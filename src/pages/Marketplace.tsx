@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -24,17 +25,42 @@ interface Product {
 }
 
 const CATEGORIES = [
-  "All",
-  "Electronics",
-  "Fashion",
-  "Home & Garden",
-  "Vehicles",
-  "Real Estate",
-  "Services",
-  "Other",
+  { key: "all", value: "All" },
+  { key: "electronics", value: "Electronics" },
+  { key: "fashion", value: "Fashion" },
+  { key: "home_garden", value: "Home & Garden" },
+  { key: "vehicles", value: "Vehicles" },
+  { key: "real_estate", value: "Real Estate" },
+  { key: "services", value: "Services" },
+  { key: "other", value: "Other" },
+];
+
+const CONDITIONS = [
+  { key: "all", value: "All" },
+  { key: "new", value: "New" },
+  { key: "like_new", value: "Like-new" },
+  { key: "good", value: "Good" },
+  { key: "fair", value: "Fair" },
+];
+
+const LOCATIONS = [
+  { key: "all", value: "All" },
+  { key: "douala", value: "Douala" },
+  { key: "yaounde", value: "Yaoundé" },
+  { key: "garoua", value: "Garoua" },
+  { key: "bamenda", value: "Bamenda" },
+  { key: "maroua", value: "Maroua" },
+  { key: "bafoussam", value: "Bafoussam" },
+  { key: "ngaoundere", value: "Ngaoundéré" },
+  { key: "bertoua", value: "Bertoua" },
+  { key: "ebolowa", value: "Ebolowa" },
+  { key: "kumba", value: "Kumba" },
+  { key: "limbe", value: "Limbe" },
+  { key: "buea", value: "Buea" },
 ];
 
 const Marketplace = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -95,79 +121,79 @@ const Marketplace = () => {
       
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2">Marketplace</h1>
-          <p className="text-muted-foreground">Discover products from sellers in Yaoundé</p>
+          <h1 className="text-4xl font-bold mb-2">{t("marketplace")}</h1>
+          <p className="text-muted-foreground">{t("discover_products")}</p>
         </div>
 
         <div className="mb-8 p-4 border rounded-lg space-y-4">
           <Input
-            placeholder="Search..."
+            placeholder={t("search")}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full"
           />
-          <div className="flex flex-wrap items-end gap-4">
-            <div className="flex-grow space-y-1">
-              <Label htmlFor="category">Category</Label>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div className="space-y-1">
+              <Label htmlFor="category">{t("category")}</Label>
               <Select value={selectedCategory} onValueChange={setSelectedCategory}>
                 <SelectTrigger id="category" className="w-full">
-                  <SelectValue placeholder="Category" />
+                  <SelectValue placeholder={t("category")} />
                 </SelectTrigger>
                 <SelectContent>
                   {CATEGORIES.map((category) => (
-                    <SelectItem key={category} value={category}>
-                      {category}
+                    <SelectItem key={category.key} value={category.value}>
+                      {t(`categories.${category.key}`)}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-            <div className="flex-grow space-y-1">
-              <Label htmlFor="location">Location</Label>
+            <div className="space-y-1">
+              <Label htmlFor="location">{t("location")}</Label>
               <Select value={selectedLocation} onValueChange={setSelectedLocation}>
                 <SelectTrigger id="location" className="w-full">
-                  <SelectValue placeholder="Location" />
+                  <SelectValue placeholder={t("location")} />
                 </SelectTrigger>
                 <SelectContent>
-                  {["All", "Douala", "Yaoundé", "Garoua", "Bamenda", "Maroua", "Bafoussam", "Ngaoundéré", "Bertoua", "Ebolowa", "Kumba", "Limbe", "Buea"].map((location) => (
-                    <SelectItem key={location} value={location}>
-                      {location}
+                  {LOCATIONS.map((location) => (
+                    <SelectItem key={location.key} value={location.value}>
+                      {t(`locations.${location.key}`)}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-            <div className="flex-grow space-y-1">
-              <Label htmlFor="condition">Condition</Label>
+            <div className="space-y-1">
+              <Label htmlFor="condition">{t("condition")}</Label>
               <Select value={selectedCondition} onValueChange={setSelectedCondition}>
                 <SelectTrigger id="condition" className="w-full">
-                  <SelectValue placeholder="Condition" />
+                  <SelectValue placeholder={t("condition")} />
                 </SelectTrigger>
                 <SelectContent>
-                  {["All", "New", "Like-new", "Good", "Fair"].map((condition) => (
-                    <SelectItem key={condition} value={condition}>
-                      {condition}
+                  {CONDITIONS.map((condition) => (
+                    <SelectItem key={condition.key} value={condition.value}>
+                      {t(`conditions.${condition.key}`)}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-            <div className="flex-grow space-y-1">
-              <Label htmlFor="min-price">Min Price</Label>
+            <div className="space-y-1">
+              <Label htmlFor="min-price">{t("min_price")}</Label>
               <Input
                 id="min-price"
-                placeholder="Min price"
+                placeholder={t("min_price")}
                 type="number"
                 value={minPrice}
                 onChange={(e) => setMinPrice(e.target.value)}
                 className="w-full"
               />
             </div>
-            <div className="flex-grow space-y-1">
-              <Label htmlFor="max-price">Max Price</Label>
+            <div className="space-y-1">
+              <Label htmlFor="max-price">{t("max_price")}</Label>
               <Input
                 id="max-price"
-                placeholder="Max price"
+                placeholder={t("max_price")}
                 type="number"
                 value={maxPrice}
                 onChange={(e) => setMaxPrice(e.target.value)}
@@ -179,12 +205,12 @@ const Marketplace = () => {
 
         {isLoading ? (
           <div className="text-center py-12">
-            <p className="text-muted-foreground">Loading products...</p>
+            <p className="text-muted-foreground">{t("loading_products")}</p>
           </div>
         ) : filteredProducts.length === 0 ? (
           <div className="text-center py-12">
             <Package className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-            <p className="text-muted-foreground">No products found</p>
+            <p className="text-muted-foreground">{t("no_products_found")}</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -203,7 +229,7 @@ const Marketplace = () => {
                 <CardHeader>
                   <div className="flex justify-between items-start">
                     <CardTitle className="text-xl">{product.name}</CardTitle>
-                    <Badge variant="secondary">{product.category}</Badge>
+                    {product.category && <Badge variant="secondary">{t(`categories.${product.category.toLowerCase().replace(' & ', '_')}`)}</Badge>}
                   </div>
                   <CardDescription className="line-clamp-2">
                     {product.description}

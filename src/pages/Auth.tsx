@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { register, login } from "@/api/client";
@@ -11,6 +12,7 @@ import { toast } from "@/hooks/use-toast";
 import { Loader2, Store } from "lucide-react";
 
 const Auth = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState("");
@@ -31,7 +33,7 @@ const Auth = () => {
       await register(email, password);
       toast({
         title: "Success!",
-        description: "Account created successfully. You can now login.",
+        description: t("account_created_successfully"),
       });
       // Switch to signin tab after successful registration
       document.querySelector<HTMLButtonElement>('[data-state="inactive"][role="tab"]')?.click();
@@ -87,31 +89,31 @@ const Auth = () => {
           </div>
           <CardTitle className="text-3xl font-bold">KamerLink</CardTitle>
           <CardDescription>
-            Connect buyers and sellers in Yaoundé
+            {t("connect_buyers_and_sellers")}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="signin" className="w-full">
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="signin">Sign In</TabsTrigger>
-              <TabsTrigger value="signup">Sign Up</TabsTrigger>
+              <TabsTrigger value="signin">{t("sign_in")}</TabsTrigger>
+              <TabsTrigger value="signup">{t("sign_up")}</TabsTrigger>
             </TabsList>
             
             <TabsContent value="signin">
               <form onSubmit={handleSignIn} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="signin-email">Email</Label>
+                  <Label htmlFor="signin-email">{t("email")}</Label>
                   <Input
                     id="signin-email"
                     type="email"
-                    placeholder="your@email.com"
+                    placeholder={t("your_email")}
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="signin-password">Password</Label>
+                  <Label htmlFor="signin-password">{t("password")}</Label>
                   <Input
                     id="signin-password"
                     type="password"
@@ -123,7 +125,7 @@ const Auth = () => {
                 </div>
                 <Button type="submit" className="w-full" disabled={isLoading}>
                   {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Sign In
+                  {t("sign_in")}
                 </Button>
               </form>
             </TabsContent>
@@ -131,18 +133,18 @@ const Auth = () => {
             <TabsContent value="signup">
               <form onSubmit={handleSignUp} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="signup-email">Email</Label>
+                  <Label htmlFor="signup-email">{t("email")}</Label>
                   <Input
                     id="signup-email"
                     type="email"
-                    placeholder="your@email.com"
+                    placeholder={t("your_email")}
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="signup-password">Password</Label>
+                  <Label htmlFor="signup-password">{t("password")}</Label>
                   <Input
                     id="signup-password"
                     type="password"
@@ -155,7 +157,7 @@ const Auth = () => {
                 </div>
                 <Button type="submit" className="w-full" disabled={isLoading}>
                   {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Sign Up
+                  {t("sign_up")}
                 </Button>
               </form>
             </TabsContent>

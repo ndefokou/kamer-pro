@@ -1,12 +1,15 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Store, LogOut } from "lucide-react";
+import { Store, LogOut, Globe } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { logout, getRole } from "@/api/client";
+import { useTranslation } from "react-i18next";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 const Navbar = () => {
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation();
   const [userRole, setUserRole] = useState<string | null>(null);
 
   useEffect(() => {
@@ -44,14 +47,14 @@ const Navbar = () => {
             {userRole === "seller" && (
               <Link to="/seller-dashboard">
                 <Button variant="secondary" size="sm">
-                  Dashboard
+                  {t("dashboard")}
                 </Button>
               </Link>
             )}
             {userRole === "buyer" && (
               <Link to="/marketplace">
                 <Button variant="secondary" size="sm">
-                  Marketplace
+                  {t("marketplace")}
                 </Button>
               </Link>
             )}
@@ -62,8 +65,24 @@ const Navbar = () => {
               className="flex items-center space-x-2"
             >
               <LogOut className="h-4 w-4" />
-              <span>Logout</span>
+              <span>{t("logout")}</span>
             </Button>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="secondary" size="icon">
+                  <Globe className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem onClick={() => i18n.changeLanguage("en")}>
+                  English
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => i18n.changeLanguage("fr")}>
+                  Français
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </div>

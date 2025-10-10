@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import apiClient from "@/api/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,16 +32,21 @@ interface Product {
 }
 
 const CATEGORIES = [
-  "Electronics",
-  "Fashion",
-  "Home & Garden",
-  "Vehicles",
-  "Real Estate",
-  "Services",
-  "Other",
+  { key: "electronics", value: "Electronics" },
+  { key: "fashion", value: "Fashion" },
+  { key: "home_garden", value: "Home & Garden" },
+  { key: "vehicles", value: "Vehicles" },
+  { key: "real_estate", value: "Real Estate" },
+  { key: "services", value: "Services" },
+  { key: "other", value: "Other" },
 ];
 
-const CONDITIONS = ["New", "Like-new", "Good", "Fair"];
+const CONDITIONS = [
+  { key: "new", value: "New" },
+  { key: "like_new", value: "Like-new" },
+  { key: "good", value: "Good" },
+  { key: "fair", value: "Fair" },
+];
 
 const LOCATIONS = [
   "Douala",
@@ -58,6 +64,7 @@ const LOCATIONS = [
 ];
 
 const SellerDashboard = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [products, setProducts] = useState<Product[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -246,28 +253,28 @@ const SellerDashboard = () => {
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-4xl font-bold mb-2">Seller Dashboard</h1>
-            <p className="text-muted-foreground">Manage your product listings</p>
+            <h1 className="text-4xl font-bold mb-2">{t("seller_dashboard")}</h1>
+            <p className="text-muted-foreground">{t("manage_your_product_listings")}</p>
           </div>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
               <Button onClick={() => handleOpenDialog()} className="flex items-center space-x-2">
                 <Plus className="h-4 w-4" />
-                <span>Add Product</span>
+                <span>{t("add_product")}</span>
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>
-                  {editingProduct ? "Edit Product" : "Add New Product"}
+                  {editingProduct ? t("edit_product") : t("add_new_product")}
                 </DialogTitle>
                 <DialogDescription>
-                  Fill in the details to {editingProduct ? "update" : "create"} your product listing.
+                  {editingProduct ? t("fill_in_the_details_to_update") : t("fill_in_the_details_to_create")}
                 </DialogDescription>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="name">Product Title *</Label>
+                  <Label htmlFor="name">{t("product_title")} *</Label>
                   <Input
                     id="name"
                     value={formData.name}
@@ -277,7 +284,7 @@ const SellerDashboard = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="description">Description *</Label>
+                  <Label htmlFor="description">{t("description")} *</Label>
                   <Textarea
                     id="description"
                     value={formData.description}
@@ -289,7 +296,7 @@ const SellerDashboard = () => {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="price">Price (XAF) *</Label>
+                    <Label htmlFor="price">{t("price")} (XAF) *</Label>
                     <Input
                       id="price"
                       type="number"
@@ -302,7 +309,7 @@ const SellerDashboard = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="category">Category *</Label>
+                    <Label htmlFor="category">{t("category")} *</Label>
                     <Select
                       value={formData.category}
                       onValueChange={(value) => setFormData({ ...formData, category: value })}
@@ -312,8 +319,8 @@ const SellerDashboard = () => {
                       </SelectTrigger>
                       <SelectContent>
                         {CATEGORIES.map((category) => (
-                          <SelectItem key={category} value={category}>
-                            {category}
+                          <SelectItem key={category.key} value={category.value}>
+                            {t(`categories.${category.key}`)}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -322,7 +329,7 @@ const SellerDashboard = () => {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="condition">Condition *</Label>
+                    <Label htmlFor="condition">{t("condition")} *</Label>
                     <Select
                       value={formData.condition}
                       onValueChange={(value) => setFormData({ ...formData, condition: value })}
@@ -332,8 +339,8 @@ const SellerDashboard = () => {
                       </SelectTrigger>
                       <SelectContent>
                         {CONDITIONS.map((condition) => (
-                          <SelectItem key={condition} value={condition}>
-                            {condition}
+                          <SelectItem key={condition.key} value={condition.value}>
+                            {t(`conditions.${condition.key}`)}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -341,7 +348,7 @@ const SellerDashboard = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="location">Location *</Label>
+                    <Label htmlFor="location">{t("location")} *</Label>
                      <Select
                       value={formData.location}
                       onValueChange={(value) => setFormData({ ...formData, location: value })}
@@ -362,7 +369,7 @@ const SellerDashboard = () => {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="contact_phone">Contact Phone</Label>
+                    <Label htmlFor="contact_phone">{t("contact_phone")}</Label>
                     <Input
                       id="contact_phone"
                       type="tel"
@@ -373,7 +380,7 @@ const SellerDashboard = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="contact_email">Contact Email</Label>
+                    <Label htmlFor="contact_email">{t("contact_email")}</Label>
                     <Input
                       id="contact_email"
                       type="email"
@@ -384,7 +391,7 @@ const SellerDashboard = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Product Image</Label>
+                  <Label>{t("product_image")}</Label>
                   <Input
                     id="image"
                     type="file"
@@ -407,7 +414,7 @@ const SellerDashboard = () => {
                     ) : (
                       <div className="flex flex-col items-center justify-center space-y-2 text-muted-foreground">
                         <Upload className="h-12 w-12" />
-                        <p>Click to upload an image</p>
+                        <p>{t("click_to_upload_an_image")}</p>
                       </div>
                     )}
                   </div>
@@ -416,7 +423,7 @@ const SellerDashboard = () => {
                 <DialogFooter>
                   <Button type="submit" disabled={isLoading}>
                     {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    {editingProduct ? "Update Product" : "Create Product"}
+                    {editingProduct ? t("update_product") : t("create_product")}
                   </Button>
                 </DialogFooter>
               </form>
@@ -427,10 +434,10 @@ const SellerDashboard = () => {
         {products.length === 0 ? (
           <Card className="text-center py-12">
             <CardContent>
-              <p className="text-muted-foreground mb-4">You haven't created any products yet.</p>
+              <p className="text-muted-foreground mb-4">{t("you_havent_created_any_products_yet")}</p>
               <Button onClick={() => handleOpenDialog()}>
                 <Plus className="mr-2 h-4 w-4" />
-                Create Your First Product
+                {t("create_your_first_product")}
               </Button>
             </CardContent>
           </Card>
@@ -451,7 +458,7 @@ const SellerDashboard = () => {
                   <div className="flex justify-between items-start">
                     <CardTitle className="text-xl">{product.name}</CardTitle>
                     <div className="flex items-center space-x-2">
-                       {product.condition && <Badge variant="outline">{product.condition}</Badge>}
+                       {product.condition && <Badge variant="outline">{t(`conditions.${product.condition.toLowerCase().replace('-', '_')}`)}</Badge>}
                       <Badge variant={product.status === "active" ? "default" : "secondary"}>
                         {product.status}
                       </Badge>
@@ -482,7 +489,7 @@ const SellerDashboard = () => {
                     onClick={() => handleOpenDialog(product)}
                   >
                     <Edit2 className="h-4 w-4 mr-1" />
-                    Edit
+                    {t("edit")}
                   </Button>
                   <Button
                     variant="destructive"
@@ -490,7 +497,7 @@ const SellerDashboard = () => {
                     onClick={() => handleDelete(product.id)}
                   >
                     <Trash2 className="h-4 w-4 mr-1" />
-                    Delete
+                    {t("delete")}
                   </Button>
                 </CardFooter>
               </Card>

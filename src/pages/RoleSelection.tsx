@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import apiClient from "@/api/client";
 import { Button } from "@/components/ui/button";
@@ -9,6 +10,7 @@ import { jwtDecode } from "jwt-decode";
 import axios from "axios";
 
 const RoleSelection = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [userId, setUserId] = useState<number | null>(null);
@@ -51,7 +53,7 @@ const RoleSelection = () => {
 
       toast({
         title: "Success!",
-        description: `You are now registered as a ${role}.`,
+        description: t("role_registered_successfully", { role }),
       });
 
       if (role === "seller") {
@@ -81,10 +83,10 @@ const RoleSelection = () => {
       <div className="w-full max-w-4xl">
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-primary-foreground mb-2">
-            Choose Your Role
+            {t("choose_your_role")}
           </h1>
           <p className="text-primary-foreground/90">
-            How would you like to use KamerLink?
+            {t("how_would_you_like_to_use_kamerlink")}
           </p>
         </div>
 
@@ -96,17 +98,17 @@ const RoleSelection = () => {
                   <ShoppingBag className="h-10 w-10 text-secondary-foreground" />
                 </div>
               </div>
-              <CardTitle className="text-2xl">Buyer</CardTitle>
+              <CardTitle className="text-2xl">{t("buyer")}</CardTitle>
               <CardDescription>
-                Browse and purchase products from sellers in Yaoundé
+                {t("browse_and_purchase_products")}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <ul className="space-y-2 mb-6 text-sm text-muted-foreground">
-                <li>• Browse products by category</li>
-                <li>• Search and filter listings</li>
-                <li>• View seller contact information</li>
-                <li>• Discover local deals</li>
+                <li>• {t("browse_products_by_category")}</li>
+                <li>• {t("search_and_filter_listings")}</li>
+                <li>• {t("view_seller_contact_information")}</li>
+                <li>• {t("discover_local_deals")}</li>
               </ul>
               <Button
                 onClick={() => handleRoleSelection("buyer")}
@@ -115,7 +117,7 @@ const RoleSelection = () => {
                 variant="secondary"
               >
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Continue as Buyer
+                {t("continue_as_buyer")}
               </Button>
             </CardContent>
           </Card>
@@ -127,17 +129,17 @@ const RoleSelection = () => {
                   <Store className="h-10 w-10 text-primary-foreground" />
                 </div>
               </div>
-              <CardTitle className="text-2xl">Seller</CardTitle>
+              <CardTitle className="text-2xl">{t("seller")}</CardTitle>
               <CardDescription>
-                List and sell your products to buyers in Yaoundé
+                {t("list_and_sell_your_products")}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <ul className="space-y-2 mb-6 text-sm text-muted-foreground">
-                <li>• Create product listings</li>
-                <li>• Manage your inventory</li>
-                <li>• Set your own prices</li>
-                <li>• Connect with local buyers</li>
+                <li>• {t("create_product_listings")}</li>
+                <li>• {t("manage_your_inventory")}</li>
+                <li>• {t("set_your_own_prices")}</li>
+                <li>• {t("connect_with_local_buyers")}</li>
               </ul>
               <Button
                 onClick={() => handleRoleSelection("seller")}
@@ -145,7 +147,7 @@ const RoleSelection = () => {
                 className="w-full"
               >
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Continue as Seller
+                {t("continue_as_seller")}
               </Button>
             </CardContent>
           </Card>
