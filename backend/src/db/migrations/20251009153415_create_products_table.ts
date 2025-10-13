@@ -8,7 +8,7 @@ export async function up(knex: Knex): Promise<void> {
         table.text('description');
         table.decimal('price').notNullable();
         table.string('condition');
-        table.integer('user_id').unsigned().references('id').inTable('users').onDelete('CASCADE');
+        table.integer('user_id').unsigned();
         table.timestamps(true, true);
     });
 }

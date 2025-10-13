@@ -1,4 +1,4 @@
-use actix_web::{get, post, put, delete, web, HttpRequest, HttpResponse, Responder, HttpMessage};
+use actix_web::{get, post, put, delete, web, HttpRequest, HttpResponse, Responder};
 use serde::{Deserialize, Serialize};
 use sqlx::SqlitePool;
 
@@ -57,7 +57,7 @@ pub struct ProductFilters {
     search: Option<String>,
 }
 
-#[get("/products")]
+#[get("")]
 pub async fn get_products(pool: web::Data<SqlitePool>, query: web::Query<ProductFilters>) -> impl Responder {
     let mut query_builder = sqlx::QueryBuilder::new("SELECT products.* FROM products JOIN user_roles ON products.user_id = user_roles.user_id WHERE user_roles.role = 'seller' AND products.status = 'active'");
 
@@ -126,7 +126,7 @@ pub async fn get_products(pool: web::Data<SqlitePool>, query: web::Query<Product
     }
 }
 
-#[get("/products/{id}")]
+#[get("/{id}")]
 pub async fn get_product(pool: web::Data<SqlitePool>, path: web::Path<i32>) -> impl Responder {
     let id = path.into_inner();
     let product: Result<Product, _> = sqlx::query_as("SELECT * FROM products WHERE id = ?")
@@ -152,11 +152,8 @@ pub async fn get_product(pool: web::Data<SqlitePool>, path: web::Path<i32>) -> i
     }
 }
 #[get("/my-products")]
-pub async fn get_my_products(req: HttpRequest, pool: web::Data<SqlitePool>) -> impl Responder {
-    let user_id = match req.extensions().get::<i32>().cloned() {
-        Some(id) => id,
-        None => return HttpResponse::InternalServerError().finish(),
-    };
+pub async fn get_my_products(_req: HttpRequest, pool: web::Data<SqlitePool>) -> impl Responder {
+    let user_id = 1; // Hardcoded user ID
 
     let products: Result<Vec<Product>, _> = sqlx::query_as("SELECT * FROM products WHERE user_id = ?")
         .bind(user_id)
@@ -185,17 +182,13 @@ pub async fn get_my_products(req: HttpRequest, pool: web::Data<SqlitePool>) -> i
     }
 }
 
-#[post("/products")]
+#[post("")]
 pub async fn create_product(
-    req: HttpRequest,
+    _req: HttpRequest,
     pool: web::Data<SqlitePool>,
     payload: web::Json<CreateProductPayload>,
 ) -> impl Responder {
-    let user_id = match req.extensions().get::<i32>().cloned() {
-        Some(id) => id,
-        // This should not happen if middleware is applied correctly
-        None => return HttpResponse::InternalServerError().finish(),
-    };
+    let user_id = 1; // Hardcoded user ID
 
     let result = sqlx::query(
         "INSERT INTO products (name, description, price, condition, category, location, contact_phone, contact_email, user_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
@@ -231,18 +224,15 @@ pub async fn create_product(
     }
 }
 
-#[put("/products/{id}")]
+#[put("/{id}")]
 pub async fn update_product(
-    req: HttpRequest,
+    _req: HttpRequest,
     pool: web::Data<SqlitePool>,
     path: web::Path<i32>,
     payload: web::Json<CreateProductPayload>,
 ) -> impl Responder {
     let id = path.into_inner();
-    let user_id = match req.extensions().get::<i32>().cloned() {
-        Some(id) => id,
-        None => return HttpResponse::InternalServerError().finish(),
-    };
+    let user_id = 1; // Hardcoded user ID
 
     // Check if the user is authorized to update this product
     let product: Result<Product, _> = sqlx::query_as("SELECT * FROM products WHERE id = ?")
@@ -303,13 +293,10 @@ pub async fn update_product(
     }
 }
 
-#[delete("/products/{id}")]
-pub async fn delete_product(req: HttpRequest, pool: web::Data<SqlitePool>, path: web::Path<i32>) -> impl Responder {
+#[delete("/{id}")]
+pub async fn delete_product(_req: HttpRequest, pool: web::Data<SqlitePool>, path: web::Path<i32>) -> impl Responder {
     let id = path.into_inner();
-    let user_id = match req.extensions().get::<i32>().cloned() {
-        Some(id) => id,
-        None => return HttpResponse::InternalServerError().finish(),
-    };
+    let user_id = 1; // Hardcoded user ID
 
     // Check if the user is authorized to delete this product
     let product: Result<Product, _> = sqlx::query_as("SELECT * FROM products WHERE id = ?")

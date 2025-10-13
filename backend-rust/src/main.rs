@@ -7,10 +7,7 @@ use log::info;
 use std::io;
 
 mod routes;
-mod middleware;
 
-use middleware::Auth;
-use routes::auth::{register, login};
 use routes::products::{get_products, get_product, create_product, update_product, delete_product, get_my_products};
 use routes::roles::{get_user_role, set_user_role};
 use routes::upload::{upload_images};
@@ -49,34 +46,22 @@ async fn main() -> std::io::Result<()> {
             .service(
                 web::scope("/api")
                     .service(
-                        web::scope("/auth")
-                            .service(register)
-                            .service(login)
-                    )
-                    .service(
                         web::scope("/products")
                             .service(get_products)
                             .service(get_product)
+                            .service(create_product)
+                            .service(update_product)
+                            .service(delete_product)
+                            .service(get_my_products)
                     )
                     .service(
-                        web::scope("")
-                            .wrap(Auth)
-                            .service(
-                                web::scope("/products")
-                                    .service(create_product)
-                                    .service(update_product)
-                                    .service(delete_product)
-                                    .service(get_my_products)
-                            )
-                            .service(
-                                web::scope("/roles")
-                                    .service(get_user_role)
-                                    .service(set_user_role)
-                            )
-                            .service(
-                                web::scope("/upload")
-                                    .service(upload_images)
-                            )
+                        web::scope("/roles")
+                            .service(get_user_role)
+                            .service(set_user_role)
+                    )
+                    .service(
+                        web::scope("/upload")
+                            .service(upload_images)
                     )
             )
     })

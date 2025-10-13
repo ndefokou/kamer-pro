@@ -20,12 +20,12 @@ const Index = () => {
             The premier marketplace connecting buyers and sellers in Yaoundé, Cameroon
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link to="/auth">
+            <Link to="/role-selection">
               <Button size="lg" variant="secondary" className="w-full sm:w-auto">
                 Get Started
               </Button>
             </Link>
-            <Link to="/marketplace">
+            <Link to="/role-selection">
               <Button size="lg" variant="outline" className="w-full sm:w-auto bg-primary-foreground/10 border-primary-foreground/20 hover:bg-primary-foreground/20">
                 Browse Marketplace
               </Button>
@@ -87,7 +87,7 @@ const Index = () => {
           <p className="text-xl mb-8 opacity-95">
             Join KamerLink today and discover the best local marketplace in Yaoundé
           </p>
-          <Link to="/auth">
+          <Link to="/role-selection">
             <Button size="lg" variant="secondary">
               Sign Up Now
             </Button>

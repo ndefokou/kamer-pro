@@ -1,17 +1,12 @@
 import { Router } from 'express';
 import db from '../db/client';
-import { protect } from '../middleware/auth';
 import { Request } from 'express';
-
-interface AuthRequest extends Request {
-  user?: { id: number };
-}
 
 const router = Router();
 
 // Get user role
-router.get('/', protect, async (req: AuthRequest, res) => {
-  const userId = req.user?.id;
+router.get('/', async (req: Request, res) => {
+  const userId = 1; // Hardcoded user ID
 
   try {
     const userRole = await db('user_roles').where({ user_id: userId }).first();
@@ -26,8 +21,8 @@ router.get('/', protect, async (req: AuthRequest, res) => {
 });
 
 // Set user role
-router.post('/', protect, async (req: AuthRequest, res) => {
-  const userId = req.user?.id;
+router.post('/', async (req: Request, res) => {
+  const userId = 1; // Hardcoded user ID
   const { role } = req.body;
 
   if (!role) {

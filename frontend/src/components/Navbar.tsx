@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Store, LogOut, Globe } from "lucide-react";
+import { Store, Globe } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import { logout, getRole } from "@/api/client";
+import { getRole } from "@/api/client";
 import { useTranslation } from "react-i18next";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
@@ -25,14 +25,6 @@ const Navbar = () => {
     }
   };
 
-  const handleLogout = () => {
-    logout();
-    toast({
-      title: "Logged out",
-      description: "You have been successfully logged out.",
-    });
-    navigate("/");
-  };
 
   return (
     <nav className="bg-primary text-primary-foreground shadow-soft">
@@ -58,15 +50,6 @@ const Navbar = () => {
                 </Button>
               </Link>
             )}
-            <Button
-              onClick={handleLogout}
-              variant="secondary"
-              size="sm"
-              className="flex items-center space-x-2"
-            >
-              <LogOut className="h-4 w-4" />
-              <span>{t("logout")}</span>
-            </Button>
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

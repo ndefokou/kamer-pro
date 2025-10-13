@@ -90,9 +90,6 @@ const Marketplace = () => {
 
   const checkAuth = () => {
     const token = localStorage.getItem("token");
-    if (!token) {
-      navigate("/auth");
-    }
   };
 
   const fetchProducts = async () => {

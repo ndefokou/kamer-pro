@@ -1,11 +1,6 @@
 import { Router } from 'express';
 import db from '../db/client';
-import { protect } from '../middleware/auth';
 import { Request } from 'express';
-
-interface AuthRequest extends Request {
-  user?: { id: number };
-}
 
 const router = Router();
 
@@ -62,8 +57,8 @@ router.get('/', async (req, res) => {
 });
 
 // Get all products for the logged-in user
-router.get('/my-products', protect, async (req: AuthRequest, res) => {
-  const userId = req.user?.id;
+router.get('/my-products', async (req: Request, res) => {
+  const userId = 1; // Hardcoded user ID
 
   try {
     const products = await db('products').where({ user_id: userId }).select('*');
@@ -96,9 +91,9 @@ router.get('/:id', async (req, res) => {
 });
 
 // Create a new product
-router.post('/', protect, async (req: AuthRequest, res) => {
+router.post('/', async (req: Request, res) => {
   const { name, description, price, condition, category, location, contact_phone, contact_email } = req.body;
-  const userId = req.user?.id;
+  const userId = 1; // Hardcoded user ID
 
   if (!name || !price) {
     return res.status(400).json({ message: 'Name and price are required' });
@@ -123,9 +118,9 @@ router.post('/', protect, async (req: AuthRequest, res) => {
 });
 
 // Update a product
-router.put('/:id', protect, async (req: AuthRequest, res) => {
+router.put('/:id', async (req: Request, res) => {
   const { name, description, price, condition, category, location, contact_phone, contact_email } = req.body;
-  const userId = req.user?.id;
+  const userId = 1; // Hardcoded user ID
 
   try {
     const product = await db('products').where({ id: req.params.id }).first();
@@ -154,8 +149,8 @@ router.put('/:id', protect, async (req: AuthRequest, res) => {
 });
 
 // Delete a product
-router.delete('/:id', protect, async (req: AuthRequest, res) => {
-  const userId = req.user?.id;
+router.delete('/:id', async (req: Request, res) => {
+  const userId = 1; // Hardcoded user ID
 
   try {
     const product = await db('products').where({ id: req.params.id }).first();

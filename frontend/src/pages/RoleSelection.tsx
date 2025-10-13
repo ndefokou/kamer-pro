@@ -6,43 +6,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
 import { ShoppingBag, Store, Loader2 } from "lucide-react";
-import { jwtDecode } from "jwt-decode";
 import axios from "axios";
 
 const RoleSelection = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
-  const [userId, setUserId] = useState<number | null>(null);
+  const userId = 1; // Hardcoded user ID
 
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      navigate("/auth");
-    } else {
-      try {
-        const decoded: { id: number } = jwtDecode(token);
-        setUserId(decoded.id);
-        checkUserRole();
-      } catch (error) {
-        navigate("/auth");
-      }
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [navigate]);
-
-  const checkUserRole = async () => {
-    try {
-      const { data } = await apiClient.get("/roles");
-      if (data?.role === "seller") {
-        navigate("/seller-dashboard");
-      } else if (data?.role === "buyer") {
-        navigate("/marketplace");
-      }
-    } catch (error) {
-      // User doesn't have a role yet, so we stay on this page.
-    }
-  };
 
   const handleRoleSelection = async (role: "buyer" | "seller") => {
     if (!userId) return;
