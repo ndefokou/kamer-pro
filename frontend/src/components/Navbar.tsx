@@ -51,6 +51,12 @@ const Navbar = () => {
               </Link>
             )}
 
+            <Link to="/role-selection">
+              <Button variant="secondary" size="sm">
+                {t("change_role")}
+              </Button>
+            </Link>
+
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="secondary" size="icon">

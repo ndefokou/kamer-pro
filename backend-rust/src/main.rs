@@ -49,10 +49,10 @@ async fn main() -> std::io::Result<()> {
                         web::scope("/products")
                             .service(get_products)
                             .service(get_product)
-                            .service(create_product)
-                            .service(update_product)
                             .service(delete_product)
                             .service(get_my_products)
+                            .route("", web::post().to(create_product))
+                            .route("/{id}", web::put().to(update_product))
                     )
                     .service(
                         web::scope("/roles")
