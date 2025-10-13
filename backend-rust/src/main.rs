@@ -1,5 +1,6 @@
 use actix_cors::Cors;
 use actix_web::{get, web, App, HttpResponse, HttpServer, Responder};
+use actix_files as fs;
 use dotenv::dotenv;
 use log::info;
 use sqlx::sqlite::SqlitePool;
@@ -70,9 +71,10 @@ async fn main() -> std::io::Result<()> {
                     .service(web::scope("/roles").service(set_user_role))
                     .service(web::scope("/upload").service(upload_images)),
             )
+            // Serve static files from the public directory
+            .service(fs::Files::new("/public", "./public").show_files_listing())
     })
     .bind("127.0.0.1:8082")?
     .run()
     .await
 }
-

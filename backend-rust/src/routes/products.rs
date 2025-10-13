@@ -227,7 +227,8 @@ pub async fn create_product(
                 while let Some(chunk) = field.try_next().await.unwrap() {
                     f.write_all(&chunk).unwrap();
                 }
-                image_paths.push(format!("public/uploads/{}", filename));
+                // Store with leading slash so frontend can use it directly
+                image_paths.push(format!("/public/uploads/{}", filename));
             }
             _ => (),
         }
@@ -328,7 +329,8 @@ pub async fn update_product(
                 while let Some(chunk) = field.try_next().await.unwrap() {
                     f.write_all(&chunk).unwrap();
                 }
-                image_paths.push(format!("public/uploads/{}", filename));
+                // Store with leading slash so frontend can use it directly
+                image_paths.push(format!("/public/uploads/{}", filename));
             }
             _ => (),
         }

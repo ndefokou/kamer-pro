@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Edit2, Trash2, Upload, Loader2 } from "lucide-react";
+import { Plus, Edit2, Trash2, Upload, Loader2, Phone, Mail } from "lucide-react";
 import { useDropzone } from "react-dropzone";
 import Navbar from "@/components/Navbar";
 
@@ -107,7 +107,10 @@ const SellerDashboard = () => {
         images: [],
       });
       if (product.images && product.images.length > 0) {
-        setPreviews(product.images.map(img => `${apiClient.defaults.baseURL}/${img.image_url}`));
+        setPreviews(product.images.map(img => {
+          const url = img.image_url;
+          return url.startsWith('http') ? url : `http://localhost:8082${url}`;
+        }));
       } else {
         setPreviews([]);
       }
@@ -205,6 +208,13 @@ const SellerDashboard = () => {
     } catch (error) {
       console.error("Failed to delete product:", error);
     }
+  };
+
+  const getImageUrl = (imagePath: string) => {
+    if (imagePath.startsWith('http')) {
+      return imagePath;
+    }
+    return `http://localhost:8082${imagePath}`;
   };
 
   const totalProducts = products.length;
@@ -436,21 +446,21 @@ const SellerDashboard = () => {
             .map((product) => (
             <Card key={product.id} className="flex flex-col">
               <CardHeader>
-                <div className="aspect-w-16 aspect-h-9 mb-4">
+                <div className="aspect-w-16 aspect-h-9 mb-4 h-48 bg-gray-100 rounded-lg flex items-center justify-center">
                   {product.images && product.images.length > 0 ? (
                     <img
-                      src={`${apiClient.defaults.baseURL}/${product.images[0].image_url}`}
+                      src={getImageUrl(product.images[0].image_url)}
                       alt={product.name}
-                      className="object-cover rounded-t-lg w-full h-full"
+                      className="object-cover rounded-lg w-full h-full"
                     />
                   ) : (
-                    <div className="bg-gray-200 rounded-t-lg w-full h-full" />
+                    <div className="text-gray-400">No image</div>
                   )}
                 </div>
                 <div className="flex justify-between items-start">
                   <CardTitle className="text-xl">{product.name}</CardTitle>
                   <div className="flex items-center space-x-2">
-                     {product.condition && <Badge variant="outline">{t(`conditions.${product.condition.toLowerCase().replace('-', '_')}`)}</Badge>}
+                     {product.condition && <Badge variant="outline">{product.condition}</Badge>}
                     <Badge variant={product.status === "active" ? "default" : "secondary"}>
                       {product.status}
                     </Badge>
@@ -459,9 +469,23 @@ const SellerDashboard = () => {
               </CardHeader>
               <CardContent className="flex-grow">
                 <p className="text-muted-foreground text-sm mb-4">{product.description.substring(0, 100)}...</p>
-                <div className="flex justify-between items-center">
+                <div className="flex justify-between items-center mb-4">
                   <p className="text-lg font-semibold">{product.price} XAF</p>
                   <p className="text-sm text-muted-foreground">{product.location}</p>
+                </div>
+                <div className="space-y-2">
+                  {product.contact_phone && (
+                    <div className="flex items-center text-sm text-muted-foreground">
+                      <Phone className="h-4 w-4 mr-2" />
+                      <span>{product.contact_phone}</span>
+                    </div>
+                  )}
+                  {product.contact_email && (
+                    <div className="flex items-center text-sm text-muted-foreground">
+                      <Mail className="h-4 w-4 mr-2" />
+                      <span>{product.contact_email}</span>
+                    </div>
+                  )}
                 </div>
               </CardContent>
               <CardFooter className="flex justify-end space-x-2 mt-auto pt-4">

@@ -18,7 +18,7 @@ interface Product {
   condition?: string;
   contact_phone: string | null;
   contact_email: string | null;
-  images: string[];
+  images: { image_url: string }[];
 }
 
 const ProductDetails = () => {
@@ -41,6 +41,15 @@ const ProductDetails = () => {
 
     fetchProduct();
   }, [id]);
+
+  const getImageUrl = (imagePath: string) => {
+    // If the path already has the full URL, use it as is
+    if (imagePath.startsWith('http')) {
+      return imagePath;
+    }
+    // Otherwise, construct the URL
+    return `http://localhost:8082${imagePath}`;
+  };
 
   if (isLoading) {
     return <div>{t("loading")}</div>;
@@ -66,9 +75,9 @@ const ProductDetails = () => {
               <Carousel className="mb-6">
                 <CarouselContent>
                   {product.images.map((image) => (
-                    <CarouselItem key={image}>
+                    <CarouselItem key={image.image_url}>
                       <img
-                        src={`http://localhost:3001${image}`}
+                        src={getImageUrl(image.image_url)}
                         alt={product.name}
                         className="w-full h-auto object-cover rounded-lg border"
                       />

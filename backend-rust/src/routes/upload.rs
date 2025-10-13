@@ -64,7 +64,8 @@ pub async fn upload_images(
                 let data = chunk.unwrap();
                 f = web::block(move || f.write_all(&data).map(|_| f)).await??;
             }
-            file_paths.push(format!("/uploads/{}", unique_filename));
+            // Store with leading slash so frontend can use it directly
+            file_paths.push(format!("/public/uploads/{}", unique_filename));
         }
     }
 

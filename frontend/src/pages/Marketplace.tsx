@@ -111,6 +111,14 @@ const Marketplace = () => {
     setIsLoading(false);
   };
 
+  const getImageUrl = (imagePath: string) => {
+    // If the path already has the full URL, use it as is
+    if (imagePath.startsWith('http')) {
+      return imagePath;
+    }
+    // Otherwise, construct the URL
+    return `http://localhost:8082${imagePath}`;
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -217,7 +225,7 @@ const Marketplace = () => {
                 {product.images && product.images.length > 0 && (
                   <div className="h-48 overflow-hidden rounded-t-lg">
                     <img
-                      src={`http://localhost:3001${product.images[0]}`}
+                      src={getImageUrl(product.images[0])}
                       alt={product.name}
                       className="w-full h-full object-cover"
                     />
