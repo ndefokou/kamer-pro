@@ -56,7 +56,6 @@ async fn main() -> std::io::Result<()> {
                     )
                     .service(
                         web::scope("/roles")
-                            .service(get_user_role)
                             .service(set_user_role)
                     )
                     .service(
