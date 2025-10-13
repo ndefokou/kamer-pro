@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const apiClient = axios.create({
-  baseURL: 'http://localhost:3001/api',
+  baseURL: 'http://localhost:8082/api',
 });
 
 apiClient.interceptors.request.use((config) => {
@@ -12,8 +12,8 @@ apiClient.interceptors.request.use((config) => {
   return config;
 });
 
-export const register = async (email, password) => {
-  const response = await apiClient.post('/auth/register', { email, password });
+export const register = async (username, email, password) => {
+  const response = await apiClient.post('/auth/register', { username, email, password });
   if (response.data.token) {
     localStorage.setItem('token', response.data.token);
   }

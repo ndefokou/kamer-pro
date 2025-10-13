@@ -54,6 +54,8 @@
   "sign_up": "S'inscrire",
   "email": "Email",
   "your_email": "votre@email.com",
+  "username": "Nom d'utilisateur",
+  "your_username": "votre_nom_d_utilisateur",
   "password": "Mot de passe",
   "product_details": "Détails du produit",
   "account_created_successfully": "Compte créé avec succès. Vous pouvez maintenant vous connecter.",

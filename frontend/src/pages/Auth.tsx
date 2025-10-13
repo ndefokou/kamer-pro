@@ -15,6 +15,7 @@ const Auth = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
+  const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
@@ -30,7 +31,7 @@ const Auth = () => {
     setIsLoading(true);
 
     try {
-      await register(email, password);
+      await register(username, email, password);
       toast({
         title: "Success!",
         description: t("account_created_successfully"),
@@ -132,6 +133,17 @@ const Auth = () => {
             
             <TabsContent value="signup">
               <form onSubmit={handleSignUp} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="signup-username">{t("username")}</Label>
+                  <Input
+                    id="signup-username"
+                    type="text"
+                    placeholder={t("your_username")}
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    required
+                  />
+                </div>
                 <div className="space-y-2">
                   <Label htmlFor="signup-email">{t("email")}</Label>
                   <Input

@@ -157,7 +157,7 @@ const SellerDashboard = () => {
         contact_email: product.contact_email || "",
       });
       // This will be updated later to fetch all images
-      setImagePreviews(product.images ? product.images.map(img => `http://localhost:3001${img}`) : []);
+      setImagePreviews(product.images ? product.images.map(img => `http://localhost:8082${img}`) : []);
     } else {
       resetForm();
     }
@@ -448,7 +448,7 @@ const SellerDashboard = () => {
                 {product.images && product.images.length > 0 && (
                   <div className="h-48 overflow-hidden rounded-t-lg">
                     <img
-                      src={`http://localhost:3001${product.images[0]}`}
+                      src={`http://localhost:8082${product.images[0]}`}
                       alt={product.name}
                       className="w-full h-full object-cover"
                     />
