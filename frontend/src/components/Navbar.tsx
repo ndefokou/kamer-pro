@@ -43,7 +43,7 @@ const Navbar = () => {
                 </Button>
               </Link>
             )}
-            {userRole === "buyer" && (
+            {(userRole === "buyer" || userRole === "seller") && (
               <Link to="/marketplace">
                 <Button variant="secondary" size="sm">
                   {t("marketplace")}

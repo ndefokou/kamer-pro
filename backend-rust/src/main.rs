@@ -1,16 +1,18 @@
 use actix_cors::Cors;
 use actix_web::{get, web, App, HttpResponse, HttpServer, Responder};
 use dotenv::dotenv;
+use log::info;
 use sqlx::sqlite::SqlitePool;
 use std::env;
-use log::info;
 use std::io;
 
 mod routes;
 
-use routes::products::{get_products, get_product, create_product, update_product, delete_product, get_my_products};
-use routes::roles::{get_user_role, set_user_role};
-use routes::upload::{upload_images};
+use routes::products::{
+    create_product, delete_product, get_my_products, get_product, get_products, update_product,
+};
+use routes::roles::{set_user_role};
+use routes::upload::upload_images;
 
 #[get("/")]
 async fn hello() -> impl Responder {
@@ -21,15 +23,26 @@ async fn hello() -> impl Responder {
 async fn main() -> std::io::Result<()> {
     dotenv().ok();
     env_logger::init();
-    let current_dir = env::current_dir().map_err(|e| io::Error::new(io::ErrorKind::Other, format!("Failed to get current directory: {}", e)))?;
+    let current_dir = env::current_dir().map_err(|e| {
+        io::Error::new(
+            io::ErrorKind::Other,
+            format!("Failed to get current directory: {}", e),
+        )
+    })?;
     info!("Current working directory: {:?}", current_dir);
-    let database_url = env::var("DATABASE_URL").unwrap_or_else(|_| "sqlite:dev.sqlite3".to_string());
+    let database_url =
+        env::var("DATABASE_URL").unwrap_or_else(|_| "sqlite:dev.sqlite3".to_string());
     info!("Connecting to database at: {}", &database_url);
-    let pool = SqlitePool::connect(&database_url).await.expect("Failed to create pool.");
+    let pool = SqlitePool::connect(&database_url)
+        .await
+        .expect("Failed to create pool.");
 
     // Run migrations
     info!("Running database migrations...");
-    sqlx::migrate!("./migrations").run(&pool).await.expect("Failed to run migrations");
+    sqlx::migrate!("./migrations")
+        .run(&pool)
+        .await
+        .expect("Failed to run migrations");
     info!("Database migrations completed successfully.");
 
     HttpServer::new(move || {
@@ -47,24 +60,19 @@ async fn main() -> std::io::Result<()> {
                 web::scope("/api")
                     .service(
                         web::scope("/products")
+                            .service(get_my_products)
                             .service(get_products)
                             .service(get_product)
                             .service(delete_product)
-                            .service(get_my_products)
                             .route("", web::post().to(create_product))
-                            .route("/{id}", web::put().to(update_product))
+                            .route("/{id}", web::put().to(update_product)),
                     )
-                    .service(
-                        web::scope("/roles")
-                            .service(set_user_role)
-                    )
-                    .service(
-                        web::scope("/upload")
-                            .service(upload_images)
-                    )
+                    .service(web::scope("/roles").service(set_user_role))
+                    .service(web::scope("/upload").service(upload_images)),
             )
     })
     .bind("127.0.0.1:8082")?
     .run()
     .await
 }
+

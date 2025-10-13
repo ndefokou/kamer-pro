@@ -72,7 +72,7 @@ async fn extract_string_from_field(field: &mut actix_multipart::Field) -> Result
 
 #[get("")]
 pub async fn get_products(pool: web::Data<SqlitePool>, query: web::Query<ProductFilters>) -> impl Responder {
-    let mut query_builder = sqlx::QueryBuilder::new("SELECT products.* FROM products JOIN user_roles ON products.user_id = user_roles.user_id WHERE user_roles.role = 'seller' AND products.status = 'active'");
+    let mut query_builder = sqlx::QueryBuilder::new("SELECT products.* FROM products JOIN user_roles ON products.user_id = user_roles.user_id WHERE user_roles.role = 'seller'");
 
     if let Some(category) = &query.category {
         if category != "All" {
