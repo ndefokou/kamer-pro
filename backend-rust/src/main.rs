@@ -1,6 +1,6 @@
 use actix_cors::Cors;
-use actix_web::{get, web, App, HttpResponse, HttpServer, Responder};
 use actix_files as fs;
+use actix_web::{get, web, App, HttpResponse, HttpServer, Responder};
 use dotenv::dotenv;
 use log::info;
 use sqlx::sqlite::SqlitePool;
@@ -9,12 +9,14 @@ use std::io;
 
 mod routes;
 
+use routes::auth::{
+    authentication_complete, authentication_start, registration_complete, registration_start,
+};
 use routes::products::{
     create_product, delete_product, get_my_products, get_product, get_products, update_product,
 };
 use routes::roles::{get_user_role, set_user_role};
 use routes::upload::upload_images;
-use routes::auth::{registration_start, registration_complete, authentication_start, authentication_complete};
 
 #[get("/")]
 async fn hello() -> impl Responder {
@@ -76,7 +78,11 @@ async fn main() -> std::io::Result<()> {
                             .route("", web::post().to(create_product))
                             .route("/{id}", web::put().to(update_product)),
                     )
-                    .service(web::scope("/roles").service(get_user_role).service(set_user_role))
+                    .service(
+                        web::scope("/roles")
+                            .service(get_user_role)
+                            .service(set_user_role),
+                    )
                     .service(web::scope("/upload").service(upload_images)),
             )
             // Serve static files from the public directory

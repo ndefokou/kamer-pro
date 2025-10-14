@@ -1,8 +1,9 @@
-use actix_web::{get, delete, web, HttpRequest, HttpResponse, Responder};
+use crate::routes::middleware::extract_user_id_from_token;
+use actix_multipart::Multipart;
+use actix_web::{delete, get, web, HttpRequest, HttpResponse, Responder};
+use futures_util::TryStreamExt;
 use serde::{Deserialize, Serialize};
 use sqlx::SqlitePool;
-use actix_multipart::Multipart;
-use futures_util::TryStreamExt;
 use std::io::Write;
 use uuid::Uuid;
 
@@ -62,7 +63,9 @@ pub struct ProductFilters {
     search: Option<String>,
 }
 
-async fn extract_string_from_field(field: &mut actix_multipart::Field) -> Result<String, actix_web::Error> {
+async fn extract_string_from_field(
+    field: &mut actix_multipart::Field,
+) -> Result<String, actix_web::Error> {
     let mut bytes = Vec::new();
     while let Some(chunk) = field.try_next().await? {
         bytes.extend_from_slice(&chunk);
@@ -70,50 +73,70 @@ async fn extract_string_from_field(field: &mut actix_multipart::Field) -> Result
     Ok(String::from_utf8(bytes).map_err(|e| actix_web::error::ErrorInternalServerError(e))?)
 }
 
+fn get_user_id_from_headers(req: &HttpRequest) -> Result<i32, actix_web::Error> {
+    if let Some(auth_header) = req.headers().get("Authorization") {
+        if let Ok(auth_str) = auth_header.to_str() {
+            if let Some(token) = auth_str.strip_prefix("Bearer ") {
+                return extract_user_id_from_token(token);
+            }
+        }
+    }
+    Err(actix_web::error::ErrorUnauthorized(
+        "Missing or invalid authorization header",
+    ))
+}
+
+// Get ALL products (for marketplace - buyers and sellers can see all)
 #[get("")]
-pub async fn get_products(pool: web::Data<SqlitePool>, query: web::Query<ProductFilters>) -> impl Responder {
-    let mut query_builder = sqlx::QueryBuilder::new("SELECT products.* FROM products JOIN user_roles ON products.user_id = user_roles.user_id WHERE user_roles.role = 'seller'");
+pub async fn get_products(
+    pool: web::Data<SqlitePool>,
+    query: web::Query<ProductFilters>,
+) -> impl Responder {
+    let mut query_builder = sqlx::QueryBuilder::new("SELECT * FROM products WHERE 1=1");
 
     if let Some(category) = &query.category {
         if category != "All" {
-            query_builder.push(" AND products.category = ");
+            query_builder.push(" AND category = ");
             query_builder.push_bind(category);
         }
     }
 
     if let Some(location) = &query.location {
         if location != "All" {
-            query_builder.push(" AND products.location = ");
+            query_builder.push(" AND location = ");
             query_builder.push_bind(location);
         }
     }
 
     if let Some(condition) = &query.condition {
         if condition != "All" {
-            query_builder.push(" AND products.condition = ");
+            query_builder.push(" AND condition = ");
             query_builder.push_bind(condition);
         }
     }
 
     if let Some(min_price) = &query.min_price {
-        query_builder.push(" AND products.price >= ");
+        query_builder.push(" AND price >= ");
         query_builder.push_bind(min_price);
     }
 
     if let Some(max_price) = &query.max_price {
-        query_builder.push(" AND products.price <= ");
+        query_builder.push(" AND price <= ");
         query_builder.push_bind(max_price);
     }
 
     if let Some(search) = &query.search {
-        query_builder.push(" AND (products.name LIKE ");
+        query_builder.push(" AND (name LIKE ");
         query_builder.push_bind(format!("%{}%", search));
-        query_builder.push(" OR products.description LIKE ");
+        query_builder.push(" OR description LIKE ");
         query_builder.push_bind(format!("%{}%", search));
         query_builder.push(")");
     }
 
-    let products: Result<Vec<Product>, _> = query_builder.build_query_as()
+    query_builder.push(" ORDER BY created_at DESC");
+
+    let products: Result<Vec<Product>, _> = query_builder
+        .build_query_as()
         .fetch_all(pool.get_ref())
         .await;
 
@@ -121,15 +144,13 @@ pub async fn get_products(pool: web::Data<SqlitePool>, query: web::Query<Product
         Ok(products) => {
             let mut product_responses = Vec::new();
             for product in products {
-                let images: Vec<ProductImage> = sqlx::query_as("SELECT * FROM product_images WHERE product_id = ?")
-                    .bind(product.id)
-                    .fetch_all(pool.get_ref())
-                    .await
-                    .unwrap_or_else(|_| vec![]);
-                product_responses.push(ProductResponse {
-                    product,
-                    images,
-                });
+                let images: Vec<ProductImage> =
+                    sqlx::query_as("SELECT * FROM product_images WHERE product_id = ?")
+                        .bind(product.id)
+                        .fetch_all(pool.get_ref())
+                        .await
+                        .unwrap_or_else(|_| vec![]);
+                product_responses.push(ProductResponse { product, images });
             }
             HttpResponse::Ok().json(product_responses)
         }
@@ -152,15 +173,13 @@ pub async fn get_product(pool: web::Data<SqlitePool>, path: web::Path<i32>) -> i
 
     match product {
         Ok(product) => {
-            let images: Vec<ProductImage> = sqlx::query_as("SELECT * FROM product_images WHERE product_id = ?")
-                .bind(product.id)
-                .fetch_all(pool.get_ref())
-                .await
-                .unwrap_or_else(|_| vec![]);
-            HttpResponse::Ok().json(ProductResponse {
-                product,
-                images,
-            })
+            let images: Vec<ProductImage> =
+                sqlx::query_as("SELECT * FROM product_images WHERE product_id = ?")
+                    .bind(product.id)
+                    .fetch_all(pool.get_ref())
+                    .await
+                    .unwrap_or_else(|_| vec![]);
+            HttpResponse::Ok().json(ProductResponse { product, images })
         }
         Err(_) => HttpResponse::NotFound().json(ErrorResponse {
             message: "Product not found".to_string(),
@@ -168,28 +187,35 @@ pub async fn get_product(pool: web::Data<SqlitePool>, path: web::Path<i32>) -> i
     }
 }
 
+// Get ONLY the logged-in user's products (for seller dashboard)
 #[get("/seller")]
-pub async fn get_my_products(_req: HttpRequest, pool: web::Data<SqlitePool>) -> impl Responder {
-    let user_id = 1; // Hardcoded user ID
+pub async fn get_my_products(req: HttpRequest, pool: web::Data<SqlitePool>) -> impl Responder {
+    let user_id = match get_user_id_from_headers(&req) {
+        Ok(id) => id,
+        Err(_) => {
+            return HttpResponse::Unauthorized().json(ErrorResponse {
+                message: "Unauthorized - Please log in".to_string(),
+            })
+        }
+    };
 
-    let products: Result<Vec<Product>, _> = sqlx::query_as("SELECT * FROM products WHERE user_id = ?")
-        .bind(user_id)
-        .fetch_all(pool.get_ref())
-        .await;
+    let products: Result<Vec<Product>, _> =
+        sqlx::query_as("SELECT * FROM products WHERE user_id = ? ORDER BY created_at DESC")
+            .bind(user_id)
+            .fetch_all(pool.get_ref())
+            .await;
 
     match products {
         Ok(products) => {
             let mut product_responses = Vec::new();
             for product in products {
-                let images: Vec<ProductImage> = sqlx::query_as("SELECT * FROM product_images WHERE product_id = ?")
-                    .bind(product.id)
-                    .fetch_all(pool.get_ref())
-                    .await
-                    .unwrap_or_else(|_| vec![]);
-                product_responses.push(ProductResponse {
-                    product,
-                    images,
-                });
+                let images: Vec<ProductImage> =
+                    sqlx::query_as("SELECT * FROM product_images WHERE product_id = ?")
+                        .bind(product.id)
+                        .fetch_all(pool.get_ref())
+                        .await
+                        .unwrap_or_else(|_| vec![]);
+                product_responses.push(ProductResponse { product, images });
             }
             HttpResponse::Ok().json(product_responses)
         }
@@ -200,10 +226,19 @@ pub async fn get_my_products(_req: HttpRequest, pool: web::Data<SqlitePool>) -> 
 }
 
 pub async fn create_product(
+    req: HttpRequest,
     pool: web::Data<SqlitePool>,
     mut payload: Multipart,
 ) -> impl Responder {
-    let user_id = 1; // Hardcoded user ID
+    let user_id = match get_user_id_from_headers(&req) {
+        Ok(id) => id,
+        Err(_) => {
+            return HttpResponse::Unauthorized().json(ErrorResponse {
+                message: "Unauthorized - Please log in".to_string(),
+            })
+        }
+    };
+
     let mut product_payload = CreateProductPayload::default();
     let mut image_paths: Vec<String> = Vec::new();
 
@@ -213,13 +248,33 @@ pub async fn create_product(
 
         match field_name {
             "name" => product_payload.name = extract_string_from_field(&mut field).await.unwrap(),
-            "description" => product_payload.description = extract_string_from_field(&mut field).await.unwrap(),
-            "price" => product_payload.price = extract_string_from_field(&mut field).await.unwrap().parse().unwrap(),
-            "condition" => product_payload.condition = extract_string_from_field(&mut field).await.unwrap(),
-            "category" => product_payload.category = extract_string_from_field(&mut field).await.unwrap(),
-            "location" => product_payload.location = extract_string_from_field(&mut field).await.unwrap(),
-            "contact_phone" => product_payload.contact_phone = Some(extract_string_from_field(&mut field).await.unwrap()),
-            "contact_email" => product_payload.contact_email = Some(extract_string_from_field(&mut field).await.unwrap()),
+            "description" => {
+                product_payload.description = extract_string_from_field(&mut field).await.unwrap()
+            }
+            "price" => {
+                product_payload.price = extract_string_from_field(&mut field)
+                    .await
+                    .unwrap()
+                    .parse()
+                    .unwrap()
+            }
+            "condition" => {
+                product_payload.condition = extract_string_from_field(&mut field).await.unwrap()
+            }
+            "category" => {
+                product_payload.category = extract_string_from_field(&mut field).await.unwrap()
+            }
+            "location" => {
+                product_payload.location = extract_string_from_field(&mut field).await.unwrap()
+            }
+            "contact_phone" => {
+                product_payload.contact_phone =
+                    Some(extract_string_from_field(&mut field).await.unwrap())
+            }
+            "contact_email" => {
+                product_payload.contact_email =
+                    Some(extract_string_from_field(&mut field).await.unwrap())
+            }
             "images[]" => {
                 let filename = format!("{}.png", Uuid::new_v4());
                 let filepath = format!("./public/uploads/{}", filename);
@@ -227,7 +282,6 @@ pub async fn create_product(
                 while let Some(chunk) = field.try_next().await.unwrap() {
                     f.write_all(&chunk).unwrap();
                 }
-                // Store with leading slash so frontend can use it directly
                 image_paths.push(format!("/public/uploads/{}", filename));
             }
             _ => (),
@@ -266,16 +320,14 @@ pub async fn create_product(
                 .fetch_one(pool.get_ref())
                 .await
                 .unwrap();
-            let images: Vec<ProductImage> = sqlx::query_as("SELECT * FROM product_images WHERE product_id = ?")
-                .bind(product_id)
-                .fetch_all(pool.get_ref())
-                .await
-                .unwrap_or_else(|_| vec![]);
+            let images: Vec<ProductImage> =
+                sqlx::query_as("SELECT * FROM product_images WHERE product_id = ?")
+                    .bind(product_id)
+                    .fetch_all(pool.get_ref())
+                    .await
+                    .unwrap_or_else(|_| vec![]);
 
-            HttpResponse::Created().json(ProductResponse {
-                product,
-                images,
-            })
+            HttpResponse::Created().json(ProductResponse { product, images })
         }
         Err(e) => {
             eprintln!("Failed to create product: {}", e);
@@ -287,18 +339,27 @@ pub async fn create_product(
 }
 
 pub async fn update_product(
+    req: HttpRequest,
     pool: web::Data<SqlitePool>,
     path: web::Path<i32>,
     mut payload: Multipart,
 ) -> impl Responder {
     let id = path.into_inner();
-    let user_id = 1; // Hardcoded user ID
+    let user_id = match get_user_id_from_headers(&req) {
+        Ok(id) => id,
+        Err(_) => {
+            return HttpResponse::Unauthorized().json(ErrorResponse {
+                message: "Unauthorized - Please log in".to_string(),
+            })
+        }
+    };
 
-    let product: Result<Product, _> = sqlx::query_as("SELECT * FROM products WHERE id = ? AND user_id = ?")
-        .bind(id)
-        .bind(user_id)
-        .fetch_one(pool.get_ref())
-        .await;
+    let product: Result<Product, _> =
+        sqlx::query_as("SELECT * FROM products WHERE id = ? AND user_id = ?")
+            .bind(id)
+            .bind(user_id)
+            .fetch_one(pool.get_ref())
+            .await;
 
     if product.is_err() {
         return HttpResponse::NotFound().json(ErrorResponse {
@@ -315,13 +376,33 @@ pub async fn update_product(
 
         match field_name {
             "name" => product_payload.name = extract_string_from_field(&mut field).await.unwrap(),
-            "description" => product_payload.description = extract_string_from_field(&mut field).await.unwrap(),
-            "price" => product_payload.price = extract_string_from_field(&mut field).await.unwrap().parse().unwrap(),
-            "condition" => product_payload.condition = extract_string_from_field(&mut field).await.unwrap(),
-            "category" => product_payload.category = extract_string_from_field(&mut field).await.unwrap(),
-            "location" => product_payload.location = extract_string_from_field(&mut field).await.unwrap(),
-            "contact_phone" => product_payload.contact_phone = Some(extract_string_from_field(&mut field).await.unwrap()),
-            "contact_email" => product_payload.contact_email = Some(extract_string_from_field(&mut field).await.unwrap()),
+            "description" => {
+                product_payload.description = extract_string_from_field(&mut field).await.unwrap()
+            }
+            "price" => {
+                product_payload.price = extract_string_from_field(&mut field)
+                    .await
+                    .unwrap()
+                    .parse()
+                    .unwrap()
+            }
+            "condition" => {
+                product_payload.condition = extract_string_from_field(&mut field).await.unwrap()
+            }
+            "category" => {
+                product_payload.category = extract_string_from_field(&mut field).await.unwrap()
+            }
+            "location" => {
+                product_payload.location = extract_string_from_field(&mut field).await.unwrap()
+            }
+            "contact_phone" => {
+                product_payload.contact_phone =
+                    Some(extract_string_from_field(&mut field).await.unwrap())
+            }
+            "contact_email" => {
+                product_payload.contact_email =
+                    Some(extract_string_from_field(&mut field).await.unwrap())
+            }
             "images[]" => {
                 let filename = format!("{}.png", Uuid::new_v4());
                 let filepath = format!("./public/uploads/{}", filename);
@@ -329,7 +410,6 @@ pub async fn update_product(
                 while let Some(chunk) = field.try_next().await.unwrap() {
                     f.write_all(&chunk).unwrap();
                 }
-                // Store with leading slash so frontend can use it directly
                 image_paths.push(format!("/public/uploads/{}", filename));
             }
             _ => (),
@@ -374,16 +454,14 @@ pub async fn update_product(
                 .fetch_one(pool.get_ref())
                 .await
                 .unwrap();
-            let images: Vec<ProductImage> = sqlx::query_as("SELECT * FROM product_images WHERE product_id = ?")
-                .bind(id)
-                .fetch_all(pool.get_ref())
-                .await
-                .unwrap_or_else(|_| vec![]);
+            let images: Vec<ProductImage> =
+                sqlx::query_as("SELECT * FROM product_images WHERE product_id = ?")
+                    .bind(id)
+                    .fetch_all(pool.get_ref())
+                    .await
+                    .unwrap_or_else(|_| vec![]);
 
-            HttpResponse::Ok().json(ProductResponse {
-                product,
-                images,
-            })
+            HttpResponse::Ok().json(ProductResponse { product, images })
         }
         Err(_) => HttpResponse::InternalServerError().json(ErrorResponse {
             message: "Failed to update product".to_string(),
@@ -392,11 +470,21 @@ pub async fn update_product(
 }
 
 #[delete("/{id}")]
-pub async fn delete_product(_req: HttpRequest, pool: web::Data<SqlitePool>, path: web::Path<i32>) -> impl Responder {
+pub async fn delete_product(
+    req: HttpRequest,
+    pool: web::Data<SqlitePool>,
+    path: web::Path<i32>,
+) -> impl Responder {
     let id = path.into_inner();
-    let user_id = 1; // Hardcoded user ID
+    let user_id = match get_user_id_from_headers(&req) {
+        Ok(id) => id,
+        Err(_) => {
+            return HttpResponse::Unauthorized().json(ErrorResponse {
+                message: "Unauthorized - Please log in".to_string(),
+            })
+        }
+    };
 
-    // Check if the user is authorized to delete this product
     let product: Result<Product, _> = sqlx::query_as("SELECT * FROM products WHERE id = ?")
         .bind(id)
         .fetch_one(pool.get_ref())

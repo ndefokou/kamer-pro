@@ -1,8 +1,8 @@
 use actix_web::{post, web, HttpResponse, Responder};
+use chrono::Utc;
 use serde::{Deserialize, Serialize};
 use sqlx::SqlitePool;
 use uuid::Uuid;
-use chrono::Utc;
 
 #[derive(Serialize, Deserialize, sqlx::FromRow)]
 pub struct User {
@@ -108,7 +108,7 @@ pub async fn registration_complete(
 
     let result = sqlx::query(
         "INSERT INTO users (username, credential_id, public_key, counter, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?)"
+         VALUES (?, ?, ?, ?, ?, ?)",
     )
     .bind(&req.username)
     .bind(&req.credential_id)
@@ -175,8 +175,8 @@ pub async fn authentication_complete(
 
     match user {
         Ok(user) => {
-            // Generate a simple JWT token (in production, use proper JWT with secret)
-            let token = format!("token_{}", Uuid::new_v4().to_string());
+            // Generate token with user_id embedded
+            let token = format!("token_{}_{}", Uuid::new_v4().to_string(), user.id);
 
             HttpResponse::Ok().json(AuthenticationCompleteResponse {
                 message: "Authentication successful".to_string(),

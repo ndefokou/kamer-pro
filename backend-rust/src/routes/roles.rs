@@ -1,3 +1,5 @@
+// Update backend-rust/src/routes/roles.rs
+
 use actix_web::{get, post, web, HttpRequest, HttpResponse, Responder};
 use serde::{Deserialize, Serialize};
 use sqlx::SqlitePool;
@@ -19,14 +21,46 @@ struct ErrorResponse {
     message: String,
 }
 
-#[get("")]
-pub async fn get_user_role(_req: HttpRequest, pool: web::Data<SqlitePool>) -> impl Responder {
-    let user_id = 1; // Hardcoded user ID
+fn get_user_id_from_headers(req: &HttpRequest) -> Result<i32, actix_web::Error> {
+    if let Some(auth_header) = req.headers().get("Authorization") {
+        if let Ok(auth_str) = auth_header.to_str() {
+            if let Some(token) = auth_str.strip_prefix("Bearer ") {
+                return extract_user_id_from_token(token);
+            }
+        }
+    }
+    Err(actix_web::error::ErrorUnauthorized(
+        "Missing or invalid authorization header",
+    ))
+}
 
-    let user_role: Result<UserRole, _> = sqlx::query_as("SELECT * FROM user_roles WHERE user_id = ?")
-        .bind(user_id)
-        .fetch_one(pool.get_ref())
-        .await;
+fn extract_user_id_from_token(token: &str) -> Result<i32, actix_web::Error> {
+    if let Some(user_id_str) = token.strip_prefix("token_") {
+        if let Some(parts) = user_id_str.rsplit_once('_') {
+            if let Ok(user_id) = parts.1.parse::<i32>() {
+                return Ok(user_id);
+            }
+        }
+    }
+    Err(actix_web::error::ErrorUnauthorized("Invalid token"))
+}
+
+#[get("")]
+pub async fn get_user_role(req: HttpRequest, pool: web::Data<SqlitePool>) -> impl Responder {
+    let user_id = match get_user_id_from_headers(&req) {
+        Ok(id) => id,
+        Err(_) => {
+            return HttpResponse::Unauthorized().json(ErrorResponse {
+                message: "Unauthorized - Please log in".to_string(),
+            })
+        }
+    };
+
+    let user_role: Result<UserRole, _> =
+        sqlx::query_as("SELECT * FROM user_roles WHERE user_id = ?")
+            .bind(user_id)
+            .fetch_one(pool.get_ref())
+            .await;
 
     match user_role {
         Ok(user_role) => HttpResponse::Ok().json(user_role),
@@ -38,11 +72,18 @@ pub async fn get_user_role(_req: HttpRequest, pool: web::Data<SqlitePool>) -> im
 
 #[post("")]
 pub async fn set_user_role(
-    _req: HttpRequest,
+    req: HttpRequest,
     pool: web::Data<SqlitePool>,
     payload: web::Json<SetRolePayload>,
 ) -> impl Responder {
-    let user_id = 1; // Hardcoded user ID
+    let user_id = match get_user_id_from_headers(&req) {
+        Ok(id) => id,
+        Err(_) => {
+            return HttpResponse::Unauthorized().json(ErrorResponse {
+                message: "Unauthorized - Please log in".to_string(),
+            })
+        }
+    };
 
     // Check if user already has a role
     let existing_role: Result<Option<UserRole>, _> =

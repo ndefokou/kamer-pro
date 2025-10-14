@@ -1,7 +1,7 @@
 use actix_multipart::Multipart;
-use actix_web::{post, web, Error, HttpRequest, HttpResponse, HttpMessage};
-use serde::Serialize;
+use actix_web::{post, web, Error, HttpMessage, HttpRequest, HttpResponse};
 use futures_util::stream::{StreamExt, TryStreamExt};
+use serde::Serialize;
 use sqlx::SqlitePool;
 use std::io::Write;
 use uuid::Uuid;
@@ -25,10 +25,11 @@ pub async fn upload_images(
     };
 
     // Check if the user is authorized to upload images for this product
-    let product: Result<super::products::Product, _> = sqlx::query_as("SELECT * FROM products WHERE id = ?")
-        .bind(product_id)
-        .fetch_one(pool.get_ref())
-        .await;
+    let product: Result<super::products::Product, _> =
+        sqlx::query_as("SELECT * FROM products WHERE id = ?")
+            .bind(product_id)
+            .fetch_one(pool.get_ref())
+            .await;
 
     match product {
         Ok(product) => {
@@ -50,16 +51,11 @@ pub async fn upload_images(
     while let Ok(Some(mut field)) = payload.try_next().await {
         let content_disposition = field.content_disposition();
         if let Some(filename) = content_disposition.get_filename() {
-            let unique_filename = format!(
-                "{}-{}",
-                Uuid::new_v4().to_string(),
-                filename
-            );
+            let unique_filename = format!("{}-{}", Uuid::new_v4().to_string(), filename);
             let filepath = format!("./public/uploads/{}", unique_filename);
 
             // Create a new file and write the content to it
-            let mut f = web::block(move || std::fs::File::create(filepath))
-                .await??;
+            let mut f = web::block(move || std::fs::File::create(filepath)).await??;
             while let Some(chunk) = field.next().await {
                 let data = chunk.unwrap();
                 f = web::block(move || f.write_all(&data).map(|_| f)).await??;
@@ -68,7 +64,6 @@ pub async fn upload_images(
             file_paths.push(format!("/public/uploads/{}", unique_filename));
         }
     }
-
 
     let mut tx = pool.begin().await.unwrap();
     for file_path in file_paths.iter() {
