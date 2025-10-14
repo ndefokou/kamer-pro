@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import apiClient from "@/api/client";
 import Navbar from "@/components/Navbar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,6 +25,7 @@ const ProductDetails = () => {
   const { t } = useTranslation();
   const { id } = useParams();
   const [product, setProduct] = useState<Product | null>(null);
+  const [similarProducts, setSimilarProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -33,6 +34,18 @@ const ProductDetails = () => {
       try {
         const response = await apiClient.get(`/products/${id}`);
         setProduct(response.data);
+        
+        // Fetch similar products based on category
+        if (response.data.category) {
+          const similarResponse = await apiClient.get("/products", {
+            params: { category: response.data.category }
+          });
+          // Filter out the current product and limit to 6 similar products
+          const filtered = similarResponse.data
+            .filter((p: Product) => p.id !== id)
+            .slice(0, 6);
+          setSimilarProducts(filtered);
+        }
       } catch (error) {
         console.error("Failed to fetch product:", error);
       }
@@ -132,6 +145,55 @@ const ProductDetails = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Similar Products Section */}
+        {similarProducts.length > 0 && (
+          <div className="mt-12">
+            <h2 className="text-3xl font-bold mb-6">{t("similar_products") || "Similar Products"}</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {similarProducts.map((product) => (
+                <Link key={product.id} to={`/product/${product.id}`}>
+                  <Card className="shadow-soft hover:shadow-elevated transition-shadow h-full cursor-pointer">
+                    {product.images && product.images.length > 0 && (
+                      <div className="h-48 overflow-hidden rounded-t-lg">
+                        <img
+                          src={getImageUrl(product.images[0].image_url)}
+                          alt={product.name}
+                          className="w-full h-full object-cover hover:scale-105 transition-transform"
+                        />
+                      </div>
+                    )}
+                    <CardHeader>
+                      <div className="flex justify-between items-start">
+                        <CardTitle className="text-lg hover:text-primary transition-colors">
+                          {product.name}
+                        </CardTitle>
+                        {product.category && <Badge variant="secondary">{t(`categories.${product.category.toLowerCase().replace(' & ', '_')}`)}</Badge>}
+                      </div>
+                      <CardDescription className="line-clamp-2">
+                        {product.description}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2">
+                        <div className="text-2xl font-bold text-primary">
+                          {new Intl.NumberFormat('fr-FR', {
+                            style: 'currency',
+                            currency: 'XAF',
+                          }).format(product.price)}
+                        </div>
+                        <div className="flex items-center text-sm text-muted-foreground">
+                          <MapPin className="h-4 w-4 mr-1" />
+                          {product.location}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

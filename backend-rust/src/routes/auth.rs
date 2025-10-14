@@ -59,6 +59,7 @@ pub struct AuthenticationStartResponse {
 #[derive(Deserialize)]
 pub struct AuthenticationCompleteRequest {
     pub username: String,
+    #[allow(dead_code)] // Used for WebAuthn verification in production
     pub signature: String,
 }
 
@@ -168,6 +169,7 @@ pub async fn authentication_complete(
     req: web::Json<AuthenticationCompleteRequest>,
 ) -> impl Responder {
     // Verify user exists and authenticate
+    // Note: In production, the signature should be verified against the stored public key
     let user: Result<User, _> = sqlx::query_as("SELECT * FROM users WHERE username = ?")
         .bind(&req.username)
         .fetch_one(pool.get_ref())

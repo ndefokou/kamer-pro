@@ -25,7 +25,7 @@ pub struct Product {
 #[derive(Serialize, Deserialize, sqlx::FromRow, Clone)]
 pub struct ProductImage {
     id: i32,
-    image_url: String,
+    pub image_url: String,
     product_id: i32,
 }
 
@@ -33,7 +33,14 @@ pub struct ProductImage {
 pub struct ProductResponse {
     #[serde(flatten)]
     product: Product,
-    images: Vec<ProductImage>,
+    images: Vec<ProductImageResponse>,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+pub struct ProductImageResponse {
+    pub id: i32,
+    pub image_url: String,
+    pub product_id: i32,
 }
 
 #[derive(Deserialize, Debug, Default)]
@@ -150,7 +157,15 @@ pub async fn get_products(
                         .fetch_all(pool.get_ref())
                         .await
                         .unwrap_or_else(|_| vec![]);
-                product_responses.push(ProductResponse { product, images });
+                let image_responses = images
+                    .into_iter()
+                    .map(|img| ProductImageResponse {
+                        id: img.id,
+                        image_url: format!("http://localhost:8082{}", img.image_url.replace("/public", "")),
+                        product_id: img.product_id,
+                    })
+                    .collect();
+                product_responses.push(ProductResponse { product, images: image_responses });
             }
             HttpResponse::Ok().json(product_responses)
         }
@@ -179,7 +194,15 @@ pub async fn get_product(pool: web::Data<SqlitePool>, path: web::Path<i32>) -> i
                     .fetch_all(pool.get_ref())
                     .await
                     .unwrap_or_else(|_| vec![]);
-            HttpResponse::Ok().json(ProductResponse { product, images })
+            let image_responses = images
+                .into_iter()
+                .map(|img| ProductImageResponse {
+                    id: img.id,
+                    image_url: format!("http://localhost:8082{}", img.image_url.replace("/public", "")),
+                    product_id: img.product_id,
+                })
+                .collect();
+            HttpResponse::Ok().json(ProductResponse { product, images: image_responses })
         }
         Err(_) => HttpResponse::NotFound().json(ErrorResponse {
             message: "Product not found".to_string(),
@@ -215,7 +238,15 @@ pub async fn get_my_products(req: HttpRequest, pool: web::Data<SqlitePool>) -> i
                         .fetch_all(pool.get_ref())
                         .await
                         .unwrap_or_else(|_| vec![]);
-                product_responses.push(ProductResponse { product, images });
+                let image_responses = images
+                    .into_iter()
+                    .map(|img| ProductImageResponse {
+                        id: img.id,
+                        image_url: format!("http://localhost:8082{}", img.image_url.replace("/public", "")),
+                        product_id: img.product_id,
+                    })
+                    .collect();
+                product_responses.push(ProductResponse { product, images: image_responses });
             }
             HttpResponse::Ok().json(product_responses)
         }
@@ -282,7 +313,7 @@ pub async fn create_product(
                 while let Some(chunk) = field.try_next().await.unwrap() {
                     f.write_all(&chunk).unwrap();
                 }
-                image_paths.push(format!("/public/uploads/{}", filename));
+                image_paths.push(format!("/uploads/{}", filename));
             }
             _ => (),
         }
@@ -326,8 +357,16 @@ pub async fn create_product(
                     .fetch_all(pool.get_ref())
                     .await
                     .unwrap_or_else(|_| vec![]);
+            let image_responses = images
+                .into_iter()
+                .map(|img| ProductImageResponse {
+                    id: img.id,
+                    image_url: format!("http://localhost:8082{}", img.image_url.replace("/public", "")),
+                    product_id: img.product_id,
+                })
+                .collect();
 
-            HttpResponse::Created().json(ProductResponse { product, images })
+            HttpResponse::Created().json(ProductResponse { product, images: image_responses })
         }
         Err(e) => {
             eprintln!("Failed to create product: {}", e);
@@ -410,7 +449,7 @@ pub async fn update_product(
                 while let Some(chunk) = field.try_next().await.unwrap() {
                     f.write_all(&chunk).unwrap();
                 }
-                image_paths.push(format!("/public/uploads/{}", filename));
+                image_paths.push(format!("/uploads/{}", filename));
             }
             _ => (),
         }
@@ -460,8 +499,16 @@ pub async fn update_product(
                     .fetch_all(pool.get_ref())
                     .await
                     .unwrap_or_else(|_| vec![]);
+            let image_responses = images
+                .into_iter()
+                .map(|img| ProductImageResponse {
+                    id: img.id,
+                    image_url: format!("http://localhost:8082{}", img.image_url.replace("/public", "")),
+                    product_id: img.product_id,
+                })
+                .collect();
 
-            HttpResponse::Ok().json(ProductResponse { product, images })
+            HttpResponse::Ok().json(ProductResponse { product, images: image_responses })
         }
         Err(_) => HttpResponse::InternalServerError().json(ErrorResponse {
             message: "Failed to update product".to_string(),

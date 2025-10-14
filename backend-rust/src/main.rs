@@ -91,7 +91,7 @@ async fn main() -> std::io::Result<()> {
                     .service(web::scope("/upload").service(upload_images)),
             )
             // Serve static files from the public directory
-            .service(fs::Files::new("/public", "./public").show_files_listing())
+            .service(fs::Files::new("/uploads", "./public/uploads").show_files_listing())
     })
     .bind("127.0.0.1:8082")?
     .run()

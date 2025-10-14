@@ -25,7 +25,7 @@ const Index = () => {
                 Get Started
               </Button>
             </Link>
-            <Link to="/marketplace">
+            <Link to="/webauth-login">
               <Button size="lg" variant="outline" className="w-full sm:w-auto bg-primary-foreground/10 border-primary-foreground/20 hover:bg-primary-foreground/20">
                 Browse Marketplace
               </Button>
