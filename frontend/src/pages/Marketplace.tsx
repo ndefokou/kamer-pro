@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -71,24 +71,7 @@ const Marketplace = () => {
   const [maxPrice, setMaxPrice] = useState("");
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    fetchProducts();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      fetchProducts();
-    }, 500); // Debounce API calls
-
-    return () => {
-      clearTimeout(handler);
-    };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchQuery, selectedCategory, selectedLocation, selectedCondition, minPrice, maxPrice]);
-
-
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async () => {
     setIsLoading(true);
     try {
       const filters = {
@@ -105,7 +88,17 @@ const Marketplace = () => {
       console.error("Failed to fetch products:", error);
     }
     setIsLoading(false);
-  };
+  }, [searchQuery, selectedCategory, selectedLocation, selectedCondition, minPrice, maxPrice]);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      fetchProducts();
+    }, 500); // Debounce API calls
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [fetchProducts]);
 
   const getImageUrl = (imagePath: string) => {
     // If the path already has the full URL, use it as is
@@ -119,7 +112,7 @@ const Marketplace = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      
+
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
           <h1 className="text-4xl font-bold mb-2">{t("marketplace")}</h1>
@@ -216,20 +209,25 @@ const Marketplace = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredProducts.map((product) => (
-              <Link to={`/product/${product.id}`} key={product.id}>
-              <Card className="shadow-soft hover:shadow-elevated transition-shadow">
-                {product.images && product.images.length > 0 && (
-                  <div className="h-48 overflow-hidden rounded-t-lg">
-                    <img
-                      src={getImageUrl(product.images[0])}
-                      alt={product.name}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                )}
+              <Card key={product.id} className="shadow-soft hover:shadow-elevated transition-shadow">
+                <Link to={`/product/${product.id}`}>
+                  {product.images && product.images.length > 0 && (
+                    <div className="h-48 overflow-hidden rounded-t-lg">
+                      <img
+                        src={getImageUrl(product.images[0])}
+                        alt={product.name}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  )}
+                </Link>
                 <CardHeader>
                   <div className="flex justify-between items-start">
-                    <CardTitle className="text-xl">{product.name}</CardTitle>
+                    <Link to={`/product/${product.id}`}>
+                      <CardTitle className="text-xl hover:text-primary transition-colors">
+                        {product.name}
+                      </CardTitle>
+                    </Link>
                     {product.category && <Badge variant="secondary">{t(`categories.${product.category.toLowerCase().replace(' & ', '_')}`)}</Badge>}
                   </div>
                   <CardDescription className="line-clamp-2">
@@ -269,12 +267,11 @@ const Marketplace = () => {
                   )}
                 </CardFooter>
               </Card>
-              </Link>
             ))}
-          </div>
-        )}
       </div>
+        )}
     </div>
+    </div >
   );
 };
 
