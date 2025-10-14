@@ -8,7 +8,7 @@ use chrono::Utc;
 pub struct User {
     pub id: i32,
     pub username: String,
-    pub email: String,
+    pub email: Option<String>,
     pub credential_id: Option<String>,
     pub public_key: Option<String>,
     pub counter: Option<i64>,
@@ -18,7 +18,6 @@ pub struct User {
 #[derive(Deserialize)]
 pub struct RegistrationStartRequest {
     pub username: String,
-    pub email: String,
 }
 
 #[derive(Serialize)]
@@ -36,7 +35,6 @@ pub struct ErrorResponse {
 #[derive(Deserialize)]
 pub struct RegistrationCompleteRequest {
     pub username: String,
-    pub email: String,
     pub credential_id: String,
     pub public_key: String,
 }
@@ -70,7 +68,7 @@ pub struct AuthenticationCompleteResponse {
     pub token: String,
     pub user_id: i32,
     pub username: String,
-    pub email: String,
+    pub email: Option<String>,
 }
 
 #[post("/register/start")]
@@ -79,9 +77,8 @@ pub async fn registration_start(
     req: web::Json<RegistrationStartRequest>,
 ) -> impl Responder {
     // Check if user already exists
-    let existing_user: Result<User, _> = sqlx::query_as("SELECT * FROM users WHERE username = ? OR email = ?")
+    let existing_user: Result<User, _> = sqlx::query_as("SELECT * FROM users WHERE username = ?")
         .bind(&req.username)
-        .bind(&req.email)
         .fetch_one(pool.get_ref())
         .await;
 
@@ -110,11 +107,10 @@ pub async fn registration_complete(
     let now = Utc::now().to_rfc3339();
 
     let result = sqlx::query(
-        "INSERT INTO users (username, email, credential_id, public_key, counter, created_at, updated_at) 
-         VALUES (?, ?, ?, ?, ?, ?, ?)"
+        "INSERT INTO users (username, credential_id, public_key, counter, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?)"
     )
     .bind(&req.username)
-    .bind(&req.email)
     .bind(&req.credential_id)
     .bind(&req.public_key)
     .bind(0i64)

@@ -36,17 +36,15 @@ const Navbar = () => {
           </Link>
 
           <div className="flex items-center space-x-4">
+            <Link to="/marketplace">
+              <Button variant="secondary" size="sm">
+                {t("marketplace")}
+              </Button>
+            </Link>
             {userRole === "seller" && (
               <Link to="/seller-dashboard">
                 <Button variant="secondary" size="sm">
                   {t("dashboard")}
-                </Button>
-              </Link>
-            )}
-            {(userRole === "buyer" || userRole === "seller") && (
-              <Link to="/marketplace">
-                <Button variant="secondary" size="sm">
-                  {t("marketplace")}
                 </Button>
               </Link>
             )}
