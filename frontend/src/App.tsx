@@ -9,6 +9,8 @@ import Marketplace from "./pages/Marketplace";
 import SellerDashboard from "./pages/SellerDashboard";
 import NotFound from "./pages/NotFound";
 import ProductDetails from "./pages/ProductDetails";
+import { WebAuthLogin } from "./pages/WebAuthLogin";
+import { WebAuthRegister } from "./pages/WebAuthRegister";
 
 const queryClient = new QueryClient();
 
@@ -24,6 +26,8 @@ const App = () => (
           <Route path="/marketplace" element={<Marketplace />} />
           <Route path="/seller-dashboard" element={<SellerDashboard />} />
           <Route path="/product/:id" element={<ProductDetails />} />
+          <Route path="/webauth-login" element={<WebAuthLogin />} />
+          <Route path="/webauth-register" element={<WebAuthRegister />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

@@ -72,7 +72,6 @@ const Marketplace = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    checkAuth();
     fetchProducts();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -88,9 +87,6 @@ const Marketplace = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchQuery, selectedCategory, selectedLocation, selectedCondition, minPrice, maxPrice]);
 
-  const checkAuth = () => {
-    const token = localStorage.getItem("token");
-  };
 
   const fetchProducts = async () => {
     setIsLoading(true);
@@ -113,7 +109,7 @@ const Marketplace = () => {
 
   const getImageUrl = (imagePath: string) => {
     // If the path already has the full URL, use it as is
-    if (imagePath.startsWith('http')) {
+    if (typeof imagePath === 'string' && imagePath.startsWith('http')) {
       return imagePath;
     }
     // Otherwise, construct the URL

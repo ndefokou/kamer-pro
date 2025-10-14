@@ -12,8 +12,9 @@ mod routes;
 use routes::products::{
     create_product, delete_product, get_my_products, get_product, get_products, update_product,
 };
-use routes::roles::{set_user_role};
+use routes::roles::{get_user_role, set_user_role};
 use routes::upload::upload_images;
+use routes::auth::{registration_start, registration_complete, authentication_start, authentication_complete};
 
 #[get("/")]
 async fn hello() -> impl Responder {
@@ -60,6 +61,13 @@ async fn main() -> std::io::Result<()> {
             .service(
                 web::scope("/api")
                     .service(
+                        web::scope("/auth")
+                            .service(registration_start)
+                            .service(registration_complete)
+                            .service(authentication_start)
+                            .service(authentication_complete),
+                    )
+                    .service(
                         web::scope("/products")
                             .service(get_my_products)
                             .service(get_products)
@@ -68,7 +76,7 @@ async fn main() -> std::io::Result<()> {
                             .route("", web::post().to(create_product))
                             .route("/{id}", web::put().to(update_product)),
                     )
-                    .service(web::scope("/roles").service(set_user_role))
+                    .service(web::scope("/roles").service(get_user_role).service(set_user_role))
                     .service(web::scope("/upload").service(upload_images)),
             )
             // Serve static files from the public directory
