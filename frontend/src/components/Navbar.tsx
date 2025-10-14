@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Store, Globe } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import { getRole } from "@/api/client";
+import { getRoles } from "@/api/client";
 import { useTranslation } from "react-i18next";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
@@ -18,7 +18,7 @@ const Navbar = () => {
 
   const checkUserRole = async () => {
     try {
-      const role = await getRole();
+      const role = await getRoles();
       setUserRole(role.role);
     } catch (error) {
       console.error("Failed to get user role:", error);

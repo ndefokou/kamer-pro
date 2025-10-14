@@ -5,6 +5,7 @@ use dotenv::dotenv;
 use log::info;
 use sqlx::sqlite::SqlitePool;
 use std::env;
+use std::fs::File;
 use std::io;
 
 mod routes;
@@ -34,8 +35,12 @@ async fn main() -> std::io::Result<()> {
         )
     })?;
     info!("Current working directory: {:?}", current_dir);
-    let database_url =
-        env::var("DATABASE_URL").unwrap_or_else(|_| "sqlite:dev.sqlite3".to_string());
+    let db_path = current_dir.join("dev.sqlite3");
+    if !db_path.exists() {
+        File::create(&db_path).expect("Failed to create database file");
+    }
+    let database_url = env::var("DATABASE_URL")
+        .unwrap_or_else(|_| format!("sqlite:{}", db_path.to_str().unwrap()));
     info!("Connecting to database at: {}", &database_url);
     let pool = SqlitePool::connect(&database_url)
         .await
