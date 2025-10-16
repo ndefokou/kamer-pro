@@ -1,0 +1,179 @@
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { isAxiosError } from 'axios';
+import apiClient from '@/api/client';
+import { useToast } from '@/hooks/use-toast';
+
+export interface CartItem {
+  id: number;
+  product_id: number;
+  quantity: number;
+  product_name: string;
+  product_price: number;
+  product_image: string | null;
+  product_location: string;
+  product_status: string;
+}
+
+interface CartContextType {
+  cartItems: CartItem[];
+  cartCount: number;
+  isLoading: boolean;
+  addToCart: (productId: number, quantity: number) => Promise<void>;
+  updateCartItem: (id: number, quantity: number) => Promise<void>;
+  removeFromCart: (id: number) => Promise<void>;
+  clearCart: () => Promise<void>;
+  refreshCart: () => Promise<void>;
+  getCartTotal: () => number;
+}
+
+const CartContext = createContext<CartContextType | undefined>(undefined);
+
+export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [cartCount, setCartCount] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
+
+  const refreshCart = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    try {
+      const response = await apiClient.get('/cart');
+      setCartItems(response.data);
+      setCartCount(response.data.length);
+    } catch (error) {
+      console.error('Failed to fetch cart:', error);
+    }
+  };
+
+  const addToCart = async (productId: number, quantity: number = 1) => {
+    setIsLoading(true);
+    try {
+      await apiClient.post('/cart', { product_id: productId, quantity });
+      await refreshCart();
+      toast({
+        title: 'Success',
+        description: 'Item added to cart',
+      });
+    } catch (error) {
+      let errorMessage = 'Failed to add item to cart';
+      if (isAxiosError(error) && typeof error.response?.data?.message === 'string') {
+        errorMessage = error.response.data.message;
+      }
+      toast({
+        title: 'Error',
+        description: errorMessage,
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const updateCartItem = async (id: number, quantity: number) => {
+    setIsLoading(true);
+    try {
+      await apiClient.put(`/cart/${id}`, { quantity });
+      await refreshCart();
+      toast({
+        title: 'Success',
+        description: 'Cart updated',
+      });
+    } catch (error) {
+      let errorMessage = 'Failed to update cart';
+      if (isAxiosError(error) && typeof error.response?.data?.message === 'string') {
+        errorMessage = error.response.data.message;
+      }
+      toast({
+        title: 'Error',
+        description: errorMessage,
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const removeFromCart = async (id: number) => {
+    setIsLoading(true);
+    try {
+      await apiClient.delete(`/cart/${id}`);
+      await refreshCart();
+      toast({
+        title: 'Success',
+        description: 'Item removed from cart',
+      });
+    } catch (error) {
+      let errorMessage = 'Failed to remove item';
+      if (isAxiosError(error) && typeof error.response?.data?.message === 'string') {
+        errorMessage = error.response.data.message;
+      }
+      toast({
+        title: 'Error',
+        description: errorMessage,
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const clearCart = async () => {
+    setIsLoading(true);
+    try {
+      await apiClient.delete('/cart');
+      await refreshCart();
+      toast({
+        title: 'Success',
+        description: 'Cart cleared',
+      });
+    } catch (error) {
+      let errorMessage = 'Failed to clear cart';
+      if (isAxiosError(error) && typeof error.response?.data?.message === 'string') {
+        errorMessage = error.response.data.message;
+      }
+      toast({
+        title: 'Error',
+        description: errorMessage,
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const getCartTotal = () => {
+    return cartItems.reduce((total, item) => total + item.product_price * item.quantity, 0);
+  };
+
+  useEffect(() => {
+    refreshCart();
+  }, []);
+
+  return (
+    <CartContext.Provider
+      value={{
+        cartItems,
+        cartCount,
+        isLoading,
+        addToCart,
+        updateCartItem,
+        removeFromCart,
+        clearCart,
+        refreshCart,
+        getCartTotal,
+      }}
+    >
+      {children}
+    </CartContext.Provider>
+  );
+};
+
+export const useCart = () => {
+  const context = useContext(CartContext);
+  if (context === undefined) {
+    throw new Error('useCart must be used within a CartProvider');
+  }
+  return context;
+};

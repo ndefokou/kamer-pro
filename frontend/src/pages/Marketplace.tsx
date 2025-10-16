@@ -7,9 +7,11 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Navbar from "@/components/Navbar";
-import { Search, MapPin, Phone, Mail, Package } from "lucide-react";
+import { Search, MapPin, Phone, Mail, Package, ShoppingCart, Heart } from "lucide-react";
 import { useNavigate, Link } from "react-router-dom";
 import { getProducts } from "@/api/client";
+import { useCart } from "@/contexts/CartContext";
+import { useWishlist } from "@/contexts/WishlistContext";
 
 interface Product {
   id: string;
@@ -62,6 +64,8 @@ const LOCATIONS = [
 const Marketplace = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { addToCart } = useCart();
+  const { addToWishlist, isInWishlist, removeFromWishlistByProduct } = useWishlist();
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
@@ -70,6 +74,7 @@ const Marketplace = () => {
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  const token = localStorage.getItem("token");
 
   const fetchProducts = useCallback(async () => {
     setIsLoading(true);
@@ -93,7 +98,7 @@ const Marketplace = () => {
   useEffect(() => {
     const handler = setTimeout(() => {
       fetchProducts();
-    }, 500); // Debounce API calls
+    }, 500);
 
     return () => {
       clearTimeout(handler);
@@ -101,12 +106,31 @@ const Marketplace = () => {
   }, [fetchProducts]);
 
   const getImageUrl = (imagePath: string) => {
-    // If the path already has the full URL, use it as is
     if (typeof imagePath === 'string' && imagePath.startsWith('http')) {
       return imagePath;
     }
-    // Otherwise, construct the URL
     return `http://localhost:8082${imagePath}`;
+  };
+
+  const handleAddToCart = (productId: string) => {
+    if (!token) {
+      navigate("/webauth-login");
+      return;
+    }
+    addToCart(parseInt(productId), 1);
+  };
+
+  const handleToggleWishlist = (productId: string) => {
+    if (!token) {
+      navigate("/webauth-login");
+      return;
+    }
+    const productIdNum = parseInt(productId);
+    if (isInWishlist(productIdNum)) {
+      removeFromWishlistByProduct(productIdNum);
+    } else {
+      addToWishlist(productIdNum);
+    }
   };
 
   return (
@@ -212,12 +236,27 @@ const Marketplace = () => {
               <Card key={product.id} className="shadow-soft hover:shadow-elevated transition-shadow">
                 <Link to={`/product/${product.id}`}>
                   {product.images && product.images.length > 0 && (
-                    <div className="h-48 overflow-hidden rounded-t-lg">
+                    <div className="h-48 overflow-hidden rounded-t-lg relative">
                       <img
                         src={getImageUrl(product.images[0])}
                         alt={product.name}
                         className="w-full h-full object-cover"
                       />
+                      {token && (
+                        <Button
+                          variant="secondary"
+                          size="icon"
+                          className="absolute top-2 right-2"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            handleToggleWishlist(product.id);
+                          }}
+                        >
+                          <Heart 
+                            className={`h-4 w-4 ${isInWishlist(parseInt(product.id)) ? 'fill-current text-red-500' : ''}`}
+                          />
+                        </Button>
+                      )}
                     </div>
                   )}
                 </Link>
@@ -249,6 +288,15 @@ const Marketplace = () => {
                   </div>
                 </CardContent>
                 <CardFooter className="flex-col items-start space-y-2">
+                  {token && (
+                    <Button 
+                      className="w-full" 
+                      onClick={() => handleAddToCart(product.id)}
+                    >
+                      <ShoppingCart className="h-4 w-4 mr-2" />
+                      {t("add_to_cart")}
+                    </Button>
+                  )}
                   {product.contact_phone && (
                     <div className="flex items-center text-sm w-full">
                       <Phone className="h-4 w-4 mr-2 text-primary" />
@@ -268,10 +316,10 @@ const Marketplace = () => {
                 </CardFooter>
               </Card>
             ))}
-      </div>
+          </div>
         )}
+      </div>
     </div>
-    </div >
   );
 };
 

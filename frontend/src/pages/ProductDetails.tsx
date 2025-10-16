@@ -1,12 +1,17 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import apiClient from "@/api/client";
 import Navbar from "@/components/Navbar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { Badge } from "@/components/ui/badge";
-import { Phone, Mail, MapPin } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Phone, Mail, MapPin, ShoppingCart, Heart, Plus, Minus } from "lucide-react";
+import { useCart } from "@/contexts/CartContext";
+import { useWishlist } from "@/contexts/WishlistContext";
 
 interface Product {
   id: string;
@@ -24,9 +29,14 @@ interface Product {
 const ProductDetails = () => {
   const { t } = useTranslation();
   const { id } = useParams();
+  const navigate = useNavigate();
   const [product, setProduct] = useState<Product | null>(null);
   const [similarProducts, setSimilarProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [quantity, setQuantity] = useState(1);
+  const { addToCart } = useCart();
+  const { addToWishlist, isInWishlist, removeFromWishlistByProduct } = useWishlist();
+  const token = localStorage.getItem("token");
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -35,12 +45,10 @@ const ProductDetails = () => {
         const response = await apiClient.get(`/products/${id}`);
         setProduct(response.data);
         
-        // Fetch similar products based on category
         if (response.data.category) {
           const similarResponse = await apiClient.get("/products", {
             params: { category: response.data.category }
           });
-          // Filter out the current product and limit to 6 similar products
           const filtered = similarResponse.data
             .filter((p: Product) => p.id !== id)
             .slice(0, 6);
@@ -56,20 +64,64 @@ const ProductDetails = () => {
   }, [id]);
 
   const getImageUrl = (imagePath: string) => {
-    // If the path already has the full URL, use it as is
     if (imagePath.startsWith('http')) {
       return imagePath;
     }
-    // Otherwise, construct the URL
     return `http://localhost:8082${imagePath}`;
   };
 
+  const handleAddToCart = () => {
+    if (!token) {
+      navigate("/webauth-login");
+      return;
+    }
+    if (product) {
+      addToCart(parseInt(product.id), quantity);
+    }
+  };
+
+  const handleToggleWishlist = () => {
+    if (!token) {
+      navigate("/webauth-login");
+      return;
+    }
+    if (product) {
+      const productIdNum = parseInt(product.id);
+      if (isInWishlist(productIdNum)) {
+        removeFromWishlistByProduct(productIdNum);
+      } else {
+        addToWishlist(productIdNum);
+      }
+    }
+  };
+
+  const handleQuantityChange = (change: number) => {
+    const newQuantity = quantity + change;
+    if (newQuantity > 0) {
+      setQuantity(newQuantity);
+    }
+  };
+
   if (isLoading) {
-    return <div>{t("loading")}</div>;
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <div className="container mx-auto px-4 py-16 text-center">
+          <p>{t("loading")}</p>
+        </div>
+      </div>
+    );
   }
 
   if (!product) {
-    return <div>{t("product_not_found")}</div>;
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <div className="container mx-auto px-4 py-16 text-center">
+          <p>{t("product_not_found")}</p>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -115,7 +167,11 @@ const ProductDetails = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <h3 className="text-lg font-semibold mb-2">{t("condition")}</h3>
-                  {product.condition && <Badge variant="outline">{t(`conditions.${product.condition.toLowerCase().replace('-', '_')}`)}</Badge>}
+                  {product.condition && (
+                    <Badge variant="outline">
+                      {t(`conditions.${product.condition.toLowerCase().replace('-', '_')}`)}
+                    </Badge>
+                  )}
                 </div>
                 <div>
                   <h3 className="text-lg font-semibold mb-2">{t("location")}</h3>
@@ -125,19 +181,81 @@ const ProductDetails = () => {
                   </div>
                 </div>
               </div>
+
+              {token && (
+                <div className="space-y-4 border-t pt-4">
+                  <div className="flex items-center space-x-4">
+                    <Label htmlFor="quantity">{t("quantity")}</Label>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => handleQuantityChange(-1)}
+                        disabled={quantity <= 1}
+                      >
+                        <Minus className="h-4 w-4" />
+                      </Button>
+                      <Input
+                        id="quantity"
+                        type="number"
+                        value={quantity}
+                        onChange={(e) => {
+                          const value = parseInt(e.target.value);
+                          if (value > 0) {
+                            setQuantity(value);
+                          }
+                        }}
+                        className="w-20 text-center"
+                      />
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => handleQuantityChange(1)}
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <Button 
+                      className="flex-1" 
+                      size="lg"
+                      onClick={handleAddToCart}
+                    >
+                      <ShoppingCart className="h-5 w-5 mr-2" />
+                      {t("add_to_cart")}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="lg"
+                      onClick={handleToggleWishlist}
+                    >
+                      <Heart 
+                        className={`h-5 w-5 ${isInWishlist(parseInt(product.id)) ? 'fill-current text-red-500' : ''}`}
+                      />
+                    </Button>
+                  </div>
+                </div>
+              )}
+
               <div>
                 <h3 className="text-xl font-semibold mb-2">{t("contact_seller")}</h3>
                 <div className="space-y-2">
                   {product.contact_phone && (
                     <div className="flex items-center">
                       <Phone className="h-4 w-4 mr-2 text-primary" />
-                      <a href={`tel:${product.contact_phone}`} className="hover:underline">{product.contact_phone}</a>
+                      <a href={`tel:${product.contact_phone}`} className="hover:underline">
+                        {product.contact_phone}
+                      </a>
                     </div>
                   )}
                   {product.contact_email && (
                     <div className="flex items-center">
                       <Mail className="h-4 w-4 mr-2 text-primary" />
-                      <a href={`mailto:${product.contact_email}`} className="hover:underline">{product.contact_email}</a>
+                      <a href={`mailto:${product.contact_email}`} className="hover:underline">
+                        {product.contact_email}
+                      </a>
                     </div>
                   )}
                 </div>
@@ -146,7 +264,6 @@ const ProductDetails = () => {
           </CardContent>
         </Card>
 
-        {/* Similar Products Section */}
         {similarProducts.length > 0 && (
           <div className="mt-12">
             <h2 className="text-3xl font-bold mb-6">{t("similar_products") || "Similar Products"}</h2>
@@ -168,7 +285,11 @@ const ProductDetails = () => {
                         <CardTitle className="text-lg hover:text-primary transition-colors">
                           {product.name}
                         </CardTitle>
-                        {product.category && <Badge variant="secondary">{t(`categories.${product.category.toLowerCase().replace(' & ', '_')}`)}</Badge>}
+                        {product.category && (
+                          <Badge variant="secondary">
+                            {t(`categories.${product.category.toLowerCase().replace(' & ', '_')}`)}
+                          </Badge>
+                        )}
                       </div>
                       <CardDescription className="line-clamp-2">
                         {product.description}

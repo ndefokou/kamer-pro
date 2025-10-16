@@ -13,11 +13,18 @@ mod routes;
 use routes::auth::{
     authentication_complete, authentication_start, registration_complete, registration_start,
 };
+use routes::cart::{
+    add_to_cart, clear_cart, get_cart, get_cart_count, remove_from_cart, update_cart_item,
+};
 use routes::products::{
     create_product, delete_product, get_my_products, get_product, get_products, update_product,
 };
 use routes::roles::{get_user_role, set_user_role};
 use routes::upload::upload_images;
+use routes::wishlist::{
+    add_to_wishlist, check_wishlist, get_wishlist, get_wishlist_count, remove_from_wishlist,
+    remove_from_wishlist_by_product,
+};
 
 #[get("/")]
 async fn hello() -> impl Responder {
@@ -87,6 +94,24 @@ async fn main() -> std::io::Result<()> {
                         web::scope("/roles")
                             .service(get_user_role)
                             .service(set_user_role),
+                    )
+                    .service(
+                        web::scope("/cart")
+                            .service(get_cart)
+                            .service(get_cart_count)
+                            .service(add_to_cart)
+                            .service(update_cart_item)
+                            .service(remove_from_cart)
+                            .service(clear_cart),
+                    )
+                    .service(
+                        web::scope("/wishlist")
+                            .service(get_wishlist)
+                            .service(get_wishlist_count)
+                            .service(add_to_wishlist)
+                            .service(remove_from_wishlist)
+                            .service(remove_from_wishlist_by_product)
+                            .service(check_wishlist),
                     )
                     .service(web::scope("/upload").service(upload_images)),
             )

@@ -1,101 +1,120 @@
-import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Store, Globe, Menu, X } from "lucide-react";
-import { toast } from "@/hooks/use-toast";
-import { getRoles } from "@/api/client";
-import { useTranslation } from "react-i18next";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Badge } from "@/components/ui/badge";
+import { Store, ShoppingCart, Heart, User, LogOut } from "lucide-react";
+import { useCart } from "@/contexts/CartContext";
+import { useWishlist } from "@/contexts/WishlistContext";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const Navbar = () => {
   const navigate = useNavigate();
-  const { t, i18n } = useTranslation();
-  const [userRole, setUserRole] = useState<string | null>(null);
-  const [isOpen, setIsOpen] = useState(false);
+  const { cartCount } = useCart();
+  const { wishlistCount } = useWishlist();
+  const username = localStorage.getItem("username");
+  const token = localStorage.getItem("token");
 
-  useEffect(() => {
-    checkUserRole();
-  }, []);
-
-  const checkUserRole = async () => {
-    try {
-      const role = await getRoles();
-      setUserRole(role.role);
-    } catch (error) {
-      console.error("Failed to get user role:", error);
-    }
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("username");
+    localStorage.removeItem("userId");
+    navigate("/");
   };
 
-  const NavLinks = ({ mobile = false }) => (
-    <div className={`flex ${mobile ? 'flex-col space-y-4' : 'items-center space-x-4'}`}>
-      <Link to="/marketplace" onClick={() => mobile && setIsOpen(false)}>
-        <Button variant="secondary" size="sm" className={mobile ? 'w-full justify-start' : ''}>
-          {t("marketplace")}
-        </Button>
-      </Link>
-      {userRole === "seller" && (
-        <Link to="/seller-dashboard" onClick={() => mobile && setIsOpen(false)}>
-          <Button variant="secondary" size="sm" className={mobile ? 'w-full justify-start' : ''}>
-            {t("dashboard")}
-          </Button>
-        </Link>
-      )}
-
-      <Link to="/role-selection" onClick={() => mobile && setIsOpen(false)}>
-        <Button variant="secondary" size="sm" className={mobile ? 'w-full justify-start' : ''}>
-          {t("change_role")}
-        </Button>
-      </Link>
-
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="secondary" size={mobile ? "sm" : "icon"} className={mobile ? 'w-full justify-start' : ''}>
-            <Globe className="h-4 w-4" />
-            {mobile && <span className="ml-2">Language</span>}
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent>
-          <DropdownMenuItem onClick={() => i18n.changeLanguage("en")}>
-            English
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => i18n.changeLanguage("fr")}>
-            Français
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    </div>
-  );
-
   return (
-    <nav className="bg-primary text-primary-foreground shadow-soft">
+    <nav className="bg-primary text-primary-foreground shadow-md sticky top-0 z-50">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
-          {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2 hover:opacity-90 transition-opacity">
+          <Link to="/marketplace" className="flex items-center space-x-2">
             <Store className="h-6 w-6" />
             <span className="text-xl font-bold">KamerLink</span>
           </Link>
 
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex">
-            <NavLinks />
-          </div>
+          <div className="flex items-center space-x-4">
+            <Link to="/marketplace">
+              <Button variant="ghost" className="text-primary-foreground hover:bg-primary-foreground/10">
+                Marketplace
+              </Button>
+            </Link>
+            
+            <Link to="/seller-dashboard">
+              <Button variant="ghost" className="text-primary-foreground hover:bg-primary-foreground/10">
+                Seller Dashboard
+              </Button>
+            </Link>
 
-          {/* Mobile Navigation */}
-          <div className="md:hidden">
-            <Sheet open={isOpen} onOpenChange={setIsOpen}>
-              <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="text-primary-foreground">
-                  {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="right" className="w-[250px] sm:w-[300px]">
-                <div className="flex flex-col space-y-4 mt-8">
-                  <NavLinks mobile={true} />
-                </div>
-              </SheetContent>
-            </Sheet>
+            {token && (
+              <>
+                <Link to="/wishlist" className="relative">
+                  <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-primary-foreground/10">
+                    <Heart className="h-5 w-5" />
+                    {wishlistCount > 0 && (
+                      <Badge 
+                        className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-secondary text-secondary-foreground"
+                        variant="secondary"
+                      >
+                        {wishlistCount}
+                      </Badge>
+                    )}
+                  </Button>
+                </Link>
+
+                <Link to="/cart" className="relative">
+                  <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-primary-foreground/10">
+                    <ShoppingCart className="h-5 w-5" />
+                    {cartCount > 0 && (
+                      <Badge 
+                        className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-secondary text-secondary-foreground"
+                        variant="secondary"
+                      >
+                        {cartCount}
+                      </Badge>
+                    )}
+                  </Button>
+                </Link>
+              </>
+            )}
+
+            {token ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="text-primary-foreground hover:bg-primary-foreground/10">
+                    <User className="h-5 w-5 mr-2" />
+                    {username || "User"}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => navigate("/marketplace")}>
+                    Marketplace
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate("/seller-dashboard")}>
+                    Seller Dashboard
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate("/wishlist")}>
+                    <Heart className="h-4 w-4 mr-2" />
+                    Wishlist
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate("/cart")}>
+                    <ShoppingCart className="h-4 w-4 mr-2" />
+                    Cart
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleLogout}>
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Logout
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <Link to="/webauth-login">
+                <Button variant="secondary">Login</Button>
+              </Link>
+            )}
           </div>
         </div>
       </div>
