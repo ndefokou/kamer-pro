@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { AxiosError } from "axios";
 import { useTranslation } from "react-i18next";
 import apiClient from "@/api/client";
@@ -77,28 +77,28 @@ export const ProductReviews = ({ productId, isProductOwner = false }: ProductRev
     maxFiles: 5,
   });
 
-  useEffect(() => {
-    fetchReviews();
-    fetchStats();
-  }, [productId]);
-
-  const fetchReviews = async () => {
+  const fetchReviews = useCallback(async () => {
     try {
       const response = await apiClient.get(`/reviews/products/${productId}`);
       setReviews(response.data);
     } catch (error) {
       console.error("Failed to fetch reviews:", error);
     }
-  };
+  }, [productId]);
 
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
     try {
       const response = await apiClient.get(`/reviews/products/${productId}/stats`);
       setStats(response.data);
     } catch (error) {
       console.error("Failed to fetch review stats:", error);
     }
-  };
+  }, [productId]);
+
+  useEffect(() => {
+    fetchReviews();
+    fetchStats();
+  }, [fetchReviews, fetchStats]);
 
   const handleSubmitReview = async () => {
     if (!token) {

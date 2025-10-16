@@ -1,7 +1,6 @@
-// backend-rust/src/routes/reviews.rs
 use crate::routes::middleware::extract_user_id_from_token;
 use actix_multipart::Multipart;
-use actix_web::{delete, get, post, put, web, HttpRequest, HttpResponse, Responder};
+use actix_web::{delete, get, post, web, HttpRequest, HttpResponse, Responder};
 use futures_util::TryStreamExt;
 use serde::{Deserialize, Serialize};
 use sqlx::SqlitePool;
@@ -45,14 +44,6 @@ pub struct SellerResponse {
     pub response_text: String,
     pub created_at: String,
     pub updated_at: String,
-}
-
-#[derive(Deserialize)]
-pub struct CreateReviewRequest {
-    pub product_id: i32,
-    pub rating: i32,
-    pub title: Option<String>,
-    pub comment: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -246,15 +237,8 @@ pub async fn create_review(
     req: HttpRequest,
     pool: web::Data<SqlitePool>,
     mut payload: Multipart,
-) -> impl Responder {
-    let user_id = match get_user_id_from_headers(&req) {
-        Ok(id) => id,
-        Err(_) => {
-            return HttpResponse::Unauthorized().json(ErrorResponse {
-                message: "Unauthorized".to_string(),
-            })
-        }
-    };
+) -> Result<HttpResponse, actix_web::Error> {
+    let user_id = get_user_id_from_headers(&req)?;
 
     let mut product_id: Option<i32> = None;
     let mut rating: Option<i32> = None;
@@ -262,35 +246,55 @@ pub async fn create_review(
     let mut comment: Option<String> = None;
     let mut images: Vec<String> = Vec::new();
 
-    while let Ok(Some(mut field)) = payload.try_next().await {
+    while let Some(mut field) = payload
+        .try_next()
+        .await
+        .map_err(|e| actix_web::error::ErrorInternalServerError(e))?
+    {
         let content_disposition = field.content_disposition();
         let field_name = content_disposition.get_name().unwrap_or_default();
 
         match field_name {
             "product_id" => {
                 let mut bytes = Vec::new();
-                while let Some(chunk) = field.try_next().await.unwrap() {
+                while let Some(chunk) = field
+                    .try_next()
+                    .await
+                    .map_err(|e| actix_web::error::ErrorInternalServerError(e))?
+                {
                     bytes.extend_from_slice(&chunk);
                 }
                 product_id = String::from_utf8(bytes).ok().and_then(|s| s.parse().ok());
             }
             "rating" => {
                 let mut bytes = Vec::new();
-                while let Some(chunk) = field.try_next().await.unwrap() {
+                while let Some(chunk) = field
+                    .try_next()
+                    .await
+                    .map_err(|e| actix_web::error::ErrorInternalServerError(e))?
+                {
                     bytes.extend_from_slice(&chunk);
                 }
                 rating = String::from_utf8(bytes).ok().and_then(|s| s.parse().ok());
             }
             "title" => {
                 let mut bytes = Vec::new();
-                while let Some(chunk) = field.try_next().await.unwrap() {
+                while let Some(chunk) = field
+                    .try_next()
+                    .await
+                    .map_err(|e| actix_web::error::ErrorInternalServerError(e))?
+                {
                     bytes.extend_from_slice(&chunk);
                 }
                 title = String::from_utf8(bytes).ok();
             }
             "comment" => {
                 let mut bytes = Vec::new();
-                while let Some(chunk) = field.try_next().await.unwrap() {
+                while let Some(chunk) = field
+                    .try_next()
+                    .await
+                    .map_err(|e| actix_web::error::ErrorInternalServerError(e))?
+                {
                     bytes.extend_from_slice(&chunk);
                 }
                 comment = String::from_utf8(bytes).ok();
@@ -298,9 +302,15 @@ pub async fn create_review(
             "images[]" => {
                 let filename = format!("{}.png", Uuid::new_v4());
                 let filepath = format!("./public/uploads/{}", filename);
-                let mut f = std::fs::File::create(&filepath).unwrap();
-                while let Some(chunk) = field.try_next().await.unwrap() {
-                    f.write_all(&chunk).unwrap();
+                let mut f = std::fs::File::create(&filepath)
+                    .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+                while let Some(chunk) = field
+                    .try_next()
+                    .await
+                    .map_err(|e| actix_web::error::ErrorInternalServerError(e))?
+                {
+                    f.write_all(&chunk)
+                        .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
                 }
                 images.push(format!("/uploads/{}", filename));
             }
@@ -308,23 +318,20 @@ pub async fn create_review(
         }
     }
 
-    let product_id = match product_id {
-        Some(id) => id,
-        None => {
-            return HttpResponse::BadRequest().json(ErrorResponse {
-                message: "Product ID is required".to_string(),
-            })
-        }
-    };
+    let product_id =
+        product_id.ok_or_else(|| actix_web::error::ErrorBadRequest("Product ID is required"))?;
 
-    let rating = match rating {
-        Some(r) if r >= 1 && r <= 5 => r,
-        _ => {
-            return HttpResponse::BadRequest().json(ErrorResponse {
-                message: "Rating must be between 1 and 5".to_string(),
-            })
-        }
-    };
+    let rating = rating
+        .ok_or_else(|| actix_web::error::ErrorBadRequest("Rating is required"))
+        .and_then(|r| {
+            if (1..=5).contains(&r) {
+                Ok(r)
+            } else {
+                Err(actix_web::error::ErrorBadRequest(
+                    "Rating must be between 1 and 5",
+                ))
+            }
+        })?;
 
     let result = sqlx::query(
         "INSERT INTO reviews (product_id, user_id, rating, title, comment) VALUES (?, ?, ?, ?, ?)",
@@ -335,31 +342,26 @@ pub async fn create_review(
     .bind(title)
     .bind(comment)
     .execute(pool.get_ref())
-    .await;
+    .await
+    .map_err(|_| actix_web::error::ErrorInternalServerError("Failed to create review"))?;
 
-    match result {
-        Ok(res) => {
-            let review_id = res.last_insert_rowid() as i32;
+    let review_id = result.last_insert_rowid() as i32;
 
-            for image in images {
-                let _ = sqlx::query(
-                    "INSERT INTO review_images (review_id, image_url) VALUES (?, ?)",
-                )
-                .bind(review_id)
-                .bind(&image)
-                .execute(pool.get_ref())
-                .await;
-            }
-
-            HttpResponse::Created().json(serde_json::json!({
-                "message": "Review created successfully",
-                "review_id": review_id
-            }))
+    for image in images {
+        if let Err(e) = sqlx::query("INSERT INTO review_images (review_id, image_url) VALUES (?, ?)")
+            .bind(review_id)
+            .bind(&image)
+            .execute(pool.get_ref())
+            .await
+        {
+            eprintln!("Failed to insert review image: {}", e);
         }
-        Err(_) => HttpResponse::InternalServerError().json(ErrorResponse {
-            message: "Failed to create review".to_string(),
-        }),
     }
+
+    Ok(HttpResponse::Created().json(serde_json::json!({
+        "message": "Review created successfully",
+        "review_id": review_id
+    })))
 }
 
 // Vote on a review
