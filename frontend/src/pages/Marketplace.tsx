@@ -10,8 +10,8 @@ import Navbar from "@/components/Navbar";
 import { Search, MapPin, Phone, Mail, Package, ShoppingCart, Heart } from "lucide-react";
 import { useNavigate, Link } from "react-router-dom";
 import { getProducts } from "@/api/client";
-import { useCart } from "@/contexts/CartContext";
-import { useWishlist } from "@/contexts/WishlistContext";
+import { useCart } from "@/hooks/useCart";
+import { useWishlist } from "@/hooks/useWishlist";
 
 interface Product {
   id: string;

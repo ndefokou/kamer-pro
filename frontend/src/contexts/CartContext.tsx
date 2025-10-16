@@ -1,32 +1,8 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { isAxiosError } from 'axios';
 import apiClient from '@/api/client';
 import { useToast } from '@/hooks/use-toast';
-
-export interface CartItem {
-  id: number;
-  product_id: number;
-  quantity: number;
-  product_name: string;
-  product_price: number;
-  product_image: string | null;
-  product_location: string;
-  product_status: string;
-}
-
-interface CartContextType {
-  cartItems: CartItem[];
-  cartCount: number;
-  isLoading: boolean;
-  addToCart: (productId: number, quantity: number) => Promise<void>;
-  updateCartItem: (id: number, quantity: number) => Promise<void>;
-  removeFromCart: (id: number) => Promise<void>;
-  clearCart: () => Promise<void>;
-  refreshCart: () => Promise<void>;
-  getCartTotal: () => number;
-}
-
-const CartContext = createContext<CartContextType | undefined>(undefined);
+import { CartContext, CartItem } from './CartContextTypes';
 
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
@@ -168,12 +144,4 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       {children}
     </CartContext.Provider>
   );
-};
-
-export const useCart = () => {
-  const context = useContext(CartContext);
-  if (context === undefined) {
-    throw new Error('useCart must be used within a CartProvider');
-  }
-  return context;
 };

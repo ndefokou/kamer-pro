@@ -1,32 +1,12 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { isAxiosError } from 'axios';
 import apiClient from '@/api/client';
 import { useToast } from '@/hooks/use-toast';
-
-export interface WishlistItem {
-  id: number;
-  product_id: number;
-  product_name: string;
-  product_price: number;
-  product_image: string | null;
-  product_location: string;
-  product_category: string;
-  product_status: string;
-}
-
-interface WishlistContextType {
-  wishlistItems: WishlistItem[];
-  wishlistCount: number;
-  isLoading: boolean;
-  addToWishlist: (productId: number) => Promise<void>;
-  removeFromWishlist: (id: number) => Promise<void>;
-  removeFromWishlistByProduct: (productId: number) => Promise<void>;
-  isInWishlist: (productId: number) => boolean;
-  checkWishlist: (productId: number) => Promise<boolean>;
-  refreshWishlist: () => Promise<void>;
-}
-
-const WishlistContext = createContext<WishlistContextType | undefined>(undefined);
+import {
+  WishlistItem,
+  WishlistContextType,
+  WishlistContext,
+} from './WishlistContextTypes';
 
 export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [wishlistItems, setWishlistItems] = useState<WishlistItem[]>([]);
@@ -163,10 +143,3 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   );
 };
 
-export const useWishlist = () => {
-  const context = useContext(WishlistContext);
-  if (context === undefined) {
-    throw new Error('useWishlist must be used within a WishlistProvider');
-  }
-  return context;
-};
