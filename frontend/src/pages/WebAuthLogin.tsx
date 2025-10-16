@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate, Link } from 'react-router-dom';
 import { WebAuthService } from '@/services/webAuthService';
 import { Button } from '@/components/ui/button';
@@ -8,6 +9,7 @@ import { toast } from '@/hooks/use-toast';
 import { Loader2, KeyRound, Shield } from 'lucide-react';
 
 export const WebAuthLogin = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [username, setUsername] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -19,18 +21,18 @@ export const WebAuthLogin = () => {
     
     if (!username) {
       toast({
-        title: 'Error',
-        description: 'Please enter your username',
+        title: t("error"),
+        description: t("please_enter_your_username"),
         variant: 'destructive',
       });
       return;
     }
-
+ 
     // Check WebAuthn support
     if (!window.PublicKeyCredential) {
       toast({
-        title: 'Error',
-        description: 'Your browser does not support WebAuthn. Please use a modern browser.',
+        title: t("error"),
+        description: t("your_browser_does_not_support_webauthn"),
         variant: 'destructive',
       });
       return;
@@ -55,9 +57,9 @@ export const WebAuthLogin = () => {
       })) as PublicKeyCredential | null;
 
       if (!assertion) {
-        throw new Error('Authentication was cancelled');
+        throw new Error(t("authentication_was_cancelled"));
       }
-
+ 
       // Step 3: Send assertion to server
       const signatureBase64 = WebAuthService.arrayBufferToBase64(
         (assertion.response as AuthenticatorAssertionResponse).signature
@@ -75,19 +77,19 @@ export const WebAuthLogin = () => {
       localStorage.setItem('email', response.email);
 
       toast({
-        title: 'Success!',
-        description: 'Logged in successfully.',
+        title: t("success"),
+        description: t("logged_in_successfully"),
       });
-
+ 
       navigate('/role-selection');
     } catch (error) {
       console.error('Authentication error:', error);
-      let errorMessage = 'Authentication failed. Please try again.';
+      let errorMessage = t("authentication_failed");
       if (error instanceof Error) {
         errorMessage = error.message;
       }
       toast({
-        title: 'Error',
+        title: t("error"),
         description: errorMessage,
         variant: 'destructive',
       });
@@ -106,55 +108,55 @@ export const WebAuthLogin = () => {
               <KeyRound className="h-8 w-8 text-primary" />
             </div>
           </div>
-          <CardTitle className="text-2xl">Sign In</CardTitle>
+          <CardTitle className="text-2xl">{t("sign_in")}</CardTitle>
           <CardDescription>
             {step === 'form'
-              ? 'Sign in using your security key or biometric authentication'
-              : 'Please authenticate with your security device...'}
+              ? t("sign_in_using_your_security_key")
+              : t("please_authenticate_with_your_security_device")}
           </CardDescription>
         </CardHeader>
         <CardContent>
           {step === 'form' ? (
             <form onSubmit={handleLogin} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium mb-2">Username</label>
+                <label className="block text-sm font-medium mb-2">{t("username")}</label>
                 <Input
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  placeholder="Enter your username"
+                  placeholder={t("your_username")}
                   required
                   disabled={isLoading}
                 />
               </div>
-
+ 
               <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-3 mb-4">
                 <div className="flex items-start gap-2">
                   <Shield className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
                   <div className="text-sm text-blue-900 dark:text-blue-100">
-                    <p className="font-medium mb-1">Security Notice</p>
-                    <p>You'll be asked to authenticate with your security key or device biometrics.</p>
+                    <p className="font-medium mb-1">{t("security_notice")}</p>
+                    <p>{t("youll_be_asked_to_authenticate")}</p>
                   </div>
                 </div>
               </div>
-
+ 
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {isLoading ? 'Signing in...' : 'Authenticate'}
+                {isLoading ? t("signing_in") : t("authenticate")}
               </Button>
-
+ 
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
                   <div className="w-full border-t border-gray-300 dark:border-gray-600" />
                 </div>
                 <div className="relative flex justify-center text-sm">
-                  <span className="px-2 bg-white dark:bg-gray-950">New to KamerLink?</span>
+                  <span className="px-2 bg-white dark:bg-gray-950">{t("new_to_kamerlink")}</span>
                 </div>
               </div>
-
+ 
               <Link to="/webauth-register">
                 <Button variant="outline" className="w-full">
-                  Create Account
+                  {t("create_account")}
                 </Button>
               </Link>
             </form>
@@ -168,10 +170,10 @@ export const WebAuthLogin = () => {
                 </div>
               </div>
               <p className="text-sm text-muted-foreground mt-4">
-                Please authenticate with your security device...
+                {t("please_authenticate_with_your_security_device")}
               </p>
               <p className="text-xs text-muted-foreground mt-2">
-                This may take a moment
+                {t("this_may_take_a_moment")}
               </p>
             </div>
           )}

@@ -12,6 +12,8 @@ import { Label } from "@/components/ui/label";
 import { Phone, Mail, MapPin, ShoppingCart, Heart, Plus, Minus } from "lucide-react";
 import { useCart } from "@/hooks/useCart";
 import { useWishlist } from "@/hooks/useWishlist";
+import { ProductReviews } from "@/components/ProductReviews";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface Product {
   id: string;
@@ -24,6 +26,7 @@ interface Product {
   contact_phone: string | null;
   contact_email: string | null;
   images: { image_url: string }[];
+  user_id: number;
 }
 
 const ProductDetails = () => {
@@ -44,7 +47,7 @@ const ProductDetails = () => {
       try {
         const response = await apiClient.get(`/products/${id}`);
         setProduct(response.data);
-        
+
         if (response.data.category) {
           const similarResponse = await apiClient.get("/products", {
             params: { category: response.data.category }
@@ -218,8 +221,8 @@ const ProductDetails = () => {
                   </div>
 
                   <div className="flex gap-2">
-                    <Button 
-                      className="flex-1" 
+                    <Button
+                      className="flex-1"
                       size="lg"
                       onClick={handleAddToCart}
                     >
@@ -231,7 +234,7 @@ const ProductDetails = () => {
                       size="lg"
                       onClick={handleToggleWishlist}
                     >
-                      <Heart 
+                      <Heart
                         className={`h-5 w-5 ${isInWishlist(parseInt(product.id)) ? 'fill-current text-red-500' : ''}`}
                       />
                     </Button>
@@ -264,9 +267,63 @@ const ProductDetails = () => {
           </CardContent>
         </Card>
 
+        {/* Product Details Tabs */}
+        <Card className="mt-8">
+          <Tabs defaultValue="description" className="w-full">
+            <TabsList className="w-full justify-start border-b rounded-none h-auto p-0">
+              <TabsTrigger
+                value="description"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary"
+              >
+                {t("description")}
+              </TabsTrigger>
+              <TabsTrigger
+                value="reviews"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary"
+              >
+                {t("reviews")}
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="description" className="p-6">
+              <div className="prose max-w-none">
+                <h3 className="text-xl font-semibold mb-4">{t("product_description")}</h3>
+                <p className="text-muted-foreground whitespace-pre-wrap">
+                  {product.description}
+                </p>
+
+                <div className="mt-6 grid grid-cols-2 gap-4">
+                  <div>
+                    <h4 className="font-semibold mb-2">{t("condition")}</h4>
+                    {product.condition && (
+                      <Badge variant="outline">
+                        {t(`conditions.${product.condition.toLowerCase().replace('-', '_')}`)}
+                      </Badge>
+                    )}
+                  </div>
+                  <div>
+                    <h4 className="font-semibold mb-2">{t("location")}</h4>
+                    <div className="flex items-center text-muted-foreground">
+                      <MapPin className="h-4 w-4 mr-1" />
+                      {product.location}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="reviews" className="p-6">
+              <ProductReviews
+                productId={parseInt(product.id)}
+                isProductOwner={product.user_id === parseInt(localStorage.getItem("userId") || "0")}
+              />
+            </TabsContent>
+          </Tabs>
+        </Card>
+
         {similarProducts.length > 0 && (
           <div className="mt-12">
-            <h2 className="text-3xl font-bold mb-6">{t("similar_products") || "Similar Products"}</h2>
+            <h2 className="text-3xl font-bold mb-6">{t("similar_products")}</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {similarProducts.map((product) => (
                 <Link key={product.id} to={`/product/${product.id}`}>

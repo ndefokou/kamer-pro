@@ -454,15 +454,15 @@ const SellerDashboard = () => {
                       className="object-cover rounded-lg w-full h-full"
                     />
                   ) : (
-                    <div className="text-gray-400">No image</div>
+                    <div className="text-gray-400">{t("no_image")}</div>
                   )}
                 </div>
                 <div className="flex justify-between items-start">
                   <CardTitle className="text-xl">{product.name}</CardTitle>
                   <div className="flex items-center space-x-2">
-                     {product.condition && <Badge variant="outline">{product.condition}</Badge>}
+                     {product.condition && <Badge variant="outline">{t(`conditions.${product.condition.toLowerCase().replace('-', '_')}`)}</Badge>}
                     <Badge variant={product.status === "active" ? "default" : "secondary"}>
-                      {product.status}
+                      {t(product.status)}
                     </Badge>
                   </div>
                 </div>

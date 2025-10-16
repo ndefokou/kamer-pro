@@ -19,6 +19,10 @@ use routes::cart::{
 use routes::products::{
     create_product, delete_product, get_my_products, get_product, get_products, update_product,
 };
+use routes::reviews::{
+    add_seller_response, create_review, delete_review, get_product_reviews, get_review_stats,
+    vote_review,
+};
 use routes::roles::{get_user_role, set_user_role};
 use routes::upload::upload_images;
 use routes::wishlist::{
@@ -113,7 +117,16 @@ async fn main() -> std::io::Result<()> {
                             .service(remove_from_wishlist_by_product)
                             .service(check_wishlist),
                     )
-                    .service(web::scope("/upload").service(upload_images)),
+                    .service(web::scope("/upload").service(upload_images))
+                    .service(
+                        web::scope("/reviews")
+                            .service(get_product_reviews)
+                            .service(get_review_stats)
+                            .service(create_review)
+                            .service(vote_review)
+                            .service(add_seller_response)
+                            .service(delete_review),
+                    ),
             )
             // Serve static files from the public directory
             .service(fs::Files::new("/uploads", "./public/uploads").show_files_listing())

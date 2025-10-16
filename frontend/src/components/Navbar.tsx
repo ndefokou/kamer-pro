@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Store, ShoppingCart, Heart, User, LogOut, Menu, X } from "lucide-react";
+import { Store, ShoppingCart, Heart, User, LogOut, Menu, X, Globe } from "lucide-react";
 import { useCart } from "@/hooks/useCart";
 import { useWishlist } from "@/hooks/useWishlist";
 import {
@@ -12,10 +13,18 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 
 const Navbar = () => {
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation();
   const { cartCount } = useCart();
   const { wishlistCount } = useWishlist();
   const username = localStorage.getItem("username");
@@ -35,6 +44,11 @@ const Navbar = () => {
     navigate(path);
   };
 
+  const toggleLanguage = () => {
+    const newLang = i18n.language === "en" ? "fr" : "en";
+    i18n.changeLanguage(newLang);
+  };
+ 
   return (
     <nav className="bg-primary text-primary-foreground shadow-md sticky top-0 z-50">
       <div className="container mx-auto px-4">
@@ -127,6 +141,14 @@ const Navbar = () => {
                 <Button variant="secondary">Login</Button>
               </Link>
             )}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-primary-foreground hover:bg-primary-foreground/10"
+              onClick={toggleLanguage}
+            >
+              <Globe className="h-5 w-5" />
+            </Button>
           </div>
 
           {/* Mobile Navigation */}
@@ -170,6 +192,12 @@ const Navbar = () => {
                 </Button>
               </SheetTrigger>
               <SheetContent side="right" className="w-[300px] sm:w-[400px]">
+                <SheetHeader>
+                  <SheetTitle>Menu</SheetTitle>
+                  <SheetDescription>
+                    Navigate through the application
+                  </SheetDescription>
+                </SheetHeader>
                 <div className="flex flex-col space-y-4 mt-8">
                   {token && (
                     <div className="flex items-center space-x-2 pb-4 border-b">
@@ -248,6 +276,14 @@ const Navbar = () => {
                       Login
                     </Button>
                   )}
+                   <Button
+                    variant="ghost"
+                    className="justify-start"
+                    onClick={toggleLanguage}
+                  >
+                    <Globe className="h-5 w-5 mr-2" />
+                    {t("change_language")}
+                  </Button>
                 </div>
               </SheetContent>
             </Sheet>

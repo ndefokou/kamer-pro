@@ -23,10 +23,10 @@ const RoleSelection = () => {
       await apiClient.post("/roles", { role });
 
       toast({
-        title: "Success!",
+        title: t("success"),
         description: t("role_registered_successfully", { role }),
       });
-
+ 
       if (role === "seller") {
         navigate("/seller-dashboard");
       } else {
@@ -40,7 +40,7 @@ const RoleSelection = () => {
         errorMessage = error.message;
       }
       toast({
-        title: "Error",
+        title: t("error"),
         description: errorMessage,
         variant: "destructive",
       });

@@ -83,7 +83,7 @@ const Cart = () => {
                       </p>
                       {item.product_status !== 'active' && (
                         <p className="text-sm text-destructive mt-1">
-                          {t("product_not_available")}
+                          {t("not_available")}
                         </p>
                       )}
                     </div>
