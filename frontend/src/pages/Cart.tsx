@@ -51,24 +51,24 @@ const Cart = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
       <div className="container mx-auto px-4 py-8">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-4xl font-bold">{t("shopping_cart")}</h1>
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
+          <h1 className="text-3xl md:text-4xl font-bold">{t("shopping_cart")}</h1>
           <Button variant="outline" onClick={clearCart} disabled={isLoading}>
             {t("clear_cart")}
           </Button>
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2 space-y-4">
+        <div className="grid md:grid-cols-3 gap-8">
+          <div className="md:col-span-2 space-y-4">
             {cartItems.map((item) => (
               <Card key={item.id}>
-                <CardContent className="p-6">
-                  <div className="flex gap-4">
+                <CardContent className="p-4 sm:p-6">
+                  <div className="flex flex-col sm:flex-row gap-4">
                     {item.product_image && (
                       <img
                         src={item.product_image}
                         alt={item.product_name}
-                        className="w-24 h-24 object-cover rounded"
+                        className="w-full sm:w-24 h-auto sm:h-24 object-cover rounded"
                       />
                     )}
                     <div className="flex-1">
@@ -87,16 +87,17 @@ const Cart = () => {
                         </p>
                       )}
                     </div>
-                    <div className="flex flex-col items-end justify-between">
+                    <div className="flex flex-col items-start sm:items-end justify-between mt-4 sm:mt-0">
                       <Button
                         variant="ghost"
                         size="icon"
                         onClick={() => removeFromCart(item.id)}
                         disabled={isLoading}
+                        className="self-end"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 mt-2">
                         <Button
                           variant="outline"
                           size="icon"
@@ -126,7 +127,7 @@ const Cart = () => {
                           <Plus className="h-4 w-4" />
                         </Button>
                       </div>
-                      <p className="text-sm font-semibold mt-2">
+                      <p className="text-sm font-semibold mt-2 self-end">
                         {t("subtotal")}: {formatPrice(item.product_price * item.quantity)}
                       </p>
                     </div>
@@ -136,7 +137,7 @@ const Cart = () => {
             ))}
           </div>
 
-          <div className="lg:col-span-1">
+          <div className="md:col-span-1">
             <Card className="sticky top-4">
               <CardHeader>
                 <CardTitle>{t("order_summary")}</CardTitle>
