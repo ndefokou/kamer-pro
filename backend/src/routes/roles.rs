@@ -1,5 +1,3 @@
-// Update backend-rust/src/routes/roles.rs
-
 use actix_web::{get, post, web, HttpRequest, HttpResponse, Responder};
 use serde::{Deserialize, Serialize};
 use sqlx::SqlitePool;

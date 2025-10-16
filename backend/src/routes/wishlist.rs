@@ -1,4 +1,3 @@
-// backend-rust/src/routes/wishlist.rs
 use crate::routes::middleware::extract_user_id_from_token;
 use actix_web::{delete, get, post, web, HttpRequest, HttpResponse, Responder};
 use serde::{Deserialize, Serialize};
