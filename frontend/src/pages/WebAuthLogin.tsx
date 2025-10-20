@@ -22,7 +22,7 @@ export const WebAuthLogin = () => {
     if (!username) {
       toast({
         title: t("error"),
-        description: t("please_enter_your_username"),
+        description: t("please enter your username"),
         variant: 'destructive',
       });
       return;
@@ -32,7 +32,7 @@ export const WebAuthLogin = () => {
     if (!window.PublicKeyCredential) {
       toast({
         title: t("error"),
-        description: t("your_browser_does_not_support_webauthn"),
+        description: t("your browser does not support webauthn"),
         variant: 'destructive',
       });
       return;
@@ -57,7 +57,7 @@ export const WebAuthLogin = () => {
       })) as PublicKeyCredential | null;
 
       if (!assertion) {
-        throw new Error(t("authentication_was_cancelled"));
+        throw new Error(t("authentication was cancelled"));
       }
  
       // Step 3: Send assertion to server
@@ -78,13 +78,13 @@ export const WebAuthLogin = () => {
 
       toast({
         title: t("success"),
-        description: t("logged_in_successfully"),
+        description: t("logged in successfully"),
       });
  
       navigate('/role-selection');
     } catch (error) {
       console.error('Authentication error:', error);
-      let errorMessage = t("authentication_failed");
+      let errorMessage = t("authentication failed");
       if (error instanceof Error) {
         errorMessage = error.message;
       }
@@ -108,11 +108,11 @@ export const WebAuthLogin = () => {
               <KeyRound className="h-8 w-8 text-primary" />
             </div>
           </div>
-          <CardTitle className="text-2xl">{t("sign_in")}</CardTitle>
+          <CardTitle className="text-2xl">{t("sign in")}</CardTitle>
           <CardDescription>
             {step === 'form'
-              ? t("sign_in_using_your_security_key")
-              : t("please_authenticate_with_your_security_device")}
+              ? t("sign in using your security key")
+              : t("please authenticate with your security device")}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -124,7 +124,7 @@ export const WebAuthLogin = () => {
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  placeholder={t("your_username")}
+                  placeholder={t("your username")}
                   required
                   disabled={isLoading}
                 />
@@ -134,15 +134,15 @@ export const WebAuthLogin = () => {
                 <div className="flex items-start gap-2">
                   <Shield className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
                   <div className="text-sm text-blue-900 dark:text-blue-100">
-                    <p className="font-medium mb-1">{t("security_notice")}</p>
-                    <p>{t("youll_be_asked_to_authenticate")}</p>
+                    <p className="font-medium mb-1">{t("security notice")}</p>
+                    <p>{t("youll be asked to authenticate")}</p>
                   </div>
                 </div>
               </div>
  
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {isLoading ? t("signing_in") : t("authenticate")}
+                {isLoading ? t("signing in") : t("authenticate")}
               </Button>
  
               <div className="relative">
@@ -150,13 +150,13 @@ export const WebAuthLogin = () => {
                   <div className="w-full border-t border-gray-300 dark:border-gray-600" />
                 </div>
                 <div className="relative flex justify-center text-sm">
-                  <span className="px-2 bg-white dark:bg-gray-950">{t("new_to_kamerlink")}</span>
+                  <span className="px-2 bg-white dark:bg-gray-950">{t("new to kamerlink")}</span>
                 </div>
               </div>
  
               <Link to="/webauth-register">
                 <Button variant="outline" className="w-full">
-                  {t("create_account")}
+                  {t("create account")}
                 </Button>
               </Link>
             </form>
@@ -170,10 +170,10 @@ export const WebAuthLogin = () => {
                 </div>
               </div>
               <p className="text-sm text-muted-foreground mt-4">
-                {t("please_authenticate_with_your_security_device")}
+                {t("please authenticate with your security device")}
               </p>
               <p className="text-xs text-muted-foreground mt-2">
-                {t("this_may_take_a_moment")}
+                {t("this may take a moment")}
               </p>
             </div>
           )}

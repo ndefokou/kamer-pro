@@ -33,12 +33,12 @@ const Cart = () => {
           <Card className="max-w-md mx-auto text-center py-12">
             <CardContent>
               <ShoppingBag className="h-24 w-24 mx-auto text-muted-foreground mb-4" />
-              <h2 className="text-2xl font-bold mb-2">{t("your_cart_is_empty")}</h2>
+              <h2 className="text-2xl font-bold mb-2">{t("your cart is empty")}</h2>
               <p className="text-muted-foreground mb-6">
-                {t("add_items_to_your_cart_to_see_them_here")}
+                {t("add items to your cart to see them here")}
               </p>
               <Link to="/marketplace">
-                <Button>{t("continue_shopping")}</Button>
+                <Button>{t("continue shopping")}</Button>
               </Link>
             </CardContent>
           </Card>
@@ -52,9 +52,9 @@ const Cart = () => {
       <Navbar />
       <div className="container mx-auto px-4 py-8">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
-          <h1 className="text-3xl md:text-4xl font-bold">{t("shopping_cart")}</h1>
+          <h1 className="text-3xl md:text-4xl font-bold">{t("shopping cart")}</h1>
           <Button variant="outline" onClick={clearCart} disabled={isLoading}>
-            {t("clear_cart")}
+            {t("clear cart")}
           </Button>
         </div>
 
@@ -83,7 +83,7 @@ const Cart = () => {
                       </p>
                       {item.product_status !== 'active' && (
                         <p className="text-sm text-destructive mt-1">
-                          {t("not_available")}
+                          {t("not available")}
                         </p>
                       )}
                     </div>
@@ -140,7 +140,7 @@ const Cart = () => {
           <div className="md:col-span-1">
             <Card className="sticky top-4">
               <CardHeader>
-                <CardTitle>{t("order_summary")}</CardTitle>
+                <CardTitle>{t("order summary")}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex justify-between">
@@ -148,7 +148,7 @@ const Cart = () => {
                   <span className="font-semibold">{formatPrice(getCartTotal())}</span>
                 </div>
                 <div className="flex justify-between text-sm text-muted-foreground">
-                  <span>{t("items_in_cart")}</span>
+                  <span>{t("items in cart")}</span>
                   <span>{cartItems.length}</span>
                 </div>
                 <div className="border-t pt-4 flex justify-between text-lg font-bold">
@@ -158,11 +158,11 @@ const Cart = () => {
               </CardContent>
               <CardFooter className="flex-col gap-2">
                 <Button className="w-full" size="lg">
-                  {t("proceed_to_checkout")}
+                  {t("proceed to checkout")}
                 </Button>
                 <Link to="/marketplace" className="w-full">
                   <Button variant="outline" className="w-full">
-                    {t("continue_shopping")}
+                    {t("continue shopping")}
                   </Button>
                 </Link>
               </CardFooter>

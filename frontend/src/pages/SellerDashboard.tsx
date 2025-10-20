@@ -31,16 +31,16 @@ interface Product {
 const CATEGORIES = [
   { key: "electronics", value: "Electronics" },
   { key: "fashion", value: "Fashion" },
-  { key: "home_garden", value: "Home & Garden" },
+  { key: "home garden", value: "Home & Garden" },
   { key: "vehicles", value: "Vehicles" },
-  { key: "real_estate", value: "Real Estate" },
+  { key: "real estate", value: "Real Estate" },
   { key: "services", value: "Services" },
   { key: "other", value: "Other" },
 ];
 
 const CONDITIONS = [
   { key: "new", value: "New" },
-  { key: "like_new", value: "Like-new" },
+  { key: "like new", value: "Like-new" },
   { key: "good", value: "Good" },
   { key: "fair", value: "Fair" },
 ];
@@ -227,28 +227,28 @@ const SellerDashboard = () => {
       <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-4xl font-bold mb-2">{t("seller_dashboard")}</h1>
-          <p className="text-muted-foreground">{t("manage_your_product_listings")}</p>
+          <h1 className="text-4xl font-bold mb-2">{t("seller dashboard")}</h1>
+          <p className="text-muted-foreground">{t("manage your product listings")}</p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button onClick={() => handleOpenDialog()} className="flex items-center space-x-2">
               <Plus className="h-4 w-4" />
-              <span>{t("add_product")}</span>
+              <span>{t("add product")}</span>
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
-                {editingProduct ? t("edit_product") : t("add_new_product")}
+                {editingProduct ? t("edit product") : t("add new product")}
               </DialogTitle>
               <DialogDescription>
-                {editingProduct ? t("fill_in_the_details_to_update") : t("fill_in_the_details_to_create")}
+                {editingProduct ? t("fill in the details to update") : t("fill in the details to create")}
               </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="name">{t("product_title")} *</Label>
+                <Label htmlFor="name">{t("product title")} *</Label>
                 <Input
                   id="name"
                   value={formData.name}
@@ -286,7 +286,7 @@ const SellerDashboard = () => {
                     onValueChange={(value) => setFormData({ ...formData, category: value })}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder={t("select_a_category")} />
+                      <SelectValue placeholder={t("select a category")} />
                     </SelectTrigger>
                     <SelectContent>
                       {CATEGORIES.map((category) => (
@@ -306,7 +306,7 @@ const SellerDashboard = () => {
                     onValueChange={(value) => setFormData({ ...formData, condition: value })}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder={t("select_a_condition")} />
+                      <SelectValue placeholder={t("select a condition")} />
                     </SelectTrigger>
                     <SelectContent>
                       {CONDITIONS.map((condition) => (
@@ -325,7 +325,7 @@ const SellerDashboard = () => {
                     onValueChange={(value) => setFormData({ ...formData, location: value })}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder={t("select_a_location")} />
+                      <SelectValue placeholder={t("select a location")} />
                     </SelectTrigger>
                     <SelectContent>
                       {LOCATIONS.map((location) => (
@@ -340,7 +340,7 @@ const SellerDashboard = () => {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="contact_phone">{t("contact_phone")}</Label>
+                  <Label htmlFor="contact_phone">{t("contact phone")}</Label>
                   <Input
                     id="contact_phone"
                     type="tel"
@@ -350,7 +350,7 @@ const SellerDashboard = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="contact_email">{t("contact_email")}</Label>
+                  <Label htmlFor="contact_email">{t("contact email")}</Label>
                   <Input
                     id="contact_email"
                     type="email"
@@ -361,7 +361,7 @@ const SellerDashboard = () => {
               </div>
 
               <div className="space-y-2">
-                <Label>{t("product_image")}</Label>
+                <Label>{t("product image")}</Label>
                 <div
                   {...getRootProps()}
                   className="mt-2 flex justify-center rounded-lg border border-dashed border-gray-900/25 px-6 py-10 dark:border-gray-100/25 cursor-pointer"
@@ -376,7 +376,7 @@ const SellerDashboard = () => {
                   ) : (
                     <div className="flex flex-col items-center justify-center space-y-2 text-muted-foreground">
                       <Upload className="h-12 w-12" />
-                      <p>{t("click_to_upload_an_image")}</p>
+                      <p>{t("click to upload an image")}</p>
                     </div>
                   )}
                 </div>
@@ -385,7 +385,7 @@ const SellerDashboard = () => {
               <DialogFooter>
                 <Button type="submit" disabled={isLoading}>
                   {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  {editingProduct ? t("update_product") : t("create_product")}
+                  {editingProduct ? t("update product") : t("create product")}
                 </Button>
               </DialogFooter>
             </form>
@@ -396,7 +396,7 @@ const SellerDashboard = () => {
       <div className="grid gap-4 md:grid-cols-3 mb-8">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t("total_products")}</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("total products")}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{totalProducts}</div>
@@ -404,7 +404,7 @@ const SellerDashboard = () => {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t("active_listings")}</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("active listings")}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{activeProducts}</div>
@@ -412,7 +412,7 @@ const SellerDashboard = () => {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t("inactive_listings")}</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("inactive listings")}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{inactiveProducts}</div>
@@ -421,7 +421,7 @@ const SellerDashboard = () => {
       </div>
 
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-2xl font-bold">{t("my_products")}</h2>
+        <h2 className="text-2xl font-bold">{t("my products")}</h2>
         <div className="flex space-x-2">
           <Button variant={filterStatus === 'all' ? 'default' : 'outline'} onClick={() => setFilterStatus('all')}>{t("all")}</Button>
           <Button variant={filterStatus === 'active' ? 'default' : 'outline'} onClick={() => setFilterStatus('active')}>{t("active")}</Button>
@@ -432,10 +432,10 @@ const SellerDashboard = () => {
       {products.length === 0 ? (
         <Card className="text-center py-12">
           <CardContent>
-            <p className="text-muted-foreground mb-4">{t("you_havent_created_any_products_yet")}</p>
+            <p className="text-muted-foreground mb-4">{t("you havent created any products yet")}</p>
             <Button onClick={() => handleOpenDialog()}>
               <Plus className="mr-2 h-4 w-4" />
-              {t("create_your_first_product")}
+              {t("create your first product")}
             </Button>
           </CardContent>
         </Card>
@@ -454,13 +454,13 @@ const SellerDashboard = () => {
                       className="object-cover rounded-lg w-full h-full"
                     />
                   ) : (
-                    <div className="text-gray-400">{t("no_image")}</div>
+                    <div className="text-gray-400">{t("no image")}</div>
                   )}
                 </div>
                 <div className="flex justify-between items-start">
                   <CardTitle className="text-xl">{product.name}</CardTitle>
                   <div className="flex items-center space-x-2">
-                     {product.condition && <Badge variant="outline">{t(`conditions.${product.condition.toLowerCase().replace('-', '_')}`)}</Badge>}
+                     {product.condition && <Badge variant="outline">{t(`conditions.${product.condition.toLowerCase().replace('-', ' ')}`)}</Badge>}
                     <Badge variant={product.status === "active" ? "default" : "secondary"}>
                       {t(product.status)}
                     </Badge>

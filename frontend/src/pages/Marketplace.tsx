@@ -22,7 +22,7 @@ interface Product {
   location: string;
   contact_phone: string | null;
   contact_email: string | null;
-  images: string[];
+  images: { image_url: string }[];
   created_at: string;
 }
 
@@ -140,7 +140,7 @@ const Marketplace = () => {
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
           <h1 className="text-4xl font-bold mb-2">{t("marketplace")}</h1>
-          <p className="text-muted-foreground">{t("discover_products")}</p>
+          <p className="text-muted-foreground">{t("discover products")}</p>
         </div>
 
         <div className="mb-8 p-4 border rounded-lg space-y-4">
@@ -197,10 +197,10 @@ const Marketplace = () => {
               </Select>
             </div>
             <div className="space-y-1">
-              <Label htmlFor="min-price">{t("min_price")}</Label>
+              <Label htmlFor="min-price">{t("min price")}</Label>
               <Input
                 id="min-price"
-                placeholder={t("min_price")}
+                placeholder={t("min price")}
                 type="number"
                 value={minPrice}
                 onChange={(e) => setMinPrice(e.target.value)}
@@ -208,10 +208,10 @@ const Marketplace = () => {
               />
             </div>
             <div className="space-y-1">
-              <Label htmlFor="max-price">{t("max_price")}</Label>
+              <Label htmlFor="max-price">{t("max price")}</Label>
               <Input
                 id="max-price"
-                placeholder={t("max_price")}
+                placeholder={t("max price")}
                 type="number"
                 value={maxPrice}
                 onChange={(e) => setMaxPrice(e.target.value)}
@@ -223,12 +223,12 @@ const Marketplace = () => {
 
         {isLoading ? (
           <div className="text-center py-12">
-            <p className="text-muted-foreground">{t("loading_products")}</p>
+            <p className="text-muted-foreground">{t("loading products")}</p>
           </div>
         ) : filteredProducts.length === 0 ? (
           <div className="text-center py-12">
             <Package className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-            <p className="text-muted-foreground">{t("no_products_found")}</p>
+            <p className="text-muted-foreground">{t("no products found")}</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -238,7 +238,7 @@ const Marketplace = () => {
                   {product.images && product.images.length > 0 && (
                     <div className="h-48 overflow-hidden rounded-t-lg relative">
                       <img
-                        src={getImageUrl(product.images[0])}
+                        src={getImageUrl(product.images[0].image_url)}
                         alt={product.name}
                         className="w-full h-full object-cover"
                       />
@@ -252,7 +252,7 @@ const Marketplace = () => {
                             handleToggleWishlist(product.id);
                           }}
                         >
-                          <Heart 
+                          <Heart
                             className={`h-4 w-4 ${isInWishlist(parseInt(product.id)) ? 'fill-current text-red-500' : ''}`}
                           />
                         </Button>
@@ -289,12 +289,12 @@ const Marketplace = () => {
                 </CardContent>
                 <CardFooter className="flex-col items-start space-y-2">
                   {token && (
-                    <Button 
-                      className="w-full" 
+                    <Button
+                      className="w-full"
                       onClick={() => handleAddToCart(product.id)}
                     >
                       <ShoppingCart className="h-4 w-4 mr-2" />
-                      {t("add_to_cart")}
+                      {t("add to cart")}
                     </Button>
                   )}
                   {product.contact_phone && (

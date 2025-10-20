@@ -21,7 +21,7 @@ export const WebAuthRegister = () => {
     if (!username) {
       toast({
         title: t("error"),
-        description: t("please_fill_in_all_fields"),
+        description: t("please fill in all fields"),
         variant: 'destructive',
       });
       return;
@@ -31,7 +31,7 @@ export const WebAuthRegister = () => {
     if (!window.PublicKeyCredential) {
       toast({
         title: t("error"),
-        description: t("your_browser_does_not_support_webauthn"),
+        description: t("your browser does not support webauthn"),
         variant: 'destructive',
       });
       return;
@@ -68,7 +68,7 @@ export const WebAuthRegister = () => {
       })) as PublicKeyCredential | null;
 
       if (!credential) {
-        throw new Error(t("failed_to_create_credential"));
+        throw new Error(t("failed to create credential"));
       }
  
       // Step 3: Send credential to server
@@ -89,13 +89,13 @@ export const WebAuthRegister = () => {
 
       toast({
         title: t("success"),
-        description: t("registration_successful"),
+        description: t("registration successful"),
       });
  
       navigate('/webauth-login');
     } catch (error) {
       console.error('Registration error:', error);
-      const errorMessage = error instanceof Error ? error.message : t("registration_failed");
+      const errorMessage = error instanceof Error ? error.message : t("registration failed");
       toast({
         title: t("error"),
         description: errorMessage,
@@ -115,9 +115,9 @@ export const WebAuthRegister = () => {
               <KeyRound className="h-8 w-8 text-primary" />
             </div>
           </div>
-          <CardTitle className="text-2xl">{t("create_account")}</CardTitle>
+          <CardTitle className="text-2xl">{t("create account")}</CardTitle>
           <CardDescription>
-            {t("register_using_your_security_key")}
+            {t("register using your security key")}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -128,7 +128,7 @@ export const WebAuthRegister = () => {
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                placeholder={t("choose_a_username")}
+                placeholder={t("choose a username")}
                 required
                 disabled={isLoading}
               />
@@ -138,15 +138,15 @@ export const WebAuthRegister = () => {
               <div className="flex items-start gap-2">
                 <Shield className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
                 <div className="text-sm text-blue-900 dark:text-blue-100">
-                  <p className="font-medium mb-1">{t("security_notice")}</p>
-                  <p>{t("youll_be_asked_to_connect_your_security_key")}</p>
+                  <p className="font-medium mb-1">{t("security notice")}</p>
+                  <p>{t("youll be asked to connect your security key")}</p>
                 </div>
               </div>
             </div>
  
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {isLoading ? t("registering") : t("register_with_webauthn")}
+              {isLoading ? t("registering") : t("register with webauthn")}
             </Button>
  
             <div className="relative">
@@ -154,13 +154,13 @@ export const WebAuthRegister = () => {
                 <div className="w-full border-t border-gray-300 dark:border-gray-600" />
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white dark:bg-gray-950">{t("already_have_an_account")}</span>
+                <span className="px-2 bg-white dark:bg-gray-950">{t("already have an account")}</span>
               </div>
             </div>
  
             <Link to="/webauth-login">
               <Button variant="outline" className="w-full">
-                {t("sign_in")}
+                {t("sign in")}
               </Button>
             </Link>
           </form>

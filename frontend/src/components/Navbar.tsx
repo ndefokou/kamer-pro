@@ -282,7 +282,7 @@ const Navbar = () => {
                     onClick={toggleLanguage}
                   >
                     <Globe className="h-5 w-5 mr-2" />
-                    {t("change_language")}
+                    {t("change language")}
                   </Button>
                 </div>
               </SheetContent>

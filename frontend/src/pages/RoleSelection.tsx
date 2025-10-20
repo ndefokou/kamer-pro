@@ -54,10 +54,10 @@ const RoleSelection = () => {
       <div className="w-full max-w-4xl">
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-primary-foreground mb-2">
-            {t("choose_your_role")}
+            {t("choose your role")}
           </h1>
           <p className="text-primary-foreground/90">
-            {t("how_would_you_like_to_use_kamerlink")}
+            {t("how would you like to use kamerlink")}
           </p>
         </div>
 
@@ -71,15 +71,15 @@ const RoleSelection = () => {
               </div>
               <CardTitle className="text-2xl">{t("buyer")}</CardTitle>
               <CardDescription>
-                {t("browse_and_purchase_products")}
+                {t("browse and purchase products")}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <ul className="space-y-2 mb-6 text-sm text-muted-foreground">
-                <li>• {t("browse_products_by_category")}</li>
-                <li>• {t("search_and_filter_listings")}</li>
-                <li>• {t("view_seller_contact_information")}</li>
-                <li>• {t("discover_local_deals")}</li>
+                <li>• {t("browse products by category")}</li>
+                <li>• {t("search and filter listings")}</li>
+                <li>• {t("view seller contact information")}</li>
+                <li>• {t("discover local deals")}</li>
               </ul>
               <Button
                 onClick={() => handleRoleSelection("buyer")}
@@ -88,7 +88,7 @@ const RoleSelection = () => {
                 variant="secondary"
               >
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {t("continue_as_buyer")}
+                {t("continue as buyer")}
               </Button>
             </CardContent>
           </Card>
@@ -102,15 +102,15 @@ const RoleSelection = () => {
               </div>
               <CardTitle className="text-2xl">{t("seller")}</CardTitle>
               <CardDescription>
-                {t("list_and_sell_your_products")}
+                {t("list and sell your products")}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <ul className="space-y-2 mb-6 text-sm text-muted-foreground">
-                <li>• {t("create_product_listings")}</li>
-                <li>• {t("manage_your_inventory")}</li>
-                <li>• {t("set_your_own_prices")}</li>
-                <li>• {t("connect_with_local_buyers")}</li>
+                <li>• {t("create product listings")}</li>
+                <li>• {t("manage your inventory")}</li>
+                <li>• {t("set your own prices")}</li>
+                <li>• {t("connect with local buyers")}</li>
               </ul>
               <Button
                 onClick={() => handleRoleSelection("seller")}
@@ -118,7 +118,7 @@ const RoleSelection = () => {
                 className="w-full"
               >
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {t("continue_as_seller")}
+                {t("continue as seller")}
               </Button>
             </CardContent>
           </Card>

@@ -121,7 +121,7 @@ const ProductDetails = () => {
       <div className="min-h-screen bg-background">
         <Navbar />
         <div className="container mx-auto px-4 py-16 text-center">
-          <p>{t("product_not_found")}</p>
+          <p>{t("product not found")}</p>
         </div>
       </div>
     );
@@ -227,7 +227,7 @@ const ProductDetails = () => {
                       onClick={handleAddToCart}
                     >
                       <ShoppingCart className="h-5 w-5 mr-2" />
-                      {t("add_to_cart")}
+                      {t("add to cart")}
                     </Button>
                     <Button
                       variant="outline"
@@ -243,7 +243,7 @@ const ProductDetails = () => {
               )}
 
               <div>
-                <h3 className="text-xl font-semibold mb-2">{t("contact_seller")}</h3>
+                <h3 className="text-xl font-semibold mb-2">{t("contact seller")}</h3>
                 <div className="space-y-2">
                   {product.contact_phone && (
                     <div className="flex items-center">
@@ -287,7 +287,7 @@ const ProductDetails = () => {
 
             <TabsContent value="description" className="p-6">
               <div className="prose max-w-none">
-                <h3 className="text-xl font-semibold mb-4">{t("product_description")}</h3>
+                <h3 className="text-xl font-semibold mb-4">{t("product description")}</h3>
                 <p className="text-muted-foreground whitespace-pre-wrap">
                   {product.description}
                 </p>
@@ -323,7 +323,7 @@ const ProductDetails = () => {
 
         {similarProducts.length > 0 && (
           <div className="mt-12">
-            <h2 className="text-3xl font-bold mb-6">{t("similar_products")}</h2>
+            <h2 className="text-3xl font-bold mb-6">{t("similar products")}</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {similarProducts.map((product) => (
                 <Link key={product.id} to={`/product/${product.id}`}>

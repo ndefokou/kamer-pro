@@ -33,12 +33,12 @@ const Wishlist = () => {
           <Card className="max-w-md mx-auto text-center py-12">
             <CardContent>
               <Heart className="h-24 w-24 mx-auto text-muted-foreground mb-4" />
-              <h2 className="text-2xl font-bold mb-2">{t("your_wishlist_is_empty")}</h2>
+              <h2 className="text-2xl font-bold mb-2">{t("your wishlist is empty")}</h2>
               <p className="text-muted-foreground mb-6">
-                {t("save_items_you_love_to_your_wishlist")}
+                {t("save items you love to your wishlist")}
               </p>
               <Link to="/marketplace">
-                <Button>{t("browse_products")}</Button>
+                <Button>{t("browse products")}</Button>
               </Link>
             </CardContent>
           </Card>
@@ -52,7 +52,7 @@ const Wishlist = () => {
       <Navbar />
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2">{t("my_wishlist")}</h1>
+          <h1 className="text-4xl font-bold mb-2">{t("my wishlist")}</h1>
           <p className="text-muted-foreground">
             {wishlistItems.length} {wishlistItems.length === 1 ? t("item") : t("items")}
           </p>
@@ -96,7 +96,7 @@ const Wishlist = () => {
                     {item.product_location}
                   </div>
                   {item.product_status !== 'active' && (
-                    <Badge variant="destructive">{t("not_available")}</Badge>
+                    <Badge variant="destructive">{t("not available")}</Badge>
                   )}
                 </div>
               </CardContent>
@@ -107,7 +107,7 @@ const Wishlist = () => {
                   disabled={isLoading || item.product_status !== 'active'}
                 >
                   <ShoppingCart className="h-4 w-4 mr-2" />
-                  {t("add_to_cart")}
+                  {t("add to cart")}
                 </Button>
                 <Button
                   variant="outline"
