@@ -1,45 +1,51 @@
-import { useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { useNavigate, Link } from 'react-router-dom';
-import { WebAuthService } from '@/services/webAuthService';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { toast } from '@/hooks/use-toast';
-import { Loader2, KeyRound, Shield } from 'lucide-react';
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import { useNavigate, Link } from "react-router-dom";
+import { WebAuthService } from "@/services/webAuthService";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { toast } from "@/hooks/use-toast";
+import { Loader2, KeyRound, Shield } from "lucide-react";
 
 export const WebAuthLogin = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const [username, setUsername] = useState('');
+  const [username, setUsername] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [step, setStep] = useState<'form' | 'authenticating'>('form');
+  const [step, setStep] = useState<"form" | "authenticating">("form");
   const webAuthService = new WebAuthService();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!username) {
       toast({
         title: t("error"),
         description: t("please enter your username"),
-        variant: 'destructive',
+        variant: "destructive",
       });
       return;
     }
- 
+
     // Check WebAuthn support
     if (!window.PublicKeyCredential) {
       toast({
         title: t("error"),
         description: t("your browser does not support webauthn"),
-        variant: 'destructive',
+        variant: "destructive",
       });
       return;
     }
 
     setIsLoading(true);
-    setStep('authenticating');
+    setStep("authenticating");
 
     try {
       // Step 1: Start authentication and get challenge
@@ -49,7 +55,7 @@ export const WebAuthLogin = () => {
       const assertionOptions = {
         challenge: new TextEncoder().encode(startResponse.challenge),
         timeout: 60000,
-        userVerification: 'preferred' as const,
+        userVerification: "preferred" as const,
       };
 
       const assertion = (await navigator.credentials.get({
@@ -59,31 +65,31 @@ export const WebAuthLogin = () => {
       if (!assertion) {
         throw new Error(t("authentication was cancelled"));
       }
- 
+
       // Step 3: Send assertion to server
       const signatureBase64 = WebAuthService.arrayBufferToBase64(
-        (assertion.response as AuthenticatorAssertionResponse).signature
+        (assertion.response as AuthenticatorAssertionResponse).signature,
       );
 
       const response = await webAuthService.completeAuthentication(
         username,
-        signatureBase64
+        signatureBase64,
       );
 
       // Store authentication data
-      localStorage.setItem('token', response.token);
-      localStorage.setItem('user_id', response.user_id.toString());
-      localStorage.setItem('username', response.username);
-      localStorage.setItem('email', response.email);
+      localStorage.setItem("token", response.token);
+      localStorage.setItem("user_id", response.user_id.toString());
+      localStorage.setItem("username", response.username);
+      localStorage.setItem("email", response.email);
 
       toast({
         title: t("success"),
         description: t("logged in successfully"),
       });
- 
-      navigate('/role-selection');
+
+      navigate("/role-selection");
     } catch (error) {
-      console.error('Authentication error:', error);
+      console.error("Authentication error:", error);
       let errorMessage = t("authentication failed");
       if (error instanceof Error) {
         errorMessage = error.message;
@@ -91,9 +97,9 @@ export const WebAuthLogin = () => {
       toast({
         title: t("error"),
         description: errorMessage,
-        variant: 'destructive',
+        variant: "destructive",
       });
-      setStep('form');
+      setStep("form");
     } finally {
       setIsLoading(false);
     }
@@ -110,16 +116,18 @@ export const WebAuthLogin = () => {
           </div>
           <CardTitle className="text-2xl">{t("sign in")}</CardTitle>
           <CardDescription>
-            {step === 'form'
+            {step === "form"
               ? t("sign in using your security key")
               : t("please authenticate with your security device")}
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {step === 'form' ? (
+          {step === "form" ? (
             <form onSubmit={handleLogin} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium mb-2">{t("username")}</label>
+                <label className="block text-sm font-medium mb-2">
+                  {t("username")}
+                </label>
                 <Input
                   type="text"
                   value={username}
@@ -129,7 +137,7 @@ export const WebAuthLogin = () => {
                   disabled={isLoading}
                 />
               </div>
- 
+
               <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-3 mb-4">
                 <div className="flex items-start gap-2">
                   <Shield className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
@@ -139,21 +147,23 @@ export const WebAuthLogin = () => {
                   </div>
                 </div>
               </div>
- 
+
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {isLoading ? t("signing in") : t("authenticate")}
               </Button>
- 
+
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
                   <div className="w-full border-t border-gray-300 dark:border-gray-600" />
                 </div>
                 <div className="relative flex justify-center text-sm">
-                  <span className="px-2 bg-white dark:bg-gray-950">{t("new to kamerlink")}</span>
+                  <span className="px-2 bg-white dark:bg-gray-950">
+                    {t("new to kamerlink")}
+                  </span>
                 </div>
               </div>
- 
+
               <Link to="/webauth-register">
                 <Button variant="outline" className="w-full">
                   {t("create account")}

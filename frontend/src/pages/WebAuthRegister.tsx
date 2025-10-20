@@ -1,38 +1,44 @@
-import { useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { useNavigate, Link } from 'react-router-dom';
-import { WebAuthService } from '@/services/webAuthService';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { toast } from '@/hooks/use-toast';
-import { Loader2, KeyRound, Shield } from 'lucide-react';
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import { useNavigate, Link } from "react-router-dom";
+import { WebAuthService } from "@/services/webAuthService";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { toast } from "@/hooks/use-toast";
+import { Loader2, KeyRound, Shield } from "lucide-react";
 
 export const WebAuthRegister = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const [username, setUsername] = useState('');
+  const [username, setUsername] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const webAuthService = new WebAuthService();
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!username) {
       toast({
         title: t("error"),
         description: t("please fill in all fields"),
-        variant: 'destructive',
+        variant: "destructive",
       });
       return;
     }
- 
+
     // Check WebAuthn support
     if (!window.PublicKeyCredential) {
       toast({
         title: t("error"),
         description: t("your browser does not support webauthn"),
-        variant: 'destructive',
+        variant: "destructive",
       });
       return;
     }
@@ -42,13 +48,13 @@ export const WebAuthRegister = () => {
     try {
       // Step 1: Start registration and get challenge
       const startResponse = await webAuthService.startRegistration(username);
-      
+
       // Step 2: Create credentials
       const credentialCreationOptions: PublicKeyCredentialCreationOptions = {
         challenge: new TextEncoder().encode(startResponse.challenge),
         rp: {
-          name: 'KamerLink',
-          id: 'localhost',
+          name: "KamerLink",
+          id: "localhost",
         },
         user: {
           id: new TextEncoder().encode(startResponse.user_id),
@@ -56,11 +62,11 @@ export const WebAuthRegister = () => {
           displayName: username,
         },
         pubKeyCredParams: [
-          { type: 'public-key', alg: -7 }, // ES256
-          { type: 'public-key', alg: -257 }, // RS256
+          { type: "public-key", alg: -7 }, // ES256
+          { type: "public-key", alg: -257 }, // RS256
         ],
         timeout: 60000,
-        attestation: 'direct',
+        attestation: "direct",
       };
 
       const credential = (await navigator.credentials.create({
@@ -70,36 +76,37 @@ export const WebAuthRegister = () => {
       if (!credential) {
         throw new Error(t("failed to create credential"));
       }
- 
+
       // Step 3: Send credential to server
       const credentialIdBase64 = WebAuthService.arrayBufferToBase64(
-        credential.rawId
+        credential.rawId,
       );
-      
+
       const response = credential.response as AuthenticatorAttestationResponse;
       const attestationObjectBase64 = WebAuthService.arrayBufferToBase64(
-        response.attestationObject
+        response.attestationObject,
       );
 
       await webAuthService.completeRegistration(
         username,
         credentialIdBase64,
-        attestationObjectBase64
+        attestationObjectBase64,
       );
 
       toast({
         title: t("success"),
         description: t("registration successful"),
       });
- 
-      navigate('/webauth-login');
+
+      navigate("/webauth-login");
     } catch (error) {
-      console.error('Registration error:', error);
-      const errorMessage = error instanceof Error ? error.message : t("registration failed");
+      console.error("Registration error:", error);
+      const errorMessage =
+        error instanceof Error ? error.message : t("registration failed");
       toast({
         title: t("error"),
         description: errorMessage,
-        variant: 'destructive',
+        variant: "destructive",
       });
     } finally {
       setIsLoading(false);
@@ -123,7 +130,9 @@ export const WebAuthRegister = () => {
         <CardContent>
           <form onSubmit={handleRegister} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium mb-2">{t("username")}</label>
+              <label className="block text-sm font-medium mb-2">
+                {t("username")}
+              </label>
               <Input
                 type="text"
                 value={username}
@@ -133,7 +142,7 @@ export const WebAuthRegister = () => {
                 disabled={isLoading}
               />
             </div>
- 
+
             <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-3 mb-4">
               <div className="flex items-start gap-2">
                 <Shield className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
@@ -143,21 +152,23 @@ export const WebAuthRegister = () => {
                 </div>
               </div>
             </div>
- 
+
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {isLoading ? t("registering") : t("register with webauthn")}
             </Button>
- 
+
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-gray-300 dark:border-gray-600" />
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white dark:bg-gray-950">{t("already have an account")}</span>
+                <span className="px-2 bg-white dark:bg-gray-950">
+                  {t("already have an account")}
+                </span>
               </div>
             </div>
- 
+
             <Link to="/webauth-login">
               <Button variant="outline" className="w-full">
                 {t("sign in")}

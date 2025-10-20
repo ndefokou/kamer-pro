@@ -1,46 +1,51 @@
-import React, { useState, useEffect } from 'react';
-import { isAxiosError } from 'axios';
-import apiClient from '@/api/client';
-import { useToast } from '@/hooks/use-toast';
-import { CartContext, CartItem } from './CartContextTypes';
+import React, { useState, useEffect } from "react";
+import { isAxiosError } from "axios";
+import apiClient from "@/api/client";
+import { useToast } from "@/hooks/use-toast";
+import { CartContext, CartItem } from "./CartContextTypes";
 
-export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const CartProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [cartCount, setCartCount] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
   const refreshCart = async () => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem("token");
     if (!token) return;
 
     try {
-      const response = await apiClient.get('/cart');
+      const response = await apiClient.get("/cart");
       setCartItems(response.data);
       setCartCount(response.data.length);
     } catch (error) {
-      console.error('Failed to fetch cart:', error);
+      console.error("Failed to fetch cart:", error);
     }
   };
 
   const addToCart = async (productId: number, quantity: number = 1) => {
     setIsLoading(true);
     try {
-      await apiClient.post('/cart', { product_id: productId, quantity });
+      await apiClient.post("/cart", { product_id: productId, quantity });
       await refreshCart();
       toast({
-        title: 'Success',
-        description: 'Item added to cart',
+        title: "Success",
+        description: "Item added to cart",
       });
     } catch (error) {
-      let errorMessage = 'Failed to add item to cart';
-      if (isAxiosError(error) && typeof error.response?.data?.message === 'string') {
+      let errorMessage = "Failed to add item to cart";
+      if (
+        isAxiosError(error) &&
+        typeof error.response?.data?.message === "string"
+      ) {
         errorMessage = error.response.data.message;
       }
       toast({
-        title: 'Error',
+        title: "Error",
         description: errorMessage,
-        variant: 'destructive',
+        variant: "destructive",
       });
     } finally {
       setIsLoading(false);
@@ -53,18 +58,21 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await apiClient.put(`/cart/${id}`, { quantity });
       await refreshCart();
       toast({
-        title: 'Success',
-        description: 'Cart updated',
+        title: "Success",
+        description: "Cart updated",
       });
     } catch (error) {
-      let errorMessage = 'Failed to update cart';
-      if (isAxiosError(error) && typeof error.response?.data?.message === 'string') {
+      let errorMessage = "Failed to update cart";
+      if (
+        isAxiosError(error) &&
+        typeof error.response?.data?.message === "string"
+      ) {
         errorMessage = error.response.data.message;
       }
       toast({
-        title: 'Error',
+        title: "Error",
         description: errorMessage,
-        variant: 'destructive',
+        variant: "destructive",
       });
     } finally {
       setIsLoading(false);
@@ -77,18 +85,21 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await apiClient.delete(`/cart/${id}`);
       await refreshCart();
       toast({
-        title: 'Success',
-        description: 'Item removed from cart',
+        title: "Success",
+        description: "Item removed from cart",
       });
     } catch (error) {
-      let errorMessage = 'Failed to remove item';
-      if (isAxiosError(error) && typeof error.response?.data?.message === 'string') {
+      let errorMessage = "Failed to remove item";
+      if (
+        isAxiosError(error) &&
+        typeof error.response?.data?.message === "string"
+      ) {
         errorMessage = error.response.data.message;
       }
       toast({
-        title: 'Error',
+        title: "Error",
         description: errorMessage,
-        variant: 'destructive',
+        variant: "destructive",
       });
     } finally {
       setIsLoading(false);
@@ -98,21 +109,24 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const clearCart = async () => {
     setIsLoading(true);
     try {
-      await apiClient.delete('/cart');
+      await apiClient.delete("/cart");
       await refreshCart();
       toast({
-        title: 'Success',
-        description: 'Cart cleared',
+        title: "Success",
+        description: "Cart cleared",
       });
     } catch (error) {
-      let errorMessage = 'Failed to clear cart';
-      if (isAxiosError(error) && typeof error.response?.data?.message === 'string') {
+      let errorMessage = "Failed to clear cart";
+      if (
+        isAxiosError(error) &&
+        typeof error.response?.data?.message === "string"
+      ) {
         errorMessage = error.response.data.message;
       }
       toast({
-        title: 'Error',
+        title: "Error",
         description: errorMessage,
-        variant: 'destructive',
+        variant: "destructive",
       });
     } finally {
       setIsLoading(false);
@@ -120,7 +134,10 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const getCartTotal = () => {
-    return cartItems.reduce((total, item) => total + item.product_price * item.quantity, 0);
+    return cartItems.reduce(
+      (total, item) => total + item.product_price * item.quantity,
+      0,
+    );
   };
 
   useEffect(() => {

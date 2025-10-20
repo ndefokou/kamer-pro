@@ -3,13 +3,33 @@ import { useTranslation } from "react-i18next";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import apiClient from "@/api/client";
 import Navbar from "@/components/Navbar";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Phone, Mail, MapPin, ShoppingCart, Heart, Plus, Minus } from "lucide-react";
+import {
+  Phone,
+  Mail,
+  MapPin,
+  ShoppingCart,
+  Heart,
+  Plus,
+  Minus,
+} from "lucide-react";
 import { useCart } from "@/hooks/useCart";
 import { useWishlist } from "@/hooks/useWishlist";
 import { ProductReviews } from "@/components/ProductReviews";
@@ -38,7 +58,8 @@ const ProductDetails = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
   const { addToCart } = useCart();
-  const { addToWishlist, isInWishlist, removeFromWishlistByProduct } = useWishlist();
+  const { addToWishlist, isInWishlist, removeFromWishlistByProduct } =
+    useWishlist();
   const token = localStorage.getItem("token");
 
   useEffect(() => {
@@ -50,7 +71,7 @@ const ProductDetails = () => {
 
         if (response.data.category) {
           const similarResponse = await apiClient.get("/products", {
-            params: { category: response.data.category }
+            params: { category: response.data.category },
           });
           const filtered = similarResponse.data
             .filter((p: Product) => p.id !== id)
@@ -67,7 +88,7 @@ const ProductDetails = () => {
   }, [id]);
 
   const getImageUrl = (imagePath: string) => {
-    if (imagePath.startsWith('http')) {
+    if (imagePath.startsWith("http")) {
       return imagePath;
     }
     return `http://localhost:8082${imagePath}`;
@@ -135,19 +156,22 @@ const ProductDetails = () => {
           <CardHeader>
             <CardTitle className="text-3xl font-bold">{product.name}</CardTitle>
             <CardDescription className="text-lg text-muted-foreground">
-              {t(`categories.${product.category.toLowerCase().replace(' & ', '_')}`)}
+              {t(
+                `categories.${product.category.toLowerCase().replace(" & ", "_")}`,
+              )}
             </CardDescription>
           </CardHeader>
           <CardContent className="grid md:grid-cols-2 gap-8">
             <div>
               <Carousel className="mb-6">
                 <CarouselContent>
-                  {product.images.map((image) => (
+                  {product.images.map((image, index) => (
                     <CarouselItem key={image.image_url}>
                       <img
                         src={getImageUrl(image.image_url)}
-                        alt={product.name}
-                        className="w-full h-auto object-cover rounded-lg border"
+                        alt={`${product.name} - Image ${index + 1}`}
+                        className="w-full max-h-96 object-contain rounded-lg border bg-muted"
+                        loading={index === 0 ? "eager" : "lazy"}
                       />
                     </CarouselItem>
                   ))}
@@ -158,7 +182,9 @@ const ProductDetails = () => {
             </div>
             <div className="space-y-6">
               <div>
-                <h3 className="text-xl font-semibold mb-2">{t("description")}</h3>
+                <h3 className="text-xl font-semibold mb-2">
+                  {t("description")}
+                </h3>
                 <p className="text-muted-foreground">{product.description}</p>
               </div>
               <div className="text-3xl font-bold text-primary">
@@ -169,15 +195,21 @@ const ProductDetails = () => {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <h3 className="text-lg font-semibold mb-2">{t("condition")}</h3>
+                  <h3 className="text-lg font-semibold mb-2">
+                    {t("condition")}
+                  </h3>
                   {product.condition && (
                     <Badge variant="outline">
-                      {t(`conditions.${product.condition.toLowerCase().replace('-', '_')}`)}
+                      {t(
+                        `conditions.${product.condition.toLowerCase().replace("-", "_")}`,
+                      )}
                     </Badge>
                   )}
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold mb-2">{t("location")}</h3>
+                  <h3 className="text-lg font-semibold mb-2">
+                    {t("location")}
+                  </h3>
                   <div className="flex items-center text-muted-foreground">
                     <MapPin className="h-4 w-4 mr-1" />
                     {product.location}
@@ -235,7 +267,7 @@ const ProductDetails = () => {
                       onClick={handleToggleWishlist}
                     >
                       <Heart
-                        className={`h-5 w-5 ${isInWishlist(parseInt(product.id)) ? 'fill-current text-red-500' : ''}`}
+                        className={`h-5 w-5 ${isInWishlist(parseInt(product.id)) ? "fill-current text-red-500" : ""}`}
                       />
                     </Button>
                   </div>
@@ -243,12 +275,17 @@ const ProductDetails = () => {
               )}
 
               <div>
-                <h3 className="text-xl font-semibold mb-2">{t("contact seller")}</h3>
+                <h3 className="text-xl font-semibold mb-2">
+                  {t("contact seller")}
+                </h3>
                 <div className="space-y-2">
                   {product.contact_phone && (
                     <div className="flex items-center">
                       <Phone className="h-4 w-4 mr-2 text-primary" />
-                      <a href={`tel:${product.contact_phone}`} className="hover:underline">
+                      <a
+                        href={`tel:${product.contact_phone}`}
+                        className="hover:underline"
+                      >
                         {product.contact_phone}
                       </a>
                     </div>
@@ -256,7 +293,10 @@ const ProductDetails = () => {
                   {product.contact_email && (
                     <div className="flex items-center">
                       <Mail className="h-4 w-4 mr-2 text-primary" />
-                      <a href={`mailto:${product.contact_email}`} className="hover:underline">
+                      <a
+                        href={`mailto:${product.contact_email}`}
+                        className="hover:underline"
+                      >
                         {product.contact_email}
                       </a>
                     </div>
@@ -287,7 +327,9 @@ const ProductDetails = () => {
 
             <TabsContent value="description" className="p-6">
               <div className="prose max-w-none">
-                <h3 className="text-xl font-semibold mb-4">{t("product description")}</h3>
+                <h3 className="text-xl font-semibold mb-4">
+                  {t("product description")}
+                </h3>
                 <p className="text-muted-foreground whitespace-pre-wrap">
                   {product.description}
                 </p>
@@ -297,7 +339,9 @@ const ProductDetails = () => {
                     <h4 className="font-semibold mb-2">{t("condition")}</h4>
                     {product.condition && (
                       <Badge variant="outline">
-                        {t(`conditions.${product.condition.toLowerCase().replace('-', '_')}`)}
+                        {t(
+                          `conditions.${product.condition.toLowerCase().replace("-", "_")}`,
+                        )}
                       </Badge>
                     )}
                   </div>
@@ -315,7 +359,10 @@ const ProductDetails = () => {
             <TabsContent value="reviews" className="p-6">
               <ProductReviews
                 productId={parseInt(product.id)}
-                isProductOwner={product.user_id === parseInt(localStorage.getItem("userId") || "0")}
+                isProductOwner={
+                  product.user_id ===
+                  parseInt(localStorage.getItem("userId") || "0")
+                }
               />
             </TabsContent>
           </Tabs>
@@ -327,24 +374,30 @@ const ProductDetails = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {similarProducts.map((product) => (
                 <Link key={product.id} to={`/product/${product.id}`}>
-                  <Card className="shadow-soft hover:shadow-elevated transition-shadow h-full cursor-pointer">
+                  <Card
+                    key={product.id}
+                    className="shadow-soft hover:shadow-elevated transition-shadow h-full cursor-pointer"
+                  >
                     {product.images && product.images.length > 0 && (
-                      <div className="h-48 overflow-hidden rounded-t-lg">
+                      <div className="h-24 overflow-hidden rounded-t-lg">
                         <img
                           src={getImageUrl(product.images[0].image_url)}
                           alt={product.name}
                           className="w-full h-full object-cover hover:scale-105 transition-transform"
+                          loading="lazy"
                         />
                       </div>
                     )}
-                    <CardHeader>
+                    <CardHeader className="p-4">
                       <div className="flex justify-between items-start">
                         <CardTitle className="text-lg hover:text-primary transition-colors">
                           {product.name}
                         </CardTitle>
                         {product.category && (
                           <Badge variant="secondary">
-                            {t(`categories.${product.category.toLowerCase().replace(' & ', '_')}`)}
+                            {t(
+                              `categories.${product.category.toLowerCase().replace(" & ", "_")}`,
+                            )}
                           </Badge>
                         )}
                       </div>
@@ -352,12 +405,12 @@ const ProductDetails = () => {
                         {product.description}
                       </CardDescription>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="p-4 pt-0">
                       <div className="space-y-2">
                         <div className="text-2xl font-bold text-primary">
-                          {new Intl.NumberFormat('fr-FR', {
-                            style: 'currency',
-                            currency: 'XAF',
+                          {new Intl.NumberFormat("fr-FR", {
+                            style: "currency",
+                            currency: "XAF",
                           }).format(product.price)}
                         </div>
                         <div className="flex items-center text-sm text-muted-foreground">

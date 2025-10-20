@@ -47,12 +47,14 @@ To get the project up and running on your local machine, follow these steps.
 ### Installation
 
 1.  **Clone the repository**:
+
     ```bash
     git clone https://github.com/your-username/kamer-pro.git
     cd kamer-pro
     ```
 
 2.  **Set up the backend**:
+
     ```bash
     cd backend
     cargo build
@@ -70,16 +72,16 @@ To get the project up and running on your local machine, follow these steps.
 
 ### Frontend
 
--   `npm run dev`: Starts the development server.
--   `npm run build`: Builds the application for production.
--   `npm run lint`: Lints the codebase for errors.
--   `npm run preview`: Previews the production build locally.
+- `npm run dev`: Starts the development server.
+- `npm run build`: Builds the application for production.
+- `npm run lint`: Lints the codebase for errors.
+- `npm run preview`: Previews the production build locally.
 
 ### Backend
 
--   `cargo run`: Compiles and runs the backend server.
--   `cargo build`: Compiles the backend code.
--   `cargo test`: Runs the backend tests.
+- `cargo run`: Compiles and runs the backend server.
+- `cargo build`: Compiles the backend code.
+- `cargo test`: Runs the backend tests.
 
 ## Project Structure
 

@@ -1,4 +1,4 @@
-import { createContext } from 'react';
+import { createContext } from "react";
 
 export interface CartItem {
   id: number;
@@ -23,4 +23,6 @@ export interface CartContextType {
   getCartTotal: () => number;
 }
 
-export const CartContext = createContext<CartContextType | undefined>(undefined);
+export const CartContext = createContext<CartContextType | undefined>(
+  undefined,
+);

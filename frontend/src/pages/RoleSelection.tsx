@@ -3,7 +3,13 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import apiClient from "@/api/client";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
 import { ShoppingBag, Store, Loader2 } from "lucide-react";
 import axios from "axios";
@@ -14,10 +20,9 @@ const RoleSelection = () => {
   const [isLoading, setIsLoading] = useState(false);
   const userId = 1; // Hardcoded user ID
 
-
   const handleRoleSelection = async (role: "buyer" | "seller") => {
     if (!userId) return;
-    
+
     setIsLoading(true);
     try {
       await apiClient.post("/roles", { role });
@@ -26,7 +31,7 @@ const RoleSelection = () => {
         title: t("success"),
         description: t("role_registered_successfully", { role }),
       });
- 
+
       if (role === "seller") {
         navigate("/seller-dashboard");
       } else {

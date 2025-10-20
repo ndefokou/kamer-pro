@@ -2,12 +2,33 @@ import { useState, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Navbar from "@/components/Navbar";
-import { Search, MapPin, Phone, Mail, Package, ShoppingCart, Heart } from "lucide-react";
+import {
+  Search,
+  MapPin,
+  Phone,
+  Mail,
+  Package,
+  ShoppingCart,
+  Heart,
+} from "lucide-react";
 import { useNavigate, Link } from "react-router-dom";
 import { getProducts } from "@/api/client";
 import { useCart } from "@/hooks/useCart";
@@ -65,7 +86,8 @@ const Marketplace = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { addToCart } = useCart();
-  const { addToWishlist, isInWishlist, removeFromWishlistByProduct } = useWishlist();
+  const { addToWishlist, isInWishlist, removeFromWishlistByProduct } =
+    useWishlist();
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
@@ -93,7 +115,14 @@ const Marketplace = () => {
       console.error("Failed to fetch products:", error);
     }
     setIsLoading(false);
-  }, [searchQuery, selectedCategory, selectedLocation, selectedCondition, minPrice, maxPrice]);
+  }, [
+    searchQuery,
+    selectedCategory,
+    selectedLocation,
+    selectedCondition,
+    minPrice,
+    maxPrice,
+  ]);
 
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -106,7 +135,7 @@ const Marketplace = () => {
   }, [fetchProducts]);
 
   const getImageUrl = (imagePath: string) => {
-    if (typeof imagePath === 'string' && imagePath.startsWith('http')) {
+    if (typeof imagePath === "string" && imagePath.startsWith("http")) {
       return imagePath;
     }
     return `http://localhost:8082${imagePath}`;
@@ -153,7 +182,10 @@ const Marketplace = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             <div className="space-y-1">
               <Label htmlFor="category">{t("category")}</Label>
-              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+              <Select
+                value={selectedCategory}
+                onValueChange={setSelectedCategory}
+              >
                 <SelectTrigger id="category" className="w-full">
                   <SelectValue placeholder={t("category")} />
                 </SelectTrigger>
@@ -168,7 +200,10 @@ const Marketplace = () => {
             </div>
             <div className="space-y-1">
               <Label htmlFor="location">{t("location")}</Label>
-              <Select value={selectedLocation} onValueChange={setSelectedLocation}>
+              <Select
+                value={selectedLocation}
+                onValueChange={setSelectedLocation}
+              >
                 <SelectTrigger id="location" className="w-full">
                   <SelectValue placeholder={t("location")} />
                 </SelectTrigger>
@@ -183,7 +218,10 @@ const Marketplace = () => {
             </div>
             <div className="space-y-1">
               <Label htmlFor="condition">{t("condition")}</Label>
-              <Select value={selectedCondition} onValueChange={setSelectedCondition}>
+              <Select
+                value={selectedCondition}
+                onValueChange={setSelectedCondition}
+              >
                 <SelectTrigger id="condition" className="w-full">
                   <SelectValue placeholder={t("condition")} />
                 </SelectTrigger>
@@ -231,16 +269,20 @@ const Marketplace = () => {
             <p className="text-muted-foreground">{t("no products found")}</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
             {filteredProducts.map((product) => (
-              <Card key={product.id} className="shadow-soft hover:shadow-elevated transition-shadow">
+              <Card
+                key={product.id}
+                className="shadow-soft hover:shadow-elevated transition-shadow"
+              >
                 <Link to={`/product/${product.id}`}>
                   {product.images && product.images.length > 0 && (
-                    <div className="h-48 overflow-hidden rounded-t-lg relative">
+                    <div className="h-40 overflow-hidden rounded-t-lg relative">
                       <img
                         src={getImageUrl(product.images[0].image_url)}
                         alt={product.name}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-contain"
+                        loading="lazy"
                       />
                       {token && (
                         <Button
@@ -253,32 +295,38 @@ const Marketplace = () => {
                           }}
                         >
                           <Heart
-                            className={`h-4 w-4 ${isInWishlist(parseInt(product.id)) ? 'fill-current text-red-500' : ''}`}
+                            className={`h-4 w-4 ${isInWishlist(parseInt(product.id)) ? "fill-current text-red-500" : ""}`}
                           />
                         </Button>
                       )}
                     </div>
                   )}
                 </Link>
-                <CardHeader>
+                <CardHeader className="p-4">
                   <div className="flex justify-between items-start">
                     <Link to={`/product/${product.id}`}>
                       <CardTitle className="text-xl hover:text-primary transition-colors">
                         {product.name}
                       </CardTitle>
                     </Link>
-                    {product.category && <Badge variant="secondary">{t(`categories.${product.category.toLowerCase().replace(' & ', '_')}`)}</Badge>}
+                    {product.category && (
+                      <Badge variant="secondary">
+                        {t(
+                          `categories.${product.category.toLowerCase().replace(" & ", "_")}`,
+                        )}
+                      </Badge>
+                    )}
                   </div>
                   <CardDescription className="line-clamp-2">
                     {product.description}
                   </CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-4 pt-0">
                   <div className="space-y-2">
                     <div className="text-2xl font-bold text-primary">
-                      {new Intl.NumberFormat('fr-FR', {
-                        style: 'currency',
-                        currency: 'XAF',
+                      {new Intl.NumberFormat("fr-FR", {
+                        style: "currency",
+                        currency: "XAF",
                       }).format(product.price)}
                     </div>
                     <div className="flex items-center text-sm text-muted-foreground">
@@ -287,7 +335,7 @@ const Marketplace = () => {
                     </div>
                   </div>
                 </CardContent>
-                <CardFooter className="flex-col items-start space-y-2">
+                <CardFooter className="flex-col items-start space-y-2 p-4 pt-0">
                   {token && (
                     <Button
                       className="w-full"
@@ -300,7 +348,10 @@ const Marketplace = () => {
                   {product.contact_phone && (
                     <div className="flex items-center text-sm w-full">
                       <Phone className="h-4 w-4 mr-2 text-primary" />
-                      <a href={`tel:${product.contact_phone}`} className="hover:underline">
+                      <a
+                        href={`tel:${product.contact_phone}`}
+                        className="hover:underline"
+                      >
                         {product.contact_phone}
                       </a>
                     </div>
@@ -308,7 +359,10 @@ const Marketplace = () => {
                   {product.contact_email && (
                     <div className="flex items-center text-sm w-full">
                       <Mail className="h-4 w-4 mr-2 text-primary" />
-                      <a href={`mailto:${product.contact_email}`} className="hover:underline">
+                      <a
+                        href={`mailto:${product.contact_email}`}
+                        className="hover:underline"
+                      >
                         {product.contact_email}
                       </a>
                     </div>

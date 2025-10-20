@@ -1,57 +1,59 @@
-import React, { useState, useEffect } from 'react';
-import { isAxiosError } from 'axios';
-import apiClient from '@/api/client';
-import { useToast } from '@/hooks/use-toast';
+import React, { useState, useEffect } from "react";
+import { isAxiosError } from "axios";
+import apiClient from "@/api/client";
+import { useToast } from "@/hooks/use-toast";
 import {
   WishlistItem,
   WishlistContextType,
   WishlistContext,
-} from './WishlistContextTypes';
+} from "./WishlistContextTypes";
 
-export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
   const [wishlistItems, setWishlistItems] = useState<WishlistItem[]>([]);
   const [wishlistCount, setWishlistCount] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
   const refreshWishlist = async () => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem("token");
     if (!token) return;
 
     try {
-      const response = await apiClient.get('/wishlist');
+      const response = await apiClient.get("/wishlist");
       setWishlistItems(response.data);
       setWishlistCount(response.data.length);
     } catch (error) {
-      console.error('Failed to fetch wishlist:', error);
+      console.error("Failed to fetch wishlist:", error);
     }
   };
 
   const addToWishlist = async (productId: number) => {
     setIsLoading(true);
     try {
-      await apiClient.post('/wishlist', { product_id: productId });
+      await apiClient.post("/wishlist", { product_id: productId });
       await refreshWishlist();
       toast({
-        title: 'Success',
-        description: 'Item added to wishlist',
+        title: "Success",
+        description: "Item added to wishlist",
       });
     } catch (error: unknown) {
-      let message = 'Failed to add item to wishlist';
+      let message = "Failed to add item to wishlist";
       if (isAxiosError(error) && error.response?.data?.message) {
         message = error.response.data.message;
       }
 
-      if (message.includes('already in wishlist')) {
+      if (message.includes("already in wishlist")) {
         toast({
-          title: 'Info',
-          description: 'Item is already in your wishlist',
+          title: "Info",
+          description: "Item is already in your wishlist",
         });
       } else {
         toast({
-          title: 'Error',
+          title: "Error",
           description: message,
-          variant: 'destructive',
+          variant: "destructive",
         });
       }
     } finally {
@@ -65,18 +67,18 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       await apiClient.delete(`/wishlist/${id}`);
       await refreshWishlist();
       toast({
-        title: 'Success',
-        description: 'Item removed from wishlist',
+        title: "Success",
+        description: "Item removed from wishlist",
       });
     } catch (error: unknown) {
-      let description = 'Failed to remove item';
+      let description = "Failed to remove item";
       if (isAxiosError(error) && error.response?.data?.message) {
         description = error.response.data.message;
       }
       toast({
-        title: 'Error',
+        title: "Error",
         description,
-        variant: 'destructive',
+        variant: "destructive",
       });
     } finally {
       setIsLoading(false);
@@ -89,18 +91,18 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       await apiClient.delete(`/wishlist/product/${productId}`);
       await refreshWishlist();
       toast({
-        title: 'Success',
-        description: 'Item removed from wishlist',
+        title: "Success",
+        description: "Item removed from wishlist",
       });
     } catch (error: unknown) {
-      let description = 'Failed to remove item';
+      let description = "Failed to remove item";
       if (isAxiosError(error) && error.response?.data?.message) {
         description = error.response.data.message;
       }
       toast({
-        title: 'Error',
+        title: "Error",
         description,
-        variant: 'destructive',
+        variant: "destructive",
       });
     } finally {
       setIsLoading(false);
@@ -108,7 +110,7 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const isInWishlist = (productId: number): boolean => {
-    return wishlistItems.some(item => item.product_id === productId);
+    return wishlistItems.some((item) => item.product_id === productId);
   };
 
   const checkWishlist = async (productId: number): Promise<boolean> => {
@@ -142,4 +144,3 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     </WishlistContext.Provider>
   );
 };
-

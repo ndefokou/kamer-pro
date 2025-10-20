@@ -1,15 +1,18 @@
 import { useLocation } from "react-router-dom";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
- 
+
 const NotFound = () => {
   const location = useLocation();
   const { t } = useTranslation();
- 
+
   useEffect(() => {
-    console.error("404 Error: User attempted to access non-existent route:", location.pathname);
+    console.error(
+      "404 Error: User attempted to access non-existent route:",
+      location.pathname,
+    );
   }, [location.pathname]);
- 
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-100">
       <div className="text-center">
@@ -22,5 +25,5 @@ const NotFound = () => {
     </div>
   );
 };
- 
+
 export default NotFound;

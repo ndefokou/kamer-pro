@@ -1,11 +1,11 @@
-import axios from 'axios';
+import axios from "axios";
 
 const apiClient = axios.create({
-  baseURL: 'http://localhost:8082/api',
+  baseURL: "http://localhost:8082/api",
 });
 
 apiClient.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem("token");
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -13,12 +13,12 @@ apiClient.interceptors.request.use((config) => {
 });
 
 export const getRoles = async () => {
-  const response = await apiClient.get('/roles');
+  const response = await apiClient.get("/roles");
   return response.data;
 };
 
 export const addRole = async (role: string) => {
-  const response = await apiClient.post('/roles', { role });
+  const response = await apiClient.post("/roles", { role });
   return response.data;
 };
 
@@ -39,6 +39,6 @@ export interface ProductFilters {
 }
 
 export const getProducts = async (filters: ProductFilters) => {
-  const response = await apiClient.get('/products', { params: filters });
+  const response = await apiClient.get("/products", { params: filters });
   return response.data;
 };

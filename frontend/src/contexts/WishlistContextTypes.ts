@@ -1,4 +1,4 @@
-import { createContext } from 'react';
+import { createContext } from "react";
 
 export interface WishlistItem {
   id: number;
@@ -23,4 +23,6 @@ export interface WishlistContextType {
   refreshWishlist: () => Promise<void>;
 }
 
-export const WishlistContext = createContext<WishlistContextType | undefined>(undefined);
+export const WishlistContext = createContext<WishlistContextType | undefined>(
+  undefined,
+);

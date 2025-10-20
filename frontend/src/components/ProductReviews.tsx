@@ -8,13 +8,32 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Star, ThumbsUp, ThumbsDown, CheckCircle, Upload, Send } from "lucide-react";
+import {
+  Star,
+  ThumbsUp,
+  ThumbsDown,
+  CheckCircle,
+  Upload,
+  Send,
+} from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useDropzone } from "react-dropzone";
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
 
 interface Review {
   id: number;
@@ -48,7 +67,10 @@ interface ProductReviewsProps {
   isProductOwner?: boolean;
 }
 
-export const ProductReviews = ({ productId, isProductOwner = false }: ProductReviewsProps) => {
+export const ProductReviews = ({
+  productId,
+  isProductOwner = false,
+}: ProductReviewsProps) => {
   const { t } = useTranslation();
   const { toast } = useToast();
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -61,18 +83,20 @@ export const ProductReviews = ({ productId, isProductOwner = false }: ProductRev
   const [images, setImages] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [responseTexts, setResponseTexts] = useState<{ [key: number]: string }>({});
+  const [responseTexts, setResponseTexts] = useState<{ [key: number]: string }>(
+    {},
+  );
   const token = localStorage.getItem("token");
 
   const onDrop = (acceptedFiles: File[]) => {
     setImages([...images, ...acceptedFiles]);
-    const newPreviews = acceptedFiles.map(file => URL.createObjectURL(file));
+    const newPreviews = acceptedFiles.map((file) => URL.createObjectURL(file));
     setPreviews([...previews, ...newPreviews]);
   };
 
   const { getRootProps, getInputProps } = useDropzone({
     onDrop,
-    accept: { 'image/*': ['.jpeg', '.png', '.jpg'] },
+    accept: { "image/*": [".jpeg", ".png", ".jpg"] },
     multiple: true,
     maxFiles: 5,
   });
@@ -88,7 +112,9 @@ export const ProductReviews = ({ productId, isProductOwner = false }: ProductRev
 
   const fetchStats = useCallback(async () => {
     try {
-      const response = await apiClient.get(`/reviews/products/${productId}/stats`);
+      const response = await apiClient.get(
+        `/reviews/products/${productId}/stats`,
+      );
       setStats(response.data);
     } catch (error) {
       console.error("Failed to fetch review stats:", error);
@@ -126,7 +152,7 @@ export const ProductReviews = ({ productId, isProductOwner = false }: ProductRev
     formData.append("rating", rating.toString());
     if (title) formData.append("title", title);
     if (comment) formData.append("comment", comment);
-    images.forEach(image => {
+    images.forEach((image) => {
       formData.append("images[]", image);
     });
 
@@ -152,7 +178,8 @@ export const ProductReviews = ({ productId, isProductOwner = false }: ProductRev
       const axiosError = error as AxiosError<{ message: string }>;
       toast({
         title: "Error",
-        description: axiosError.response?.data?.message || "Failed to submit review",
+        description:
+          axiosError.response?.data?.message || "Failed to submit review",
         variant: "destructive",
       });
     } finally {
@@ -171,7 +198,9 @@ export const ProductReviews = ({ productId, isProductOwner = false }: ProductRev
     }
 
     try {
-      await apiClient.post(`/reviews/${reviewId}/vote`, { is_helpful: isHelpful });
+      await apiClient.post(`/reviews/${reviewId}/vote`, {
+        is_helpful: isHelpful,
+      });
       fetchReviews();
     } catch (error) {
       toast({
@@ -208,20 +237,31 @@ export const ProductReviews = ({ productId, isProductOwner = false }: ProductRev
       const axiosError = error as AxiosError<{ message: string }>;
       toast({
         title: "Error",
-        description: axiosError.response?.data?.message || "Failed to add response",
+        description:
+          axiosError.response?.data?.message || "Failed to add response",
         variant: "destructive",
       });
     }
   };
 
-  const StarRating = ({ value, onHover, onClick }: { value: number; onHover?: (v: number) => void; onClick?: (v: number) => void }) => {
+  const StarRating = ({
+    value,
+    onHover,
+    onClick,
+  }: {
+    value: number;
+    onHover?: (v: number) => void;
+    onClick?: (v: number) => void;
+  }) => {
     return (
       <div className="flex gap-1">
         {[1, 2, 3, 4, 5].map((star) => (
           <Star
             key={star}
             className={`h-5 w-5 cursor-pointer transition-colors ${
-              star <= value ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
+              star <= value
+                ? "fill-yellow-400 text-yellow-400"
+                : "text-gray-300"
             }`}
             onMouseEnter={() => onHover?.(star)}
             onMouseLeave={() => onHover?.(0)}
@@ -233,15 +273,15 @@ export const ProductReviews = ({ productId, isProductOwner = false }: ProductRev
   };
 
   const getRatingDistribution = (rating: number) => {
-    const dist = stats?.rating_distribution.find(d => d.rating === rating);
+    const dist = stats?.rating_distribution.find((d) => d.rating === rating);
     return dist ? dist.count : 0;
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
     });
   };
 
@@ -256,7 +296,9 @@ export const ProductReviews = ({ productId, isProductOwner = false }: ProductRev
           <CardContent>
             <div className="grid md:grid-cols-2 gap-6">
               <div className="text-center">
-                <div className="text-5xl font-bold mb-2">{stats.average_rating.toFixed(1)}</div>
+                <div className="text-5xl font-bold mb-2">
+                  {stats.average_rating.toFixed(1)}
+                </div>
                 <StarRating value={Math.round(stats.average_rating)} />
                 <p className="text-sm text-muted-foreground mt-2">
                   Based on {stats.total_reviews} reviews
@@ -265,12 +307,17 @@ export const ProductReviews = ({ productId, isProductOwner = false }: ProductRev
               <div className="space-y-2">
                 {[5, 4, 3, 2, 1].map((rating) => {
                   const count = getRatingDistribution(rating);
-                  const percentage = stats.total_reviews > 0 ? (count / stats.total_reviews) * 100 : 0;
+                  const percentage =
+                    stats.total_reviews > 0
+                      ? (count / stats.total_reviews) * 100
+                      : 0;
                   return (
                     <div key={rating} className="flex items-center gap-2">
                       <span className="text-sm w-12">{rating} star</span>
                       <Progress value={percentage} className="flex-1" />
-                      <span className="text-sm text-muted-foreground w-12">{count}</span>
+                      <span className="text-sm text-muted-foreground w-12">
+                        {count}
+                      </span>
                     </div>
                   );
                 })}
@@ -393,7 +440,9 @@ export const ProductReviews = ({ productId, isProductOwner = false }: ProductRev
                   )}
 
                   {review.comment && (
-                    <p className="text-muted-foreground mb-4">{review.comment}</p>
+                    <p className="text-muted-foreground mb-4">
+                      {review.comment}
+                    </p>
                   )}
 
                   {review.images.length > 0 && (
@@ -450,7 +499,9 @@ export const ProductReviews = ({ productId, isProductOwner = false }: ProductRev
                           {formatDate(review.seller_response.created_at)}
                         </span>
                       </div>
-                      <p className="text-sm">{review.seller_response.response_text}</p>
+                      <p className="text-sm">
+                        {review.seller_response.response_text}
+                      </p>
                     </div>
                   )}
 

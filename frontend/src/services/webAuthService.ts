@@ -1,4 +1,4 @@
-import apiClient from '@/api/client';
+import apiClient from "@/api/client";
 
 export interface RegistrationStartResponse {
   challenge: string;
@@ -25,8 +25,10 @@ export interface AuthenticationCompleteResponse {
 }
 
 export class WebAuthService {
-  async startRegistration(username: string): Promise<RegistrationStartResponse> {
-    const response = await apiClient.post('/auth/register/start', {
+  async startRegistration(
+    username: string,
+  ): Promise<RegistrationStartResponse> {
+    const response = await apiClient.post("/auth/register/start", {
       username,
     });
     return response.data;
@@ -35,9 +37,9 @@ export class WebAuthService {
   async completeRegistration(
     username: string,
     credentialId: string,
-    publicKey: string
+    publicKey: string,
   ): Promise<RegistrationCompleteResponse> {
-    const response = await apiClient.post('/auth/register/complete', {
+    const response = await apiClient.post("/auth/register/complete", {
       username,
       credential_id: credentialId,
       public_key: publicKey,
@@ -45,8 +47,10 @@ export class WebAuthService {
     return response.data;
   }
 
-  async startAuthentication(username: string): Promise<AuthenticationStartResponse> {
-    const response = await apiClient.post('/auth/login/start', {
+  async startAuthentication(
+    username: string,
+  ): Promise<AuthenticationStartResponse> {
+    const response = await apiClient.post("/auth/login/start", {
       username,
     });
     return response.data;
@@ -54,9 +58,9 @@ export class WebAuthService {
 
   async completeAuthentication(
     username: string,
-    signature: string
+    signature: string,
   ): Promise<AuthenticationCompleteResponse> {
-    const response = await apiClient.post('/auth/login/complete', {
+    const response = await apiClient.post("/auth/login/complete", {
       username,
       signature,
     });
@@ -66,7 +70,7 @@ export class WebAuthService {
   // Helper to encode data to base64
   static arrayBufferToBase64(buffer: ArrayBuffer): string {
     const bytes = new Uint8Array(buffer);
-    let binary = '';
+    let binary = "";
     for (let i = 0; i < bytes.byteLength; i++) {
       binary += String.fromCharCode(bytes[i]);
     }

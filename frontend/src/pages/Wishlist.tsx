@@ -2,7 +2,13 @@ import { useWishlist } from "@/hooks/useWishlist";
 import { useCart } from "@/hooks/useCart";
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Heart, ShoppingCart, Trash2, MapPin } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -14,9 +20,9 @@ const Wishlist = () => {
   const { addToCart } = useCart();
 
   const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('fr-FR', {
-      style: 'currency',
-      currency: 'XAF',
+    return new Intl.NumberFormat("fr-FR", {
+      style: "currency",
+      currency: "XAF",
     }).format(price);
   };
 
@@ -33,7 +39,9 @@ const Wishlist = () => {
           <Card className="max-w-md mx-auto text-center py-12">
             <CardContent>
               <Heart className="h-24 w-24 mx-auto text-muted-foreground mb-4" />
-              <h2 className="text-2xl font-bold mb-2">{t("your wishlist is empty")}</h2>
+              <h2 className="text-2xl font-bold mb-2">
+                {t("your wishlist is empty")}
+              </h2>
               <p className="text-muted-foreground mb-6">
                 {t("save items you love to your wishlist")}
               </p>
@@ -54,20 +62,25 @@ const Wishlist = () => {
         <div className="mb-8">
           <h1 className="text-4xl font-bold mb-2">{t("my wishlist")}</h1>
           <p className="text-muted-foreground">
-            {wishlistItems.length} {wishlistItems.length === 1 ? t("item") : t("items")}
+            {wishlistItems.length}{" "}
+            {wishlistItems.length === 1 ? t("item") : t("items")}
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {wishlistItems.map((item) => (
-            <Card key={item.id} className="shadow-soft hover:shadow-elevated transition-shadow">
+            <Card
+              key={item.id}
+              className="shadow-soft hover:shadow-elevated transition-shadow"
+            >
               <Link to={`/product/${item.product_id}`}>
                 {item.product_image && (
-                  <div className="h-48 overflow-hidden rounded-t-lg">
+                  <div className="h-40 overflow-hidden rounded-t-lg">
                     <img
                       src={item.product_image}
                       alt={item.product_name}
                       className="w-full h-full object-cover hover:scale-105 transition-transform"
+                      loading="lazy"
                     />
                   </div>
                 )}
@@ -81,7 +94,9 @@ const Wishlist = () => {
                   </Link>
                   {item.product_category && (
                     <Badge variant="secondary">
-                      {t(`categories.${item.product_category.toLowerCase().replace(' & ', '_')}`)}
+                      {t(
+                        `categories.${item.product_category.toLowerCase().replace(" & ", "_")}`,
+                      )}
                     </Badge>
                   )}
                 </div>
@@ -95,7 +110,7 @@ const Wishlist = () => {
                     <MapPin className="h-4 w-4 mr-1" />
                     {item.product_location}
                   </div>
-                  {item.product_status !== 'active' && (
+                  {item.product_status !== "active" && (
                     <Badge variant="destructive">{t("not available")}</Badge>
                   )}
                 </div>
@@ -104,7 +119,7 @@ const Wishlist = () => {
                 <Button
                   className="flex-1"
                   onClick={() => handleAddToCart(item.product_id, item.id)}
-                  disabled={isLoading || item.product_status !== 'active'}
+                  disabled={isLoading || item.product_status !== "active"}
                 >
                   <ShoppingCart className="h-4 w-4 mr-2" />
                   {t("add to cart")}
