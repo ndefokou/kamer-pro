@@ -269,26 +269,26 @@ const Marketplace = () => {
             <p className="text-muted-foreground">{t("no products found")}</p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4">
             {filteredProducts.map((product) => (
               <Card
                 key={product.id}
-                className="shadow-soft hover:shadow-elevated transition-shadow"
+                className="shadow-soft hover:shadow-elevated transition-shadow flex flex-col h-full"
               >
                 <Link to={`/product/${product.id}`}>
                   {product.images && product.images.length > 0 && (
-                    <div className="h-40 overflow-hidden rounded-t-lg relative">
+                    <div className="h-48 overflow-hidden rounded-t-lg relative flex-shrink-0">
                       <img
                         src={getImageUrl(product.images[0].image_url)}
                         alt={product.name}
-                        className="w-full h-full object-contain"
+                        className="w-full h-full object-cover"
                         loading="lazy"
                       />
                       {token && (
                         <Button
                           variant="secondary"
                           size="icon"
-                          className="absolute top-2 right-2"
+                          className="absolute top-2 right-2 h-8 w-8"
                           onClick={(e) => {
                             e.preventDefault();
                             handleToggleWishlist(product.id);
@@ -302,66 +302,66 @@ const Marketplace = () => {
                     </div>
                   )}
                 </Link>
-                <CardHeader className="p-4">
-                  <div className="flex justify-between items-start">
-                    <Link to={`/product/${product.id}`}>
-                      <CardTitle className="text-xl hover:text-primary transition-colors">
+                <CardHeader className="p-3 flex-grow-0">
+                  <div className="flex justify-between items-start gap-2">
+                    <Link to={`/product/${product.id}`} className="flex-1 min-w-0">
+                      <CardTitle className="text-base hover:text-primary transition-colors line-clamp-2">
                         {product.name}
                       </CardTitle>
                     </Link>
                     {product.category && (
-                      <Badge variant="secondary">
+                      <Badge variant="secondary" className="text-xs flex-shrink-0">
                         {t(
                           `categories.${product.category.toLowerCase().replace(" & ", "_")}`,
                         )}
                       </Badge>
                     )}
                   </div>
-                  <CardDescription className="line-clamp-2">
+                  <CardDescription className="line-clamp-2 text-xs mt-1">
                     {product.description}
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="p-4 pt-0">
-                  <div className="space-y-2">
-                    <div className="text-2xl font-bold text-primary">
+                <CardContent className="p-3 pt-0 flex-grow-0">
+                  <div className="space-y-1">
+                    <div className="text-lg font-bold text-primary">
                       {new Intl.NumberFormat("fr-FR", {
                         style: "currency",
                         currency: "XAF",
                       }).format(product.price)}
                     </div>
-                    <div className="flex items-center text-sm text-muted-foreground">
-                      <MapPin className="h-4 w-4 mr-1" />
-                      {product.location}
+                    <div className="flex items-center text-xs text-muted-foreground">
+                      <MapPin className="h-3 w-3 mr-1 flex-shrink-0" />
+                      <span className="truncate">{product.location}</span>
                     </div>
                   </div>
                 </CardContent>
-                <CardFooter className="flex-col items-start space-y-2 p-4 pt-0">
+                <CardFooter className="flex-col items-start space-y-2 p-3 pt-0 mt-auto">
                   {token && (
                     <Button
-                      className="w-full"
+                      className="w-full text-xs h-8"
                       onClick={() => handleAddToCart(product.id)}
                     >
-                      <ShoppingCart className="h-4 w-4 mr-2" />
+                      <ShoppingCart className="h-3 w-3 mr-1" />
                       {t("add to cart")}
                     </Button>
                   )}
                   {product.contact_phone && (
-                    <div className="flex items-center text-sm w-full">
-                      <Phone className="h-4 w-4 mr-2 text-primary" />
+                    <div className="flex items-center text-xs w-full min-w-0">
+                      <Phone className="h-3 w-3 mr-1 text-primary flex-shrink-0" />
                       <a
                         href={`tel:${product.contact_phone}`}
-                        className="hover:underline"
+                        className="hover:underline truncate"
                       >
                         {product.contact_phone}
                       </a>
                     </div>
                   )}
                   {product.contact_email && (
-                    <div className="flex items-center text-sm w-full">
-                      <Mail className="h-4 w-4 mr-2 text-primary" />
+                    <div className="flex items-center text-xs w-full min-w-0">
+                      <Mail className="h-3 w-3 mr-1 text-primary flex-shrink-0" />
                       <a
                         href={`mailto:${product.contact_email}`}
-                        className="hover:underline"
+                        className="hover:underline truncate"
                       >
                         {product.contact_email}
                       </a>
