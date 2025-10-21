@@ -269,7 +269,7 @@ const Marketplace = () => {
             <p className="text-muted-foreground">{t("no products found")}</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-2 sm:gap-4">
             {filteredProducts.map((product) => (
               <Card
                 key={product.id}
@@ -277,7 +277,7 @@ const Marketplace = () => {
               >
                 <Link to={`/product/${product.id}`}>
                   {product.images && product.images.length > 0 && (
-                    <div className="h-48 overflow-hidden rounded-t-lg relative flex-shrink-0">
+                    <div className="h-32 sm:h-40 md:h-48 overflow-hidden rounded-t-lg relative flex-shrink-0">
                       <img
                         src={getImageUrl(product.images[0].image_url)}
                         alt={product.name}
@@ -288,85 +288,88 @@ const Marketplace = () => {
                         <Button
                           variant="secondary"
                           size="icon"
-                          className="absolute top-2 right-2 h-8 w-8"
+                          className="absolute top-1 right-1 sm:top-2 sm:right-2 h-6 w-6 sm:h-8 sm:w-8"
                           onClick={(e) => {
                             e.preventDefault();
                             handleToggleWishlist(product.id);
                           }}
                         >
                           <Heart
-                            className={`h-4 w-4 ${isInWishlist(parseInt(product.id)) ? "fill-current text-red-500" : ""}`}
+                            className={`h-3 w-3 sm:h-4 sm:w-4 ${isInWishlist(parseInt(product.id)) ? "fill-current text-red-500" : ""}`}
                           />
                         </Button>
                       )}
                     </div>
                   )}
                 </Link>
-                <CardHeader className="p-3 flex-grow-0">
-                  <div className="flex justify-between items-start gap-2">
+                <CardHeader className="p-2 sm:p-3 flex-grow-0">
+                  <div className="flex justify-between items-start gap-1 sm:gap-2">
                     <Link to={`/product/${product.id}`} className="flex-1 min-w-0">
-                      <CardTitle className="text-base hover:text-primary transition-colors line-clamp-2">
+                      <CardTitle className="text-xs sm:text-sm md:text-base hover:text-primary transition-colors line-clamp-2">
                         {product.name}
                       </CardTitle>
                     </Link>
                     {product.category && (
-                      <Badge variant="secondary" className="text-xs flex-shrink-0">
+                      <Badge variant="secondary" className="text-[10px] sm:text-xs flex-shrink-0 px-1 py-0 sm:px-2">
                         {t(
                           `categories.${product.category.toLowerCase().replace(" & ", "_")}`,
                         )}
                       </Badge>
                     )}
                   </div>
-                  <CardDescription className="line-clamp-2 text-xs mt-1">
+                  <CardDescription className="line-clamp-2 text-[10px] sm:text-xs mt-1 hidden sm:block">
                     {product.description}
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="p-3 pt-0 flex-grow-0">
-                  <div className="space-y-1">
-                    <div className="text-lg font-bold text-primary">
+                <CardContent className="p-2 sm:p-3 pt-0 flex-grow-0">
+                  <div className="space-y-0.5 sm:space-y-1">
+                    <div className="text-sm sm:text-base md:text-lg font-bold text-primary">
                       {new Intl.NumberFormat("fr-FR", {
                         style: "currency",
                         currency: "XAF",
                       }).format(product.price)}
                     </div>
-                    <div className="flex items-center text-xs text-muted-foreground">
-                      <MapPin className="h-3 w-3 mr-1 flex-shrink-0" />
+                    <div className="flex items-center text-[10px] sm:text-xs text-muted-foreground">
+                      <MapPin className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-0.5 sm:mr-1 flex-shrink-0" />
                       <span className="truncate">{product.location}</span>
                     </div>
                   </div>
                 </CardContent>
-                <CardFooter className="flex-col items-start space-y-2 p-3 pt-0 mt-auto">
+                <CardFooter className="flex-col items-start space-y-1 sm:space-y-2 p-2 sm:p-3 pt-0 mt-auto">
                   {token && (
                     <Button
-                      className="w-full text-xs h-8"
+                      className="w-full text-[10px] sm:text-xs h-7 sm:h-8"
                       onClick={() => handleAddToCart(product.id)}
                     >
-                      <ShoppingCart className="h-3 w-3 mr-1" />
-                      {t("add to cart")}
+                      <ShoppingCart className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-1" />
+                      <span className="hidden sm:inline">{t("add to cart")}</span>
+                      <span className="sm:hidden">{t("cart")}</span>
                     </Button>
                   )}
-                  {product.contact_phone && (
-                    <div className="flex items-center text-xs w-full min-w-0">
-                      <Phone className="h-3 w-3 mr-1 text-primary flex-shrink-0" />
-                      <a
-                        href={`tel:${product.contact_phone}`}
-                        className="hover:underline truncate"
-                      >
-                        {product.contact_phone}
-                      </a>
-                    </div>
-                  )}
-                  {product.contact_email && (
-                    <div className="flex items-center text-xs w-full min-w-0">
-                      <Mail className="h-3 w-3 mr-1 text-primary flex-shrink-0" />
-                      <a
-                        href={`mailto:${product.contact_email}`}
-                        className="hover:underline truncate"
-                      >
-                        {product.contact_email}
-                      </a>
-                    </div>
-                  )}
+                  <div className="hidden sm:block w-full space-y-1">
+                    {product.contact_phone && (
+                      <div className="flex items-center text-xs w-full min-w-0">
+                        <Phone className="h-3 w-3 mr-1 text-primary flex-shrink-0" />
+                        <a
+                          href={`tel:${product.contact_phone}`}
+                          className="hover:underline truncate"
+                        >
+                          {product.contact_phone}
+                        </a>
+                      </div>
+                    )}
+                    {product.contact_email && (
+                      <div className="flex items-center text-xs w-full min-w-0">
+                        <Mail className="h-3 w-3 mr-1 text-primary flex-shrink-0" />
+                        <a
+                          href={`mailto:${product.contact_email}`}
+                          className="hover:underline truncate"
+                        >
+                          {product.contact_email}
+                        </a>
+                      </div>
+                    )}
+                  </div>
                 </CardFooter>
               </Card>
             ))}
