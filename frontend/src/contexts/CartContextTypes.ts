@@ -1,15 +1,17 @@
 import { createContext } from "react";
 
-export interface CartItem {
-  id: number;
-  product_id: number;
+import { Product } from "./WishlistContextTypes";
+
+export interface CartItem extends Product {
   quantity: number;
-  product_name: string;
-  product_price: number;
-  product_image: string | null;
-  product_location: string;
-  product_status: string;
+  cart_id: number;
 }
+export interface BackendCartItem {
+  id: number;
+  quantity: number;
+  product: Product;
+}
+
 
 export interface CartContextType {
   cartItems: CartItem[];

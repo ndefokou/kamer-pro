@@ -85,37 +85,32 @@ const Cart = () => {
               <Card key={item.id}>
                 <CardContent className="p-4 sm:p-6">
                   <div className="flex flex-col sm:flex-row gap-4">
-                    {item.product_image && (
+                    {item.images && item.images.length > 0 && (
                       <img
-                        src={item.product_image}
-                        alt={item.product_name}
+                        src={item.images[0].image_url}
+                        alt={item.name}
                         className="w-full sm:w-20 h-auto sm:h-20 object-cover rounded"
                         loading="lazy"
                       />
                     )}
                     <div className="flex-1">
-                      <Link to={`/product/${item.product_id}`}>
+                      <Link to={`/product/${item.id}`}>
                         <h3 className="text-lg font-semibold hover:text-primary transition-colors">
-                          {item.product_name}
+                          {item.name}
                         </h3>
                       </Link>
                       <p className="text-sm text-muted-foreground">
-                        {item.product_location}
+                        {item.location}
                       </p>
                       <p className="text-lg font-bold text-primary mt-2">
-                        {formatPrice(item.product_price)}
+                        {formatPrice(item.price)}
                       </p>
-                      {item.product_status !== "active" && (
-                        <p className="text-sm text-destructive mt-1">
-                          {t("not available")}
-                        </p>
-                      )}
                     </div>
                     <div className="flex flex-col items-start sm:items-end justify-between mt-4 sm:mt-0">
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => removeFromCart(item.id)}
+                        onClick={() => removeFromCart(item.cart_id)}
                         disabled={isLoading}
                         className="self-end"
                       >
@@ -126,7 +121,7 @@ const Cart = () => {
                           variant="outline"
                           size="icon"
                           onClick={() =>
-                            handleQuantityChange(item.id, item.quantity, -1)
+                            handleQuantityChange(item.cart_id, item.quantity, -1)
                           }
                           disabled={isLoading || item.quantity <= 1}
                         >
@@ -138,7 +133,7 @@ const Cart = () => {
                           onChange={(e) => {
                             const value = parseInt(e.target.value);
                             if (value > 0) {
-                              updateCartItem(item.id, value);
+                              updateCartItem(item.cart_id, value);
                             }
                           }}
                           className="w-16 text-center"
@@ -148,7 +143,7 @@ const Cart = () => {
                           variant="outline"
                           size="icon"
                           onClick={() =>
-                            handleQuantityChange(item.id, item.quantity, 1)
+                            handleQuantityChange(item.cart_id, item.quantity, 1)
                           }
                           disabled={isLoading}
                         >
@@ -157,7 +152,7 @@ const Cart = () => {
                       </div>
                       <p className="text-sm font-semibold mt-2 self-end">
                         {t("subtotal")}:{" "}
-                        {formatPrice(item.product_price * item.quantity)}
+                        {formatPrice(item.price * item.quantity)}
                       </p>
                     </div>
                   </div>

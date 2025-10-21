@@ -2,7 +2,11 @@ import React, { useState, useEffect } from "react";
 import { isAxiosError } from "axios";
 import apiClient from "@/api/client";
 import { useToast } from "@/hooks/use-toast";
-import { CartContext, CartItem } from "./CartContextTypes";
+import {
+  CartContext,
+  CartItem,
+  BackendCartItem,
+} from "./CartContextTypes";
 
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
@@ -18,7 +22,11 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({
 
     try {
       const response = await apiClient.get("/cart");
-      setCartItems(response.data);
+      setCartItems(response.data.map((item: BackendCartItem) => ({
+        ...item.product,
+        quantity: item.quantity,
+        cart_id: item.id,
+      })));
       setCartCount(response.data.length);
     } catch (error) {
       console.error("Failed to fetch cart:", error);
@@ -135,7 +143,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const getCartTotal = () => {
     return cartItems.reduce(
-      (total, item) => total + item.product_price * item.quantity,
+      (total, item) => total + item.price * item.quantity,
       0,
     );
   };

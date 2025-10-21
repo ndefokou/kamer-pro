@@ -20,16 +20,16 @@ const queryClient = new QueryClient();
 
 const router = createBrowserRouter(
   [
-    { path: "/", element: <Index /> },
-    { path: "/role-selection", element: <RoleSelection /> },
-    { path: "/marketplace", element: <Marketplace /> },
-    { path: "/seller-dashboard", element: <SellerDashboard /> },
-    { path: "/product/:id", element: <ProductDetails /> },
-    { path: "/cart", element: <Cart /> },
-    { path: "/wishlist", element: <Wishlist /> },
-    { path: "/webauth-login", element: <WebAuthLogin /> },
-    { path: "/webauth-register", element: <WebAuthRegister /> },
-    { path: "*", element: <NotFound /> },
+    { path: "/", Component: Index },
+    { path: "/role-selection", Component: RoleSelection },
+    { path: "/marketplace", Component: Marketplace },
+    { path: "/seller-dashboard", Component: SellerDashboard },
+    { path: "/product/:id", Component: ProductDetails },
+    { path: "/cart", Component: Cart },
+    { path: "/wishlist", Component: Wishlist },
+    { path: "/webauth-login", Component: WebAuthLogin },
+    { path: "/webauth-register", Component: WebAuthRegister },
+    { path: "*", Component: NotFound },
   ],
   {
     future: {

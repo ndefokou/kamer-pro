@@ -6,6 +6,7 @@ import {
   WishlistItem,
   WishlistContextType,
   WishlistContext,
+  ApiWishlistItem,
 } from "./WishlistContextTypes";
 
 export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({
@@ -22,7 +23,10 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({
 
     try {
       const response = await apiClient.get("/wishlist");
-      setWishlistItems(response.data);
+      setWishlistItems(response.data.map((item: ApiWishlistItem) => ({
+        ...item.product,
+        wishlist_id: item.id,
+      })));
       setWishlistCount(response.data.length);
     } catch (error) {
       console.error("Failed to fetch wishlist:", error);
@@ -110,7 +114,7 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const isInWishlist = (productId: number): boolean => {
-    return wishlistItems.some((item) => item.product_id === productId);
+    return wishlistItems.some((item) => parseInt(item.id) === productId);
   };
 
   const checkWishlist = async (productId: number): Promise<boolean> => {

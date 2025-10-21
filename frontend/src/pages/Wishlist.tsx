@@ -10,7 +10,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Heart, ShoppingCart, Trash2, MapPin } from "lucide-react";
+import { Heart, ShoppingCart, Trash2 } from "lucide-react";
+import ProductCard from "@/components/ProductCard";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
@@ -29,6 +30,20 @@ const Wishlist = () => {
   const handleAddToCart = async (productId: number, wishlistId: number) => {
     await addToCart(productId, 1);
     await removeFromWishlist(wishlistId);
+  };
+
+  const handleToggleWishlist = (productId: string) => {
+    const item = wishlistItems.find((item) => item.id === productId);
+    if (item) {
+      removeFromWishlist(item.wishlist_id);
+    }
+  };
+
+  const getImageUrl = (imagePath: string) => {
+    if (imagePath.startsWith("http")) {
+      return imagePath;
+    }
+    return `http://localhost:8082${imagePath}`;
   };
 
   if (wishlistItems.length === 0) {
@@ -67,73 +82,17 @@ const Wishlist = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-2 sm:gap-4">
           {wishlistItems.map((item) => (
-            <Card
+            <ProductCard
               key={item.id}
-              className="shadow-soft hover:shadow-elevated transition-shadow"
-            >
-              <Link to={`/product/${item.product_id}`}>
-                {item.product_image && (
-                  <div className="h-40 overflow-hidden rounded-t-lg">
-                    <img
-                      src={item.product_image}
-                      alt={item.product_name}
-                      className="w-full h-full object-cover hover:scale-105 transition-transform"
-                      loading="lazy"
-                    />
-                  </div>
-                )}
-              </Link>
-              <CardHeader>
-                <div className="flex justify-between items-start">
-                  <Link to={`/product/${item.product_id}`}>
-                    <CardTitle className="text-xl hover:text-primary transition-colors">
-                      {item.product_name}
-                    </CardTitle>
-                  </Link>
-                  {item.product_category && (
-                    <Badge variant="secondary">
-                      {t(
-                        `categories.${item.product_category.toLowerCase().replace(" & ", "_")}`,
-                      )}
-                    </Badge>
-                  )}
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <div className="text-2xl font-bold text-primary">
-                    {formatPrice(item.product_price)}
-                  </div>
-                  <div className="flex items-center text-sm text-muted-foreground">
-                    <MapPin className="h-4 w-4 mr-1" />
-                    {item.product_location}
-                  </div>
-                  {item.product_status !== "active" && (
-                    <Badge variant="destructive">{t("not available")}</Badge>
-                  )}
-                </div>
-              </CardContent>
-              <CardFooter className="flex gap-2">
-                <Button
-                  className="flex-1"
-                  onClick={() => handleAddToCart(item.product_id, item.id)}
-                  disabled={isLoading || item.product_status !== "active"}
-                >
-                  <ShoppingCart className="h-4 w-4 mr-2" />
-                  {t("add to cart")}
-                </Button>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => removeFromWishlist(item.id)}
-                  disabled={isLoading}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </CardFooter>
-            </Card>
+              product={item}
+              token={localStorage.getItem("token")}
+              isInWishlist={() => true}
+              handleToggleWishlist={handleToggleWishlist}
+              handleAddToCart={() => handleAddToCart(parseInt(item.id), item.wishlist_id)}
+              getImageUrl={getImageUrl}
+            />
           ))}
         </div>
       </div>

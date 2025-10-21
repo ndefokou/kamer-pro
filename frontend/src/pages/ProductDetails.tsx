@@ -34,6 +34,7 @@ import { useCart } from "@/hooks/useCart";
 import { useWishlist } from "@/hooks/useWishlist";
 import { ProductReviews } from "@/components/ProductReviews";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import ProductCard from "@/components/ProductCard";
 
 interface Product {
   id: string;
@@ -116,6 +117,27 @@ const ProductDetails = () => {
       } else {
         addToWishlist(productIdNum);
       }
+    }
+  };
+
+  const handleSimilarAddToCart = (productId: string) => {
+    if (!token) {
+      navigate("/webauth-login");
+      return;
+    }
+    addToCart(parseInt(productId), 1);
+  };
+
+  const handleSimilarToggleWishlist = (productId: string) => {
+    if (!token) {
+      navigate("/webauth-login");
+      return;
+    }
+    const productIdNum = parseInt(productId);
+    if (isInWishlist(productIdNum)) {
+      removeFromWishlistByProduct(productIdNum);
+    } else {
+      addToWishlist(productIdNum);
     }
   };
 
@@ -371,56 +393,17 @@ const ProductDetails = () => {
         {similarProducts.length > 0 && (
           <div className="mt-12">
             <h2 className="text-3xl font-bold mb-6">{t("similar products")}</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {similarProducts.map((product) => (
-                <Link key={product.id} to={`/product/${product.id}`}>
-                  <Card
-                    key={product.id}
-                    className="shadow-soft hover:shadow-elevated transition-shadow h-full cursor-pointer"
-                  >
-                    {product.images && product.images.length > 0 && (
-                      <div className="h-24 overflow-hidden rounded-t-lg">
-                        <img
-                          src={getImageUrl(product.images[0].image_url)}
-                          alt={product.name}
-                          className="w-full h-full object-cover hover:scale-105 transition-transform"
-                          loading="lazy"
-                        />
-                      </div>
-                    )}
-                    <CardHeader className="p-4">
-                      <div className="flex justify-between items-start">
-                        <CardTitle className="text-lg hover:text-primary transition-colors">
-                          {product.name}
-                        </CardTitle>
-                        {product.category && (
-                          <Badge variant="secondary">
-                            {t(
-                              `categories.${product.category.toLowerCase().replace(" & ", "_")}`,
-                            )}
-                          </Badge>
-                        )}
-                      </div>
-                      <CardDescription className="line-clamp-2">
-                        {product.description}
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="p-4 pt-0">
-                      <div className="space-y-2">
-                        <div className="text-2xl font-bold text-primary">
-                          {new Intl.NumberFormat("fr-FR", {
-                            style: "currency",
-                            currency: "XAF",
-                          }).format(product.price)}
-                        </div>
-                        <div className="flex items-center text-sm text-muted-foreground">
-                          <MapPin className="h-4 w-4 mr-1" />
-                          {product.location}
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </Link>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-2 sm:gap-4">
+              {similarProducts.map((p) => (
+                <ProductCard
+                  key={p.id}
+                  product={p}
+                  token={token}
+                  isInWishlist={isInWishlist}
+                  handleToggleWishlist={handleSimilarToggleWishlist}
+                  handleAddToCart={handleSimilarAddToCart}
+                  getImageUrl={getImageUrl}
+                />
               ))}
             </div>
           </div>
