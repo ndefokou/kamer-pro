@@ -8,8 +8,13 @@ export interface CartItem extends Product {
 }
 export interface BackendCartItem {
   id: number;
+  product_id: number;
   quantity: number;
-  product: Product;
+  product_name: string;
+  product_price: number;
+  product_image: string | null;
+  product_location: string;
+  product_status: string;
 }
 
 

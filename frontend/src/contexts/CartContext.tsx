@@ -22,11 +22,21 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({
 
     try {
       const response = await apiClient.get("/cart");
-      setCartItems(response.data.map((item: BackendCartItem) => ({
-        ...item.product,
-        quantity: item.quantity,
-        cart_id: item.id,
-      })));
+      setCartItems(
+        response.data.map((item: BackendCartItem) => ({
+          id: item.product_id.toString(),
+          name: item.product_name,
+          price: item.product_price,
+          location: item.product_location,
+          images: item.product_image ? [{ image_url: item.product_image }] : [],
+          description: "",
+          category: "",
+          contact_phone: null,
+          contact_email: null,
+          quantity: item.quantity,
+          cart_id: item.id,
+        })),
+      );
       setCartCount(response.data.length);
     } catch (error) {
       console.error("Failed to fetch cart:", error);
