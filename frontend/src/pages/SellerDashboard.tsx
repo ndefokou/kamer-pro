@@ -42,6 +42,7 @@ import {
 } from "lucide-react";
 import { useDropzone } from "react-dropzone";
 import Navbar from "@/components/Navbar";
+import ProductCard from "@/components/ProductCard";
 
 interface Product {
   id: number;
@@ -524,94 +525,27 @@ const SellerDashboard = () => {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-2 sm:gap-4">
             {products
               .filter(
                 (p) => filterStatus === "all" || p.status === filterStatus,
               )
               .map((product) => (
-                <Card key={product.id} className="flex flex-col">
-                  <CardHeader>
-                    <div className="aspect-w-16 aspect-h-9 mb-4 h-36 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden">
-                      {product.images && product.images.length > 0 ? (
-                        <img
-                          src={getImageUrl(product.images[0].image_url)}
-                          alt={product.name}
-                          className="object-cover w-full h-full"
-                          loading="lazy"
-                        />
-                      ) : (
-                        <div className="text-gray-400">{t("no image")}</div>
-                      )}
-                    </div>
-                    <div className="flex justify-between items-start">
-                      <CardTitle className="text-xl">{product.name}</CardTitle>
-                      <div className="flex items-center space-x-2">
-                        {product.condition && (
-                          <Badge variant="outline">
-                            {t(
-                              `conditions.${product.condition.toLowerCase().replace("-", " ")}`,
-                            )}
-                          </Badge>
-                        )}
-                        <Badge
-                          variant={
-                            product.status === "active"
-                              ? "default"
-                              : "secondary"
-                          }
-                        >
-                          {t(product.status)}
-                        </Badge>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="flex-grow">
-                    <p className="text-muted-foreground text-sm mb-4">
-                      {product.description.substring(0, 100)}...
-                    </p>
-                    <div className="flex justify-between items-center mb-4">
-                      <p className="text-lg font-semibold">
-                        {product.price} XAF
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        {product.location}
-                      </p>
-                    </div>
-                    <div className="space-y-2">
-                      {product.contact_phone && (
-                        <div className="flex items-center text-sm text-muted-foreground">
-                          <Phone className="h-4 w-4 mr-2" />
-                          <span>{product.contact_phone}</span>
-                        </div>
-                      )}
-                      {product.contact_email && (
-                        <div className="flex items-center text-sm text-muted-foreground">
-                          <Mail className="h-4 w-4 mr-2" />
-                          <span>{product.contact_email}</span>
-                        </div>
-                      )}
-                    </div>
-                  </CardContent>
-                  <CardFooter className="flex justify-end space-x-2 mt-auto pt-4">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleOpenDialog(product)}
-                    >
-                      <Edit2 className="h-4 w-4 mr-1" />
-                      {t("edit")}
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => handleDelete(product.id)}
-                    >
-                      <Trash2 className="h-4 w-4 mr-1" />
-                      {t("delete")}
-                    </Button>
-                  </CardFooter>
-                </Card>
+                <ProductCard
+                  key={product.id}
+                  product={{
+                    ...product,
+                    id: product.id.toString(),
+                    contact_phone: product.contact_phone ?? null,
+                    contact_email: product.contact_email ?? null,
+                    images: product.images ?? [],
+                  }}
+                  token={localStorage.getItem("token")}
+                  getImageUrl={getImageUrl}
+                  variant="seller"
+                  onEdit={() => handleOpenDialog(product)}
+                  onDelete={() => handleDelete(product.id)}
+                />
               ))}
           </div>
         )}

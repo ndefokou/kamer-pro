@@ -2,7 +2,7 @@ import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Phone, Mail, ShoppingCart, Heart } from "lucide-react";
+import { MapPin, Phone, Mail, ShoppingCart, Heart, Edit2, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
 
 interface Product {
@@ -16,15 +16,20 @@ interface Product {
   contact_email: string | null;
   images: { image_url: string }[];
   created_at?: string;
+  status?: "active" | "inactive";
+  condition?: string;
 }
 
 interface ProductCardProps {
   product: Product;
   token: string | null;
-  isInWishlist: (productId: number) => boolean;
-  handleToggleWishlist: (productId: string) => void;
-  handleAddToCart: (productId: string) => void;
+  isInWishlist?: (productId: number) => boolean;
+  handleToggleWishlist?: (productId: string) => void;
+  handleAddToCart?: (productId: string) => void;
   getImageUrl: (imagePath: string) => string;
+  variant?: "marketplace" | "seller";
+  onEdit?: () => void;
+  onDelete?: () => void;
 }
 
 const ProductCard = ({
@@ -34,6 +39,9 @@ const ProductCard = ({
   handleToggleWishlist,
   handleAddToCart,
   getImageUrl,
+  variant = "marketplace",
+  onEdit,
+  onDelete,
 }: ProductCardProps) => {
   const { t } = useTranslation();
 
@@ -51,7 +59,7 @@ const ProductCard = ({
               className="w-full h-full object-cover"
               loading="lazy"
             />
-            {token && (
+            {variant === "marketplace" && token && handleToggleWishlist && isInWishlist && (
               <Button
                 variant="secondary"
                 size="icon"
@@ -69,6 +77,14 @@ const ProductCard = ({
                   }`}
                 />
               </Button>
+            )}
+            {variant === "seller" && product.status && (
+              <Badge
+                variant={product.status === "active" ? "default" : "secondary"}
+                className="absolute top-2 right-2"
+              >
+                {t(product.status)}
+              </Badge>
             )}
           </div>
         )}
@@ -112,7 +128,7 @@ const ProductCard = ({
         </div>
       </CardContent>
       <CardFooter className="flex-col items-start space-y-1 sm:space-y-2 p-2 sm:p-3 pt-0 mt-auto">
-        {token && (
+        {variant === "marketplace" && token && handleAddToCart && (
           <Button
             className="w-full text-[10px] sm:text-xs h-7 sm:h-8"
             onClick={() => handleAddToCart(product.id)}
@@ -122,30 +138,44 @@ const ProductCard = ({
             <span className="sm:hidden">{t("cart")}</span>
           </Button>
         )}
-        <div className="hidden sm:block w-full space-y-1">
-          {product.contact_phone && (
-            <div className="flex items-center text-xs w-full min-w-0">
-              <Phone className="h-3 w-3 mr-1 text-primary flex-shrink-0" />
-              <a
-                href={`tel:${product.contact_phone}`}
-                className="hover:underline truncate"
-              >
-                {product.contact_phone}
-              </a>
-            </div>
-          )}
-          {product.contact_email && (
-            <div className="flex items-center text-xs w-full min-w-0">
-              <Mail className="h-3 w-3 mr-1 text-primary flex-shrink-0" />
-              <a
-                href={`mailto:${product.contact_email}`}
-                className="hover:underline truncate"
-              >
-                {product.contact_email}
-              </a>
-            </div>
-          )}
-        </div>
+        {variant === "seller" && (
+          <div className="flex justify-end space-x-2 w-full">
+            <Button variant="outline" size="sm" onClick={onEdit}>
+              <Edit2 className="h-4 w-4 mr-1" />
+              {t("edit")}
+            </Button>
+            <Button variant="destructive" size="sm" onClick={onDelete}>
+              <Trash2 className="h-4 w-4 mr-1" />
+              {t("delete")}
+            </Button>
+          </div>
+        )}
+        {variant === "marketplace" && (
+          <div className="hidden sm:block w-full space-y-1">
+            {product.contact_phone && (
+              <div className="flex items-center text-xs w-full min-w-0">
+                <Phone className="h-3 w-3 mr-1 text-primary flex-shrink-0" />
+                <a
+                  href={`tel:${product.contact_phone}`}
+                  className="hover:underline truncate"
+                >
+                  {product.contact_phone}
+                </a>
+              </div>
+            )}
+            {product.contact_email && (
+              <div className="flex items-center text-xs w-full min-w-0">
+                <Mail className="h-3 w-3 mr-1 text-primary flex-shrink-0" />
+                <a
+                  href={`mailto:${product.contact_email}`}
+                  className="hover:underline truncate"
+                >
+                  {product.contact_email}
+                </a>
+              </div>
+            )}
+          </div>
+        )}
       </CardFooter>
     </Card>
   );

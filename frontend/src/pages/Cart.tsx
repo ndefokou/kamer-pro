@@ -97,89 +97,99 @@ const Cart = () => {
 
         <div className="grid md:grid-cols-3 gap-8">
           <div className="md:col-span-2 space-y-4">
-            {cartItems.map((item) => {
-              const itemPrice = item.price || 0;
-              const itemQuantity = item.quantity || 1;
-              
-              return (
-                <Card key={item.cart_id || item.id}>
-                  <CardContent className="p-4 sm:p-6">
-                    <div className="flex flex-col sm:flex-row gap-4">
-                      {item.images && item.images.length > 0 && (
-                        <img
-                          src={getImageUrl(item.images[0].image_url)}
-                          alt={item.name}
-                          className="w-full sm:w-24 h-auto sm:h-24 object-cover rounded"
-                          loading="lazy"
-                        />
-                      )}
-                      <div className="flex-1">
-                        <Link to={`/product/${item.id}`}>
-                          <h3 className="text-lg font-semibold hover:text-primary transition-colors">
-                            {item.name || "Produit sans nom"}
-                          </h3>
-                        </Link>
-                        <p className="text-sm text-muted-foreground">
-                          {item.location || "Localisation non spécifiée"}
-                        </p>
-                        <p className="text-lg font-bold text-primary mt-2">
-                          {formatPrice(itemPrice)}
-                        </p>
-                      </div>
-                      <div className="flex flex-col items-start sm:items-end justify-between mt-4 sm:mt-0">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => removeFromCart(item.cart_id)}
-                          disabled={isLoading}
-                          className="self-end"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                        <div className="flex items-center gap-2 mt-2">
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={() =>
-                              handleQuantityChange(item.cart_id, itemQuantity, -1)
-                            }
-                            disabled={isLoading || itemQuantity <= 1}
-                          >
-                            <Minus className="h-4 w-4" />
-                          </Button>
-                          <Input
-                            type="number"
-                            value={itemQuantity}
-                            onChange={(e) => {
-                              const value = parseInt(e.target.value);
-                              if (value > 0) {
-                                updateCartItem(item.cart_id, value);
-                              }
-                            }}
-                            className="w-16 text-center"
-                            disabled={isLoading}
-                            min="1"
+            {cartItems
+              .filter((item) => item.cart_id != null)
+              .map((item) => {
+                const itemPrice = item.price || 0;
+                const itemQuantity = item.quantity || 1;
+
+                return (
+                  <Card key={item.cart_id}>
+                    <CardContent className="p-4 sm:p-6">
+                      <div className="flex flex-col sm:flex-row gap-4">
+                        {item.images && item.images.length > 0 && (
+                          <img
+                            src={getImageUrl(item.images[0].image_url)}
+                            alt={item.name}
+                            className="w-full sm:w-32 h-auto sm:h-32 object-cover rounded"
+                            loading="lazy"
                           />
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={() =>
-                              handleQuantityChange(item.cart_id, itemQuantity, 1)
-                            }
-                            disabled={isLoading}
-                          >
-                            <Plus className="h-4 w-4" />
-                          </Button>
+                        )}
+                        <div className="flex-1">
+                          <Link to={`/product/${item.id}`}>
+                            <h3 className="text-lg font-semibold hover:text-primary transition-colors">
+                              {item.name || "Produit sans nom"}
+                            </h3>
+                          </Link>
+                          <p className="text-sm text-muted-foreground">
+                            {item.location || "Localisation non spécifiée"}
+                          </p>
+                          <p className="text-lg font-bold text-primary mt-2">
+                            {formatPrice(itemPrice)}
+                          </p>
                         </div>
-                        <p className="text-sm font-semibold mt-2 self-end">
-                          Sous-total: {formatPrice(itemPrice * itemQuantity)}
-                        </p>
+                        <div className="flex flex-col items-start sm:items-end justify-between mt-4 sm:mt-0">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => removeFromCart(item.cart_id)}
+                            disabled={isLoading}
+                            className="self-end"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                          <div className="flex items-center gap-2 mt-2">
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              onClick={() =>
+                                handleQuantityChange(
+                                  item.cart_id,
+                                  itemQuantity,
+                                  -1,
+                                )
+                              }
+                              disabled={isLoading || itemQuantity <= 1}
+                            >
+                              <Minus className="h-4 w-4" />
+                            </Button>
+                            <Input
+                              type="number"
+                              value={itemQuantity}
+                              onChange={(e) => {
+                                const value = parseInt(e.target.value);
+                                if (value > 0) {
+                                  updateCartItem(item.cart_id, value);
+                                }
+                              }}
+                              className="w-16 text-center"
+                              disabled={isLoading}
+                              min="1"
+                            />
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              onClick={() =>
+                                handleQuantityChange(
+                                  item.cart_id,
+                                  itemQuantity,
+                                  1,
+                                )
+                              }
+                              disabled={isLoading}
+                            >
+                              <Plus className="h-4 w-4" />
+                            </Button>
+                          </div>
+                          <p className="text-sm font-semibold mt-2 self-end">
+                            Sous-total: {formatPrice(itemPrice * itemQuantity)}
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
+                    </CardContent>
+                  </Card>
+                );
+              })}
           </div>
 
           <div className="md:col-span-1">

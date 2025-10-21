@@ -72,14 +72,21 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const updateCartItem = async (id: number, quantity: number) => {
     setIsLoading(true);
+    const originalCartItems = [...cartItems];
+    setCartItems((prevItems) =>
+      prevItems.map((item) =>
+        item.cart_id === id ? { ...item, quantity } : item,
+      ),
+    );
+
     try {
       await apiClient.put(`/cart/${id}`, { quantity });
-      await refreshCart();
       toast({
         title: "Success",
         description: "Cart updated",
       });
     } catch (error) {
+      setCartItems(originalCartItems);
       let errorMessage = "Failed to update cart";
       if (
         isAxiosError(error) &&
@@ -99,14 +106,18 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const removeFromCart = async (id: number) => {
     setIsLoading(true);
+    const originalCartItems = [...cartItems];
+    setCartItems((prevItems) => prevItems.filter((item) => item.cart_id !== id));
+    setCartCount((prevCount) => prevCount - 1);
+
     try {
       await apiClient.delete(`/cart/${id}`);
-      await refreshCart();
       toast({
         title: "Success",
         description: "Item removed from cart",
       });
     } catch (error) {
+      setCartItems(originalCartItems);
       let errorMessage = "Failed to remove item";
       if (
         isAxiosError(error) &&
@@ -126,9 +137,12 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const clearCart = async () => {
     setIsLoading(true);
+    const originalCartItems = [...cartItems];
+    setCartItems([]);
+    setCartCount(0);
+
     try {
       await apiClient.delete("/cart");
-      await refreshCart();
       toast({
         title: "Success",
         description: "Cart cleared",
