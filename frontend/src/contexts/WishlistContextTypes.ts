@@ -18,7 +18,12 @@ export interface WishlistItem extends Product {
 }
 export interface ApiWishlistItem {
   id: number;
-  product: Product;
+  product_id: number;
+  product_name: string;
+  product_price: number;
+  product_location: string;
+  product_category: string;
+  product_image: string | null;
 }
 
 

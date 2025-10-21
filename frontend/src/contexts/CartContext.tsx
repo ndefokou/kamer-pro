@@ -142,10 +142,11 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const getCartTotal = () => {
-    return cartItems.reduce(
-      (total, item) => total + item.price * item.quantity,
-      0,
-    );
+    return cartItems.reduce((total, item) => {
+      const price = item.price || 0;
+      const quantity = item.quantity || 0;
+      return total + price * quantity;
+    }, 0);
   };
 
   useEffect(() => {

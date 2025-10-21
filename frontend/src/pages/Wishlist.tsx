@@ -5,12 +5,8 @@ import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Heart, ShoppingCart, Trash2 } from "lucide-react";
+import { Heart } from "lucide-react";
 import ProductCard from "@/components/ProductCard";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -20,16 +16,10 @@ const Wishlist = () => {
   const { wishlistItems, removeFromWishlist, isLoading } = useWishlist();
   const { addToCart } = useCart();
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat("fr-FR", {
-      style: "currency",
-      currency: "XAF",
-    }).format(price);
-  };
-
   const handleAddToCart = async (productId: number, wishlistId: number) => {
     await addToCart(productId, 1);
-    await removeFromWishlist(wishlistId);
+    // Optionally remove from wishlist after adding to cart
+    // await removeFromWishlist(wishlistId);
   };
 
   const handleToggleWishlist = (productId: string) => {
@@ -40,9 +30,8 @@ const Wishlist = () => {
   };
 
   const getImageUrl = (imagePath: string) => {
-    if (imagePath.startsWith("http")) {
-      return imagePath;
-    }
+    if (!imagePath) return "/placeholder-image.png";
+    if (imagePath.startsWith("http")) return imagePath;
     return `http://localhost:8082${imagePath}`;
   };
 
@@ -55,13 +44,13 @@ const Wishlist = () => {
             <CardContent>
               <Heart className="h-24 w-24 mx-auto text-muted-foreground mb-4" />
               <h2 className="text-2xl font-bold mb-2">
-                {t("your wishlist is empty")}
+                Ma liste de souhaits
               </h2>
               <p className="text-muted-foreground mb-6">
-                {t("save items you love to your wishlist")}
+                Votre liste de souhaits est vide
               </p>
               <Link to="/marketplace">
-                <Button>{t("browse products")}</Button>
+                <Button>Découvrir des produits</Button>
               </Link>
             </CardContent>
           </Card>
@@ -75,17 +64,17 @@ const Wishlist = () => {
       <Navbar />
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2">{t("my wishlist")}</h1>
+          <h1 className="text-4xl font-bold mb-2">Ma liste de souhaits</h1>
           <p className="text-muted-foreground">
             {wishlistItems.length}{" "}
-            {wishlistItems.length === 1 ? t("item") : t("items")}
+            {wishlistItems.length === 1 ? "article" : "articles"}
           </p>
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-2 sm:gap-4">
           {wishlistItems.map((item) => (
             <ProductCard
-              key={item.id}
+              key={item.wishlist_id}
               product={item}
               token={localStorage.getItem("token")}
               isInWishlist={() => true}
@@ -101,3 +90,4 @@ const Wishlist = () => {
 };
 
 export default Wishlist;
+

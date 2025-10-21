@@ -124,7 +124,7 @@ export const ProductReviews = ({
   useEffect(() => {
     fetchReviews();
     fetchStats();
-  }, [fetchReviews, fetchStats]);
+  }, [productId]);
 
   const handleSubmitReview = async () => {
     if (!token) {

@@ -35,11 +35,23 @@ const Cart = () => {
     }
   };
 
-  const formatPrice = (price: number) => {
+  const formatPrice = (price: number | string | undefined) => {
+    // Handle undefined, null, or invalid prices
+    const numPrice = typeof price === 'string' ? parseFloat(price) : price;
+    const validPrice = !isNaN(numPrice || 0) ? (numPrice || 0) : 0;
+    
     return new Intl.NumberFormat("fr-FR", {
       style: "currency",
       currency: "XAF",
-    }).format(price);
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(validPrice);
+  };
+
+  const getImageUrl = (imagePath: string) => {
+    if (!imagePath) return "/placeholder-image.png";
+    if (imagePath.startsWith("http")) return imagePath;
+    return `http://localhost:8082${imagePath}`;
   };
 
   if (cartItems.length === 0) {
@@ -51,13 +63,13 @@ const Cart = () => {
             <CardContent>
               <ShoppingBag className="h-24 w-24 mx-auto text-muted-foreground mb-4" />
               <h2 className="text-2xl font-bold mb-2">
-                {t("your cart is empty")}
+                Panier d'achat
               </h2>
               <p className="text-muted-foreground mb-6">
-                {t("add items to your cart to see them here")}
+                Votre panier est vide
               </p>
               <Link to="/marketplace">
-                <Button>{t("continue shopping")}</Button>
+                <Button>Continuer vos achats</Button>
               </Link>
             </CardContent>
           </Card>
@@ -72,113 +84,122 @@ const Cart = () => {
       <div className="container mx-auto px-4 py-8">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
           <h1 className="text-3xl md:text-4xl font-bold">
-            {t("shopping cart")}
+            Panier d'achat
           </h1>
-          <Button variant="outline" onClick={clearCart} disabled={isLoading}>
-            {t("clear cart")}
+          <Button 
+            variant="outline" 
+            onClick={clearCart} 
+            disabled={isLoading}
+          >
+            Vider le panier
           </Button>
         </div>
 
         <div className="grid md:grid-cols-3 gap-8">
           <div className="md:col-span-2 space-y-4">
-            {cartItems.map((item) => (
-              <Card key={item.id}>
-                <CardContent className="p-4 sm:p-6">
-                  <div className="flex flex-col sm:flex-row gap-4">
-                    {item.images && item.images.length > 0 && (
-                      <img
-                        src={item.images[0].image_url}
-                        alt={item.name}
-                        className="w-full sm:w-20 h-auto sm:h-20 object-cover rounded"
-                        loading="lazy"
-                      />
-                    )}
-                    <div className="flex-1">
-                      <Link to={`/product/${item.id}`}>
-                        <h3 className="text-lg font-semibold hover:text-primary transition-colors">
-                          {item.name}
-                        </h3>
-                      </Link>
-                      <p className="text-sm text-muted-foreground">
-                        {item.location}
-                      </p>
-                      <p className="text-lg font-bold text-primary mt-2">
-                        {formatPrice(item.price)}
-                      </p>
-                    </div>
-                    <div className="flex flex-col items-start sm:items-end justify-between mt-4 sm:mt-0">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => removeFromCart(item.cart_id)}
-                        disabled={isLoading}
-                        className="self-end"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                      <div className="flex items-center gap-2 mt-2">
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          onClick={() =>
-                            handleQuantityChange(item.cart_id, item.quantity, -1)
-                          }
-                          disabled={isLoading || item.quantity <= 1}
-                        >
-                          <Minus className="h-4 w-4" />
-                        </Button>
-                        <Input
-                          type="number"
-                          value={item.quantity}
-                          onChange={(e) => {
-                            const value = parseInt(e.target.value);
-                            if (value > 0) {
-                              updateCartItem(item.cart_id, value);
-                            }
-                          }}
-                          className="w-16 text-center"
-                          disabled={isLoading}
+            {cartItems.map((item) => {
+              const itemPrice = item.price || 0;
+              const itemQuantity = item.quantity || 1;
+              
+              return (
+                <Card key={item.cart_id || item.id}>
+                  <CardContent className="p-4 sm:p-6">
+                    <div className="flex flex-col sm:flex-row gap-4">
+                      {item.images && item.images.length > 0 && (
+                        <img
+                          src={getImageUrl(item.images[0].image_url)}
+                          alt={item.name}
+                          className="w-full sm:w-24 h-auto sm:h-24 object-cover rounded"
+                          loading="lazy"
                         />
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          onClick={() =>
-                            handleQuantityChange(item.cart_id, item.quantity, 1)
-                          }
-                          disabled={isLoading}
-                        >
-                          <Plus className="h-4 w-4" />
-                        </Button>
+                      )}
+                      <div className="flex-1">
+                        <Link to={`/product/${item.id}`}>
+                          <h3 className="text-lg font-semibold hover:text-primary transition-colors">
+                            {item.name || "Produit sans nom"}
+                          </h3>
+                        </Link>
+                        <p className="text-sm text-muted-foreground">
+                          {item.location || "Localisation non spécifiée"}
+                        </p>
+                        <p className="text-lg font-bold text-primary mt-2">
+                          {formatPrice(itemPrice)}
+                        </p>
                       </div>
-                      <p className="text-sm font-semibold mt-2 self-end">
-                        {t("subtotal")}:{" "}
-                        {formatPrice(item.price * item.quantity)}
-                      </p>
+                      <div className="flex flex-col items-start sm:items-end justify-between mt-4 sm:mt-0">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => removeFromCart(item.cart_id)}
+                          disabled={isLoading}
+                          className="self-end"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                        <div className="flex items-center gap-2 mt-2">
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() =>
+                              handleQuantityChange(item.cart_id, itemQuantity, -1)
+                            }
+                            disabled={isLoading || itemQuantity <= 1}
+                          >
+                            <Minus className="h-4 w-4" />
+                          </Button>
+                          <Input
+                            type="number"
+                            value={itemQuantity}
+                            onChange={(e) => {
+                              const value = parseInt(e.target.value);
+                              if (value > 0) {
+                                updateCartItem(item.cart_id, value);
+                              }
+                            }}
+                            className="w-16 text-center"
+                            disabled={isLoading}
+                            min="1"
+                          />
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() =>
+                              handleQuantityChange(item.cart_id, itemQuantity, 1)
+                            }
+                            disabled={isLoading}
+                          >
+                            <Plus className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        <p className="text-sm font-semibold mt-2 self-end">
+                          Sous-total: {formatPrice(itemPrice * itemQuantity)}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
 
           <div className="md:col-span-1">
             <Card className="sticky top-4">
               <CardHeader>
-                <CardTitle>{t("order summary")}</CardTitle>
+                <CardTitle>Résumé de la commande</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex justify-between">
-                  <span>{t("subtotal")}</span>
+                  <span>Sous-total</span>
                   <span className="font-semibold">
                     {formatPrice(getCartTotal())}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm text-muted-foreground">
-                  <span>{t("items in cart")}</span>
+                  <span>Articles dans le panier</span>
                   <span>{cartItems.length}</span>
                 </div>
                 <div className="border-t pt-4 flex justify-between text-lg font-bold">
-                  <span>{t("total")}</span>
+                  <span>Total</span>
                   <span className="text-primary">
                     {formatPrice(getCartTotal())}
                   </span>
@@ -186,11 +207,11 @@ const Cart = () => {
               </CardContent>
               <CardFooter className="flex-col gap-2">
                 <Button className="w-full" size="lg">
-                  {t("proceed to checkout")}
+                  Passer à la caisse
                 </Button>
                 <Link to="/marketplace" className="w-full">
                   <Button variant="outline" className="w-full">
-                    {t("continue shopping")}
+                    Continuer vos achats
                   </Button>
                 </Link>
               </CardFooter>

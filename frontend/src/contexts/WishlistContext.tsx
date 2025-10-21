@@ -23,10 +23,21 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({
 
     try {
       const response = await apiClient.get("/wishlist");
-      setWishlistItems(response.data.map((item: ApiWishlistItem) => ({
-        ...item.product,
-        wishlist_id: item.id,
-      })));
+      console.log("Raw wishlist response:", response.data);
+      setWishlistItems(
+        response.data.map((item: ApiWishlistItem) => ({
+          id: item.product_id.toString(),
+          name: item.product_name,
+          price: item.product_price,
+          location: item.product_location,
+          category: item.product_category,
+          images: item.product_image ? [{ image_url: item.product_image }] : [],
+          wishlist_id: item.id,
+          description: "",
+          contact_phone: null,
+          contact_email: null,
+        })),
+      );
       setWishlistCount(response.data.length);
     } catch (error) {
       console.error("Failed to fetch wishlist:", error);
