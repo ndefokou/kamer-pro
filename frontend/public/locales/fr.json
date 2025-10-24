@@ -111,16 +111,16 @@
     "all": "Toutes",
     "electronics": "Électronique",
     "fashion": "Mode",
-    "home garden": "Maison & Jardin",
+    "home_garden": "Maison & Jardin",
     "vehicles": "Véhicules",
-    "real estate": "Immobilier",
+    "real_estate": "Immobilier",
     "services": "Services",
     "other": "Autre"
   },
   "conditions": {
     "all": "Tous",
     "new": "Neuf",
-    "like new": "Comme neuf",
+    "like_new": "Comme neuf",
     "good": "Bon",
     "fair": "Passable"
   },

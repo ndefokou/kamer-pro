@@ -102,8 +102,8 @@ const Marketplace = () => {
         category: selectedCategory,
         location: selectedLocation,
         condition: selectedCondition,
-        minPrice,
-        maxPrice,
+        min_price: minPrice,
+        max_price: maxPrice,
       };
       const data = await getProducts(filters);
       setFilteredProducts(data);

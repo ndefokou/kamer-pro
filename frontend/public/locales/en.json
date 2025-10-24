@@ -111,16 +111,16 @@
     "all": "All",
     "electronics": "Electronics",
     "fashion": "Fashion",
-    "home garden": "Home & Garden",
+    "home_garden": "Home & Garden",
     "vehicles": "Vehicles",
-    "real estate": "Real Estate",
+    "real_estate": "Real Estate",
     "services": "Services",
     "other": "Other"
   },
   "conditions": {
     "all": "All",
     "new": "New",
-    "like new": "Like-new",
+    "like_new": "Like-new",
     "good": "Good",
     "fair": "Fair"
   },

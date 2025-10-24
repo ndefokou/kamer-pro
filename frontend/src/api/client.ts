@@ -34,11 +34,19 @@ export interface ProductFilters {
   category?: string;
   location?: string;
   condition?: string;
-  minPrice?: string;
-  maxPrice?: string;
+  min_price?: string;
+  max_price?: string;
 }
 
 export const getProducts = async (filters: ProductFilters) => {
-  const response = await apiClient.get("/products", { params: filters });
+  const params = { ...filters };
+  if (params.min_price === "") {
+    delete params.min_price;
+  }
+  if (params.max_price === "") {
+    delete params.max_price;
+  }
+  const response = await apiClient.get("/products", { params });
   return response.data;
 };
+

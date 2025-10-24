@@ -99,7 +99,8 @@ pub async fn get_products(
     pool: web::Data<SqlitePool>,
     query: web::Query<ProductFilters>,
 ) -> impl Responder {
-    let mut query_builder = sqlx::QueryBuilder::new("SELECT * FROM products WHERE 1=1");
+    let mut query_builder =
+        sqlx::QueryBuilder::new("SELECT * FROM products WHERE status = 'active'");
 
     if let Some(category) = &query.category {
         if category != "All" {
@@ -133,11 +134,14 @@ pub async fn get_products(
     }
 
     if let Some(search) = &query.search {
-        query_builder.push(" AND (name LIKE ");
-        query_builder.push_bind(format!("%{}%", search));
-        query_builder.push(" OR description LIKE ");
-        query_builder.push_bind(format!("%{}%", search));
-        query_builder.push(")");
+        let trimmed_search = search.trim();
+        if !trimmed_search.is_empty() {
+            query_builder.push(" AND (name LIKE ");
+            query_builder.push_bind(format!("%{}%", trimmed_search));
+            query_builder.push(" OR description LIKE ");
+            query_builder.push_bind(format!("%{}%", trimmed_search));
+            query_builder.push(")");
+        }
     }
 
     query_builder.push(" ORDER BY created_at DESC");
@@ -320,7 +324,7 @@ pub async fn create_product(
     }
 
     let result = sqlx::query(
-        "INSERT INTO products (name, description, price, condition, category, location, contact_phone, contact_email, user_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+        "INSERT INTO products (name, description, price, condition, category, location, contact_phone, contact_email, user_id, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
     )
     .bind(&product_payload.name)
     .bind(&product_payload.description)
@@ -331,6 +335,7 @@ pub async fn create_product(
     .bind(&product_payload.contact_phone)
     .bind(&product_payload.contact_email)
     .bind(user_id)
+    .bind("active")
     .execute(pool.get_ref())
     .await;
 
