@@ -37,9 +37,9 @@ const Cart = () => {
 
   const formatPrice = (price: number | string | undefined) => {
     // Handle undefined, null, or invalid prices
-    const numPrice = typeof price === 'string' ? parseFloat(price) : price;
-    const validPrice = !isNaN(numPrice || 0) ? (numPrice || 0) : 0;
-    
+    const numPrice = typeof price === "string" ? parseFloat(price) : price;
+    const validPrice = !isNaN(numPrice || 0) ? numPrice || 0 : 0;
+
     return new Intl.NumberFormat("fr-FR", {
       style: "currency",
       currency: "XAF",
@@ -62,9 +62,7 @@ const Cart = () => {
           <Card className="max-w-md mx-auto text-center py-12">
             <CardContent>
               <ShoppingBag className="h-24 w-24 mx-auto text-muted-foreground mb-4" />
-              <h2 className="text-2xl font-bold mb-2">
-                Panier d'achat
-              </h2>
+              <h2 className="text-2xl font-bold mb-2">Panier d'achat</h2>
               <p className="text-muted-foreground mb-6">
                 Votre panier est vide
               </p>
@@ -83,14 +81,8 @@ const Cart = () => {
       <Navbar />
       <div className="container mx-auto px-4 py-8">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
-          <h1 className="text-3xl md:text-4xl font-bold">
-            Panier d'achat
-          </h1>
-          <Button 
-            variant="outline" 
-            onClick={clearCart} 
-            disabled={isLoading}
-          >
+          <h1 className="text-3xl md:text-4xl font-bold">Panier d'achat</h1>
+          <Button variant="outline" onClick={clearCart} disabled={isLoading}>
             Vider le panier
           </Button>
         </div>

@@ -26,7 +26,6 @@ export interface ApiWishlistItem {
   product_image: string | null;
 }
 
-
 export interface WishlistContextType {
   wishlistItems: WishlistItem[];
   wishlistCount: number;

@@ -17,7 +17,6 @@ export interface BackendCartItem {
   product_status: string;
 }
 
-
 export interface CartContextType {
   cartItems: CartItem[];
   cartCount: number;

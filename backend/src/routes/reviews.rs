@@ -97,25 +97,22 @@ pub async fn get_product_reviews(
     let product_id = path.into_inner();
     let user_id = get_user_id_from_headers(&req).ok();
 
-    let reviews: Result<Vec<Review>, _> = sqlx::query_as(
-        "SELECT * FROM reviews WHERE product_id = ? ORDER BY created_at DESC",
-    )
-    .bind(product_id)
-    .fetch_all(pool.get_ref())
-    .await;
+    let reviews: Result<Vec<Review>, _> =
+        sqlx::query_as("SELECT * FROM reviews WHERE product_id = ? ORDER BY created_at DESC")
+            .bind(product_id)
+            .fetch_all(pool.get_ref())
+            .await;
 
     match reviews {
         Ok(reviews) => {
             let mut detailed_reviews = Vec::new();
 
             for review in reviews {
-                let username: (String,) = sqlx::query_as(
-                    "SELECT username FROM users WHERE id = ?",
-                )
-                .bind(review.user_id)
-                .fetch_one(pool.get_ref())
-                .await
-                .unwrap_or((String::from("Unknown"),));
+                let username: (String,) = sqlx::query_as("SELECT username FROM users WHERE id = ?")
+                    .bind(review.user_id)
+                    .fetch_one(pool.get_ref())
+                    .await
+                    .unwrap_or((String::from("Unknown"),));
 
                 let helpful_count: (i32,) = sqlx::query_as(
                     "SELECT COUNT(*) FROM review_votes WHERE review_id = ? AND is_helpful = 1",
@@ -147,13 +144,12 @@ pub async fn get_product_reviews(
                     None
                 };
 
-                let images: Vec<(String,)> = sqlx::query_as(
-                    "SELECT image_url FROM review_images WHERE review_id = ?",
-                )
-                .bind(review.id)
-                .fetch_all(pool.get_ref())
-                .await
-                .unwrap_or_else(|_| vec![]);
+                let images: Vec<(String,)> =
+                    sqlx::query_as("SELECT image_url FROM review_images WHERE review_id = ?")
+                        .bind(review.id)
+                        .fetch_all(pool.get_ref())
+                        .await
+                        .unwrap_or_else(|_| vec![]);
 
                 let seller_response: Option<SellerResponse> = sqlx::query_as(
                     "SELECT id, response_text, created_at, updated_at FROM review_responses WHERE review_id = ?",
@@ -177,7 +173,10 @@ pub async fn get_product_reviews(
                     helpful_count: helpful_count.0,
                     not_helpful_count: not_helpful_count.0,
                     user_vote: user_vote.map(|v| v.0),
-                    images: images.into_iter().map(|i| format!("http://localhost:8082{}", i.0.replace("/public", ""))).collect(),
+                    images: images
+                        .into_iter()
+                        .map(|i| format!("http://localhost:8082{}", i.0.replace("/public", "")))
+                        .collect(),
                     seller_response,
                 });
             }
@@ -198,19 +197,17 @@ pub async fn get_product_reviews(
 pub async fn get_review_stats(pool: web::Data<SqlitePool>, path: web::Path<i32>) -> impl Responder {
     let product_id = path.into_inner();
 
-    let avg_rating: Result<(Option<f64>,), _> = sqlx::query_as(
-        "SELECT AVG(rating) as avg_rating FROM reviews WHERE product_id = ?",
-    )
-    .bind(product_id)
-    .fetch_one(pool.get_ref())
-    .await;
+    let avg_rating: Result<(Option<f64>,), _> =
+        sqlx::query_as("SELECT AVG(rating) as avg_rating FROM reviews WHERE product_id = ?")
+            .bind(product_id)
+            .fetch_one(pool.get_ref())
+            .await;
 
-    let total: Result<(i32,), _> = sqlx::query_as(
-        "SELECT COUNT(*) FROM reviews WHERE product_id = ?",
-    )
-    .bind(product_id)
-    .fetch_one(pool.get_ref())
-    .await;
+    let total: Result<(i32,), _> =
+        sqlx::query_as("SELECT COUNT(*) FROM reviews WHERE product_id = ?")
+            .bind(product_id)
+            .fetch_one(pool.get_ref())
+            .await;
 
     let distribution: Result<Vec<RatingCount>, _> = sqlx::query_as(
         "SELECT rating, COUNT(*) as count FROM reviews WHERE product_id = ? GROUP BY rating ORDER BY rating DESC",
@@ -348,11 +345,12 @@ pub async fn create_review(
     let review_id = result.last_insert_rowid() as i32;
 
     for image in images {
-        if let Err(e) = sqlx::query("INSERT INTO review_images (review_id, image_url) VALUES (?, ?)")
-            .bind(review_id)
-            .bind(&image)
-            .execute(pool.get_ref())
-            .await
+        if let Err(e) =
+            sqlx::query("INSERT INTO review_images (review_id, image_url) VALUES (?, ?)")
+                .bind(review_id)
+                .bind(&image)
+                .execute(pool.get_ref())
+                .await
         {
             eprintln!("Failed to insert review image: {}", e);
         }

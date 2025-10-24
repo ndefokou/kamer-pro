@@ -1,5 +1,5 @@
-use actix_web::Error;
 use actix_web::error::ErrorUnauthorized;
+use actix_web::Error;
 
 pub fn extract_user_id_from_token(token: &str) -> Result<i32, Error> {
     // Extract user_id from token format: "token_{uuid}_{user_id}"

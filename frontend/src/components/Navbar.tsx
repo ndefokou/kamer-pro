@@ -12,9 +12,11 @@ import {
   Menu,
   X,
   Globe,
+  MessageSquare,
 } from "lucide-react";
 import { useCart } from "@/hooks/useCart";
 import { useWishlist } from "@/hooks/useWishlist";
+import { useMessaging } from "@/hooks/useMessaging";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -36,6 +38,7 @@ const Navbar = () => {
   const { t, i18n } = useTranslation();
   const { cartCount } = useCart();
   const { wishlistCount } = useWishlist();
+  const { unreadCount } = useMessaging();
   const username = localStorage.getItem("username");
   const token = localStorage.getItem("token");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -131,6 +134,24 @@ const Navbar = () => {
               </>
             )}
 
+            <Link to="/messages" className="relative">
+             <Button
+               variant="ghost"
+               size="icon"
+               className="text-primary-foreground hover:bg-primary-foreground/10"
+             >
+               <MessageSquare className="h-5 w-5" />
+               {unreadCount > 0 && (
+                 <Badge
+                   className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-secondary text-secondary-foreground"
+                   variant="secondary"
+                 >
+                   {unreadCount}
+                 </Badge>
+               )}
+             </Button>
+           </Link>
+
             {token ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -161,6 +182,10 @@ const Navbar = () => {
                     <ShoppingCart className="h-4 w-4 mr-2" />
                     Cart
                   </DropdownMenuItem>
+                 <DropdownMenuItem onClick={() => navigate("/messages")}>
+                   <MessageSquare className="h-4 w-4 mr-2" />
+                   Messages
+                 </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleLogout}>
                     <LogOut className="h-4 w-4 mr-2" />
@@ -224,6 +249,24 @@ const Navbar = () => {
                 </Link>
               </>
             )}
+
+           <Link to="/messages" className="relative">
+             <Button
+               variant="ghost"
+               size="icon"
+               className="text-primary-foreground hover:bg-primary-foreground/10"
+             >
+               <MessageSquare className="h-5 w-5" />
+               {unreadCount > 0 && (
+                 <Badge
+                   className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-secondary text-secondary-foreground text-xs"
+                   variant="secondary"
+                 >
+                   {unreadCount}
+                 </Badge>
+               )}
+             </Button>
+           </Link>
 
             <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
               <SheetTrigger asChild>
@@ -299,6 +342,20 @@ const Navbar = () => {
                           </Badge>
                         )}
                       </Button>
+
+                     <Button
+                       variant="ghost"
+                       className="justify-start"
+                       onClick={() => handleNavigation("/messages")}
+                     >
+                       <MessageSquare className="h-5 w-5 mr-2" />
+                       Messages
+                       {unreadCount > 0 && (
+                         <Badge variant="secondary" className="ml-auto">
+                           {unreadCount}
+                         </Badge>
+                       )}
+                     </Button>
 
                       <div className="border-t pt-4 mt-4">
                         <Button

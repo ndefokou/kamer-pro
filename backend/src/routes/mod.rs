@@ -6,3 +6,4 @@ pub mod roles;
 pub mod upload;
 pub mod wishlist;
 pub mod reviews;
+pub mod messages;

@@ -2,10 +2,7 @@ import { useWishlist } from "@/hooks/useWishlist";
 import { useCart } from "@/hooks/useCart";
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Heart } from "lucide-react";
 import ProductCard from "@/components/ProductCard";
 import { Link } from "react-router-dom";
@@ -43,9 +40,7 @@ const Wishlist = () => {
           <Card className="max-w-md mx-auto text-center py-12">
             <CardContent>
               <Heart className="h-24 w-24 mx-auto text-muted-foreground mb-4" />
-              <h2 className="text-2xl font-bold mb-2">
-                Ma liste de souhaits
-              </h2>
+              <h2 className="text-2xl font-bold mb-2">Ma liste de souhaits</h2>
               <p className="text-muted-foreground mb-6">
                 Votre liste de souhaits est vide
               </p>
@@ -79,7 +74,9 @@ const Wishlist = () => {
               token={localStorage.getItem("token")}
               isInWishlist={() => true}
               handleToggleWishlist={handleToggleWishlist}
-              handleAddToCart={() => handleAddToCart(parseInt(item.id), item.wishlist_id)}
+              handleAddToCart={() =>
+                handleAddToCart(parseInt(item.id), item.wishlist_id)
+              }
               getImageUrl={getImageUrl}
             />
           ))}
@@ -90,4 +87,3 @@ const Wishlist = () => {
 };
 
 export default Wishlist;
-

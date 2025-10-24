@@ -49,4 +49,3 @@ export const getProducts = async (filters: ProductFilters) => {
   const response = await apiClient.get("/products", { params });
   return response.data;
 };
-

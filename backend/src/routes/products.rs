@@ -165,11 +165,17 @@ pub async fn get_products(
                     .into_iter()
                     .map(|img| ProductImageResponse {
                         id: img.id,
-                        image_url: format!("http://localhost:8082{}", img.image_url.replace("/public", "")),
+                        image_url: format!(
+                            "http://localhost:8082{}",
+                            img.image_url.replace("/public", "")
+                        ),
                         product_id: img.product_id,
                     })
                     .collect();
-                product_responses.push(ProductResponse { product, images: image_responses });
+                product_responses.push(ProductResponse {
+                    product,
+                    images: image_responses,
+                });
             }
             HttpResponse::Ok().json(product_responses)
         }
@@ -202,11 +208,17 @@ pub async fn get_product(pool: web::Data<SqlitePool>, path: web::Path<i32>) -> i
                 .into_iter()
                 .map(|img| ProductImageResponse {
                     id: img.id,
-                    image_url: format!("http://localhost:8082{}", img.image_url.replace("/public", "")),
+                    image_url: format!(
+                        "http://localhost:8082{}",
+                        img.image_url.replace("/public", "")
+                    ),
                     product_id: img.product_id,
                 })
                 .collect();
-            HttpResponse::Ok().json(ProductResponse { product, images: image_responses })
+            HttpResponse::Ok().json(ProductResponse {
+                product,
+                images: image_responses,
+            })
         }
         Err(_) => HttpResponse::NotFound().json(ErrorResponse {
             message: "Product not found".to_string(),
@@ -246,11 +258,17 @@ pub async fn get_my_products(req: HttpRequest, pool: web::Data<SqlitePool>) -> i
                     .into_iter()
                     .map(|img| ProductImageResponse {
                         id: img.id,
-                        image_url: format!("http://localhost:8082{}", img.image_url.replace("/public", "")),
+                        image_url: format!(
+                            "http://localhost:8082{}",
+                            img.image_url.replace("/public", "")
+                        ),
                         product_id: img.product_id,
                     })
                     .collect();
-                product_responses.push(ProductResponse { product, images: image_responses });
+                product_responses.push(ProductResponse {
+                    product,
+                    images: image_responses,
+                });
             }
             HttpResponse::Ok().json(product_responses)
         }
@@ -366,12 +384,18 @@ pub async fn create_product(
                 .into_iter()
                 .map(|img| ProductImageResponse {
                     id: img.id,
-                    image_url: format!("http://localhost:8082{}", img.image_url.replace("/public", "")),
+                    image_url: format!(
+                        "http://localhost:8082{}",
+                        img.image_url.replace("/public", "")
+                    ),
                     product_id: img.product_id,
                 })
                 .collect();
 
-            HttpResponse::Created().json(ProductResponse { product, images: image_responses })
+            HttpResponse::Created().json(ProductResponse {
+                product,
+                images: image_responses,
+            })
         }
         Err(e) => {
             eprintln!("Failed to create product: {}", e);
@@ -508,12 +532,18 @@ pub async fn update_product(
                 .into_iter()
                 .map(|img| ProductImageResponse {
                     id: img.id,
-                    image_url: format!("http://localhost:8082{}", img.image_url.replace("/public", "")),
+                    image_url: format!(
+                        "http://localhost:8082{}",
+                        img.image_url.replace("/public", "")
+                    ),
                     product_id: img.product_id,
                 })
                 .collect();
 
-            HttpResponse::Ok().json(ProductResponse { product, images: image_responses })
+            HttpResponse::Ok().json(ProductResponse {
+                product,
+                images: image_responses,
+            })
         }
         Err(_) => HttpResponse::InternalServerError().json(ErrorResponse {
             message: "Failed to update product".to_string(),

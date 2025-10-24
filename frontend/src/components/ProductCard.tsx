@@ -1,8 +1,23 @@
 import { useTranslation } from "react-i18next";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Phone, Mail, ShoppingCart, Heart, Edit2, Trash2 } from "lucide-react";
+import {
+  MapPin,
+  Phone,
+  Mail,
+  ShoppingCart,
+  Heart,
+  Edit2,
+  Trash2,
+} from "lucide-react";
 import { Link } from "react-router-dom";
 
 interface Product {
@@ -59,25 +74,28 @@ const ProductCard = ({
               className="w-full h-full object-cover"
               loading="lazy"
             />
-            {variant === "marketplace" && token && handleToggleWishlist && isInWishlist && (
-              <Button
-                variant="secondary"
-                size="icon"
-                className="absolute top-1 right-1 sm:top-2 sm:right-2 h-6 w-6 sm:h-8 sm:w-8"
-                onClick={(e) => {
-                  e.preventDefault();
-                  handleToggleWishlist(product.id);
-                }}
-              >
-                <Heart
-                  className={`h-3 w-3 sm:h-4 sm:w-4 ${
-                    isInWishlist(parseInt(product.id))
-                      ? "fill-current text-red-500"
-                      : ""
-                  }`}
-                />
-              </Button>
-            )}
+            {variant === "marketplace" &&
+              token &&
+              handleToggleWishlist &&
+              isInWishlist && (
+                <Button
+                  variant="secondary"
+                  size="icon"
+                  className="absolute top-1 right-1 sm:top-2 sm:right-2 h-6 w-6 sm:h-8 sm:w-8"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleToggleWishlist(product.id);
+                  }}
+                >
+                  <Heart
+                    className={`h-3 w-3 sm:h-4 sm:w-4 ${
+                      isInWishlist(parseInt(product.id))
+                        ? "fill-current text-red-500"
+                        : ""
+                    }`}
+                  />
+                </Button>
+              )}
             {variant === "seller" && product.status && (
               <Badge
                 variant={product.status === "active" ? "default" : "secondary"}
@@ -104,7 +122,7 @@ const ProductCard = ({
               {t(
                 `categories.${product.category
                   .toLowerCase()
-                  .replace(" & ", "_")}`
+                  .replace(" & ", "_")}`,
               )}
             </Badge>
           )}

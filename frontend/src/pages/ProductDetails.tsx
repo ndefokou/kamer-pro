@@ -32,6 +32,7 @@ import {
 } from "lucide-react";
 import { useCart } from "@/hooks/useCart";
 import { useWishlist } from "@/hooks/useWishlist";
+import { useMessaging } from "@/hooks/useMessaging";
 import { ProductReviews } from "@/components/ProductReviews";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ProductCard from "@/components/ProductCard";
@@ -62,6 +63,26 @@ const ProductDetails = () => {
   const { addToWishlist, isInWishlist, removeFromWishlistByProduct } =
     useWishlist();
   const token = localStorage.getItem("token");
+  const { createOrGetConversation } = useMessaging();
+
+  const handleContactSeller = async () => {
+    if (!token) {
+      navigate("/webauth-login");
+      return;
+    }
+    if (product) {
+      try {
+        const conversationId = await createOrGetConversation(
+          parseInt(product.id),
+          product.user_id,
+        );
+        navigate(`/messages`);
+        // navigate(`/messages?conversationId=${conversationId}`);
+      } catch (error) {
+        console.error("Failed to start conversation", error);
+      }
+    }
+  };
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -324,6 +345,12 @@ const ProductDetails = () => {
                     </div>
                   )}
                 </div>
+                {token && (
+                 <Button onClick={handleContactSeller} className="mt-2">
+                   <Mail className="h-4 w-4 mr-2" />
+                   {t("contact seller via chat")}
+                 </Button>
+               )}
               </div>
             </div>
           </CardContent>

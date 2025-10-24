@@ -21,10 +21,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Navbar from "@/components/Navbar";
 import ProductCard from "@/components/ProductCard";
-import {
-  Search,
-  Package,
-} from "lucide-react";
+import { Search, Package } from "lucide-react";
 import { useNavigate, Link } from "react-router-dom";
 import { getProducts } from "@/api/client";
 import { useCart } from "@/hooks/useCart";

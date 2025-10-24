@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { CartProvider } from "@/contexts/CartContext";
 import { WishlistProvider } from "@/contexts/WishlistContext";
+import { MessagingProvider } from "@/contexts/MessagingContext";
 import Index from "./pages/Index";
 import RoleSelection from "./pages/RoleSelection";
 import Marketplace from "./pages/Marketplace";
@@ -13,6 +14,7 @@ import NotFound from "./pages/NotFound";
 import ProductDetails from "./pages/ProductDetails";
 import Cart from "./pages/Cart";
 import Wishlist from "./pages/Wishlist";
+import Messages from "./pages/Messages";
 import { WebAuthLogin } from "./pages/WebAuthLogin";
 import { WebAuthRegister } from "./pages/WebAuthRegister";
 
@@ -27,6 +29,7 @@ const router = createBrowserRouter(
     { path: "/product/:id", Component: ProductDetails },
     { path: "/cart", Component: Cart },
     { path: "/wishlist", Component: Wishlist },
+    { path: "/messages", Component: Messages },
     { path: "/webauth-login", Component: WebAuthLogin },
     { path: "/webauth-register", Component: WebAuthRegister },
     { path: "*", Component: NotFound },
@@ -41,15 +44,17 @@ const router = createBrowserRouter(
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <CartProvider>
-      <WishlistProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <RouterProvider router={router} />
-        </TooltipProvider>
-      </WishlistProvider>
-    </CartProvider>
+    <MessagingProvider>
+      <CartProvider>
+        <WishlistProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <RouterProvider router={router} />
+          </TooltipProvider>
+        </WishlistProvider>
+      </CartProvider>
+    </MessagingProvider>
   </QueryClientProvider>
 );
 

@@ -2,11 +2,7 @@ import React, { useState, useEffect } from "react";
 import { isAxiosError } from "axios";
 import apiClient from "@/api/client";
 import { useToast } from "@/hooks/use-toast";
-import {
-  CartContext,
-  CartItem,
-  BackendCartItem,
-} from "./CartContextTypes";
+import { CartContext, CartItem, BackendCartItem } from "./CartContextTypes";
 
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
@@ -107,7 +103,9 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({
   const removeFromCart = async (id: number) => {
     setIsLoading(true);
     const originalCartItems = [...cartItems];
-    setCartItems((prevItems) => prevItems.filter((item) => item.cart_id !== id));
+    setCartItems((prevItems) =>
+      prevItems.filter((item) => item.cart_id !== id),
+    );
     setCartCount((prevCount) => prevCount - 1);
 
     try {

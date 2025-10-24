@@ -29,6 +29,10 @@ use routes::wishlist::{
     add_to_wishlist, check_wishlist, get_wishlist, get_wishlist_count, remove_from_wishlist,
     remove_from_wishlist_by_product,
 };
+use routes::messages::{
+    create_conversation, delete_conversation, get_conversations, get_message_templates,
+    get_messages, get_unread_count, send_image_message, send_message,
+};
 
 #[get("/")]
 async fn hello() -> impl Responder {
@@ -126,7 +130,18 @@ async fn main() -> std::io::Result<()> {
                             .service(vote_review)
                             .service(add_seller_response)
                             .service(delete_review),
-                    ),
+                    )
+                    .service(
+                       web::scope("/messages")
+                           .service(get_conversations)
+                           .service(create_conversation)
+                           .service(get_messages)
+                           .service(send_message)
+                           .service(send_image_message)
+                           .service(delete_conversation)
+                           .service(get_message_templates)
+                           .service(get_unread_count),
+                   ),
             )
             // Serve static files from the public directory
             .service(fs::Files::new("/uploads", "./public/uploads").show_files_listing())
