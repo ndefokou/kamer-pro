@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { isAxiosError } from "axios";
 import apiClient from "@/api/client";
 import { useToast } from "@/hooks/use-toast";
@@ -19,6 +19,7 @@ export const MessagingProvider: React.FC<{ children: React.ReactNode }> = ({
   const [unreadCount, setUnreadCount] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const prevUnreadCountRef = useRef(unreadCount);
 
   const fetchConversations = useCallback(async () => {
     const token = localStorage.getItem("token");
@@ -232,6 +233,16 @@ export const MessagingProvider: React.FC<{ children: React.ReactNode }> = ({
 
     return () => clearInterval(interval);
   }, [currentConversation, selectConversation]);
+
+  useEffect(() => {
+    if (unreadCount > prevUnreadCountRef.current) {
+      toast({
+        title: "New Message",
+        description: "You have a new unread message.",
+      });
+    }
+    prevUnreadCountRef.current = unreadCount;
+  }, [unreadCount, toast]);
 
   return (
     <MessagingContext.Provider

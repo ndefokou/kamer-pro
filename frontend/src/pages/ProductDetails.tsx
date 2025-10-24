@@ -48,7 +48,7 @@ interface Product {
   contact_phone: string | null;
   contact_email: string | null;
   images: { image_url: string }[];
-  seller_id: number;
+  user_id: number;
 }
 
 const ProductDetails = () => {
@@ -74,7 +74,7 @@ const ProductDetails = () => {
       try {
         const conversationId = await createOrGetConversation(
           parseInt(product.id),
-          product.seller_id,
+          product.user_id,
         );
         navigate(`/messages`);
         // navigate(`/messages?conversationId=${conversationId}`);
@@ -409,7 +409,7 @@ const ProductDetails = () => {
               <ProductReviews
                 productId={parseInt(product.id)}
                 isProductOwner={
-                  product.seller_id ===
+                  product.user_id ===
                   parseInt(localStorage.getItem("userId") || "0")
                 }
               />
