@@ -36,11 +36,13 @@ export class WebAuthService {
 
   async completeRegistration(
     username: string,
+    email: string,
     credentialId: string,
     publicKey: string,
   ): Promise<RegistrationCompleteResponse> {
     const response = await apiClient.post("/auth/register/complete", {
       username,
+      email,
       credential_id: credentialId,
       public_key: publicKey,
     });

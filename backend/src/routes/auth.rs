@@ -35,6 +35,7 @@ pub struct ErrorResponse {
 #[derive(Deserialize)]
 pub struct RegistrationCompleteRequest {
     pub username: String,
+    pub email: String,
     pub credential_id: String,
     pub public_key: String,
 }
@@ -108,10 +109,11 @@ pub async fn registration_complete(
     let now = Utc::now().to_rfc3339();
 
     let result = sqlx::query(
-        "INSERT INTO users (username, credential_id, public_key, counter, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?)",
+        "INSERT INTO users (username, email, credential_id, public_key, counter, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?)",
     )
     .bind(&req.username)
+    .bind(&req.email)
     .bind(&req.credential_id)
     .bind(&req.public_key)
     .bind(0i64)

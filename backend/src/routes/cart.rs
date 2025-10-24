@@ -127,6 +127,18 @@ pub async fn add_to_cart(
         }
     };
 
+    // Check if user exists
+    let user_exists: Result<(i32,), _> = sqlx::query_as("SELECT id FROM users WHERE id = ?")
+        .bind(user_id)
+        .fetch_one(pool.get_ref())
+        .await;
+
+    if user_exists.is_err() {
+        return HttpResponse::Unauthorized().json(ErrorResponse {
+            message: "User not found, please log in again".to_string(),
+        });
+    }
+
     // Check if product exists
     let product: Result<crate::routes::products::Product, _> =
         sqlx::query_as("SELECT * FROM products WHERE id = ?")

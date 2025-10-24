@@ -18,13 +18,14 @@ export const WebAuthRegister = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const webAuthService = new WebAuthService();
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!username) {
+    if (!username || !email) {
       toast({
         title: t("error"),
         description: t("please fill in all fields"),
@@ -89,6 +90,7 @@ export const WebAuthRegister = () => {
 
       await webAuthService.completeRegistration(
         username,
+        email,
         credentialIdBase64,
         attestationObjectBase64,
       );
@@ -138,6 +140,19 @@ export const WebAuthRegister = () => {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder={t("choose a username")}
+                required
+                disabled={isLoading}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-2">
+                {t("email")}
+              </label>
+              <Input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder={t("enter your email")}
                 required
                 disabled={isLoading}
               />
