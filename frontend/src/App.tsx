@@ -17,6 +17,7 @@ import Wishlist from "./pages/Wishlist";
 import Messages from "./pages/Messages";
 import { WebAuthLogin } from "./pages/WebAuthLogin";
 import { WebAuthRegister } from "./pages/WebAuthRegister";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 const queryClient = new QueryClient();
 
@@ -25,13 +26,18 @@ const router = createBrowserRouter(
     { path: "/", Component: Index },
     { path: "/role-selection", Component: RoleSelection },
     { path: "/marketplace", Component: Marketplace },
-    { path: "/seller-dashboard", Component: SellerDashboard },
     { path: "/product/:id", Component: ProductDetails },
-    { path: "/cart", Component: Cart },
-    { path: "/wishlist", Component: Wishlist },
-    { path: "/messages", Component: Messages },
     { path: "/webauth-login", Component: WebAuthLogin },
     { path: "/webauth-register", Component: WebAuthRegister },
+    {
+      element: <ProtectedRoute />,
+      children: [
+        { path: "/seller-dashboard", Component: SellerDashboard },
+        { path: "/cart", Component: Cart },
+        { path: "/wishlist", Component: Wishlist },
+        { path: "/messages", Component: Messages },
+      ],
+    },
     { path: "*", Component: NotFound },
   ],
   {
