@@ -13,7 +13,7 @@ import {
   MapPin,
   Phone,
   Mail,
-  ShoppingCart,
+  MessageCircle,
   Heart,
   Edit2,
   Trash2,
@@ -40,7 +40,6 @@ interface ProductCardProps {
   token: string | null;
   isInWishlist?: (productId: number) => boolean;
   handleToggleWishlist?: (productId: string) => void;
-  handleAddToCart?: (productId: string) => void;
   getImageUrl: (imagePath: string) => string;
   variant?: "marketplace" | "seller";
   onEdit?: () => void;
@@ -52,7 +51,6 @@ const ProductCard = ({
   token,
   isInWishlist,
   handleToggleWishlist,
-  handleAddToCart,
   getImageUrl,
   variant = "marketplace",
   onEdit,
@@ -146,14 +144,24 @@ const ProductCard = ({
         </div>
       </CardContent>
       <CardFooter className="flex-col items-start space-y-1 sm:space-y-2 p-2 sm:p-3 pt-0 mt-auto">
-        {variant === "marketplace" && token && handleAddToCart && (
+        {variant === "marketplace" && (
           <Button
             className="w-full text-[10px] sm:text-xs h-7 sm:h-8"
-            onClick={() => handleAddToCart(product.id)}
+            onClick={() => {
+              if (product.contact_phone) {
+                window.open(
+                  `https://wa.me/${product.contact_phone.replace(/\s/g, "")}`,
+                  "_blank"
+                );
+              }
+            }}
+            disabled={!product.contact_phone}
           >
-            <ShoppingCart className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-1" />
-            <span className="hidden sm:inline">{t("add to cart")}</span>
-            <span className="sm:hidden">{t("cart")}</span>
+            <MessageCircle className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-1" />
+            <span className="hidden sm:inline">
+              {t("contact on whatsapp")}
+            </span>
+            <span className="sm:hidden">{t("whatsapp")}</span>
           </Button>
         )}
         {variant === "seller" && (

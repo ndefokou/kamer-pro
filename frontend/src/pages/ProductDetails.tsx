@@ -25,12 +25,11 @@ import {
   Phone,
   Mail,
   MapPin,
-  ShoppingCart,
+  MessageCircle,
   Heart,
   Plus,
   Minus,
 } from "lucide-react";
-import { useCart } from "@/hooks/useCart";
 import { useWishlist } from "@/hooks/useWishlist";
 import { useMessaging } from "@/hooks/useMessaging";
 import { ProductReviews } from "@/components/ProductReviews";
@@ -59,7 +58,6 @@ const ProductDetails = () => {
   const [similarProducts, setSimilarProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
-  const { addToCart } = useCart();
   const { addToWishlist, isInWishlist, removeFromWishlistByProduct } =
     useWishlist();
   const token = localStorage.getItem("token");
@@ -116,16 +114,6 @@ const ProductDetails = () => {
     return `http://localhost:8082${imagePath}`;
   };
 
-  const handleAddToCart = () => {
-    if (!token) {
-      navigate("/webauth-login");
-      return;
-    }
-    if (product) {
-      addToCart(parseInt(product.id), quantity);
-    }
-  };
-
   const handleToggleWishlist = () => {
     if (!token) {
       navigate("/webauth-login");
@@ -139,14 +127,6 @@ const ProductDetails = () => {
         addToWishlist(productIdNum);
       }
     }
-  };
-
-  const handleSimilarAddToCart = (productId: string) => {
-    if (!token) {
-      navigate("/webauth-login");
-      return;
-    }
-    addToCart(parseInt(productId), 1);
   };
 
   const handleSimilarToggleWishlist = (productId: string) => {
@@ -299,10 +279,21 @@ const ProductDetails = () => {
                     <Button
                       className="flex-1"
                       size="lg"
-                      onClick={handleAddToCart}
+                      onClick={() => {
+                        if (product && product.contact_phone) {
+                          window.open(
+                            `https://wa.me/${product.contact_phone.replace(
+                              /\s/g,
+                              ""
+                            )}`,
+                            "_blank"
+                          );
+                        }
+                      }}
+                      disabled={!product || !product.contact_phone}
                     >
-                      <ShoppingCart className="h-5 w-5 mr-2" />
-                      {t("add to cart")}
+                      <MessageCircle className="h-5 w-5 mr-2" />
+                      {t("contact on whatsapp")}
                     </Button>
                     <Button
                       variant="outline"
@@ -428,7 +419,6 @@ const ProductDetails = () => {
                   token={token}
                   isInWishlist={isInWishlist}
                   handleToggleWishlist={handleSimilarToggleWishlist}
-                  handleAddToCart={handleSimilarAddToCart}
                   getImageUrl={getImageUrl}
                 />
               ))}

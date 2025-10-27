@@ -25,7 +25,6 @@ import ProductCard from "@/components/ProductCard";
 import { Package } from "lucide-react";
 import { useNavigate, Link } from "react-router-dom";
 import { getProducts } from "@/api/client";
-import { useCart } from "@/hooks/useCart";
 import { useWishlist } from "@/hooks/useWishlist";
 
 interface Product {
@@ -80,7 +79,6 @@ const Marketplace = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { addToCart } = useCart();
   const { addToWishlist, isInWishlist, removeFromWishlistByProduct } =
     useWishlist();
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
@@ -140,14 +138,6 @@ const Marketplace = () => {
       return imagePath;
     }
     return `http://localhost:8082${imagePath}`;
-  };
-
-  const handleAddToCart = (productId: string) => {
-    if (!token) {
-      navigate("/webauth-login");
-      return;
-    }
-    addToCart(parseInt(productId), 1);
   };
 
   const handleToggleWishlist = (productId: string) => {
@@ -270,7 +260,6 @@ const Marketplace = () => {
                 token={token}
                 isInWishlist={isInWishlist}
                 handleToggleWishlist={handleToggleWishlist}
-                handleAddToCart={handleAddToCart}
                 getImageUrl={getImageUrl}
               />
             ))}
