@@ -174,25 +174,23 @@ const Marketplace = () => {
         </div>
 
         <div className="mb-8 p-4 border rounded-lg space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-            <div className="space-y-1">
-              <Label htmlFor="category">{t("category")}</Label>
-              <Select
-                value={selectedCategory}
-                onValueChange={setSelectedCategory}
-              >
-                <SelectTrigger id="category" className="w-full">
-                  <SelectValue placeholder={t("category")} />
-                </SelectTrigger>
-                <SelectContent>
-                  {CATEGORIES.map((category) => (
-                    <SelectItem key={category.key} value={category.value}>
-                      {t(`categories.${category.key}`)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+          <div>
+            <Label className="mb-2 block">{t("category")}</Label>
+            <div className="flex flex-wrap gap-2">
+              {CATEGORIES.map((category) => (
+                <Button
+                  key={category.key}
+                  variant={
+                    selectedCategory === category.value ? "default" : "outline"
+                  }
+                  onClick={() => setSelectedCategory(category.value)}
+                >
+                  {t(`categories.${category.key}`)}
+                </Button>
+              ))}
             </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="space-y-1">
               <Label htmlFor="location">{t("location")}</Label>
               <Select
