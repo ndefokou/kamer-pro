@@ -168,32 +168,6 @@ const ProductCard = ({
             </Button>
           </div>
         )}
-        {variant === "marketplace" && (
-          <div className="hidden sm:block w-full space-y-1">
-            {product.contact_phone && (
-              <div className="flex items-center text-xs w-full min-w-0">
-                <Phone className="h-3 w-3 mr-1 text-primary flex-shrink-0" />
-                <a
-                  href={`tel:${product.contact_phone}`}
-                  className="hover:underline truncate"
-                >
-                  {product.contact_phone}
-                </a>
-              </div>
-            )}
-            {product.contact_email && (
-              <div className="flex items-center text-xs w-full min-w-0">
-                <Mail className="h-3 w-3 mr-1 text-primary flex-shrink-0" />
-                <a
-                  href={`mailto:${product.contact_email}`}
-                  className="hover:underline truncate"
-                >
-                  {product.contact_email}
-                </a>
-              </div>
-            )}
-          </div>
-        )}
       </CardFooter>
     </Card>
   );
