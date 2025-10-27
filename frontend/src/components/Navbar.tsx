@@ -1,8 +1,9 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import {
   Store,
   ShoppingCart,
@@ -13,6 +14,7 @@ import {
   X,
   Globe,
   MessageSquare,
+  Search,
 } from "lucide-react";
 import { useCart } from "@/hooks/useCart";
 import { useWishlist } from "@/hooks/useWishlist";
@@ -36,12 +38,27 @@ import {
 const Navbar = () => {
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
+  const [searchParams] = useSearchParams();
+  const [searchQuery, setSearchQuery] = useState(searchParams.get("search") || "");
   const { cartCount } = useCart();
   const { wishlistCount } = useWishlist();
   const { unreadCount } = useMessaging();
   const username = localStorage.getItem("username");
   const token = localStorage.getItem("token");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  useEffect(() => {
+    setSearchQuery(searchParams.get("search") || "");
+  }, [searchParams]);
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    const params = new URLSearchParams();
+    if (searchQuery.trim()) {
+      params.set("search", searchQuery.trim());
+    }
+    navigate(`/marketplace?${params.toString()}`);
+  };
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -73,6 +90,21 @@ const Navbar = () => {
             </span>
             <span className="text-xl font-bold sm:hidden">KL</span>
           </Link>
+
+          {/* Search Bar */}
+          <div className="flex-1 max-w-md mx-4">
+            <form onSubmit={handleSearch}>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                <Input
+                  placeholder={t("search")}
+                  className="w-full pl-10"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+            </form>
+          </div>
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-4">

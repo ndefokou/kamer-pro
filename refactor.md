@@ -1,0 +1,15 @@
+- Remove the inactif option we should not have that
+- en francais il faut retire le yaounde la
+- remove review title also
+- la bar the recher doit etre au nivaux du nav bar
+- le s category doivent etre visible normalemet sa drop down 
+- enlever les ifo du vende au nivaux du display
+- le ajouter au panier doit renvoyer dirrectement sur whatsapp plutot
+- ajouter un petit care un desous des image pour pouvoir voir les diferent image si le vendeur a ajouter plusieur photo
+- ajoute une partir ou quelqun peut cree une boutique du cote de seller dashboard ou il vas fournir certaine information qui seront static(lemail, le numero et lieux)
+- Remove the authentication page
+- Fix the autorisation you should be authenticate to navigate on pages that are restricted
+- uptimize the performance
+- remove redondant button on the site bar
+- Remove home page
+- fix the db and store the images on an s3bocket

@@ -31,7 +31,7 @@ interface Product {
   contact_email: string | null;
   images: { image_url: string }[];
   created_at?: string;
-  status?: "active" | "inactive";
+  status?: "active";
   condition?: string;
 }
 

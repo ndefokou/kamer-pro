@@ -102,11 +102,9 @@
   "select a location": "Select a location",
   "total products": "Total Products",
   "active listings": "Active Listings",
-  "inactive listings": "Inactive Listings",
   "my products": "My Products",
   "all": "All",
   "active": "Active",
-  "inactive": "Inactive",
   "categories": {
     "all": "All",
     "electronics": "Electronics",

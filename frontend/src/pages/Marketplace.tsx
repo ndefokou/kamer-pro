@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
+import { useSearchParams } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -21,7 +22,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Navbar from "@/components/Navbar";
 import ProductCard from "@/components/ProductCard";
-import { Search, Package } from "lucide-react";
+import { Package } from "lucide-react";
 import { useNavigate, Link } from "react-router-dom";
 import { getProducts } from "@/api/client";
 import { useCart } from "@/hooks/useCart";
@@ -78,11 +79,14 @@ const LOCATIONS = [
 const Marketplace = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { addToCart } = useCart();
   const { addToWishlist, isInWishlist, removeFromWishlistByProduct } =
     useWishlist();
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(
+    searchParams.get("search") || ""
+  );
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [selectedLocation, setSelectedLocation] = useState("All");
   const [selectedCondition, setSelectedCondition] = useState("All");
@@ -116,6 +120,10 @@ const Marketplace = () => {
     minPrice,
     maxPrice,
   ]);
+
+  useEffect(() => {
+    setSearchQuery(searchParams.get("search") || "");
+  }, [searchParams]);
 
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -166,12 +174,6 @@ const Marketplace = () => {
         </div>
 
         <div className="mb-8 p-4 border rounded-lg space-y-4">
-          <Input
-            placeholder={t("search")}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full"
-          />
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             <div className="space-y-1">
               <Label htmlFor="category">{t("category")}</Label>

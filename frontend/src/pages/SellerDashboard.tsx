@@ -54,7 +54,7 @@ interface Product {
   location: string;
   contact_phone?: string;
   contact_email?: string;
-  status: "active" | "inactive";
+  status: "active";
   images?: { image_url: string }[];
 }
 
@@ -108,7 +108,7 @@ const SellerDashboard = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [previews, setPreviews] = useState<string[]>([]);
   const [filterStatus, setFilterStatus] = useState<
-    "all" | "active" | "inactive"
+    "all" | "active"
   >("all");
 
   const fetchProducts = async () => {
@@ -258,7 +258,6 @@ const SellerDashboard = () => {
 
   const totalProducts = products.length;
   const activeProducts = products.filter((p) => p.status === "active").length;
-  const inactiveProducts = totalProducts - activeProducts;
 
   return (
     <div className="min-h-screen bg-background">
@@ -476,16 +475,6 @@ const SellerDashboard = () => {
               <div className="text-2xl font-bold">{activeProducts}</div>
             </CardContent>
           </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                {t("inactive listings")}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{inactiveProducts}</div>
-            </CardContent>
-          </Card>
         </div>
 
         <div className="flex justify-between items-center mb-4">
@@ -502,12 +491,6 @@ const SellerDashboard = () => {
               onClick={() => setFilterStatus("active")}
             >
               {t("active")}
-            </Button>
-            <Button
-              variant={filterStatus === "inactive" ? "default" : "outline"}
-              onClick={() => setFilterStatus("inactive")}
-            >
-              {t("inactive")}
             </Button>
           </div>
         </div>
