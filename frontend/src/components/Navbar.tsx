@@ -198,14 +198,6 @@ const Navbar = () => {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => navigate("/marketplace")}>
-                    Marketplace
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => navigate("/seller-dashboard")}
-                  >
-                    Seller Dashboard
-                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => navigate("/wishlist")}>
                     <Heart className="h-4 w-4 mr-2" />
                     Wishlist

@@ -10,13 +10,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from "@/components/ui/carousel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -58,6 +51,7 @@ const ProductDetails = () => {
   const [similarProducts, setSimilarProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const { addToWishlist, isInWishlist, removeFromWishlistByProduct } =
     useWishlist();
   const token = localStorage.getItem("token");
@@ -88,6 +82,9 @@ const ProductDetails = () => {
       try {
         const response = await apiClient.get(`/products/${id}`);
         setProduct(response.data);
+        if (response.data.images && response.data.images.length > 0) {
+          setSelectedImage(response.data.images[0].image_url);
+        }
 
         if (response.data.category) {
           const similarResponse = await apiClient.get("/products", {
@@ -186,22 +183,28 @@ const ProductDetails = () => {
           </CardHeader>
           <CardContent className="grid md:grid-cols-2 gap-8">
             <div>
-              <Carousel className="mb-6">
-                <CarouselContent>
-                  {product.images.map((image, index) => (
-                    <CarouselItem key={image.image_url}>
-                      <img
-                        src={getImageUrl(image.image_url)}
-                        alt={`${product.name} - Image ${index + 1}`}
-                        className="w-full max-h-96 object-contain rounded-lg border bg-muted"
-                        loading={index === 0 ? "eager" : "lazy"}
-                      />
-                    </CarouselItem>
-                  ))}
-                </CarouselContent>
-                <CarouselPrevious />
-                <CarouselNext />
-              </Carousel>
+              <div className="mb-4">
+                <img
+                  src={getImageUrl(selectedImage || "")}
+                  alt={product.name}
+                  className="w-full max-h-96 object-contain rounded-lg border bg-muted"
+                />
+              </div>
+              <div className="flex space-x-2 overflow-x-auto">
+                {product.images.map((image) => (
+                  <img
+                    key={image.image_url}
+                    src={getImageUrl(image.image_url)}
+                    alt="product thumbnail"
+                    className={`h-20 w-20 object-cover rounded-md cursor-pointer border-2 ${
+                      selectedImage === image.image_url
+                        ? "border-primary"
+                        : "border-transparent"
+                    }`}
+                    onClick={() => setSelectedImage(image.image_url)}
+                  />
+                ))}
+              </div>
             </div>
             <div className="space-y-6">
               <div>
