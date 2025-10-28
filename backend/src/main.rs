@@ -13,9 +13,6 @@ mod routes;
 use routes::auth::{
     authentication_complete, authentication_start, registration_complete, registration_start,
 };
-use routes::cart::{
-    add_to_cart, clear_cart, get_cart, get_cart_count, remove_from_cart, update_cart_item,
-};
 use routes::products::{
     create_product, delete_product, get_my_products, get_product, get_products, update_product,
 };
@@ -103,15 +100,6 @@ async fn main() -> std::io::Result<()> {
                         web::scope("/roles")
                             .service(get_user_role)
                             .service(set_user_role),
-                    )
-                    .service(
-                        web::scope("/cart")
-                            .service(get_cart)
-                            .service(get_cart_count)
-                            .service(add_to_cart)
-                            .service(update_cart_item)
-                            .service(remove_from_cart)
-                            .service(clear_cart),
                     )
                     .service(
                         web::scope("/wishlist")

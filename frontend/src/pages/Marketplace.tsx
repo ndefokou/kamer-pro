@@ -176,7 +176,7 @@ const Marketplace = () => {
 
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2">{t("marketplace")}</h1>
+          <h1 className="text-3xl md:text-4xl font-bold mb-2">{t("marketplace")}</h1>
           <p className="text-muted-foreground">{t("discover products")}</p>
         </div>
 
@@ -191,13 +191,14 @@ const Marketplace = () => {
                     selectedCategory === category.value ? "default" : "outline"
                   }
                   onClick={() => setSelectedCategory(category.value)}
+                  className="text-xs px-3 py-1 h-auto"
                 >
                   {t(`categories.${category.key}`)}
                 </Button>
               ))}
             </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="space-y-1">
               <Label htmlFor="location">{t("location")}</Label>
               <Select
@@ -269,7 +270,7 @@ const Marketplace = () => {
             <p className="text-muted-foreground">{t("no products found")}</p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-2 sm:gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-2 sm:gap-4">
             {filteredProducts.map((product) => (
               <ProductCard
                 key={product.id}

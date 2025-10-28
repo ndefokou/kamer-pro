@@ -1,5 +1,4 @@
 import { useWishlist } from "@/hooks/useWishlist";
-import { useCart } from "@/hooks/useCart";
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -11,13 +10,6 @@ import { useTranslation } from "react-i18next";
 const Wishlist = () => {
   const { t } = useTranslation();
   const { wishlistItems, removeFromWishlist, isLoading } = useWishlist();
-  const { addToCart } = useCart();
-
-  const handleAddToCart = async (productId: number, wishlistId: number) => {
-    await addToCart(productId, 1);
-    // Optionally remove from wishlist after adding to cart
-    // await removeFromWishlist(wishlistId);
-  };
 
   const handleToggleWishlist = (productId: string) => {
     const item = wishlistItems.find((item) => item.id === productId);
@@ -74,9 +66,6 @@ const Wishlist = () => {
               token={localStorage.getItem("token")}
               isInWishlist={() => true}
               handleToggleWishlist={handleToggleWishlist}
-              handleAddToCart={() =>
-                handleAddToCart(parseInt(item.id), item.wishlist_id)
-              }
               getImageUrl={getImageUrl}
             />
           ))}

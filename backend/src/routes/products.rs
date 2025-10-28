@@ -331,11 +331,13 @@ pub async fn create_product(
             "images[]" => {
                 let filename = format!("{}.png", Uuid::new_v4());
                 let filepath = format!("./public/uploads/{}", filename);
+                println!("Saving image to: {}", filepath);
                 let mut f = std::fs::File::create(&filepath).unwrap();
                 while let Some(chunk) = field.try_next().await.unwrap() {
                     f.write_all(&chunk).unwrap();
                 }
                 image_paths.push(format!("/uploads/{}", filename));
+                println!("Current image paths: {:?}", image_paths);
             }
             _ => (),
         }
@@ -474,11 +476,13 @@ pub async fn update_product(
             "images[]" => {
                 let filename = format!("{}.png", Uuid::new_v4());
                 let filepath = format!("./public/uploads/{}", filename);
+                println!("Saving image to: {}", filepath);
                 let mut f = std::fs::File::create(&filepath).unwrap();
                 while let Some(chunk) = field.try_next().await.unwrap() {
                     f.write_all(&chunk).unwrap();
                 }
                 image_paths.push(format!("/uploads/{}", filename));
+                println!("Current image paths: {:?}", image_paths);
             }
             _ => (),
         }

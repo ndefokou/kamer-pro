@@ -110,60 +110,58 @@ const ProductCard = ({
       <CardHeader className="p-2 sm:p-3 flex-grow-0">
         <div className="flex justify-between items-start gap-1 sm:gap-2">
           <Link to={`/product/${product.id}`} className="flex-1 min-w-0">
-            <CardTitle className="text-xs sm:text-sm md:text-base hover:text-primary transition-colors line-clamp-2">
+            <CardTitle className="text-xs sm:text-sm hover:text-primary transition-colors line-clamp-2">
               {product.name}
             </CardTitle>
           </Link>
-          {product.category && (
-            <Badge
-              variant="secondary"
-              className="text-[10px] sm:text-xs flex-shrink-0 px-1 py-0 sm:px-2"
-            >
-              {t(
-                `categories.${product.category
-                  .toLowerCase()
-                  .replace(" & ", "_")}`,
-              )}
-            </Badge>
-          )}
         </div>
-        <CardDescription className="line-clamp-2 text-[10px] sm:text-xs mt-1 hidden sm:block">
+        <CardDescription className="line-clamp-2 text-xs mt-1 hidden sm:block">
           {product.description}
         </CardDescription>
       </CardHeader>
-      <CardContent className="p-2 sm:p-3 pt-0 flex-grow-0">
-        <div className="space-y-0.5 sm:space-y-1">
-          <div className="text-sm sm:text-base md:text-lg font-bold text-primary">
+      <CardContent className="p-2 sm:p-3 pt-0 flex-grow">
+        <div className="space-y-1">
+          <div className="text-sm font-bold text-primary">
             {new Intl.NumberFormat("fr-FR", {
               style: "currency",
               currency: "XAF",
             }).format(product.price)}
           </div>
-          <div className="flex items-center text-[10px] sm:text-xs text-muted-foreground">
-            <MapPin className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-0.5 sm:mr-1 flex-shrink-0" />
+          <div className="flex items-center text-xs text-muted-foreground">
+            <MapPin className="h-3 w-3 mr-1 flex-shrink-0" />
             <span className="truncate">{product.location}</span>
           </div>
         </div>
       </CardContent>
-      <CardFooter className="flex-col items-start space-y-1 sm:space-y-2 p-2 sm:p-3 pt-0 mt-auto">
+      <CardFooter className="p-2 sm:p-3 pt-0 mt-auto">
         {variant === "marketplace" && (
           <Button
-            className="w-full text-[10px] sm:text-xs h-7 sm:h-8"
+            className="w-full text-xs h-8"
             onClick={() => onContactSeller && onContactSeller(product)}
           >
-            <MessageCircle className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-1" />
+            <MessageCircle className="h-3 w-3 mr-1" />
             {t("contact seller")}
           </Button>
         )}
         {variant === "seller" && (
           <div className="flex justify-end space-x-2 w-full">
-            <Button variant="outline" size="sm" onClick={onEdit}>
-              <Edit2 className="h-4 w-4 mr-1" />
-              {t("edit")}
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-8 w-8 sm:w-auto sm:px-3"
+              onClick={onEdit}
+            >
+              <Edit2 className="h-4 w-4" />
+              <span className="hidden sm:inline sm:ml-1">{t("edit")}</span>
             </Button>
-            <Button variant="destructive" size="sm" onClick={onDelete}>
-              <Trash2 className="h-4 w-4 mr-1" />
-              {t("delete")}
+            <Button
+              variant="destructive"
+              size="icon"
+              className="h-8 w-8 sm:w-auto sm:px-3"
+              onClick={onDelete}
+            >
+              <Trash2 className="h-4 w-4" />
+              <span className="hidden sm:inline sm:ml-1">{t("delete")}</span>
             </Button>
           </div>
         )}

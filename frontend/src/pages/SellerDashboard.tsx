@@ -6,8 +6,6 @@ import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -30,7 +28,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
 import {
   Plus,
   Edit2,
@@ -208,12 +205,19 @@ const SellerDashboard = () => {
   };
 
   const onDrop = (acceptedFiles: File[]) => {
+    console.log("Accepted files:", acceptedFiles);
+    const updatedImages = [...formData.images, ...acceptedFiles];
+    const newPreviews = acceptedFiles.map((file) => URL.createObjectURL(file));
+    const updatedPreviews = [...previews, ...newPreviews];
+
     setFormData({
       ...formData,
-      images: [...formData.images, ...acceptedFiles],
+      images: updatedImages,
     });
-    const newPreviews = acceptedFiles.map((file) => URL.createObjectURL(file));
-    setPreviews([...previews, ...newPreviews]);
+    setPreviews(updatedPreviews);
+
+    console.log("Updated formData.images:", updatedImages);
+    console.log("Updated previews:", updatedPreviews);
   };
 
   const { getRootProps, getInputProps } = useDropzone({
@@ -225,6 +229,8 @@ const SellerDashboard = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+
+    console.log("Submitting images:", formData.images);
 
     const productData = new FormData();
     productData.append("name", formData.name);
@@ -281,9 +287,11 @@ const SellerDashboard = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
       <div className="container mx-auto px-4 py-8">
-        <div className="flex justify-between items-center mb-8">
+        <div className="flex flex-col sm:flex-row justify-between sm:items-center mb-8 gap-4">
           <div>
-            <h1 className="text-4xl font-bold mb-2">{t("seller dashboard")}</h1>
+            <h1 className="text-3xl md:text-4xl font-bold mb-2">
+              {t("seller dashboard")}
+            </h1>
             <p className="text-muted-foreground">
               {t("manage your product listings")}
             </p>
@@ -301,10 +309,10 @@ const SellerDashboard = () => {
                 <DialogTrigger asChild>
                   <Button
                     onClick={() => handleOpenDialog()}
-                    className="flex items-center space-x-2"
+                    className="w-full sm:w-auto"
                   >
-                    <Plus className="h-4 w-4" />
-                    <span>{t("add product")}</span>
+                    <Plus className="h-4 w-4 sm:mr-2" />
+                    <span className="hidden sm:inline">{t("add product")}</span>
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -462,7 +470,7 @@ const SellerDashboard = () => {
                         {...getRootProps()}
                         className="mt-2 flex justify-center rounded-lg border border-dashed border-gray-900/25 px-6 py-10 dark:border-gray-100/25 cursor-pointer"
                       >
-                        <input {...getInputProps()} id="image" />
+                        <input {...getInputProps()} />
                         {previews.length > 0 ? (
                           <div className="flex space-x-2">
                             {previews.map((src, index) => (
@@ -497,7 +505,7 @@ const SellerDashboard = () => {
                 </DialogContent>
               </Dialog>
             </div>
-            <div className="grid gap-4 md:grid-cols-3 my-8">
+            <div className="grid gap-4 sm:grid-cols-2 my-8">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">
@@ -519,18 +527,20 @@ const SellerDashboard = () => {
                 </CardContent>
               </Card>
             </div>
-            <div className="flex justify-between items-center mb-4">
+            <div className="flex flex-col sm:flex-row justify-between sm:items-center mb-4 gap-4">
               <h2 className="text-2xl font-bold">{t("my products")}</h2>
               <div className="flex space-x-2">
                 <Button
                   variant={filterStatus === "all" ? "default" : "outline"}
                   onClick={() => setFilterStatus("all")}
+                  className="w-full sm:w-auto"
                 >
                   {t("all")}
                 </Button>
                 <Button
                   variant={filterStatus === "active" ? "default" : "outline"}
                   onClick={() => setFilterStatus("active")}
+                  className="w-full sm:w-auto"
                 >
                   {t("active")}
                 </Button>
@@ -549,7 +559,7 @@ const SellerDashboard = () => {
                 </CardContent>
               </Card>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-2 sm:gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
                 {products
                   .filter(
                     (p) =>

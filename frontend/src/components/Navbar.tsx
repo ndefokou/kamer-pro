@@ -16,7 +16,6 @@ import {
   MessageSquare,
   Search,
 } from "lucide-react";
-import { useCart } from "@/hooks/useCart";
 import { useWishlist } from "@/hooks/useWishlist";
 import { useMessaging } from "@/hooks/useMessaging";
 import {
@@ -40,7 +39,6 @@ const Navbar = () => {
   const { t, i18n } = useTranslation();
   const [searchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState(searchParams.get("search") || "");
-  const { cartCount } = useCart();
   const { wishlistCount } = useWishlist();
   const { unreadCount } = useMessaging();
   const username = localStorage.getItem("username");
@@ -146,23 +144,6 @@ const Navbar = () => {
                   </Button>
                 </Link>
 
-                <Link to="/cart" className="relative">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="text-primary-foreground hover:bg-primary-foreground/10"
-                  >
-                    <ShoppingCart className="h-5 w-5" />
-                    {cartCount > 0 && (
-                      <Badge
-                        className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-secondary text-secondary-foreground"
-                        variant="secondary"
-                      >
-                        {cartCount}
-                      </Badge>
-                    )}
-                  </Button>
-                </Link>
               </>
             )}
 
@@ -201,10 +182,6 @@ const Navbar = () => {
                   <DropdownMenuItem onClick={() => navigate("/wishlist")}>
                     <Heart className="h-4 w-4 mr-2" />
                     Wishlist
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate("/cart")}>
-                    <ShoppingCart className="h-4 w-4 mr-2" />
-                    Cart
                   </DropdownMenuItem>
                  <DropdownMenuItem onClick={() => navigate("/messages")}>
                    <MessageSquare className="h-4 w-4 mr-2" />
@@ -254,23 +231,6 @@ const Navbar = () => {
                   </Button>
                 </Link>
 
-                <Link to="/cart" className="relative">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="text-primary-foreground hover:bg-primary-foreground/10"
-                  >
-                    <ShoppingCart className="h-5 w-5" />
-                    {cartCount > 0 && (
-                      <Badge
-                        className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-secondary text-secondary-foreground text-xs"
-                        variant="secondary"
-                      >
-                        {cartCount}
-                      </Badge>
-                    )}
-                  </Button>
-                </Link>
               </>
             )}
 
@@ -349,20 +309,6 @@ const Navbar = () => {
                         {wishlistCount > 0 && (
                           <Badge variant="secondary" className="ml-auto">
                             {wishlistCount}
-                          </Badge>
-                        )}
-                      </Button>
-
-                      <Button
-                        variant="ghost"
-                        className="justify-start"
-                        onClick={() => handleNavigation("/cart")}
-                      >
-                        <ShoppingCart className="h-5 w-5 mr-2" />
-                        Cart
-                        {cartCount > 0 && (
-                          <Badge variant="secondary" className="ml-auto">
-                            {cartCount}
                           </Badge>
                         )}
                       </Button>
