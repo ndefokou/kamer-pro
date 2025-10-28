@@ -47,6 +47,10 @@ export interface MessagingContextType {
   deleteConversation: (conversationId: number) => Promise<void>;
   fetchTemplates: () => Promise<void>;
   refreshUnreadCount: () => Promise<void>;
+  createConversation: (
+    sellerId: number,
+    productId: number,
+  ) => Promise<number | undefined>;
 }
 
 export const MessagingContext = createContext<MessagingContextType | undefined>(

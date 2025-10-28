@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router-dom";
+import { useMessaging } from "@/hooks/useMessaging";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -38,6 +39,7 @@ interface Product {
   contact_email: string | null;
   images: { image_url: string }[];
   created_at: string;
+  user_id: number;
 }
 
 const CATEGORIES = [
@@ -81,6 +83,7 @@ const Marketplace = () => {
   const [searchParams] = useSearchParams();
   const { addToWishlist, isInWishlist, removeFromWishlistByProduct } =
     useWishlist();
+  const { createConversation } = useMessaging();
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [searchQuery, setSearchQuery] = useState(
     searchParams.get("search") || ""
@@ -150,6 +153,20 @@ const Marketplace = () => {
       removeFromWishlistByProduct(productIdNum);
     } else {
       addToWishlist(productIdNum);
+    }
+  };
+
+  const handleContactSeller = async (product: Product) => {
+    if (!token) {
+      navigate("/webauth-login");
+      return;
+    }
+    const conversationId = await createConversation(
+      product.user_id,
+      parseInt(product.id),
+    );
+    if (conversationId) {
+      navigate(`/messages?conversationId=${conversationId}`);
     }
   };
 
@@ -261,6 +278,7 @@ const Marketplace = () => {
                 isInWishlist={isInWishlist}
                 handleToggleWishlist={handleToggleWishlist}
                 getImageUrl={getImageUrl}
+                onContactSeller={handleContactSeller}
               />
             ))}
           </div>

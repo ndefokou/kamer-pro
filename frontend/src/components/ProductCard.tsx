@@ -44,6 +44,7 @@ interface ProductCardProps {
   variant?: "marketplace" | "seller";
   onEdit?: () => void;
   onDelete?: () => void;
+  onContactSeller?: (product: Product) => void;
 }
 
 const ProductCard = ({
@@ -55,6 +56,7 @@ const ProductCard = ({
   variant = "marketplace",
   onEdit,
   onDelete,
+  onContactSeller,
 }: ProductCardProps) => {
   const { t } = useTranslation();
 
@@ -147,21 +149,10 @@ const ProductCard = ({
         {variant === "marketplace" && (
           <Button
             className="w-full text-[10px] sm:text-xs h-7 sm:h-8"
-            onClick={() => {
-              if (product.contact_phone) {
-                window.open(
-                  `https://wa.me/${product.contact_phone.replace(/\s/g, "")}`,
-                  "_blank"
-                );
-              }
-            }}
-            disabled={!product.contact_phone}
+            onClick={() => onContactSeller && onContactSeller(product)}
           >
             <MessageCircle className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-1" />
-            <span className="hidden sm:inline">
-              {t("contact on whatsapp")}
-            </span>
-            <span className="sm:hidden">{t("whatsapp")}</span>
+            {t("contact seller")}
           </Button>
         )}
         {variant === "seller" && (

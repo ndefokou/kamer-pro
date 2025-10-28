@@ -212,6 +212,21 @@ export const MessagingProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, [currentConversation, fetchConversations, toast]);
 
+  const createConversation = useCallback(
+    async (sellerId: number, productId: number) => {
+      try {
+        const conversationId = await createOrGetConversation(
+          productId,
+          sellerId,
+        );
+        return conversationId;
+      } catch (error) {
+        // Error is already handled in createOrGetConversation
+      }
+    },
+    [createOrGetConversation],
+  );
+
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) {
@@ -261,6 +276,7 @@ export const MessagingProvider: React.FC<{ children: React.ReactNode }> = ({
         deleteConversation,
         fetchTemplates,
         refreshUnreadCount,
+        createConversation,
       }}
     >
       {children}
