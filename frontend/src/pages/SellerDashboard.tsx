@@ -43,6 +43,8 @@ import {
 import { useDropzone } from "react-dropzone";
 import Navbar from "@/components/Navbar";
 import ProductCard from "@/components/ProductCard";
+import ShopSettings from "@/components/ShopSettings";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface Product {
   id: number;
@@ -105,11 +107,17 @@ const SellerDashboard = () => {
     contact_email: "",
     images: [] as File[],
   });
+  const [shopData, setShopData] = useState({
+    email: "",
+    phone: "",
+    location: "",
+  });
   const [isLoading, setIsLoading] = useState(false);
   const [previews, setPreviews] = useState<string[]>([]);
   const [filterStatus, setFilterStatus] = useState<
     "all" | "active"
   >("all");
+  const [activeTab, setActiveTab] = useState("products");
 
   const fetchProducts = async () => {
     try {
@@ -120,8 +128,18 @@ const SellerDashboard = () => {
     }
   };
 
+  const fetchShopData = async () => {
+    try {
+      const response = await apiClient.get("/shop");
+      setShopData(response.data);
+    } catch (error) {
+      console.error("Failed to fetch shop data:", error);
+    }
+  };
+
   useEffect(() => {
     fetchProducts();
+    fetchShopData();
   }, []);
 
   const handleOpenDialog = (product: Product | null = null) => {
@@ -155,9 +173,9 @@ const SellerDashboard = () => {
         price: "",
         category: "",
         condition: "",
-        location: "",
-        contact_phone: "",
-        contact_email: "",
+        location: shopData.location,
+        contact_phone: shopData.phone,
+        contact_email: shopData.email,
         images: [],
       });
       setPreviews([]);
@@ -270,268 +288,300 @@ const SellerDashboard = () => {
               {t("manage your product listings")}
             </p>
           </div>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button
-                onClick={() => handleOpenDialog()}
-                className="flex items-center space-x-2"
-              >
-                <Plus className="h-4 w-4" />
-                <span>{t("add product")}</span>
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>
-                  {editingProduct ? t("edit product") : t("add new product")}
-                </DialogTitle>
-                <DialogDescription>
-                  {editingProduct
-                    ? t("fill in the details to update")
-                    : t("fill in the details to create")}
-                </DialogDescription>
-              </DialogHeader>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">{t("product title")} *</Label>
-                  <Input
-                    id="name"
-                    value={formData.name}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
+        </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="description">{t("description")} *</Label>
-                  <Textarea
-                    id="description"
-                    value={formData.description}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="price">{t("price")} (XAF) *</Label>
-                    <Input
-                      id="price"
-                      type="number"
-                      value={formData.price}
-                      onChange={handleChange}
-                      required
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="category">{t("category")} *</Label>
-                    <Select
-                      value={formData.category}
-                      onValueChange={(value) =>
-                        setFormData({ ...formData, category: value })
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder={t("select a category")} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {CATEGORIES.map((category) => (
-                          <SelectItem key={category.key} value={category.value}>
-                            {t(`categories.${category.key}`)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="condition">{t("condition")} *</Label>
-                    <Select
-                      value={formData.condition}
-                      onValueChange={(value) =>
-                        setFormData({ ...formData, condition: value })
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder={t("select a condition")} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {CONDITIONS.map((condition) => (
-                          <SelectItem
-                            key={condition.key}
-                            value={condition.value}
-                          >
-                            {t(`conditions.${condition.key}`)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="location">{t("location")} *</Label>
-                    <Select
-                      value={formData.location}
-                      onValueChange={(value) =>
-                        setFormData({ ...formData, location: value })
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder={t("select a location")} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {LOCATIONS.map((location) => (
-                          <SelectItem key={location} value={location}>
-                            {location}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="contact_phone">{t("contact phone")}</Label>
-                    <Input
-                      id="contact_phone"
-                      type="tel"
-                      value={formData.contact_phone}
-                      onChange={handleChange}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="contact_email">{t("contact email")}</Label>
-                    <Input
-                      id="contact_email"
-                      type="email"
-                      value={formData.contact_email}
-                      onChange={handleChange}
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>{t("product image")}</Label>
-                  <div
-                    {...getRootProps()}
-                    className="mt-2 flex justify-center rounded-lg border border-dashed border-gray-900/25 px-6 py-10 dark:border-gray-100/25 cursor-pointer"
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="products">{t("my products")}</TabsTrigger>
+            <TabsTrigger value="shop">{t("my shop")}</TabsTrigger>
+          </TabsList>
+          <TabsContent value="products">
+            <div className="flex justify-end mt-4">
+              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button
+                    onClick={() => handleOpenDialog()}
+                    className="flex items-center space-x-2"
                   >
-                    <input {...getInputProps()} id="image" />
-                    {previews.length > 0 ? (
-                      <div className="flex space-x-2">
-                        {previews.map((src, index) => (
-                          <img
-                            key={index}
-                            src={src}
-                            alt="Product preview"
-                            className="h-24 w-24 object-contain"
-                          />
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="flex flex-col items-center justify-center space-y-2 text-muted-foreground">
-                        <Upload className="h-12 w-12" />
-                        <p>{t("click to upload an image")}</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <DialogFooter>
-                  <Button type="submit" disabled={isLoading}>
-                    {isLoading && (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    )}
-                    {editingProduct ? t("update product") : t("create product")}
+                    <Plus className="h-4 w-4" />
+                    <span>{t("add product")}</span>
                   </Button>
-                </DialogFooter>
-              </form>
-            </DialogContent>
-          </Dialog>
-        </div>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>
+                      {editingProduct
+                        ? t("edit product")
+                        : t("add new product")}
+                    </DialogTitle>
+                    <DialogDescription>
+                      {editingProduct
+                        ? t("fill in the details to update")
+                        : t("fill in the details to create")}
+                    </DialogDescription>
+                  </DialogHeader>
+                  <form onSubmit={handleSubmit} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="name">{t("product title")} *</Label>
+                      <Input
+                        id="name"
+                        value={formData.name}
+                        onChange={handleChange}
+                        required
+                      />
+                    </div>
 
-        <div className="grid gap-4 md:grid-cols-3 mb-8">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                {t("total products")}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{totalProducts}</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                {t("active listings")}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{activeProducts}</div>
-            </CardContent>
-          </Card>
-        </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="description">{t("description")} *</Label>
+                      <Textarea
+                        id="description"
+                        value={formData.description}
+                        onChange={handleChange}
+                        required
+                      />
+                    </div>
 
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-bold">{t("my products")}</h2>
-          <div className="flex space-x-2">
-            <Button
-              variant={filterStatus === "all" ? "default" : "outline"}
-              onClick={() => setFilterStatus("all")}
-            >
-              {t("all")}
-            </Button>
-            <Button
-              variant={filterStatus === "active" ? "default" : "outline"}
-              onClick={() => setFilterStatus("active")}
-            >
-              {t("active")}
-            </Button>
-          </div>
-        </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="price">{t("price")} (XAF) *</Label>
+                        <Input
+                          id="price"
+                          type="number"
+                          value={formData.price}
+                          onChange={handleChange}
+                          required
+                        />
+                      </div>
 
-        {products.length === 0 ? (
-          <Card className="text-center py-12">
-            <CardContent>
-              <p className="text-muted-foreground mb-4">
-                {t("you havent created any products yet")}
-              </p>
-              <Button onClick={() => handleOpenDialog()}>
-                <Plus className="mr-2 h-4 w-4" />
-                {t("create your first product")}
-              </Button>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-2 sm:gap-4">
-            {products
-              .filter(
-                (p) => filterStatus === "all" || p.status === filterStatus,
-              )
-              .map((product) => (
-                <ProductCard
-                  key={product.id}
-                  product={{
-                    ...product,
-                    id: product.id.toString(),
-                    contact_phone: product.contact_phone ?? null,
-                    contact_email: product.contact_email ?? null,
-                    images: product.images ?? [],
-                  }}
-                  token={localStorage.getItem("token")}
-                  getImageUrl={getImageUrl}
-                  variant="seller"
-                  onEdit={() => handleOpenDialog(product)}
-                  onDelete={() => handleDelete(product.id)}
-                />
-              ))}
-          </div>
-        )}
+                      <div className="space-y-2">
+                        <Label htmlFor="category">{t("category")} *</Label>
+                        <Select
+                          value={formData.category}
+                          onValueChange={(value) =>
+                            setFormData({ ...formData, category: value })
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue
+                              placeholder={t("select a category")}
+                            />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {CATEGORIES.map((category) => (
+                              <SelectItem
+                                key={category.key}
+                                value={category.value}
+                              >
+                                {t(`categories.${category.key}`)}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="condition">{t("condition")} *</Label>
+                        <Select
+                          value={formData.condition}
+                          onValueChange={(value) =>
+                            setFormData({ ...formData, condition: value })
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue
+                              placeholder={t("select a condition")}
+                            />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {CONDITIONS.map((condition) => (
+                              <SelectItem
+                                key={condition.key}
+                                value={condition.value}
+                              >
+                                {t(`conditions.${condition.key}`)}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="location">{t("location")} *</Label>
+                        <Select
+                          value={formData.location}
+                          onValueChange={(value) =>
+                            setFormData({ ...formData, location: value })
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue
+                              placeholder={t("select a location")}
+                            />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {LOCATIONS.map((location) => (
+                              <SelectItem key={location} value={location}>
+                                {location}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="contact_phone">
+                          {t("contact phone")}
+                        </Label>
+                        <Input
+                          id="contact_phone"
+                          type="tel"
+                          value={formData.contact_phone}
+                          onChange={handleChange}
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="contact_email">
+                          {t("contact email")}
+                        </Label>
+                        <Input
+                          id="contact_email"
+                          type="email"
+                          value={formData.contact_email}
+                          onChange={handleChange}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>{t("product image")}</Label>
+                      <div
+                        {...getRootProps()}
+                        className="mt-2 flex justify-center rounded-lg border border-dashed border-gray-900/25 px-6 py-10 dark:border-gray-100/25 cursor-pointer"
+                      >
+                        <input {...getInputProps()} id="image" />
+                        {previews.length > 0 ? (
+                          <div className="flex space-x-2">
+                            {previews.map((src, index) => (
+                              <img
+                                key={index}
+                                src={src}
+                                alt="Product preview"
+                                className="h-24 w-24 object-contain"
+                              />
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="flex flex-col items-center justify-center space-y-2 text-muted-foreground">
+                            <Upload className="h-12 w-12" />
+                            <p>{t("click to upload an image")}</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <DialogFooter>
+                      <Button type="submit" disabled={isLoading}>
+                        {isLoading && (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        )}
+                        {editingProduct
+                          ? t("update product")
+                          : t("create product")}
+                      </Button>
+                    </DialogFooter>
+                  </form>
+                </DialogContent>
+              </Dialog>
+            </div>
+            <div className="grid gap-4 md:grid-cols-3 my-8">
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">
+                    {t("total products")}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{totalProducts}</div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">
+                    {t("active listings")}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{activeProducts}</div>
+                </CardContent>
+              </Card>
+            </div>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-2xl font-bold">{t("my products")}</h2>
+              <div className="flex space-x-2">
+                <Button
+                  variant={filterStatus === "all" ? "default" : "outline"}
+                  onClick={() => setFilterStatus("all")}
+                >
+                  {t("all")}
+                </Button>
+                <Button
+                  variant={filterStatus === "active" ? "default" : "outline"}
+                  onClick={() => setFilterStatus("active")}
+                >
+                  {t("active")}
+                </Button>
+              </div>
+            </div>
+            {products.length === 0 ? (
+              <Card className="text-center py-12">
+                <CardContent>
+                  <p className="text-muted-foreground mb-4">
+                    {t("you havent created any products yet")}
+                  </p>
+                  <Button onClick={() => handleOpenDialog()}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    {t("create your first product")}
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-2 sm:gap-4">
+                {products
+                  .filter(
+                    (p) =>
+                      filterStatus === "all" || p.status === filterStatus,
+                  )
+                  .map((product) => (
+                    <ProductCard
+                      key={product.id}
+                      product={{
+                        ...product,
+                        id: product.id.toString(),
+                        contact_phone: product.contact_phone ?? null,
+                        contact_email: product.contact_email ?? null,
+                        images: product.images ?? [],
+                      }}
+                      token={localStorage.getItem("token")}
+                      getImageUrl={getImageUrl}
+                      variant="seller"
+                      onEdit={() => handleOpenDialog(product)}
+                      onDelete={() => handleDelete(product.id)}
+                    />
+                  ))}
+              </div>
+            )}
+          </TabsContent>
+          <TabsContent value="shop">
+            <ShopSettings
+              shopData={shopData}
+              onShopDataChange={setShopData}
+            />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );

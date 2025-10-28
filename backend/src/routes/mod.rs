@@ -7,3 +7,4 @@ pub mod upload;
 pub mod wishlist;
 pub mod reviews;
 pub mod messages;
+pub mod shops;

@@ -33,6 +33,7 @@ use routes::messages::{
     create_conversation, delete_conversation, get_conversations, get_message_templates,
     get_messages, get_unread_count, send_image_message, send_message,
 };
+use routes::shops::{create_or_update_shop, get_shop};
 
 #[get("/")]
 async fn hello() -> impl Responder {
@@ -141,7 +142,12 @@ async fn main() -> std::io::Result<()> {
                            .service(delete_conversation)
                            .service(get_message_templates)
                            .service(get_unread_count),
-                   ),
+                   )
+                     .service(
+                        web::scope("/shop")
+                            .service(get_shop)
+                            .service(create_or_update_shop),
+                    ),
             )
             // Serve static files from the public directory
             .service(fs::Files::new("/uploads", "./public/uploads").show_files_listing())
