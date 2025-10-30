@@ -57,6 +57,7 @@ pub struct MessageWithDetails {
 }
 
 #[derive(Deserialize)]
+#[allow(dead_code)]
 pub struct CreateConversationRequest {
     pub product_id: i32,
     pub seller_id: i32,

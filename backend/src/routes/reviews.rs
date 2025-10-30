@@ -47,16 +47,19 @@ pub struct SellerResponse {
 }
 
 #[derive(Deserialize)]
+#[allow(dead_code)]
 pub struct VoteRequest {
     pub is_helpful: bool,
 }
 
 #[derive(Deserialize)]
+#[allow(dead_code)]
 pub struct SellerResponseRequest {
     pub response_text: String,
 }
 
 #[derive(Serialize)]
+#[allow(dead_code)]
 pub struct ReviewStats {
     pub average_rating: f64,
     pub total_reviews: i32,
@@ -64,6 +67,7 @@ pub struct ReviewStats {
 }
 
 #[derive(Serialize, sqlx::FromRow)]
+#[allow(dead_code)]
 pub struct RatingCount {
     pub rating: i32,
     pub count: i32,

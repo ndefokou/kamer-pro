@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import apiClient from "@/api/client";
@@ -76,22 +76,13 @@ const ShopPage = () => {
 
   const token = localStorage.getItem("token");
 
-  useEffect(() => {
-    if (!token) {
-      navigate("/webauth-login");
-      return;
-    }
-    fetchShop();
-    fetchProducts();
-  }, [token, navigate]);
-
-  const fetchShop = async () => {
+  const fetchShop = useCallback(async () => {
     setIsLoading(true);
     try {
       const response = await apiClient.get("/shop");
-      setShop(response.data.shop || response.data);
-      
       const shopData = response.data.shop || response.data;
+      setShop(shopData);
+      
       setFormData({
         name: shopData.name || "",
         email: shopData.email || "",
@@ -113,21 +104,32 @@ const ShopPage = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async () => {
+    if (!shop) return;
     try {
-        if (shop) {
-            const response = await apiClient.get(`/products/seller`);
-            const filteredProducts = response.data.filter(
-                (product: Product) => product.shop_id === shop.id
-            );
-            setProducts(filteredProducts);
-        }
+      const response = await apiClient.get(`/products/seller`);
+      const filteredProducts = response.data.filter(
+        (product: Product) => product.shop_id === shop.id
+      );
+      setProducts(filteredProducts);
     } catch (error) {
-        console.error("Failed to fetch products:", error);
+      console.error("Failed to fetch products:", error);
     }
-};
+  }, [shop]);
+
+  useEffect(() => {
+    if (!token) {
+      navigate("/webauth-login");
+      return;
+    }
+    fetchShop();
+  }, [token, navigate, fetchShop]);
+
+  useEffect(() => {
+    fetchProducts();
+  }, [fetchProducts]);
 
   const onLogoDrop = (acceptedFiles: File[]) => {
     if (acceptedFiles.length > 0) {

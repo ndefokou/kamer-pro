@@ -1,6 +1,6 @@
 use crate::routes::middleware::extract_user_id_from_token;
 use actix_multipart::Multipart;
-use actix_web::{delete, get, web, HttpRequest, HttpResponse, Responder};
+use actix_web::{get, web, HttpRequest, HttpResponse, Responder};
 use futures_util::TryStreamExt;
 use serde::{Deserialize, Serialize};
 use sqlx::SqlitePool;

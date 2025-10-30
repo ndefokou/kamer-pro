@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { AxiosError } from "axios";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
@@ -63,15 +63,7 @@ const MyProducts = () => {
 
   const token = localStorage.getItem("token");
 
-  useEffect(() => {
-    if (!token) {
-      navigate("/webauth-login");
-      return;
-    }
-    fetchProducts();
-  }, [token, navigate]);
-
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async () => {
     setIsLoading(true);
     try {
       const response = await apiClient.get("/products/seller");
@@ -86,7 +78,15 @@ const MyProducts = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [t]);
+
+  useEffect(() => {
+    if (!token) {
+      navigate("/webauth-login");
+      return;
+    }
+    fetchProducts();
+  }, [token, navigate, fetchProducts]);
 
   const onDrop = (acceptedFiles: File[]) => {
     const newFiles = [...files, ...acceptedFiles];
