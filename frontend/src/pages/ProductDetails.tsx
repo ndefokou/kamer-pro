@@ -279,13 +279,22 @@ const ProductDetails = () => {
                       size="lg"
                       onClick={() => {
                         if (product && product.contact_phone) {
-                          window.open(
-                            `https://wa.me/${product.contact_phone.replace(
-                              /\s/g,
-                              ""
-                            )}`,
-                            "_blank"
+                          // Clean the phone number: remove spaces, dashes, parentheses
+                          let cleanedPhone = product.contact_phone.replace(
+                            /[-\s()]/g,
+                            ""
                           );
+
+                          // Ensure it has a country code (default to +237 for Cameroon if missing)
+                          if (!cleanedPhone.startsWith("+")) {
+                            cleanedPhone = `+237${cleanedPhone}`;
+                          }
+
+                          const message = `Hello, I'm interested in your product "${product.name}" listed for ${product.price}.`;
+                          const whatsappUrl = `https://wa.me/${cleanedPhone}?text=${encodeURIComponent(
+                            message
+                          )}`;
+                          window.open(whatsappUrl, "_blank");
                         }
                       }}
                       disabled={!product.contact_phone}

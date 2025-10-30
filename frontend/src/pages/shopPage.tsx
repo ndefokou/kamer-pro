@@ -323,9 +323,12 @@ const ShopPage = () => {
                     type="tel"
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    placeholder="+237 XXX XXX XXX"
+                    placeholder="+2376XXXXXXXX"
                     required
                   />
+                  <p className="text-sm text-muted-foreground">
+                    {t("include country code for whatsapp")}
+                  </p>
                 </div>
               </div>
 

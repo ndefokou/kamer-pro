@@ -350,6 +350,14 @@ pub async fn create_product(
     }
 
     // Use shop's location, phone, and email
+    // Format phone number for WhatsApp (remove spaces and ensure it starts with country code)
+    let formatted_phone = shop.phone.replace(" ", "").replace("-", "");
+    let formatted_phone = if !formatted_phone.starts_with("+") {
+        format!("+{}", formatted_phone)
+    } else {
+        formatted_phone
+    };
+    
     println!("Using shop location for new product: {}", &shop.location);
     let result = sqlx::query(
         "INSERT INTO products (name, description, price, condition, category, location, contact_phone, contact_email, user_id, status, shop_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
@@ -360,7 +368,7 @@ pub async fn create_product(
     .bind(&product_payload.condition)
     .bind(&product_payload.category)
     .bind(&shop.location)  // Use shop location
-    .bind(&shop.phone)      // Use shop phone
+    .bind(&formatted_phone)      // Use shop phone (formatted)
     .bind(&shop.email)      // Use shop email
     .bind(user_id)
     .bind("active")
