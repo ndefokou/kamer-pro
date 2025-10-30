@@ -8,8 +8,9 @@ import { MessagingProvider } from "@/contexts/MessagingContext";
 import Index from "./pages/Index";
 import RoleSelection from "./pages/RoleSelection";
 import Marketplace from "./pages/Marketplace";
-import SellerDashboard from "./pages/SellerDashboard";
+import ShopPage from "./pages/shopPage";
 import NotFound from "./pages/NotFound";
+import MyProducts from "./pages/MyProducts";
 import ProductDetails from "./pages/ProductDetails";
 import Wishlist from "./pages/Wishlist";
 import Messages from "./pages/Messages";
@@ -30,8 +31,9 @@ const router = createBrowserRouter(
     {
       element: <ProtectedRoute />,
       children: [
-        { path: "/seller-dashboard", Component: SellerDashboard },
+        { path: "/shop", Component: ShopPage },
         { path: "/wishlist", Component: Wishlist },
+        { path: "/my-products", Component: MyProducts },
         { path: "/messages", Component: Messages },
       ],
     },

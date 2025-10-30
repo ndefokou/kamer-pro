@@ -115,12 +115,12 @@ const Navbar = () => {
               </Button>
             </Link>
 
-            <Link to="/seller-dashboard">
+            <Link to="/shop">
               <Button
                 variant="ghost"
                 className="text-primary-foreground hover:bg-primary-foreground/10"
               >
-                Seller Dashboard
+                My Shop
               </Button>
             </Link>
 
@@ -291,10 +291,10 @@ const Navbar = () => {
                   <Button
                     variant="ghost"
                     className="justify-start"
-                    onClick={() => handleNavigation("/seller-dashboard")}
+                    onClick={() => handleNavigation("/shop")}
                   >
                     <Store className="h-5 w-5 mr-2" />
-                    Seller Dashboard
+                    My Shop
                   </Button>
 
                   {token && (

@@ -20,6 +20,12 @@ pub struct Product {
     pub contact_email: Option<String>,
     pub user_id: i32,
     pub status: String,
+    pub shop_id: Option<i32>,
+}
+
+#[derive(sqlx::FromRow)]
+struct Shop {
+    id: i32,
 }
 
 #[derive(Serialize, Deserialize, sqlx::FromRow, Clone)]
@@ -227,7 +233,6 @@ pub async fn get_product(pool: web::Data<SqlitePool>, path: web::Path<i32>) -> i
 }
 
 // Get ONLY the logged-in user's products (for seller dashboard)
-#[get("/seller")]
 pub async fn get_my_products(req: HttpRequest, pool: web::Data<SqlitePool>) -> impl Responder {
     let user_id = match get_user_id_from_headers(&req) {
         Ok(id) => id,
@@ -292,6 +297,20 @@ pub async fn create_product(
         }
     };
 
+    let shop: Result<Shop, _> = sqlx::query_as("SELECT id FROM shops WHERE user_id = ?")
+        .bind(user_id)
+        .fetch_one(pool.get_ref())
+        .await;
+
+    let shop_id = match shop {
+        Ok(s) => s.id,
+        Err(_) => {
+            return HttpResponse::BadRequest().json(ErrorResponse {
+                message: "You must create a shop before adding products.".to_string(),
+            })
+        }
+    };
+
     let mut product_payload = CreateProductPayload::default();
     let mut image_paths: Vec<String> = Vec::new();
 
@@ -344,7 +363,7 @@ pub async fn create_product(
     }
 
     let result = sqlx::query(
-        "INSERT INTO products (name, description, price, condition, category, location, contact_phone, contact_email, user_id, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+        "INSERT INTO products (name, description, price, condition, category, location, contact_phone, contact_email, user_id, status, shop_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
     )
     .bind(&product_payload.name)
     .bind(&product_payload.description)
@@ -356,6 +375,7 @@ pub async fn create_product(
     .bind(&product_payload.contact_email)
     .bind(user_id)
     .bind("active")
+    .bind(shop_id)
     .execute(pool.get_ref())
     .await;
 
