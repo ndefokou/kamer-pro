@@ -26,6 +26,9 @@ pub struct Product {
 #[derive(sqlx::FromRow)]
 struct Shop {
     id: i32,
+    location: String,
+    phone: String,
+    email: String,
 }
 
 #[derive(Serialize, Deserialize, sqlx::FromRow, Clone)]
@@ -56,9 +59,6 @@ pub struct CreateProductPayload {
     price: f64,
     condition: String,
     category: String,
-    location: String,
-    contact_phone: Option<String>,
-    contact_email: Option<String>,
 }
 
 #[derive(Serialize)]
@@ -99,7 +99,6 @@ fn get_user_id_from_headers(req: &HttpRequest) -> Result<i32, actix_web::Error> 
     ))
 }
 
-// Get ALL products (for marketplace - buyers and sellers can see all)
 #[get("")]
 pub async fn get_products(
     pool: web::Data<SqlitePool>,
@@ -194,7 +193,6 @@ pub async fn get_products(
     }
 }
 
-#[get("/{id}")]
 pub async fn get_product(pool: web::Data<SqlitePool>, path: web::Path<i32>) -> impl Responder {
     let id = path.into_inner();
     let product: Result<Product, _> = sqlx::query_as("SELECT * FROM products WHERE id = ?")
@@ -232,7 +230,6 @@ pub async fn get_product(pool: web::Data<SqlitePool>, path: web::Path<i32>) -> i
     }
 }
 
-// Get ONLY the logged-in user's products (for seller dashboard)
 pub async fn get_my_products(req: HttpRequest, pool: web::Data<SqlitePool>) -> impl Responder {
     let user_id = match get_user_id_from_headers(&req) {
         Ok(id) => id,
@@ -297,13 +294,14 @@ pub async fn create_product(
         }
     };
 
-    let shop: Result<Shop, _> = sqlx::query_as("SELECT id FROM shops WHERE user_id = ?")
+    // Get shop info to inherit location and contact details
+    let shop: Result<Shop, _> = sqlx::query_as("SELECT id, location, phone, email FROM shops WHERE user_id = ?")
         .bind(user_id)
         .fetch_one(pool.get_ref())
         .await;
 
-    let shop_id = match shop {
-        Ok(s) => s.id,
+    let shop = match shop {
+        Ok(s) => s,
         Err(_) => {
             return HttpResponse::BadRequest().json(ErrorResponse {
                 message: "You must create a shop before adding products.".to_string(),
@@ -336,17 +334,6 @@ pub async fn create_product(
             "category" => {
                 product_payload.category = extract_string_from_field(&mut field).await.unwrap()
             }
-            "location" => {
-                product_payload.location = extract_string_from_field(&mut field).await.unwrap()
-            }
-            "contact_phone" => {
-                product_payload.contact_phone =
-                    Some(extract_string_from_field(&mut field).await.unwrap())
-            }
-            "contact_email" => {
-                product_payload.contact_email =
-                    Some(extract_string_from_field(&mut field).await.unwrap())
-            }
             "images[]" => {
                 let filename = format!("{}.png", Uuid::new_v4());
                 let filepath = format!("./public/uploads/{}", filename);
@@ -362,6 +349,8 @@ pub async fn create_product(
         }
     }
 
+    // Use shop's location, phone, and email
+    println!("Using shop location for new product: {}", &shop.location);
     let result = sqlx::query(
         "INSERT INTO products (name, description, price, condition, category, location, contact_phone, contact_email, user_id, status, shop_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
     )
@@ -370,12 +359,12 @@ pub async fn create_product(
     .bind(&product_payload.price)
     .bind(&product_payload.condition)
     .bind(&product_payload.category)
-    .bind(&product_payload.location)
-    .bind(&product_payload.contact_phone)
-    .bind(&product_payload.contact_email)
+    .bind(&shop.location)  // Use shop location
+    .bind(&shop.phone)      // Use shop phone
+    .bind(&shop.email)      // Use shop email
     .bind(user_id)
     .bind("active")
-    .bind(shop_id)
+    .bind(shop.id)
     .execute(pool.get_ref())
     .await;
 
@@ -482,17 +471,6 @@ pub async fn update_product(
             "category" => {
                 product_payload.category = extract_string_from_field(&mut field).await.unwrap()
             }
-            "location" => {
-                product_payload.location = extract_string_from_field(&mut field).await.unwrap()
-            }
-            "contact_phone" => {
-                product_payload.contact_phone =
-                    Some(extract_string_from_field(&mut field).await.unwrap())
-            }
-            "contact_email" => {
-                product_payload.contact_email =
-                    Some(extract_string_from_field(&mut field).await.unwrap())
-            }
             "images[]" => {
                 let filename = format!("{}.png", Uuid::new_v4());
                 let filepath = format!("./public/uploads/{}", filename);
@@ -508,17 +486,16 @@ pub async fn update_product(
         }
     }
 
+    // Update only the fields that can be changed (not location/contact info)
     let result = sqlx::query(
-        "UPDATE products SET name = ?, description = ?, price = ?, condition = ?, category = ?, location = ?, contact_phone = ?, contact_email = ? WHERE id = ?"
+        "UPDATE products SET name = ?, description = ?, price = ?, condition = ?, category = ?, location = ? WHERE id = ?"
     )
     .bind(&product_payload.name)
     .bind(&product_payload.description)
     .bind(&product_payload.price)
     .bind(&product_payload.condition)
     .bind(&product_payload.category)
-    .bind(&product_payload.location)
-    .bind(&product_payload.contact_phone)
-    .bind(&product_payload.contact_email)
+    .bind(&product.as_ref().unwrap().location)
     .bind(id)
     .execute(pool.get_ref())
     .await;
@@ -575,7 +552,6 @@ pub async fn update_product(
     }
 }
 
-#[delete("/{id}")]
 pub async fn delete_product(
     req: HttpRequest,
     pool: web::Data<SqlitePool>,
@@ -591,35 +567,37 @@ pub async fn delete_product(
         }
     };
 
-    let product: Result<Product, _> = sqlx::query_as("SELECT * FROM products WHERE id = ?")
+    // Verify the product belongs to the user
+    let product: Result<Product, _> = sqlx::query_as("SELECT * FROM products WHERE id = ? AND user_id = ?")
         .bind(id)
+        .bind(user_id)
         .fetch_one(pool.get_ref())
         .await;
 
     match product {
-        Ok(product) => {
-            if product.user_id != user_id {
-                return HttpResponse::Forbidden().json(ErrorResponse {
-                    message: "You are not authorized to delete this product".to_string(),
-                });
+        Ok(_) => {
+            // Product belongs to user, proceed with deletion
+            let result = sqlx::query("DELETE FROM products WHERE id = ?")
+                .bind(id)
+                .execute(pool.get_ref())
+                .await;
+
+            match result {
+                Ok(_) => HttpResponse::Ok().json(serde_json::json!({
+                    "message": "Product deleted successfully"
+                })),
+                Err(e) => {
+                    eprintln!("Failed to delete product: {}", e);
+                    HttpResponse::InternalServerError().json(ErrorResponse {
+                        message: "Failed to delete product".to_string(),
+                    })
+                }
             }
         }
         Err(_) => {
-            return HttpResponse::NotFound().json(ErrorResponse {
-                message: "Product not found".to_string(),
-            });
+            HttpResponse::Forbidden().json(ErrorResponse {
+                message: "You are not authorized to delete this product".to_string(),
+            })
         }
-    }
-
-    let result = sqlx::query("DELETE FROM products WHERE id = ?")
-        .bind(id)
-        .execute(pool.get_ref())
-        .await;
-
-    match result {
-        Ok(_) => HttpResponse::NoContent().finish(),
-        Err(_) => HttpResponse::InternalServerError().json(ErrorResponse {
-            message: "Failed to delete product".to_string(),
-        }),
     }
 }

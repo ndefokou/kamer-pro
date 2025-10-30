@@ -158,5 +158,6 @@
   "order summary": "Résumé de la commande",
   "items in cart": "Articles dans le panier",
   "total": "Total",
-  "proceed to checkout": "Passer à la caisse"
+  "proceed to checkout": "Passer à la caisse",
+  "location not set": "Lieu non défini"
 }

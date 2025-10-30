@@ -8,7 +8,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   Store, 
   MapPin, 
@@ -390,7 +389,9 @@ const ShopPage = () => {
                       <div className="grid md:grid-cols-3 gap-4">
                         <div className="flex items-center gap-2">
                           <MapPin className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm">{shop.location}</span>
+                          <span className="text-sm font-semibold">
+                            {shop.location || t("location not set")}
+                          </span>
                         </div>
                         <div className="flex items-center gap-2">
                           <Mail className="h-4 w-4 text-muted-foreground" />

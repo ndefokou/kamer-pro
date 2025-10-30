@@ -158,5 +158,6 @@
   "order summary": "Order Summary",
   "items in cart": "Items in cart",
   "total": "Total",
-  "proceed to checkout": "Proceed to Checkout"
+  "proceed to checkout": "Proceed to Checkout",
+  "location not set": "Location not set"
 }

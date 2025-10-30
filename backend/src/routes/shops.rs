@@ -252,17 +252,31 @@ pub async fn create_or_update_shop(
             let updated_shop = sqlx::query_as::<_, Shop>(
                 "UPDATE shops SET name = ?, email = ?, phone = ?, location = ?, description = ?, logo_url = ?, banner_url = ?, updated_at = CURRENT_TIMESTAMP WHERE user_id = ? RETURNING *"
             )
-            .bind(&name)
-            .bind(&email)
-            .bind(&phone)
-            .bind(&location)
-            .bind(if description.is_empty() { None } else { Some(&description) })
+            .bind(if name.is_empty() { &shop.name } else { &name })
+            .bind(if email.is_empty() { &shop.email } else { &email })
+            .bind(if phone.is_empty() { &shop.phone } else { &phone })
+            .bind(if location.is_empty() { &shop.location } else { &location })
+            .bind(if description.is_empty() { shop.description.as_ref() } else { Some(&description) })
             .bind(&final_logo)
             .bind(&final_banner)
             .bind(user_id)
             .fetch_one(pool.get_ref())
             .await
             .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+
+            // After updating the shop, update all of its products with the new info
+            let final_location = if location.is_empty() { &shop.location } else { &location };
+            let final_phone = if phone.is_empty() { &shop.phone } else { &phone };
+            let final_email = if email.is_empty() { &shop.email } else { &email };
+
+            sqlx::query("UPDATE products SET location = ?, contact_phone = ?, contact_email = ? WHERE user_id = ?")
+                .bind(final_location)
+                .bind(final_phone)
+                .bind(final_email)
+                .bind(user_id)
+                .execute(pool.get_ref())
+                .await
+                .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
 
             Ok(HttpResponse::Ok().json(updated_shop))
         }

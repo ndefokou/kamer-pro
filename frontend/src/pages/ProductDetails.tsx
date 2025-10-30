@@ -219,6 +219,10 @@ const ProductDetails = () => {
                   currency: "XAF",
                 }).format(product.price)}
               </div>
+              <div className="flex items-center text-muted-foreground">
+                <MapPin className="h-4 w-4 mr-1" />
+                {product.location}
+              </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <h3 className="text-lg font-semibold mb-2">
@@ -231,15 +235,6 @@ const ProductDetails = () => {
                       )}
                     </Badge>
                   )}
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold mb-2">
-                    {t("location")}
-                  </h3>
-                  <div className="flex items-center text-muted-foreground">
-                    <MapPin className="h-4 w-4 mr-1" />
-                    {product.location}
-                  </div>
                 </div>
               </div>
 
@@ -293,7 +288,7 @@ const ProductDetails = () => {
                           );
                         }
                       }}
-                      disabled={!product || !product.contact_phone}
+                      disabled={!product.contact_phone}
                     >
                       <MessageCircle className="h-5 w-5 mr-2" />
                       {t("contact on whatsapp")}
@@ -387,13 +382,6 @@ const ProductDetails = () => {
                         )}
                       </Badge>
                     )}
-                  </div>
-                  <div>
-                    <h4 className="font-semibold mb-2">{t("location")}</h4>
-                    <div className="flex items-center text-muted-foreground">
-                      <MapPin className="h-4 w-4 mr-1" />
-                      {product.location}
-                    </div>
                   </div>
                 </div>
               </div>

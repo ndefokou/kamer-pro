@@ -50,16 +50,16 @@ async fn main() -> std::io::Result<()> {
                         web::scope("/products")
                             .service(routes::products::get_products)
                             .route("/seller", web::get().to(routes::products::get_my_products))
-                            .service(routes::products::get_product)
                             .service(
                                 web::resource("")
                                     .route(web::post().to(routes::products::create_product))
                             )
                             .service(
                                 web::resource("/{id}")
+                                    .route(web::get().to(routes::products::get_product))
                                     .route(web::put().to(routes::products::update_product))
+                                    .route(web::delete().to(routes::products::delete_product))
                             )
-                            .service(routes::products::delete_product)
                     )
                     .service(
                         web::scope("/upload").service(routes::upload::upload_images),
@@ -79,7 +79,9 @@ async fn main() -> std::io::Result<()> {
                         web::scope("/messages")
                             .service(routes::messages::get_conversations)
                             .service(routes::messages::get_messages)
-                            .service(routes::messages::send_message),
+                            .service(routes::messages::send_message)
+                            .service(routes::messages::get_message_templates)
+                            .service(routes::messages::get_unread_count),
                     )
                     .service(
                         web::scope("/shop")

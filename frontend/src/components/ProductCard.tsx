@@ -115,7 +115,11 @@ const ProductCard = ({
             </CardTitle>
           </Link>
         </div>
-        <CardDescription className="line-clamp-2 text-xs mt-1 hidden sm:block">
+        <div className="flex items-center text-xs text-muted-foreground mt-1">
+          <MapPin className="h-3 w-3 mr-1 flex-shrink-0" />
+          <span className="truncate">{product.location}</span>
+        </div>
+        <CardDescription className="line-clamp-2 text-xs mt-1">
           {product.description}
         </CardDescription>
       </CardHeader>
@@ -127,22 +131,9 @@ const ProductCard = ({
               currency: "XAF",
             }).format(product.price)}
           </div>
-          <div className="flex items-center text-xs text-muted-foreground">
-            <MapPin className="h-3 w-3 mr-1 flex-shrink-0" />
-            <span className="truncate">{product.location}</span>
-          </div>
         </div>
       </CardContent>
       <CardFooter className="p-2 sm:p-3 pt-0 mt-auto">
-        {variant === "marketplace" && (
-          <Button
-            className="w-full text-xs h-8"
-            onClick={() => onContactSeller && onContactSeller(product)}
-          >
-            <MessageCircle className="h-3 w-3 mr-1" />
-            {t("contact seller")}
-          </Button>
-        )}
         {variant === "seller" && (
           <div className="flex justify-end space-x-2 w-full">
             <Button

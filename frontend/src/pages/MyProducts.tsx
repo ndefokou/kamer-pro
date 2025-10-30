@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { AxiosError } from "axios";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import apiClient from "@/api/client";
@@ -18,6 +19,16 @@ import { PlusCircle, Loader2, Edit, Trash2, X } from "lucide-react";
 import { useDropzone } from "react-dropzone";
 import Navbar from "@/components/Navbar";
 import { toast } from "@/hooks/use-toast";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface Product {
   id: number;
@@ -26,6 +37,7 @@ interface Product {
   price: number;
   category: string;
   condition: string;
+  location: string;
   images?: { image_url: string }[];
 }
 
@@ -37,6 +49,7 @@ const MyProducts = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isEditing, setIsEditing] = useState<number | null>(null);
   const [showForm, setShowForm] = useState(false);
+  const [deleteProductId, setDeleteProductId] = useState<number | null>(null);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -65,6 +78,11 @@ const MyProducts = () => {
       setProducts(response.data);
     } catch (error) {
       console.error("Failed to fetch products:", error);
+      toast({
+        title: t("error"),
+        description: t("failed to fetch products"),
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -128,9 +146,13 @@ const MyProducts = () => {
       navigate("/shop");
     } catch (error) {
       console.error("Failed to save product:", error);
+      let errorMessage = t("failed to save product");
+      if (error instanceof AxiosError && error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      }
       toast({
         title: t("error"),
-        description: t("failed to save product"),
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -161,24 +183,35 @@ const MyProducts = () => {
       category: product.category,
       condition: product.condition,
     });
-    // Note: Existing images are not editable in this form for simplicity
     setFiles([]);
     setPreviews(product.images?.map(img => img.image_url) || []);
     setShowForm(true);
   };
 
-  const handleDelete = async (id: number) => {
+  const handleDeleteClick = (id: number) => {
+    setDeleteProductId(id);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (deleteProductId === null) return;
+
     try {
-      await apiClient.delete(`/products/${id}`);
+      await apiClient.delete(`/products/${deleteProductId}`);
       toast({ title: t("success"), description: t("product deleted successfully") });
-      fetchProducts();
+      await fetchProducts();
     } catch (error) {
       console.error("Failed to delete product:", error);
+      let errorMessage = t("failed to delete product");
+      if (error instanceof AxiosError && error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      }
       toast({
         title: t("error"),
-        description: t("failed to delete product"),
+        description: errorMessage,
         variant: "destructive",
       });
+    } finally {
+      setDeleteProductId(null);
     }
   };
 
@@ -220,13 +253,13 @@ const MyProducts = () => {
                     <Input id="name" name="name" value={formData.name} onChange={handleInputChange} required />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="price">{t("price")} *</Label>
+                    <Label htmlFor="price">{t("price")} (XAF) *</Label>
                     <Input id="price" name="price" type="number" value={formData.price} onChange={handleInputChange} required />
                   </div>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="description">{t("description")} *</Label>
-                  <Textarea id="description" name="description" value={formData.description} onChange={handleInputChange} required />
+                  <Textarea id="description" name="description" value={formData.description} onChange={handleInputChange} required rows={4} />
                 </div>
                 <div className="grid md:grid-cols-2 gap-4">
                   <div className="space-y-2">
@@ -239,10 +272,9 @@ const MyProducts = () => {
                         <SelectItem value="Electronics">{t("Electronics")}</SelectItem>
                         <SelectItem value="Fashion">{t("Fashion")}</SelectItem>
                         <SelectItem value="Home & Garden">{t("Home & Garden")}</SelectItem>
-                        <SelectItem value="Sports & Outdoors">{t("Sports & Outdoors")}</SelectItem>
-                        <SelectItem value="Toys & Hobbies">{t("Toys & Hobbies")}</SelectItem>
-                        <SelectItem value="Health & Beauty">{t("Health & Beauty")}</SelectItem>
-                        <SelectItem value="Automotive">{t("Automotive")}</SelectItem>
+                        <SelectItem value="Vehicles">{t("Vehicles")}</SelectItem>
+                        <SelectItem value="Real Estate">{t("Real Estate")}</SelectItem>
+                        <SelectItem value="Services">{t("Services")}</SelectItem>
                         <SelectItem value="Other">{t("Other")}</SelectItem>
                       </SelectContent>
                     </Select>
@@ -255,16 +287,16 @@ const MyProducts = () => {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="New">{t("New")}</SelectItem>
-                        <SelectItem value="Used - Like New">{t("Used - Like New")}</SelectItem>
-                        <SelectItem value="Used - Good">{t("Used - Good")}</SelectItem>
-                        <SelectItem value="Used - Fair">{t("Used - Fair")}</SelectItem>
+                        <SelectItem value="Like-new">{t("Like-new")}</SelectItem>
+                        <SelectItem value="Good">{t("Good")}</SelectItem>
+                        <SelectItem value="Fair">{t("Fair")}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                 </div>
                 <div className="space-y-2">
                   <Label>{t("product images")}</Label>
-                  <div {...getRootProps()} className="border-2 border-dashed rounded-lg p-8 text-center cursor-pointer">
+                  <div {...getRootProps()} className="border-2 border-dashed rounded-lg p-8 text-center cursor-pointer hover:border-primary transition-colors">
                     <input {...getInputProps()} />
                     <p>{t("drag 'n' drop some files here, or click to select files")}</p>
                   </div>
@@ -308,15 +340,20 @@ const MyProducts = () => {
                 className="h-48 w-full object-cover"
               />
               <CardContent className="p-4">
-                <h3 className="font-semibold text-lg">{product.name}</h3>
+                <h3 className="font-semibold text-lg line-clamp-1">{product.name}</h3>
                 <p className="text-muted-foreground text-sm">{product.category}</p>
-                <p className="font-bold text-xl mt-2">${product.price}</p>
+                <p className="font-bold text-xl mt-2">
+                  {new Intl.NumberFormat("fr-FR", {
+                    style: "currency",
+                    currency: "XAF",
+                  }).format(product.price)}
+                </p>
                 <div className="flex gap-2 mt-4">
-                  <Button size="sm" onClick={() => handleEdit(product)}>
+                  <Button size="sm" variant="outline" onClick={() => handleEdit(product)}>
                     <Edit className="h-4 w-4 mr-2" />
                     {t("edit")}
                   </Button>
-                  <Button size="sm" variant="destructive" onClick={() => handleDelete(product.id)}>
+                  <Button size="sm" variant="destructive" onClick={() => handleDeleteClick(product.id)}>
                     <Trash2 className="h-4 w-4 mr-2" />
                     {t("delete")}
                   </Button>
@@ -325,7 +362,35 @@ const MyProducts = () => {
             </Card>
           ))}
         </div>
+
+        {products.length === 0 && !showForm && (
+          <Card className="p-12 text-center">
+            <p className="text-muted-foreground mb-4">{t("no products yet")}</p>
+            <Button onClick={() => setShowForm(true)}>
+              <PlusCircle className="h-4 w-4 mr-2" />
+              {t("add your first product")}
+            </Button>
+          </Card>
+        )}
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteProductId !== null} onOpenChange={() => setDeleteProductId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("are you sure")}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("this action cannot be undone. this will permanently delete your product.")}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteConfirm} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              {t("delete")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
