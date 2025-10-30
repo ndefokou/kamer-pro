@@ -141,6 +141,30 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({
     refreshWishlist();
   }, []);
 
+  const clearWishlist = async () => {
+    setIsLoading(true);
+    try {
+      await apiClient.delete("/wishlist/clear");
+      await refreshWishlist();
+      toast({
+        title: "Success",
+        description: "Wishlist cleared",
+      });
+    } catch (error: unknown) {
+      let description = "Failed to clear wishlist";
+      if (isAxiosError(error) && error.response?.data?.message) {
+        description = error.response.data.message;
+      }
+      toast({
+        title: "Error",
+        description,
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <WishlistContext.Provider
       value={{
@@ -153,6 +177,7 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({
         isInWishlist,
         checkWishlist,
         refreshWishlist,
+        clearWishlist,
       }}
     >
       {children}

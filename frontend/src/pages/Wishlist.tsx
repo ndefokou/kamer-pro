@@ -9,7 +9,8 @@ import { useTranslation } from "react-i18next";
 
 const Wishlist = () => {
   const { t } = useTranslation();
-  const { wishlistItems, removeFromWishlist, isLoading } = useWishlist();
+  const { wishlistItems, removeFromWishlist, clearWishlist, isLoading } =
+    useWishlist();
 
   const handleToggleWishlist = (productId: string) => {
     const item = wishlistItems.find((item) => item.id === productId);
@@ -50,12 +51,21 @@ const Wishlist = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
       <div className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2">Ma liste de souhaits</h1>
-          <p className="text-muted-foreground">
-            {wishlistItems.length}{" "}
-            {wishlistItems.length === 1 ? "article" : "articles"}
-          </p>
+        <div className="flex justify-between items-center mb-8">
+          <div>
+            <h1 className="text-4xl font-bold mb-2">Ma liste de souhaits</h1>
+            <p className="text-muted-foreground">
+              {wishlistItems.length}{" "}
+              {wishlistItems.length === 1 ? "article" : "articles"}
+            </p>
+          </div>
+          <Button
+            variant="destructive"
+            onClick={clearWishlist}
+            disabled={isLoading}
+          >
+            {t("clear_wishlist")}
+          </Button>
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-2 sm:gap-4">

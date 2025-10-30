@@ -159,5 +159,6 @@
   "items in cart": "Items in cart",
   "total": "Total",
   "proceed to checkout": "Proceed to Checkout",
-  "location not set": "Location not set"
+  "location not set": "Location not set",
+  "clear_wishlist": "Clear Wishlist"
 }

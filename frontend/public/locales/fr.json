@@ -159,5 +159,6 @@
   "items in cart": "Articles dans le panier",
   "total": "Total",
   "proceed to checkout": "Passer à la caisse",
-  "location not set": "Lieu non défini"
+  "location not set": "Lieu non défini",
+  "clear_wishlist": "Vider la liste de souhaits"
 }

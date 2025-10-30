@@ -37,6 +37,7 @@ export interface WishlistContextType {
   isInWishlist: (productId: number) => boolean;
   checkWishlist: (productId: number) => Promise<boolean>;
   refreshWishlist: () => Promise<void>;
+  clearWishlist: () => Promise<void>;
 }
 
 export const WishlistContext = createContext<WishlistContextType | undefined>(

@@ -326,3 +326,30 @@ pub async fn get_wishlist_count(req: HttpRequest, pool: web::Data<SqlitePool>) -
         }),
     }
 }
+
+// Clear all items from wishlist
+#[delete("/clear")]
+pub async fn clear_wishlist(req: HttpRequest, pool: web::Data<SqlitePool>) -> impl Responder {
+    let user_id = match get_user_id_from_headers(&req) {
+        Ok(id) => id,
+        Err(_) => {
+            return HttpResponse::Unauthorized().json(ErrorResponse {
+                message: "Unauthorized - Please log in".to_string(),
+            })
+        }
+    };
+
+    let result = sqlx::query("DELETE FROM wishlist_items WHERE user_id = ?")
+        .bind(user_id)
+        .execute(pool.get_ref())
+        .await;
+
+    match result {
+        Ok(_) => HttpResponse::Ok().json(serde_json::json!({
+            "message": "Wishlist cleared successfully"
+        })),
+        Err(_) => HttpResponse::InternalServerError().json(ErrorResponse {
+            message: "Failed to clear wishlist".to_string(),
+        }),
+    }
+}
