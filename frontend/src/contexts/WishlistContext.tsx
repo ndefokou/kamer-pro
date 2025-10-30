@@ -34,7 +34,7 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({
           images: item.product_image ? [{ image_url: item.product_image }] : [],
           wishlist_id: item.id,
           description: "",
-          contact_phone: null,
+          contact_phone: item.product_contact_phone,
           contact_email: null,
         })),
       );

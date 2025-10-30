@@ -67,6 +67,7 @@ const Wishlist = () => {
               isInWishlist={() => true}
               handleToggleWishlist={handleToggleWishlist}
               getImageUrl={getImageUrl}
+              variant="wishlist"
             />
           ))}
         </div>

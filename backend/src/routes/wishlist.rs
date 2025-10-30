@@ -21,6 +21,7 @@ pub struct WishlistItemWithProduct {
     pub product_location: String,
     pub product_category: String,
     pub product_status: String,
+    pub product_contact_phone: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -60,7 +61,7 @@ pub async fn get_wishlist(req: HttpRequest, pool: web::Data<SqlitePool>) -> impl
 
     let wishlist_items: Result<Vec<WishlistItemWithProduct>, _> = sqlx::query_as(
         r#"
-        SELECT 
+        SELECT
             wi.id,
             wi.product_id,
             p.name as product_name,
@@ -68,7 +69,8 @@ pub async fn get_wishlist(req: HttpRequest, pool: web::Data<SqlitePool>) -> impl
             (SELECT image_url FROM product_images WHERE product_id = p.id LIMIT 1) as product_image,
             p.location as product_location,
             p.category as product_category,
-            p.status as product_status
+            p.status as product_status,
+            p.contact_phone as product_contact_phone
         FROM wishlist_items wi
         JOIN products p ON wi.product_id = p.id
         WHERE wi.user_id = ?

@@ -68,7 +68,8 @@ async fn main() -> std::io::Result<()> {
                         web::scope("/wishlist")
                             .service(routes::wishlist::get_wishlist)
                             .service(routes::wishlist::add_to_wishlist)
-                            .service(routes::wishlist::remove_from_wishlist),
+                            .service(routes::wishlist::remove_from_wishlist)
+                            .service(routes::wishlist::remove_from_wishlist_by_product),
                     )
                     .service(
                         web::scope("/reviews")

@@ -41,7 +41,7 @@ interface ProductCardProps {
   isInWishlist?: (productId: number) => boolean;
   handleToggleWishlist?: (productId: string) => void;
   getImageUrl: (imagePath: string) => string;
-  variant?: "marketplace" | "seller";
+  variant?: "marketplace" | "seller" | "wishlist";
   onEdit?: () => void;
   onDelete?: () => void;
   onContactSeller?: (product: Product) => void;
@@ -155,6 +155,35 @@ const ProductCard = ({
               <span className="hidden sm:inline sm:ml-1">{t("delete")}</span>
             </Button>
           </div>
+        )}
+        {variant === "wishlist" && (
+          <Button
+            className="w-full"
+            onClick={() => {
+              if (product && product.contact_phone) {
+                // Clean the phone number: remove spaces, dashes, parentheses
+                let cleanedPhone = product.contact_phone.replace(
+                  /[-\s()]/g,
+                  ""
+                );
+
+                // Ensure it has a country code (default to +237 for Cameroon if missing)
+                if (!cleanedPhone.startsWith("+")) {
+                  cleanedPhone = `+237${cleanedPhone}`;
+                }
+
+                const message = `Hello, I'm interested in your product "${product.name}" listed for ${product.price}.`;
+                const whatsappUrl = `https://wa.me/${cleanedPhone}?text=${encodeURIComponent(
+                  message
+                )}`;
+                window.open(whatsappUrl, "_blank");
+              }
+            }}
+            disabled={!product.contact_phone}
+          >
+            <MessageCircle className="h-4 w-4 mr-2" />
+            {t("contact on whatsapp")}
+          </Button>
         )}
       </CardFooter>
     </Card>

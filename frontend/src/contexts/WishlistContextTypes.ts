@@ -24,6 +24,7 @@ export interface ApiWishlistItem {
   product_location: string;
   product_category: string;
   product_image: string | null;
+  product_contact_phone: string | null;
 }
 
 export interface WishlistContextType {
