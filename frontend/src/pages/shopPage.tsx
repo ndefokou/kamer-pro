@@ -79,7 +79,7 @@ const ShopPage = () => {
   const fetchShop = useCallback(async () => {
     setIsLoading(true);
     try {
-      const response = await apiClient.get("/shop");
+      const response = await apiClient.get("/shops");
       const shopData = response.data.shop || response.data;
       setShop(shopData);
       
@@ -173,7 +173,7 @@ const ShopPage = () => {
     if (bannerFile) data.append("banner", bannerFile);
 
     try {
-      await apiClient.post("/shop", data, {
+      await apiClient.post("/shops", data, {
         headers: { "Content-Type": "multipart/form-data" },
       });
       

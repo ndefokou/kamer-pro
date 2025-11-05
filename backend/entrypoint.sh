@@ -14,6 +14,7 @@ touch /app/data/database.db
 
 # Give ownership of the /app/data directory to the appuser.
 chown -R appuser:appuser /app/data
+chown -R appuser:appuser /app/public
 
 echo "Permissions for /app/data after setup:"
 ls -lA /app/data

@@ -86,14 +86,14 @@ async fn main() -> std::io::Result<()> {
                             .service(routes::messages::get_unread_count),
                     )
                     .service(
-                        web::scope("/shop")
+                        web::scope("/shops")
                             .service(routes::shops::get_my_shop)
                             .service(routes::shops::get_shop_by_id)
                             .service(routes::shops::create_or_update_shop)
                             .service(routes::shops::delete_shop),
                     ),
             )
-            .service(fs::Files::new("/uploads", "./public/uploads"))
+            .service(fs::Files::new("/uploads", "/app/public/uploads"))
     })
     .bind("0.0.0.0:8082")?
     .run()
