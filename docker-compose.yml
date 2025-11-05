@@ -1,0 +1,19 @@
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "8081:8082"
+    environment:
+      - DATABASE_URL=sqlite:/app/data/database.db
+    volumes:
+      - db-data:/app/data
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:80"
+    environment:
+      - VITE_API_URL=http://localhost:8081
+
+volumes:
+  db-data:

@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: shop-backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: shop-backend
+  template:
+    metadata:
+      labels:
+        app: shop-backend
+    spec:
+      containers:
+        - name: shop-backend
+          image: your-dockerhub-username/shop-backend:latest
+          ports:
+            - containerPort: 8080
