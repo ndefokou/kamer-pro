@@ -77,10 +77,10 @@ pub async fn get_my_shop(
     if let Some(mut shop) = shop_option {
         // Convert relative URLs to absolute
         if let Some(ref logo) = shop.logo_url {
-            shop.logo_url = Some(format!("http://localhost:8082{}", logo.replace("/public", "")));
+            shop.logo_url = Some(format!("http://localhost:8081{}", logo.replace("/public", "")));
         }
         if let Some(ref banner) = shop.banner_url {
-            shop.banner_url = Some(format!("http://localhost:8082{}", banner.replace("/public", "")));
+            shop.banner_url = Some(format!("http://localhost:8081{}", banner.replace("/public", "")));
         }
 
         // Get product count
@@ -128,10 +128,10 @@ pub async fn get_shop_by_id(
 
     if let Some(mut shop) = shop_option {
         if let Some(ref logo) = shop.logo_url {
-            shop.logo_url = Some(format!("http://localhost:8082{}", logo.replace("/public", "")));
+            shop.logo_url = Some(format!("http://localhost:8081{}", logo.replace("/public", "")));
         }
         if let Some(ref banner) = shop.banner_url {
-            shop.banner_url = Some(format!("http://localhost:8082{}", banner.replace("/public", "")));
+            shop.banner_url = Some(format!("http://localhost:8081{}", banner.replace("/public", "")));
         }
 
         let count: Result<(i32,), _> = sqlx::query_as(

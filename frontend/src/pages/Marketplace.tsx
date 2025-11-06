@@ -11,14 +11,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Navbar from "@/components/Navbar";
@@ -140,7 +132,7 @@ const Marketplace = () => {
     if (typeof imagePath === "string" && imagePath.startsWith("http")) {
       return imagePath;
     }
-    return `http://localhost:8082${imagePath}`;
+    return `${imagePath}`;
   };
 
   const handleToggleWishlist = (productId: string) => {

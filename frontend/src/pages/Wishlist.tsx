@@ -22,7 +22,7 @@ const Wishlist = () => {
   const getImageUrl = (imagePath: string) => {
     if (!imagePath) return "/placeholder-image.png";
     if (imagePath.startsWith("http")) return imagePath;
-    return `http://localhost:8082${imagePath}`;
+    return `${imagePath}`;
   };
 
   if (wishlistItems.length === 0) {

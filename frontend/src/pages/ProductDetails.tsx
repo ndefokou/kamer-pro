@@ -108,7 +108,7 @@ const ProductDetails = () => {
     if (imagePath.startsWith("http")) {
       return imagePath;
     }
-    return `http://localhost:8082${imagePath}`;
+    return `${imagePath}`;
   };
 
   const handleToggleWishlist = () => {

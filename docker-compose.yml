@@ -5,6 +5,7 @@ services:
       - "8081:8082"
     environment:
       - DATABASE_URL=sqlite:/app/data/database.db
+      - RUST_LOG=info
     volumes:
       - db-data:/app/data
 

@@ -198,7 +198,7 @@ const ShopPage = () => {
 
   const getImageUrl = (imagePath: string) => {
     if (imagePath.startsWith("http")) return imagePath;
-    return `http://localhost:8082${imagePath}`;
+    return `${imagePath}`;
   };
 
   if (isLoading) {
