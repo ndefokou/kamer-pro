@@ -20,15 +20,7 @@ async fn main() -> std::io::Result<()> {
         .expect("Failed to create pool.");
 
     HttpServer::new(move || {
-        let cors = Cors::default()
-            .allowed_origin("http://localhost:3000")
-            .allowed_methods(vec!["GET", "POST", "PUT", "DELETE"])
-            .allowed_headers(vec![
-                "Content-Type",
-                "Authorization",
-                "X-Requested-With",
-            ])
-            .supports_credentials();
+        let cors = Cors::permissive(); // Allow all origins in development
 
         App::new()
             .wrap(cors)

@@ -49,15 +49,14 @@ fn get_user_id_from_headers(req: &HttpRequest) -> Result<i32, actix_web::Error> 
 
 // Get current user's shop
 #[get("")]
-pub async fn get_my_shop(
-    req: HttpRequest,
-    pool: web::Data<SqlitePool>
-) -> impl Responder {
+pub async fn get_my_shop(req: HttpRequest, pool: web::Data<SqlitePool>) -> impl Responder {
     let user_id = match get_user_id_from_headers(&req) {
         Ok(id) => id,
-        Err(e) => return HttpResponse::Unauthorized().json(ErrorResponse {
-            message: e.to_string(),
-        }),
+        Err(e) => {
+            return HttpResponse::Unauthorized().json(ErrorResponse {
+                message: e.to_string(),
+            })
+        }
     };
 
     let shop_option = match sqlx::query_as::<_, Shop>("SELECT * FROM shops WHERE user_id = ?")
@@ -77,19 +76,18 @@ pub async fn get_my_shop(
     if let Some(mut shop) = shop_option {
         // Convert relative URLs to absolute
         if let Some(ref logo) = shop.logo_url {
-            shop.logo_url = Some(format!("http://localhost:8081{}", logo.replace("/public", "")));
+            shop.logo_url = Some(logo.replace("/public", ""));
         }
         if let Some(ref banner) = shop.banner_url {
-            shop.banner_url = Some(format!("http://localhost:8081{}", banner.replace("/public", "")));
+            shop.banner_url = Some(banner.replace("/public", ""));
         }
 
         // Get product count
-        let count: Result<(i32,), _> = sqlx::query_as(
-            "SELECT COUNT(*) FROM products WHERE user_id = ?"
-        )
-        .bind(user_id)
-        .fetch_one(pool.get_ref())
-        .await;
+        let count: Result<(i32,), _> =
+            sqlx::query_as("SELECT COUNT(*) FROM products WHERE user_id = ?")
+                .bind(user_id)
+                .fetch_one(pool.get_ref())
+                .await;
 
         let product_count = count.unwrap_or((0,)).0;
 
@@ -106,10 +104,7 @@ pub async fn get_my_shop(
 
 // Get shop by ID (public)
 #[get("/{shop_id}")]
-pub async fn get_shop_by_id(
-    pool: web::Data<SqlitePool>,
-    path: web::Path<i32>,
-) -> impl Responder {
+pub async fn get_shop_by_id(pool: web::Data<SqlitePool>, path: web::Path<i32>) -> impl Responder {
     let shop_id = path.into_inner();
 
     let shop_option = match sqlx::query_as::<_, Shop>("SELECT * FROM shops WHERE id = ?")
@@ -128,18 +123,23 @@ pub async fn get_shop_by_id(
 
     if let Some(mut shop) = shop_option {
         if let Some(ref logo) = shop.logo_url {
-            shop.logo_url = Some(format!("http://localhost:8081{}", logo.replace("/public", "")));
+            shop.logo_url = Some(format!(
+                "http://localhost:8081{}",
+                logo.replace("/public", "")
+            ));
         }
         if let Some(ref banner) = shop.banner_url {
-            shop.banner_url = Some(format!("http://localhost:8081{}", banner.replace("/public", "")));
+            shop.banner_url = Some(format!(
+                "http://localhost:8081{}",
+                banner.replace("/public", "")
+            ));
         }
 
-        let count: Result<(i32,), _> = sqlx::query_as(
-            "SELECT COUNT(*) FROM products WHERE user_id = ?"
-        )
-        .bind(shop.user_id)
-        .fetch_one(pool.get_ref())
-        .await;
+        let count: Result<(i32,), _> =
+            sqlx::query_as("SELECT COUNT(*) FROM products WHERE user_id = ?")
+                .bind(shop.user_id)
+                .fetch_one(pool.get_ref())
+                .await;
 
         let product_count = count.unwrap_or((0,)).0;
 
@@ -265,9 +265,21 @@ pub async fn create_or_update_shop(
             .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
 
             // After updating the shop, update all of its products with the new info
-            let final_location = if location.is_empty() { &shop.location } else { &location };
-            let final_phone = if phone.is_empty() { &shop.phone } else { &phone };
-            let final_email = if email.is_empty() { &shop.email } else { &email };
+            let final_location = if location.is_empty() {
+                &shop.location
+            } else {
+                &location
+            };
+            let final_phone = if phone.is_empty() {
+                &shop.phone
+            } else {
+                &phone
+            };
+            let final_email = if email.is_empty() {
+                &shop.email
+            } else {
+                &email
+            };
 
             sqlx::query("UPDATE products SET location = ?, contact_phone = ?, contact_email = ? WHERE user_id = ?")
                 .bind(final_location)
@@ -304,15 +316,14 @@ pub async fn create_or_update_shop(
 
 // Delete shop
 #[delete("")]
-pub async fn delete_shop(
-    req: HttpRequest,
-    pool: web::Data<SqlitePool>,
-) -> impl Responder {
+pub async fn delete_shop(req: HttpRequest, pool: web::Data<SqlitePool>) -> impl Responder {
     let user_id = match get_user_id_from_headers(&req) {
         Ok(id) => id,
-        Err(e) => return HttpResponse::Unauthorized().json(ErrorResponse {
-            message: e.to_string(),
-        }),
+        Err(e) => {
+            return HttpResponse::Unauthorized().json(ErrorResponse {
+                message: e.to_string(),
+            })
+        }
     };
 
     let result = sqlx::query("DELETE FROM shops WHERE user_id = ?")

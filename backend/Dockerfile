@@ -1,17 +1,21 @@
 # 1. Build stage
-FROM rust:1-bookworm as builder
+FROM rust:1.82-alpine3.19 AS builder
 WORKDIR /usr/src/app
+
+# Install build dependencies for Alpine
+RUN apk add --no-cache musl-dev openssl-dev pkgconfig
 
 # Copy dependency manifests first to leverage Docker cache
 COPY Cargo.toml Cargo.lock ./
 
-# Create a cargo config file to make network requests more resilient
+# Create a cargo config file with more resilient network settings
 RUN mkdir .cargo && \
     echo '[net]' > .cargo/config.toml && \
-    echo 'retry = 5' >> .cargo/config.toml && \
-    echo 'timeout = 300' >> .cargo/config.toml && \
+    echo 'retry = 10' >> .cargo/config.toml && \
+    echo 'git-fetch-with-cli = true' >> .cargo/config.toml && \
     echo '[http]' >> .cargo/config.toml && \
-    echo 'timeout = 300' >> .cargo/config.toml
+    echo 'timeout = 600' >> .cargo/config.toml && \
+    echo 'multiplexing = false' >> .cargo/config.toml
 
 # Create a dummy main.rs to build only dependencies
 RUN mkdir src && echo "fn main() {}" > src/main.rs
@@ -20,23 +24,33 @@ RUN cargo build -j 2 --release
 # Now copy the rest of the application files
 COPY . .
 
-# Build the application. This will be much faster as dependencies are cached.
+# Build the application
 RUN cargo build -j 2 --release
 
-# Install sqlx-cli, which is needed in the runtime stage
-RUN cargo install sqlx-cli
+# Download pre-compiled sqlx-cli binary
+RUN wget https://github.com/launchbadge/sqlx/releases/download/v0.7.3/sqlx-cli-0.7.3-x86_64-unknown-linux-musl.tar.gz && \
+    tar xzf sqlx-cli-0.7.3-x86_64-unknown-linux-musl.tar.gz && \
+    mv sqlx /usr/local/cargo/bin/ && \
+    chmod +x /usr/local/cargo/bin/sqlx && \
+    rm sqlx-cli-0.7.3-x86_64-unknown-linux-musl.tar.gz
 
 # 2. Runtime stage
-FROM debian:bookworm-slim
+FROM alpine:3.19
 WORKDIR /app
+
+# Install runtime dependencies
+RUN apk add --no-cache openssl ca-certificates curl libgcc
+
 COPY --from=builder /usr/src/app/target/release/backend .
 COPY --from=builder /usr/local/cargo/bin/sqlx /usr/local/bin/
 COPY --from=builder /usr/src/app/migrations /app/migrations
 COPY --from=builder /usr/src/app/public /app/public
-RUN apt-get update && apt-get install -y openssl curl && rm -rf /var/lib/apt/lists/*
+
 RUN mkdir -p /app/data && mkdir -p /app/public/uploads
+
 # Create a non-root user
-RUN useradd -ms /bin/bash appuser
+RUN adduser -D -s /bin/sh appuser
+
 # Copy the entrypoint script and make it executable
 COPY entrypoint.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/entrypoint.sh

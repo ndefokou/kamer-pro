@@ -14,7 +14,10 @@ services:
     ports:
       - "3000:80"
     environment:
-      - VITE_API_URL=http://localhost:8081
+      - VITE_API_URL=/api  # Use relative path for nginx proxying
+    depends_on:
+      - backend
 
 volumes:
   db-data:
+  

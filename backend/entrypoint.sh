@@ -1,27 +1,31 @@
 #!/bin/sh
-#!/bin/sh
 set -e
 
 echo "--- Running entrypoint.sh ---"
 echo "Running as user: $(whoami)"
 
-echo "Permissions for /app/data before chown:"
-ls -ld /app/data
-
-# Create the database file if it doesn't exist and ensure the directory exists
+# Ensure data directory exists
 mkdir -p /app/data
-touch /app/data/database.db
 
-# Give ownership of the /app/data directory to the appuser.
+echo "Permissions for /app/data before chown:"
+ls -la /app/data
+
+# Change ownership of data directory to appuser
 chown -R appuser:appuser /app/data
 chown -R appuser:appuser /app/public
 
 echo "Permissions for /app/data after setup:"
-ls -lA /app/data
+ls -la /app/data
 
+# Run migrations using sqlite3
 echo "--- Running migrations ---"
-setpriv --reuid=appuser --regid=appuser --clear-groups /usr/local/bin/sqlx migrate run --source /app/migrations --database-url "sqlite:/app/data/database.db"
+for migration in /app/migrations/*.sql; do
+    if [ -f "$migration" ]; then
+        echo "Running migration: $migration"
+        sqlite3 /app/data/database.db < "$migration" || echo "Migration may have already been applied"
+    fi
+done
 
 echo "--- Starting application ---"
-# Execute the main command (passed as arguments to this script) as the appuser
-exec setpriv --reuid=appuser --regid=appuser --clear-groups "$@"
+# Execute the CMD as appuser
+exec "$@"

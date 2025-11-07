@@ -141,10 +141,7 @@ pub async fn get_conversations(req: HttpRequest, pool: web::Data<SqlitePool>) ->
                 .into_iter()
                 .map(|mut conv| {
                     if let Some(ref image) = conv.product_image {
-                        conv.product_image = Some(format!(
-                            "http://localhost:8082{}",
-                            image.replace("/public", "")
-                        ));
+                        conv.product_image = Some(image.replace("/public", ""));
                     }
                     conv
                 })
@@ -267,12 +264,11 @@ pub async fn get_messages(
     .execute(pool.get_ref())
     .await;
 
-    let messages: Result<Vec<Message>, _> = sqlx::query_as(
-        "SELECT * FROM messages WHERE conversation_id = ? ORDER BY created_at ASC",
-    )
-    .bind(conversation_id)
-    .fetch_all(pool.get_ref())
-    .await;
+    let messages: Result<Vec<Message>, _> =
+        sqlx::query_as("SELECT * FROM messages WHERE conversation_id = ? ORDER BY created_at ASC")
+            .bind(conversation_id)
+            .fetch_all(pool.get_ref())
+            .await;
 
     match messages {
         Ok(msgs) => {
@@ -302,7 +298,7 @@ pub async fn get_messages(
                     created_at: msg.created_at,
                     images: images
                         .into_iter()
-                        .map(|i| format!("http://localhost:8082{}", i.0.replace("/public", "")))
+                        .map(|i| i.0.replace("/public", ""))
                         .collect(),
                 });
             }
@@ -448,21 +444,23 @@ pub async fn send_image_message(
 
     // Insert images
     for image in images {
-        if let Err(e) = sqlx::query("INSERT INTO message_images (message_id, image_url) VALUES (?, ?)")
-            .bind(message_id)
-            .bind(&image)
-            .execute(pool.get_ref())
-            .await
+        if let Err(e) =
+            sqlx::query("INSERT INTO message_images (message_id, image_url) VALUES (?, ?)")
+                .bind(message_id)
+                .bind(&image)
+                .execute(pool.get_ref())
+                .await
         {
             eprintln!("Failed to insert message image: {}", e);
         }
     }
 
     // Update conversation
-    let _ = sqlx::query("UPDATE conversations SET last_message_at = CURRENT_TIMESTAMP WHERE id = ?")
-        .bind(conversation_id)
-        .execute(pool.get_ref())
-        .await;
+    let _ =
+        sqlx::query("UPDATE conversations SET last_message_at = CURRENT_TIMESTAMP WHERE id = ?")
+            .bind(conversation_id)
+            .execute(pool.get_ref())
+            .await;
 
     Ok(HttpResponse::Created().json(serde_json::json!({
         "message": "Image message sent successfully",
@@ -484,11 +482,12 @@ pub async fn get_message_templates(
         .and_then(|s| s.split('-').next())
         .unwrap_or("en");
 
-    let templates: Result<Vec<MessageTemplate>, _> =
-        sqlx::query_as("SELECT id, template_text, category FROM message_templates WHERE language = ?")
-            .bind(language)
-            .fetch_all(pool.get_ref())
-            .await;
+    let templates: Result<Vec<MessageTemplate>, _> = sqlx::query_as(
+        "SELECT id, template_text, category FROM message_templates WHERE language = ?",
+    )
+    .bind(language)
+    .fetch_all(pool.get_ref())
+    .await;
 
     match templates {
         Ok(templates) => HttpResponse::Ok().json(templates),

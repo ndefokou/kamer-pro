@@ -87,10 +87,7 @@ pub async fn get_wishlist(req: HttpRequest, pool: web::Data<SqlitePool>) -> impl
                 .into_iter()
                 .map(|mut item| {
                     if let Some(ref image) = item.product_image {
-                        item.product_image = Some(format!(
-                            "http://localhost:8082{}",
-                            image.replace("/public", "")
-                        ));
+                        item.product_image = Some(image.replace("/public", ""));
                     }
                     item
                 })
