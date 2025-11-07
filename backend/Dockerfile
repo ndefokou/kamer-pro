@@ -50,6 +50,9 @@ RUN mkdir -p /app/data && mkdir -p /app/public/uploads
 # Create a non-root user
 RUN adduser -D -s /bin/sh appuser
 
+# Change ownership of the app directory to appuser
+RUN chown -R appuser:appuser /app
+
 # Copy the entrypoint script and make it executable
 COPY entrypoint.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/entrypoint.sh

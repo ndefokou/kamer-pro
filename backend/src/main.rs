@@ -9,8 +9,10 @@ mod routes;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    println!("Rust application starting...");
     dotenv().ok();
     env_logger::init();
+    println!("Logger initialized. Starting server...");
 
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
     let pool = SqlitePoolOptions::new()
