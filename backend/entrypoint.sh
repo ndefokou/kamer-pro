@@ -22,9 +22,22 @@ ls -la /app/data
 # Run migrations using sqlite3
 echo "--- Running migrations ---"
 
+# Delete the old database to ensure a clean slate
+rm -f /app/data/database.db
+
 for migration in /app/migrations/*.sql; do
-    echo "Running migration: $migration"
-    sqlite3 /app/data/database.db < "$migration" || echo "Migration failed, continuing..."
+    if [ -f "$migration" ]; then
+        migration_name=$(basename "$migration")
+        echo "Running migration: $migration"
+        
+        # Run the migration and exit on error
+        if ! sqlite3 /app/a pp/data/database.db < "$migration"; then
+            echo "❌ Migration $migration_name failed. Exiting."
+            exit 1
+        fi
+        
+        echo "✓ Migration $migration_name completed successfully"
+    fi
 done
 
 echo "--- Starting application ---"

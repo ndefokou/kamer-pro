@@ -20,4 +20,3 @@ CREATE TABLE IF NOT EXISTS shops (
 
 -- Create indexes (these use IF NOT EXISTS)
 CREATE INDEX IF NOT EXISTS idx_shops_user_id ON shops(user_id);
-CREATE INDEX IF NOT EXISTS idx_products_shop_id ON products(shop_id);
