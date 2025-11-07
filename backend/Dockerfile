@@ -1,6 +1,9 @@
 # 1. Build stage
-FROM rust:1.82-alpine3.19 AS builder
+FROM rust:1.83-alpine3.20 AS builder
 WORKDIR /usr/src/app
+
+# Switch to nightly toolchain to use unstable features
+RUN rustup default nightly
 
 # Install build dependencies for Alpine
 RUN apk add --no-cache musl-dev openssl-dev pkgconfig
@@ -28,14 +31,10 @@ COPY . .
 RUN cargo build -j 2 --release
 
 # Download pre-compiled sqlx-cli binary
-RUN wget https://github.com/launchbadge/sqlx/releases/download/v0.7.3/sqlx-cli-0.7.3-x86_64-unknown-linux-musl.tar.gz && \
-    tar xzf sqlx-cli-0.7.3-x86_64-unknown-linux-musl.tar.gz && \
-    mv sqlx /usr/local/cargo/bin/ && \
-    chmod +x /usr/local/cargo/bin/sqlx && \
-    rm sqlx-cli-0.7.3-x86_64-unknown-linux-musl.tar.gz
+RUN cargo install sqlx-cli --version=0.7.3 --features native-tls,rustls --no-default-features
 
 # 2. Runtime stage
-FROM alpine:3.19
+FROM alpine:3.20
 WORKDIR /app
 
 # Install runtime dependencies
