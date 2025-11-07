@@ -1,8 +1,5 @@
--- Drop existing shops table if it exists
-DROP TABLE IF EXISTS shops;
-
--- Create enhanced shops table
-CREATE TABLE shops (
+-- Create shops table
+CREATE TABLE IF NOT EXISTS shops (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL UNIQUE,
     name TEXT NOT NULL,
@@ -17,9 +14,10 @@ CREATE TABLE shops (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
--- Add shop_id to products table
-ALTER TABLE products ADD COLUMN shop_id INTEGER REFERENCES shops(id) ON DELETE SET NULL;
+-- SQLite doesn't support conditional column addition, so we need to check manually
+-- The entrypoint script will handle the error if the column already exists
+-- This is wrapped in the script's error handling with "|| echo" to continue
 
--- Create index for better performance
+-- Create indexes (these use IF NOT EXISTS)
 CREATE INDEX IF NOT EXISTS idx_shops_user_id ON shops(user_id);
 CREATE INDEX IF NOT EXISTS idx_products_shop_id ON products(shop_id);

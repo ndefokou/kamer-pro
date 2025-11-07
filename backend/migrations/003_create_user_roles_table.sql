@@ -6,4 +6,5 @@ CREATE TABLE IF NOT EXISTS user_roles (
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE UNIQUE INDEX idx_user_roles_unique ON user_roles(user_id, role);
+-- Use CREATE INDEX IF NOT EXISTS instead of CREATE UNIQUE INDEX
+CREATE UNIQUE INDEX IF NOT EXISTS idx_user_roles_unique ON user_roles(user_id, role);

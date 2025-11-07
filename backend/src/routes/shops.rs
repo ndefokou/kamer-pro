@@ -162,6 +162,7 @@ pub async fn create_or_update_shop(
     mut payload: Multipart,
 ) -> Result<HttpResponse, actix_web::Error> {
     let user_id = get_user_id_from_headers(&req)?;
+    println!("Attempting to create or update shop for user_id: {}", user_id);
 
     let mut name = String::new();
     let mut email = String::new();
