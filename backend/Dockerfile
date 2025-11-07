@@ -6,7 +6,7 @@ WORKDIR /usr/src/app
 RUN rustup default nightly
 
 # Install build dependencies for Alpine
-RUN apk add --no-cache musl-dev openssl-dev pkgconfig
+RUN apk add --no-cache musl-dev openssl-dev openssl-libs-static pkgconfig
 
 # Copy dependency manifests first to leverage Docker cache
 COPY Cargo.toml Cargo.lock ./
@@ -38,7 +38,7 @@ FROM alpine:3.20
 WORKDIR /app
 
 # Install runtime dependencies
-RUN apk add --no-cache openssl ca-certificates curl libgcc
+RUN apk add --no-cache openssl ca-certificates curl libgcc sqlite su-exec
 
 COPY --from=builder /usr/src/app/target/release/backend .
 COPY --from=builder /usr/local/cargo/bin/sqlx /usr/local/bin/

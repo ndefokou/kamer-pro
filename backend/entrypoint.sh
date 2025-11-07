@@ -28,4 +28,4 @@ done
 
 echo "--- Starting application ---"
 # Execute the CMD as appuser
-exec "$@"
+exec su-exec appuser "$@"
