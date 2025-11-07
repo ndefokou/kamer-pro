@@ -214,18 +214,38 @@ pub async fn create_or_update_shop(
             "logo" => {
                 let filename = format!("shop_logo_{}.png", Uuid::new_v4());
                 let filepath = format!("./public/uploads/{}", filename);
-                let mut f = std::fs::File::create(&filepath)?;
+                println!("Attempting to save logo to: {}", filepath);
+                let mut f = match std::fs::File::create(&filepath) {
+                    Ok(file) => file,
+                    Err(e) => {
+                        eprintln!("Failed to create logo file: {}. Error: {}", filepath, e);
+                        return Err(actix_web::error::ErrorInternalServerError(e));
+                    }
+                };
                 while let Some(chunk) = field.try_next().await? {
-                    f.write_all(&chunk)?;
+                    if let Err(e) = f.write_all(&chunk) {
+                        eprintln!("Failed to write to logo file: {}. Error: {}", filepath, e);
+                        return Err(actix_web::error::ErrorInternalServerError(e));
+                    }
                 }
                 logo_path = Some(format!("/uploads/{}", filename));
             }
             "banner" => {
                 let filename = format!("shop_banner_{}.png", Uuid::new_v4());
                 let filepath = format!("./public/uploads/{}", filename);
-                let mut f = std::fs::File::create(&filepath)?;
+                println!("Attempting to save banner to: {}", filepath);
+                let mut f = match std::fs::File::create(&filepath) {
+                    Ok(file) => file,
+                    Err(e) => {
+                        eprintln!("Failed to create banner file: {}. Error: {}", filepath, e);
+                        return Err(actix_web::error::ErrorInternalServerError(e));
+                    }
+                };
                 while let Some(chunk) = field.try_next().await? {
-                    f.write_all(&chunk)?;
+                    if let Err(e) = f.write_all(&chunk) {
+                        eprintln!("Failed to write to banner file: {}. Error: {}", filepath, e);
+                        return Err(actix_web::error::ErrorInternalServerError(e));
+                    }
                 }
                 banner_path = Some(format!("/uploads/{}", filename));
             }
@@ -307,7 +327,10 @@ pub async fn create_or_update_shop(
             .bind(&banner_path)
             .fetch_one(pool.get_ref())
             .await
-            .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+            .map_err(|e| {
+                eprintln!("Failed to create shop: {}", e);
+                actix_web::error::ErrorInternalServerError(e)
+            })?;
 
             Ok(HttpResponse::Created().json(new_shop))
         }
