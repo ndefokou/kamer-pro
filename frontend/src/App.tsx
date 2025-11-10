@@ -16,7 +16,10 @@ import Wishlist from "./pages/Wishlist";
 import Messages from "./pages/Messages";
 import { WebAuthLogin } from "./pages/WebAuthLogin";
 import { WebAuthRegister } from "./pages/WebAuthRegister";
-import ProtectedRoute from "./components/ProtectedRoute";
+import {
+  ProtectedRoute,
+  SellerProtectedRoute,
+} from "./components/ProtectedRoute";
 
 const queryClient = new QueryClient();
 
@@ -29,11 +32,16 @@ const router = createBrowserRouter(
     { path: "/webauth-login", Component: WebAuthLogin },
     { path: "/webauth-register", Component: WebAuthRegister },
     {
-      element: <ProtectedRoute />,
+      element: <SellerProtectedRoute />,
       children: [
         { path: "/shop", Component: ShopPage },
-        { path: "/wishlist", Component: Wishlist },
         { path: "/my-products", Component: MyProducts },
+      ],
+    },
+    {
+      element: <ProtectedRoute />,
+      children: [
+        { path: "/wishlist", Component: Wishlist },
         { path: "/messages", Component: Messages },
       ],
     },

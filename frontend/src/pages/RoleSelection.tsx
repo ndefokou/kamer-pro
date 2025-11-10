@@ -32,8 +32,9 @@ const RoleSelection = () => {
         description: t("role_registered_successfully", { role }),
       });
 
+      localStorage.setItem("role", role);
       if (role === "seller") {
-        navigate("/seller-dashboard");
+        navigate("/shop");
       } else {
         navigate("/marketplace");
       }

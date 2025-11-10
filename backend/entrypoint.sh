@@ -31,7 +31,7 @@ for migration in /app/migrations/*.sql; do
         echo "Running migration: $migration"
         
         # Run the migration and exit on error
-        if ! sqlite3 /app/a pp/data/database.db < "$migration"; then
+        if ! sqlite3 /app/data/database.db < "$migration"; then
             echo "❌ Migration $migration_name failed. Exiting."
             exit 1
         fi
@@ -39,6 +39,8 @@ for migration in /app/migrations/*.sql; do
         echo "✓ Migration $migration_name completed successfully"
     fi
 done
+
+chown appuser:appuser /app/data/database.db
 
 echo "--- Starting application ---"
 echo "About to run backend binary..."
