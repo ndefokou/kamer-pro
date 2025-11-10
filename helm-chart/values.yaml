@@ -1,0 +1,169 @@
+# Default values for kamerlink
+# This is a YAML-formatted file.
+
+# Backend configuration
+backend:
+  name: backend
+  replicaCount: 1  # SQLite doesn't support multiple replicas without shared storage
+  
+  image:
+    repository: kamer-pro-backend
+    pullPolicy: Never
+    tag: "latest"
+  
+  imagePullSecrets: []
+  
+  service:
+    type: ClusterIP
+    port: 8082
+    targetPort: 8082
+  
+  resources:
+    limits:
+      cpu: 2000m
+      memory: 2Gi
+    requests:
+      cpu: 500m
+      memory: 512Mi
+  
+  env:
+    # This will be populated from the postgresql secret
+    # DATABASE_URL: "postgresql://{{ .Values.postgresql.auth.username }}:{{ .Values.postgresql.auth.password }}@{{ .Release.Name }}-postgresql/{{ .Values.postgresql.auth.database }}"
+    RUST_LOG: "info"
+    STORAGE_TYPE: "s3"
+    S3_BUCKET: "kamerlink-uploads"
+  
+  # Persistent volume for SQLite database
+  persistence:
+    enabled: false # Disabled in favor of PostgreSQL
+  
+  # Persistent volume for uploaded files
+  uploads:
+    enabled: false # Disabled in favor of S3
+  
+  livenessProbe:
+    httpGet:
+      path: /api/products
+      port: 8082
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+  
+  readinessProbe:
+    httpGet:
+      path: /api/products
+      port: 8082
+    initialDelaySeconds: 10
+    periodSeconds: 5
+    timeoutSeconds: 3
+    failureThreshold: 3
+
+# Frontend configuration
+frontend:
+  name: frontend
+  replicaCount: 2
+  
+  image:
+    repository: kamer-pro-frontend
+    pullPolicy: Never
+    tag: "latest"
+  
+  imagePullSecrets: []
+  
+  service:
+    type: LoadBalancer  # Change to NodePort or ClusterIP with Ingress for production
+    port: 80
+    targetPort: 5173
+  
+  resources:
+    limits:
+      cpu: 200m
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+  
+  env: {}
+  
+  livenessProbe:
+    httpGet:
+      path: /
+      port: 5173
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    timeoutSeconds: 3
+  
+  readinessProbe:
+    httpGet:
+      path: /
+      port: 5173
+    initialDelaySeconds: 5
+    periodSeconds: 5
+    timeoutSeconds: 2
+
+# Ingress configuration (optional)
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+  hosts:
+    - host: kamerlink.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+          service:
+            name: frontend
+            port: 80
+        - path: /api
+          pathType: Prefix
+          service:
+            name: backend
+            port: 8082
+  tls:
+    - secretName: kamerlink-tls
+      hosts:
+        - kamerlink.example.com
+
+# Security context
+# securityContext:
+#   runAsNonRoot: true
+#   runAsUser: 1000
+#   fsGroup: 1000
+#   capabilities:
+#     drop:
+#       - ALL
+
+# Service Account
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+# Pod annotations
+podAnnotations: {}
+
+# Node selector
+nodeSelector: {}
+
+# Tolerations
+tolerations: []
+
+# Affinity
+affinity: {}
+
+# PostgreSQL configuration
+postgresql:
+  enabled: true
+  image:
+    repository: postgres
+    tag: "13"
+  auth:
+    username: kamerlink
+    password: "changeme"
+    database: kamerlink
+  persistence:
+    enabled: true
+    storageClass: "standard"
+    size: 8Gi

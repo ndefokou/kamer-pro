@@ -1,0 +1,44 @@
+{{- if .Values.postgresql.enabled }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "kamerlink.fullname" . }}-postgresql
+spec:
+  serviceName: {{ include "kamerlink.fullname" . }}-postgresql
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ include "kamerlink.fullname" . }}-postgresql
+  template:
+    metadata:
+      labels:
+        app: {{ include "kamerlink.fullname" . }}-postgresql
+    spec:
+      containers:
+      - name: postgres
+        image: "{{ .Values.postgresql.image.repository }}:{{ .Values.postgresql.image.tag }}"
+        ports:
+        - containerPort: 5432
+        env:
+        - name: POSTGRES_USER
+          value: {{ .Values.postgresql.auth.username }}
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "kamerlink.fullname" . }}-postgresql
+              key: postgres-password
+        - name: POSTGRES_DB
+          value: {{ .Values.postgresql.auth.database }}
+        volumeMounts:
+        - name: postgres-storage
+          mountPath: /var/lib/postgresql/data
+  volumeClaimTemplates:
+  - metadata:
+      name: postgres-storage
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: {{ .Values.postgresql.storageClass }}
+      resources:
+        requests:
+          storage: {{ .Values.postgresql.size }}
+{{- end }}
