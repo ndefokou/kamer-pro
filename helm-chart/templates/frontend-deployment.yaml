@@ -38,7 +38,7 @@ spec:
               containerPort: {{ .Values.frontend.service.targetPort }}
               protocol: TCP
           env:
-            - name: NGINX_PROXY_PASS_URL
+            - name: PROXY_URL
               value: "http://{{ include "kamerlink.fullname" . }}-backend:{{ .Values.backend.service.port }}"
           envFrom:
             - configMapRef:

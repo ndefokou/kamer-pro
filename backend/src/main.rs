@@ -15,6 +15,7 @@ async fn main() -> std::io::Result<()> {
     println!("Logger initialized. Starting server...");
 
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+    eprintln!("Connecting to database at: {}", database_url);
     let pool = SqlitePoolOptions::new()
         .max_connections(5)
         .connect(&database_url)

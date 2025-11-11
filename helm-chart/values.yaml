@@ -68,13 +68,13 @@ frontend:
     repository: kamer-pro-frontend
     pullPolicy: Never
     tag: "latest"
-  
+              
   imagePullSecrets: []
   
   service:
-    type: LoadBalancer  # Change to NodePort or ClusterIP with Ingress for production
+    type: LoadBalancer
     port: 80
-    targetPort: 5173
+    targetPort: 80  # ✅ Changed from 5173 to 80 (nginx default port)
   
   resources:
     limits:
@@ -84,12 +84,13 @@ frontend:
       cpu: 100m
       memory: 128Mi
   
-  env: {}
+  env:
+    PROXY_URL: "http://{{ .Release.Name }}-backend:8082"
   
   livenessProbe:
     httpGet:
       path: /
-      port: 5173
+      port: 80  # ✅ Changed from 5173 to 80
     initialDelaySeconds: 10
     periodSeconds: 10
     timeoutSeconds: 3
@@ -97,61 +98,30 @@ frontend:
   readinessProbe:
     httpGet:
       path: /
-      port: 5173
+      port: 80  # ✅ Changed from 5173 to 80
     initialDelaySeconds: 5
     periodSeconds: 5
     timeoutSeconds: 2
 
-# Ingress configuration (optional)
+# Ingress configuration
 ingress:
-  enabled: true
-  className: "nginx"
-  annotations:
-    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+  enabled: false
+  className: ""
+  annotations: {}
+    # kubernetes.io/ingress.class: nginx
+    # kubernetes.io/tls-acme: "true"
   hosts:
-    - host: kamerlink.example.com
+    - host: chart-example.local
       paths:
         - path: /
-          pathType: Prefix
+          pathType: ImplementationSpecific
           service:
             name: frontend
             port: 80
-        - path: /api
-          pathType: Prefix
-          service:
-            name: backend
-            port: 8082
-  tls:
-    - secretName: kamerlink-tls
-      hosts:
-        - kamerlink.example.com
-
-# Security context
-# securityContext:
-#   runAsNonRoot: true
-#   runAsUser: 1000
-#   fsGroup: 1000
-#   capabilities:
-#     drop:
-#       - ALL
-
-# Service Account
-serviceAccount:
-  create: true
-  annotations: {}
-  name: ""
-
-# Pod annotations
-podAnnotations: {}
-
-# Node selector
-nodeSelector: {}
-
-# Tolerations
-tolerations: []
-
-# Affinity
-affinity: {}
+  tls: []
+  #  - secretName: chart-example-tls
+  #    hosts:
+  #      - chart-example.local
 
 # PostgreSQL configuration
 postgresql:
@@ -167,3 +137,13 @@ postgresql:
     enabled: true
     storageClass: "standard"
     size: 8Gi
+
+# Service Account configuration
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""

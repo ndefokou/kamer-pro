@@ -37,8 +37,8 @@ spec:
       name: postgres-storage
     spec:
       accessModes: [ "ReadWriteOnce" ]
-      storageClassName: {{ .Values.postgresql.storageClass }}
+      storageClassName: {{ .Values.postgresql.persistence.storageClass }}
       resources:
         requests:
-          storage: {{ .Values.postgresql.size }}
-{{- end }}
+          storage: {{ .Values.postgresql.persistence.size }}
+{{- end }}  
