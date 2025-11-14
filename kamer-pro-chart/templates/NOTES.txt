@@ -1,0 +1,14 @@
+1. Get the application URL by running these commands:
+{{- if eq .Values.frontend.service.type "LoadBalancer" }}
+  export SERVICE_IP=$(kubectl get svc --namespace {{ .Release.Namespace }} {{ include "kamer-pro-chart.fullname" . }}-frontend -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+  echo "http://$SERVICE_IP:{{ .Values.frontend.service.port }}"
+{{- else }}
+  export NODE_PORT=$(kubectl get --namespace {{ .Release.Namespace }} -o jsonpath="{.spec.ports[0].nodePort}" services {{ include "kamer-pro-chart.fullname" . }}-frontend)
+  export NODE_IP=$(kubectl get nodes --namespace {{ .Release.Namespace }} -o jsonpath="{.items[0].status.addresses[0].address}")
+  echo "http://$NODE_IP:$NODE_PORT"
+{{- end }}
+
+2. Access the PostgreSQL database:
+   export POSTGRES_PASSWORD=$(kubectl get secret --namespace {{ .Release.Namespace }} {{ include "kamer-pro-chart.fullname" . }}-postgresql -o jsonpath="{.data.postgresql-password}" | base64 --decode)
+   kubectl run {{ include "kamer-pro-chart.fullname" . }}-postgresql-client --rm --tty -i --restart='Never' --namespace {{ .Release.Namespace }} --image docker.io/bitnami/postgresql:12 --env="PGPASSWORD=$POSTGRES_PASSWORD" \
+     --command -- psql --host {{ include "kamer-pro-chart.fullname" . }}-postgresql -U kamer-pro -d kamer-pro-db -p 5432
