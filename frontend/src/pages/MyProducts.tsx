@@ -269,12 +269,12 @@ const MyProducts = () => {
                         <SelectValue placeholder={t("select a category")} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Electronics">{t("Electronics")}</SelectItem>
-                        <SelectItem value="Fashion">{t("Fashion")}</SelectItem>
-                        <SelectItem value="Home & Garden">{t("Home & Garden")}</SelectItem>
-                        <SelectItem value="Vehicles">{t("Vehicles")}</SelectItem>
-                        <SelectItem value="Real Estate">{t("Real Estate")}</SelectItem>
-                        <SelectItem value="Services">{t("Services")}</SelectItem>
+                        <SelectItem value="apartment">{t("apartment")}</SelectItem>
+                        <SelectItem value="studio">{t("studio")}</SelectItem>
+                        <SelectItem value="bedroom">{t("bedroom")}</SelectItem>
+                        <SelectItem value="villa">{t("villa")}</SelectItem>
+                        <SelectItem value="office">{t("office")}</SelectItem>
+                        <SelectItem value="shop">{t("shop")}</SelectItem>
                         <SelectItem value="Other">{t("Other")}</SelectItem>
                       </SelectContent>
                     </Select>
@@ -286,9 +286,8 @@ const MyProducts = () => {
                         <SelectValue placeholder={t("select a condition")} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="New">{t("New")}</SelectItem>
-                        <SelectItem value="Like-new">{t("Like-new")}</SelectItem>
-                        <SelectItem value="Good">{t("Good")}</SelectItem>
+                        <SelectItem value="for_sale">{t("for_sale")}</SelectItem>
+                        <SelectItem value="for_rent">{t("for_rent")}</SelectItem>
                         <SelectItem value="Fair">{t("Fair")}</SelectItem>
                       </SelectContent>
                     </Select>

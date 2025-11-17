@@ -8,25 +8,25 @@ import { Loader2 } from "lucide-react";
 import apiClient from "@/api/client";
 import { useToast } from "@/components/ui/use-toast";
 
-interface ShopData {
+interface shopData {
   email: string;
   phone: string;
   location: string;
 }
 
-interface ShopSettingsProps {
-  shopData: ShopData;
-  onShopDataChange: (newShopData: ShopData) => void;
+interface companyettingsProps {
+  shopData: shopData;
+  onshopDataChange: (newshopData: shopData) => void;
 }
 
-const ShopSettings = ({ shopData, onShopDataChange }: ShopSettingsProps) => {
+const companyettings = ({ shopData, onshopDataChange }: companyettingsProps) => {
   const { t } = useTranslation();
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target;
-    onShopDataChange({ ...shopData, [id]: value });
+    onshopDataChange({ ...shopData, [id]: value });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -96,4 +96,4 @@ const ShopSettings = ({ shopData, onShopDataChange }: ShopSettingsProps) => {
   );
 };
 
-export default ShopSettings;
+export default companyettings;

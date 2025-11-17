@@ -6,7 +6,6 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import {
   Store,
-  ShoppingCart,
   Heart,
   User,
   LogOut,
@@ -111,16 +110,16 @@ const Navbar = () => {
                 variant="ghost"
                 className="text-primary-foreground hover:bg-primary-foreground/10"
               >
-                Marketplace
+                {t("marketplace")}
               </Button>
             </Link>
 
-            <Link to="/shop">
+            <Link to="/company">
               <Button
                 variant="ghost"
                 className="text-primary-foreground hover:bg-primary-foreground/10"
               >
-                My Shop
+                My company
               </Button>
             </Link>
 
@@ -285,16 +284,16 @@ const Navbar = () => {
                     onClick={() => handleNavigation("/marketplace")}
                   >
                     <Store className="h-5 w-5 mr-2" />
-                    Marketplace
+                    {t("marketplace")}
                   </Button>
 
                   <Button
                     variant="ghost"
                     className="justify-start"
-                    onClick={() => handleNavigation("/shop")}
+                    onClick={() => handleNavigation("/company")}
                   >
                     <Store className="h-5 w-5 mr-2" />
-                    My Shop
+                    My company
                   </Button>
 
                   {token && (

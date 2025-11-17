@@ -15,6 +15,18 @@ async fn main() -> std::io::Result<()> {
     println!("Logger initialized. Starting server...");
 
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+    let db_path_str = database_url
+        .strip_prefix("sqlite:")
+        .unwrap_or(&database_url);
+    let db_path = std::path::Path::new(db_path_str);
+    if !db_path.exists() {
+        if let Some(parent) = db_path.parent() {
+            if !parent.exists() {
+                std::fs::create_dir_all(parent).expect("Failed to create database directory");
+            }
+        }
+        std::fs::File::create(db_path).expect("Failed to create database file");
+    }
     let pool = SqlitePoolOptions::new()
         .max_connections(5)
         .connect(&database_url)
@@ -22,8 +34,7 @@ async fn main() -> std::io::Result<()> {
         .expect("Failed to create pool.");
 
     HttpServer::new(move || {
-        let cors = Cors::permissive(); // Allow all origins in development
-
+        let cors = Cors::permissive(); 
         App::new()
             .wrap(cors)
             .app_data(web::Data::new(pool.clone()))
@@ -81,14 +92,14 @@ async fn main() -> std::io::Result<()> {
                             .service(routes::messages::get_unread_count),
                     )
                     .service(
-                        web::scope("/shops")
-                            .service(routes::shops::get_my_shop)
-                            .service(routes::shops::get_shop_by_id)
-                            .service(routes::shops::create_or_update_shop)
-                            .service(routes::shops::delete_shop),
+                        web::scope("/companies")
+                            .service(routes::company::get_my_company)
+                            .service(routes::company::get_company_by_id)
+                            .service(routes::company::create_or_update_company)
+                            .service(routes::company::delete_company),
                     ),
             )
-            .service(fs::Files::new("/uploads", "/app/public/uploads"))
+            .service(fs::Files::new("/uploads", "./public/uploads"))
     })
     .bind("0.0.0.0:8082")?
     .run()

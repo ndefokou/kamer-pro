@@ -11,7 +11,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
-import { ShoppingBag, Store, Loader2 } from "lucide-react";
+import { shoppingBag, Store, Loader2 } from "lucide-react";
 import axios from "axios";
 
 const RoleSelection = () => {
@@ -72,7 +72,7 @@ const RoleSelection = () => {
             <CardHeader className="text-center">
               <div className="flex justify-center mb-4">
                 <div className="bg-secondary p-4 rounded-full">
-                  <ShoppingBag className="h-10 w-10 text-secondary-foreground" />
+                  <shoppingBag className="h-10 w-10 text-secondary-foreground" />
                 </div>
               </div>
               <CardTitle className="text-2xl">{t("buyer")}</CardTitle>

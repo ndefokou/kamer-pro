@@ -24,7 +24,7 @@ import Navbar from "@/components/Navbar";
 import ProductCard from "@/components/ProductCard";
 import { toast } from "@/hooks/use-toast";
 
-interface Shop {
+interface Company {
   id: number;
   user_id: number;
   name: string;
@@ -52,10 +52,10 @@ interface Product {
   shop_id: number;
 }
 
-const ShopPage = () => {
+const CompanyPage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const [shop, setShop] = useState<Shop | null>(null);
+  const [company, setCompany] = useState<Company | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -76,23 +76,23 @@ const ShopPage = () => {
 
   const token = localStorage.getItem("token");
 
-  const fetchshop = useCallback(async () => {
+  const fetchCompany = useCallback(async () => {
     setIsLoading(true);
     try {
-      const response = await apiClient.get("/companies");
-      const shopData = response.data.shop || response.data;
-      setShop(shopData);
+      const response = await apiClient.get("/company");
+      const companyData = response.data.company || response.data;
+      setCompany(companyData);
       
       setFormData({
-        name: shopData.name || "",
-        email: shopData.email || "",
-        phone: shopData.phone || "",
-        location: shopData.location || "",
-        description: shopData.description || "",
+        name: companyData.name || "",
+        email: companyData.email || "",
+        phone: companyData.phone || "",
+        location: companyData.location || "",
+        description: companyData.description || "",
       });
       
-      if (shopData.logo_url) setLogoPreview(shopData.logo_url);
-      if (shopData.banner_url) setBannerPreview(shopData.banner_url);
+      if (companyData.logo_url) setLogoPreview(companyData.logo_url);
+      if (companyData.banner_url) setBannerPreview(companyData.banner_url);
       
       setIsEditing(false);
     } catch (error) {
@@ -100,32 +100,32 @@ const ShopPage = () => {
       if (axiosError.response?.status === 404) {
         setIsEditing(true);
       }
-      console.error("Failed to fetch shop:", error);
+      console.error("Failed to fetch company:", error);
     } finally {
       setIsLoading(false);
     }
   }, []);
 
   const fetchProducts = useCallback(async () => {
-    if (!shop) return;
+    if (!company) return;
     try {
       const response = await apiClient.get(`/products/seller`);
       const filteredProducts = response.data.filter(
-        (product: Product) => product.shop_id === shop.id
+        (product: Product) => product.shop_id === company.id
       );
       setProducts(filteredProducts);
     } catch (error) {
       console.error("Failed to fetch products:", error);
     }
-  }, [shop]);
+  }, [company]);
 
   useEffect(() => {
     if (!token) {
       navigate("/webauth-login");
       return;
     }
-    fetchshop();
-  }, [token, navigate, fetchshop]);
+    fetchCompany();
+  }, [token, navigate, fetchCompany]);
 
   useEffect(() => {
     fetchProducts();
@@ -173,22 +173,22 @@ const ShopPage = () => {
     if (bannerFile) data.append("banner", bannerFile);
 
     try {
-      await apiClient.post("/companies", data, {
+      await apiClient.post("/company", data, {
         headers: { "Content-Type": "multipart/form-data" },
       });
       
       toast({
         title: t("success"),
-        description: t("shop saved successfully"),
+        description: t("company saved successfully"),
       });
       
-      await fetchshop();
+      await fetchCompany();
       setIsEditing(false);
     } catch (error) {
-      console.error("Failed to save shop:", error);
+      console.error("Failed to save company:", error);
       toast({
         title: t("error"),
-        description: t("failed to save shop"),
+        description: t("failed to save company"),
         variant: "destructive",
       });
     } finally {
@@ -220,18 +220,18 @@ const ShopPage = () => {
         <div className="flex flex-col sm:flex-row justify-between sm:items-center mb-8 gap-4">
           <div>
             <h1 className="text-3xl md:text-4xl font-bold mb-2">
-              {isEditing && !shop ? t("create your shop") : t("my shop")}
+              {isEditing && !company ? t("create your company") : t("my company")}
             </h1>
             <p className="text-muted-foreground">
-              {isEditing && !shop 
-                ? t("set up your shop to start selling") 
-                : t("manage your shop and products")}
+              {isEditing && !company
+                ? t("set up your company to start selling")
+                : t("manage your company and products")}
             </p>
           </div>
-          {shop && !isEditing && (
+          {company && !isEditing && (
             <Button onClick={() => setIsEditing(true)}>
               <Edit2 className="h-4 w-4 mr-2" />
-              {t("edit shop")}
+              {t("edit company")}
             </Button>
           )}
         </div>
@@ -239,12 +239,12 @@ const ShopPage = () => {
         {isEditing ? (
           <Card>
             <CardHeader>
-              <CardTitle>{shop ? t("edit shop information") : t("shop information")}</CardTitle>
+              <CardTitle>{company ? t("edit company information") : t("company information")}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
               {/* Banner Image */}
               <div className="space-y-2">
-                <Label>{t("shop banner")}</Label>
+                <Label>{t("company banner")}</Label>
                 <div
                   {...getBannerRootProps()}
                   className="border-2 border-dashed rounded-lg p-8 text-center cursor-pointer hover:border-primary transition-colors"
@@ -264,7 +264,7 @@ const ShopPage = () => {
 
               {/* Logo Image */}
               <div className="space-y-2">
-                <Label>{t("shop logo")}</Label>
+                <Label>{t("company logo")}</Label>
                 <div
                   {...getLogoRootProps()}
                   className="border-2 border-dashed rounded-lg p-8 text-center cursor-pointer hover:border-primary transition-colors"
@@ -285,12 +285,12 @@ const ShopPage = () => {
               {/* shop Details */}
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="name">{t("shop name")} *</Label>
+                  <Label htmlFor="name">{t("company name")} *</Label>
                   <Input
                     id="name"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    placeholder={t("enter shop name")}
+                    placeholder={t("enter company name")}
                     required
                   />
                 </div>
@@ -335,12 +335,12 @@ const ShopPage = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="description">{t("shop description")}</Label>
+                <Label htmlFor="description">{t("company description")}</Label>
                 <Textarea
                   id="description"
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder={t("tell customers about your shop")}
+                  placeholder={t("tell customers about your company")}
                   rows={4}
                 />
               </div>
@@ -348,9 +348,9 @@ const ShopPage = () => {
               <div className="flex gap-2">
                 <Button onClick={handleSave} disabled={isSaving}>
                   {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  {t("save shop")}
+                  {t("save company")}
                 </Button>
-                {shop && (
+                {company && (
                   <Button variant="outline" onClick={() => setIsEditing(false)}>
                     {t("cancel")}
                   </Button>
@@ -358,7 +358,7 @@ const ShopPage = () => {
               </div>
             </CardContent>
           </Card>
-        ) : shop ? (
+        ) : company ? (
           <>
             {/* shop Profile Display */}
             <Card className="mb-8">
@@ -366,9 +366,9 @@ const ShopPage = () => {
                 {/* Banner */}
                 {bannerPreview && (
                   <div className="h-48 md:h-64 overflow-hidden rounded-t-lg">
-                    <img 
-                      src={bannerPreview} 
-                      alt="shop banner" 
+                    <img
+                      src={bannerPreview}
+                      alt="company banner"
                       className="w-full h-full object-cover"
                     />
                   </div>
@@ -378,33 +378,33 @@ const ShopPage = () => {
                   <div className="flex flex-col md:flex-row gap-6">
                     {/* Logo */}
                     {logoPreview && (
-                      <img 
-                        src={logoPreview} 
-                        alt="shop logo" 
+                      <img
+                        src={logoPreview}
+                        alt="company logo"
                         className="h-24 w-24 rounded-full border-4 border-background -mt-16 md:-mt-20"
                       />
                     )}
                     
                     <div className="flex-1">
-                      <h2 className="text-2xl font-bold mb-2">{shop.name}</h2>
-                      {shop.description && (
-                        <p className="text-muted-foreground mb-4">{shop.description}</p>
+                      <h2 className="text-2xl font-bold mb-2">{company.name}</h2>
+                      {company.description && (
+                        <p className="text-muted-foreground mb-4">{company.description}</p>
                       )}
                       
                       <div className="grid md:grid-cols-3 gap-4">
                         <div className="flex items-center gap-2">
                           <MapPin className="h-4 w-4 text-muted-foreground" />
                           <span className="text-sm font-semibold">
-                            {shop.location || t("location not set")}
+                            {company.location || t("location not set")}
                           </span>
                         </div>
                         <div className="flex items-center gap-2">
                           <Mail className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm">{shop.email}</span>
+                          <span className="text-sm">{company.email}</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <Phone className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm">{shop.phone}</span>
+                          <span className="text-sm">{company.phone}</span>
                         </div>
                       </div>
                     </div>
@@ -420,7 +420,7 @@ const ShopPage = () => {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm text-muted-foreground">{t("total products")}</p>
-                      <p className="text-2xl font-bold">{shop.product_count || products.length}</p>
+                      <p className="text-2xl font-bold">{company.product_count || products.length}</p>
                     </div>
                     <Package className="h-8 w-8 text-muted-foreground" />
                   </div>
@@ -447,7 +447,7 @@ const ShopPage = () => {
                     <div>
                       <p className="text-sm text-muted-foreground">{t("member since")}</p>
                       <p className="text-lg font-bold">
-                        {new Date(shop.created_at).toLocaleDateString()}
+                        {new Date(company.created_at).toLocaleDateString()}
                       </p>
                     </div>
                     <Store className="h-8 w-8 text-muted-foreground" />
@@ -459,7 +459,7 @@ const ShopPage = () => {
             {/* Products Section */}
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle>{t("shop products")}</CardTitle>
+                <CardTitle>{t("company products")}</CardTitle>
                 <Button onClick={() => navigate("/my-products")}>
                   {t("manage products")}
                 </Button>
@@ -503,4 +503,4 @@ const ShopPage = () => {
   );
 };
 
-export default ShopPage;
+export default CompanyPage;

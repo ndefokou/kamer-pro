@@ -1,12 +1,12 @@
 {
   "dashboard": "Tableau de bord",
-  "marketplace": "Marché",
+  "marketplace": "Trouver un logement",
   "logout": "Déconnexion",
-  "discover products": "Découvrez les produits des vendeurs de Yaoundé",
+  "discover products": "Trouver un logement",
   "search": "Rechercher...",
-  "category": "Catégorie",
+  "category": "Type de propriété",
   "location": "Lieu",
-  "condition": "État",
+  "condition": "Statut",
   "min price": "Prix min",
   "max price": "Prix max",
   "loading products": "Chargement des produits...",
@@ -111,20 +111,17 @@
   "active": "Actif",
   "categories": {
     "all": "Toutes",
-    "electronics": "Électronique",
-    "fashion": "Mode",
-    "home_garden": "Maison & Jardin",
-    "vehicles": "Véhicules",
-    "real_estate": "Immobilier",
-    "services": "Services",
+    "apartment": "appartement",
+    "studio": "studio",
+    "bedroom": "chambre",
+    "villa": "villa",
+    "office": "bureau",
+    "shop": "boutique",
     "other": "Autre"
   },
   "conditions": {
-    "all": "Tous",
-    "new": "Neuf",
-    "like_new": "Comme neuf",
-    "good": "Bon",
-    "fair": "Passable"
+    "for_sale": "À vendre",
+    "for_rent": "À louer"
   },
   "locations": {
     "all": "Toutes",

@@ -287,7 +287,7 @@ pub async fn create_product(
 
     // Get shop info to inherit location and contact details
     let shop: Result<Shop, _> =
-        sqlx::query_as("SELECT id, location, phone, email FROM shops WHERE user_id = ?")
+        sqlx::query_as("SELECT id, location, phone, email FROM company WHERE user_id = ?")
             .bind(user_id)
             .fetch_one(pool.get_ref())
             .await;

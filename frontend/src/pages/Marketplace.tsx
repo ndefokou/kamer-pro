@@ -36,21 +36,19 @@ interface Product {
 
 const CATEGORIES = [
   { key: "all", value: "All" },
-  { key: "electronics", value: "Electronics" },
-  { key: "fashion", value: "Fashion" },
-  { key: "home_garden", value: "Home & Garden" },
-  { key: "vehicles", value: "Vehicles" },
-  { key: "real_estate", value: "Real Estate" },
-  { key: "services", value: "Services" },
+  { key: "apartment", value: "apartment" },
+  { key: "studio", value: "studio" },
+  { key: "bedroom", value: "bedroom" },
+  { key: "villa", value: "villa" },
+  { key: "office", value: "office" },
+  { key: "shop", value: "shop" },
   { key: "other", value: "Other" },
 ];
 
 const CONDITIONS = [
-  { key: "all", value: "All" },
-  { key: "new", value: "New" },
-  { key: "like_new", value: "Like-new" },
-  { key: "good", value: "Good" },
-  { key: "fair", value: "Fair" },
+  { key: "All", value: "All" },
+  { key: "for_sale", value: "For sale" },
+  { key: "for_rent", value: "For rent" },
 ];
 
 const LOCATIONS = [

@@ -106,6 +106,18 @@ pub async fn registration_complete(
     pool: web::Data<SqlitePool>,
     req: web::Json<RegistrationCompleteRequest>,
 ) -> impl Responder {
+    // Check if email already exists
+    let existing_user: Result<User, _> = sqlx::query_as("SELECT * FROM users WHERE email = ?")
+        .bind(&req.email)
+        .fetch_one(pool.get_ref())
+        .await;
+
+    if existing_user.is_ok() {
+        return HttpResponse::BadRequest().json(ErrorResponse {
+            error: "Email already exists".to_string(),
+        });
+    }
+
     let now = Utc::now().to_rfc3339();
 
     let result = sqlx::query(

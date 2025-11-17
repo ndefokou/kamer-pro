@@ -8,7 +8,6 @@ import { MessagingProvider } from "@/contexts/MessagingContext";
 import Index from "./pages/Index";
 import RoleSelection from "./pages/RoleSelection";
 import Marketplace from "./pages/Marketplace";
-import ShopPage from "./pages/shopPage";
 import NotFound from "./pages/NotFound";
 import MyProducts from "./pages/MyProducts";
 import ProductDetails from "./pages/ProductDetails";
@@ -20,6 +19,7 @@ import {
   ProtectedRoute,
   SellerProtectedRoute,
 } from "./components/ProtectedRoute";
+import companyPage from "./pages/companyPage";
 
 const queryClient = new QueryClient();
 
@@ -34,7 +34,7 @@ const router = createBrowserRouter(
     {
       element: <SellerProtectedRoute />,
       children: [
-        { path: "/shop", Component: ShopPage },
+        { path: "/company", Component: companyPage },
         { path: "/my-products", Component: MyProducts },
       ],
     },

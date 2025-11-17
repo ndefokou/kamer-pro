@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Store, ShoppingBag, TrendingUp, MapPin } from "lucide-react";
+import { Store, shoppingBag, TrendingUp, MapPin } from "lucide-react";
 
 const Index = () => {
   return (
@@ -53,7 +53,7 @@ const Index = () => {
             <div className="text-center p-6 rounded-lg bg-gradient-card shadow-soft">
               <div className="flex justify-center mb-4">
                 <div className="bg-primary p-3 rounded-full">
-                  <ShoppingBag className="h-8 w-8 text-primary-foreground" />
+                  <shoppingBag className="h-8 w-8 text-primary-foreground" />
                 </div>
               </div>
               <h3 className="text-2xl font-bold mb-3">Easy Buying</h3>
