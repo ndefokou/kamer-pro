@@ -59,6 +59,9 @@ pub async fn get_my_company(req: HttpRequest, pool: web::Data<SqlitePool>) -> im
         }
     };
 
+    let host = req.connection_info().host().to_string();
+    let scheme = req.connection_info().scheme().to_string();
+
     let company_option = match sqlx::query_as::<_, Company>("SELECT * FROM companies WHERE user_id = ?")
         .bind(user_id)
         .fetch_optional(pool.get_ref())
@@ -76,10 +79,10 @@ pub async fn get_my_company(req: HttpRequest, pool: web::Data<SqlitePool>) -> im
     if let Some(mut company) = company_option {
         // Convert relative URLs to absolute
         if let Some(ref logo) = company.logo_url {
-            company.logo_url = Some(logo.replace("/public", ""));
+            company.logo_url = Some(format!("{}://{}{}", scheme, host, logo));
         }
         if let Some(ref banner) = company.banner_url {
-            company.banner_url = Some(banner.replace("/public", ""));
+            company.banner_url = Some(format!("{}://{}{}", scheme, host, banner));
         }
 
         // Get product count
@@ -104,8 +107,14 @@ pub async fn get_my_company(req: HttpRequest, pool: web::Data<SqlitePool>) -> im
 
 // Get company by ID (public)
 #[get("/{company_id}")]
-pub async fn get_company_by_id(pool: web::Data<SqlitePool>, path: web::Path<i32>) -> impl Responder {
+pub async fn get_company_by_id(
+    req: HttpRequest,
+    pool: web::Data<SqlitePool>,
+    path: web::Path<i32>,
+) -> impl Responder {
     let company_id = path.into_inner();
+    let host = req.connection_info().host().to_string();
+    let scheme = req.connection_info().scheme().to_string();
 
     let company_option = match sqlx::query_as::<_, Company>("SELECT * FROM companies WHERE id = ?")
         .bind(company_id)
@@ -123,16 +132,10 @@ pub async fn get_company_by_id(pool: web::Data<SqlitePool>, path: web::Path<i32>
 
     if let Some(mut company) = company_option {
         if let Some(ref logo) = company.logo_url {
-            company.logo_url = Some(format!(
-                "http://localhost:8081{}",
-                logo.replace("/public", "")
-            ));
+            company.logo_url = Some(format!("{}://{}{}", scheme, host, logo));
         }
         if let Some(ref banner) = company.banner_url {
-            company.banner_url = Some(format!(
-                "http://localhost:8081{}",
-                banner.replace("/public", "")
-            ));
+            company.banner_url = Some(format!("{}://{}{}", scheme, host, banner));
         }
 
         let count: Result<(i32,), _> =
