@@ -27,6 +27,13 @@ async fn main() -> std::io::Result<()> {
         }
         std::fs::File::create(db_path).expect("Failed to create database file");
     }
+
+    // Create the uploads directory if it doesn't exist
+    let uploads_dir = std::path::Path::new("./public/uploads");
+    if !uploads_dir.exists() {
+        std::fs::create_dir_all(uploads_dir).expect("Failed to create uploads directory");
+    }
+
     let pool = SqlitePoolOptions::new()
         .max_connections(5)
         .connect(&database_url)

@@ -338,7 +338,7 @@ pub async fn create_product(
             }
             "images[]" => {
                 let filename = format!("product_{}.png", Uuid::new_v4());
-                let filepath = format!("../public/uploads/{}", filename);
+                let filepath = format!("./public/uploads/{}", filename);
                 
                 let mut bytes = Vec::new();
                 while let Some(chunk_result) = field.try_next().await.transpose() {
@@ -498,7 +498,7 @@ pub async fn update_product(
             }
             "images[]" => {
                 let filename = format!("product_{}.png", Uuid::new_v4());
-                let filepath = format!("../public/uploads/{}", filename);
+                let filepath = format!("./public/uploads/{}", filename);
 
                 let mut bytes = Vec::new();
                 while let Some(chunk_result) = field.try_next().await.transpose() {
