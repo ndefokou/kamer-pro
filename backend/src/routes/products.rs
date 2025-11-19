@@ -59,6 +59,7 @@ pub struct CreateProductPayload {
     price: f64,
     condition: String,
     category: String,
+    location: String,
 }
 
 #[derive(Serialize)]
@@ -326,6 +327,9 @@ pub async fn create_product(
             "category" => {
                 product_payload.category = extract_string_from_field(&mut field).await.unwrap()
             }
+            "location" => {
+                product_payload.location = extract_string_from_field(&mut field).await.unwrap()
+            }
             "images[]" => {
                 let filename = format!("{}.png", Uuid::new_v4());
                 let filepath = format!("./public/uploads/{}", filename);
@@ -359,7 +363,7 @@ pub async fn create_product(
     .bind(&product_payload.price)
     .bind(&product_payload.condition)
     .bind(&product_payload.category)
-    .bind(&shop.location)  // Use shop location
+    .bind(if product_payload.location.is_empty() { &shop.location } else { &product_payload.location })
     .bind(&formatted_phone)      // Use shop phone (formatted)
     .bind(&shop.email)      // Use shop email
     .bind(user_id)

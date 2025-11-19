@@ -57,6 +57,7 @@ const MyProducts = () => {
     price: "",
     category: "",
     condition: "",
+    location: "",
   });
   const [files, setFiles] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
@@ -167,6 +168,7 @@ const MyProducts = () => {
       price: "",
       category: "",
       condition: "",
+      location: "",
     });
     setFiles([]);
     setPreviews([]);
@@ -182,6 +184,7 @@ const MyProducts = () => {
       price: product.price.toString(),
       category: product.category,
       condition: product.condition,
+      location: product.location,
     });
     setFiles([]);
     setPreviews(product.images?.map(img => img.image_url) || []);
@@ -227,149 +230,201 @@ const MyProducts = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gray-50">
       <Navbar />
       <div className="container mx-auto px-4 py-8">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold">{t("my products")}</h1>
-          {!showForm && (
-            <Button onClick={() => { setShowForm(true); setIsEditing(null); }}>
-              <PlusCircle className="h-4 w-4 mr-2" />
-              {t("add product")}
-            </Button>
-          )}
-        </div>
+        {showForm ? (
+          <>
+            {/* Breadcrumbs and Title */}
+            <div className="mb-8">
+              <nav className="text-sm text-gray-500 mb-2">
+                <ol className="list-none p-0 inline-flex">
+                  <li className="flex items-center">
+                    <a href="/" className="hover:underline">{t("home")}</a>
+                    <svg className="h-5 w-5 text-gray-400 mx-1" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                    </svg>
+                  </li>
+                  <li className="flex items-center">
+                    <span className="text-gray-500 cursor-pointer hover:underline" onClick={resetForm}>{t("my products")}</span>
+                    <svg className="h-5 w-5 text-gray-400 mx-1" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                    </svg>
+                  </li>
+                  <li className="flex items-center">
+                    <span className="text-gray-400">{isEditing ? t("editProperty") : t("add new property")}</span>
+                  </li>
+                </ol>
+              </nav>
+              <h1 className="text-3xl font-bold text-gray-800">
+                {isEditing ? t("editProperty") : t("add new property")}
+              </h1>
+            </div>
 
-        {showForm && (
-          <Card className="mb-8">
-            <CardHeader>
-              <CardTitle>{isEditing ? t("edit product") : t("add new product")}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="name">{t("product name")} *</Label>
-                    <Input id="name" name="name" value={formData.name} onChange={handleInputChange} required />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="price">{t("price")} (XAF) *</Label>
-                    <Input id="price" name="price" type="number" value={formData.price} onChange={handleInputChange} required />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="description">{t("description")} *</Label>
-                  <Textarea id="description" name="description" value={formData.description} onChange={handleInputChange} required rows={4} />
-                </div>
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="category">{t("category")} *</Label>
-                    <Select name="category" value={formData.category} onValueChange={(value) => handleSelectChange("category", value)} required>
-                      <SelectTrigger>
-                        <SelectValue placeholder={t("select a category")} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="apartment">{t("apartment")}</SelectItem>
-                        <SelectItem value="studio">{t("studio")}</SelectItem>
-                        <SelectItem value="bedroom">{t("bedroom")}</SelectItem>
-                        <SelectItem value="villa">{t("villa")}</SelectItem>
-                        <SelectItem value="office">{t("office")}</SelectItem>
-                        <SelectItem value="shop">{t("shop")}</SelectItem>
-                        <SelectItem value="Other">{t("Other")}</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="condition">{t("condition")} *</Label>
-                    <Select name="condition" value={formData.condition} onValueChange={(value) => handleSelectChange("condition", value)} required>
-                      <SelectTrigger>
-                        <SelectValue placeholder={t("select a condition")} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="for_sale">{t("for_sale")}</SelectItem>
-                        <SelectItem value="for_rent">{t("for_rent")}</SelectItem>
-                        <SelectItem value="Fair">{t("Fair")}</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label>{t("product images")}</Label>
-                  <div {...getRootProps()} className="border-2 border-dashed rounded-lg p-8 text-center cursor-pointer hover:border-primary transition-colors">
-                    <input {...getInputProps()} />
-                    <p>{t("drag 'n' drop some files here, or click to select files")}</p>
-                  </div>
-                  <div className="flex flex-wrap gap-4 mt-4">
-                    {previews.map((preview, index) => (
-                      <div key={index} className="relative">
-                        <img src={preview} alt={`preview ${index}`} className="h-24 w-24 object-cover rounded" />
-                        <Button
-                          type="button"
-                          variant="destructive"
-                          size="sm"
-                          className="absolute top-0 right-0"
-                          onClick={() => removeFile(index)}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
+            {/* Main Form Layout */}
+            <form onSubmit={handleSubmit}>
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* Left Column: Form Fields */}
+                <div className="lg:col-span-2 space-y-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>{t("propertyDescription")}</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="name">{t("property name")} *</Label>
+                        <Input id="name" name="name" value={formData.name} onChange={handleInputChange} placeholder={t("enter your property nameceholder")} required />
                       </div>
-                    ))}
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <Button type="submit" disabled={isSubmitting}>
-                    {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    {isEditing ? t("update product") : t("create product")}
-                  </Button>
-                  <Button type="button" variant="outline" onClick={resetForm}>
-                    {t("cancel")}
-                  </Button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
-        )}
+                      <div className="space-y-2">
+                        <Label htmlFor="description">{t("description")} *</Label>
+                        <Textarea id="description" name="description" value={formData.description} onChange={handleInputChange} placeholder={t("enter the property description")} required rows={6} />
+                      </div>
+                    </CardContent>
+                  </Card>
 
-        <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {products.map(product => (
-            <Card key={product.id} className="overflow-hidden">
-              <img
-                src={product.images?.[0]?.image_url || "/placeholder.svg"}
-                alt={product.name}
-                className="h-48 w-full object-cover"
-              />
-              <CardContent className="p-4">
-                <h3 className="font-semibold text-lg line-clamp-1">{product.name}</h3>
-                <p className="text-muted-foreground text-sm">{product.category}</p>
-                <p className="font-bold text-xl mt-2">
-                  {new Intl.NumberFormat("fr-FR", {
-                    style: "currency",
-                    currency: "XAF",
-                  }).format(product.price)}
-                </p>
-                <div className="flex gap-2 mt-4">
-                  <Button size="sm" variant="outline" onClick={() => handleEdit(product)}>
-                    <Edit className="h-4 w-4 mr-2" />
-                    {t("edit")}
-                  </Button>
-                  <Button size="sm" variant="destructive" onClick={() => handleDeleteClick(product.id)}>
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    {t("delete")}
-                  </Button>
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>{t("propertyDetails")}</CardTitle>
+                    </CardHeader>
+                    <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <Label htmlFor="category">{t("category")} *</Label>
+                        <Select name="category" value={formData.category} onValueChange={(value) => handleSelectChange("category", value)} required>
+                          <SelectTrigger><SelectValue placeholder={t("select a category")} /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="apartment">{t("apartment")}</SelectItem>
+                            <SelectItem value="studio">{t("studio")}</SelectItem>
+                            <SelectItem value="bedroom">{t("bedroom")}</SelectItem>
+                            <SelectItem value="villa">{t("villa")}</SelectItem>
+                            <SelectItem value="office">{t("office")}</SelectItem>
+                            <SelectItem value="shop">{t("shop")}</SelectItem>
+                            <SelectItem value="Other">{t("Other")}</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="condition">{t("property status")} *</Label>
+                        <Select name="condition" value={formData.condition} onValueChange={(value) => handleSelectChange("condition", value)} required>
+                          <SelectTrigger><SelectValue placeholder={t("select a condition")} /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="for_sale">{t("for_sale")}</SelectItem>
+                            <SelectItem value="for_rent">{t("for_rent")}</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="price">{t("price")} (XAF) *</Label>
+                        <Input id="price" name="price" type="number" value={formData.price} onChange={handleInputChange} placeholder="250,000" required />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="location">{t("location")} *</Label>
+                        <Input id="location" name="location" value={formData.location} onChange={handleInputChange} placeholder={t("locationPlaceholder")} required />
+                      </div>
+                    </CardContent>
+                  </Card>
                 </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
 
-        {products.length === 0 && !showForm && (
-          <Card className="p-12 text-center">
-            <p className="text-muted-foreground mb-4">{t("no products yet")}</p>
-            <Button onClick={() => setShowForm(true)}>
-              <PlusCircle className="h-4 w-4 mr-2" />
-              {t("add your first product")}
-            </Button>
-          </Card>
+                {/* Right Column: Map and Images */}
+                <div className="space-y-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>{t("propertyLocation")}</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="h-64 bg-gray-200 rounded-md flex items-center justify-center">
+                        <p className="text-gray-500">{t("mapPlaceholder")}</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>{t("propertyImages")}</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div {...getRootProps()} className="border-2 border-dashed rounded-lg p-8 text-center cursor-pointer hover:border-primary transition-colors">
+                        <input {...getInputProps()} />
+                        <p className="text-sm text-gray-500">{t("drag and drop")}</p>
+                      </div>
+                      <div className="flex flex-wrap gap-4 mt-4">
+                        {previews.map((preview, index) => (
+                          <div key={index} className="relative">
+                            <img src={preview} alt={`preview ${index}`} className="h-24 w-24 object-cover rounded" />
+                            <Button type="button" variant="destructive" size="icon" className="absolute -top-2 -right-2 h-6 w-6 rounded-full" onClick={() => removeFile(index)}>
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="mt-8 flex justify-end gap-4">
+                <Button type="button" variant="outline" onClick={resetForm}>
+                  {t("cancel")}
+                </Button>
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {isEditing ? t("updateProperty") : t("create  property")}
+                </Button>
+              </div>
+            </form>
+          </>
+        ) : (
+          <>
+            <div className="flex justify-between items-center mb-8">
+              <h1 className="text-3xl font-bold">{t("my products")}</h1>
+              <Button onClick={() => { setShowForm(true); setIsEditing(null); }}>
+                <PlusCircle className="h-4 w-4 mr-2" />
+                {t("add property")}
+              </Button>
+            </div>
+
+            <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+              {products.map(product => (
+                <Card key={product.id} className="overflow-hidden">
+                  <img
+                    src={product.images?.[0]?.image_url || "/placeholder.svg"}
+                    alt={product.name}
+                    className="h-48 w-full object-cover"
+                  />
+                  <CardContent className="p-4">
+                    <h3 className="font-semibold text-lg line-clamp-1">{product.name}</h3>
+                    <p className="text-muted-foreground text-sm">{product.category}</p>
+                    <p className="font-bold text-xl mt-2">
+                      {new Intl.NumberFormat("fr-FR", {
+                        style: "currency",
+                        currency: "XAF",
+                      }).format(product.price)}
+                    </p>
+                    <div className="flex gap-2 mt-4">
+                      <Button size="sm" variant="outline" onClick={() => handleEdit(product)}>
+                        <Edit className="h-4 w-4 mr-2" />
+                        {t("edit")}
+                      </Button>
+                      <Button size="sm" variant="destructive" onClick={() => handleDeleteClick(product.id)}>
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        {t("delete")}
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            {products.length === 0 && (
+              <Card className="p-12 text-center">
+                <p className="text-muted-foreground mb-4">{t("no products yet")}</p>
+                <Button onClick={() => setShowForm(true)}>
+                  <PlusCircle className="h-4 w-4 mr-2" />
+                  {t("add your first property")}
+                </Button>
+              </Card>
+            )}
+          </>
         )}
       </div>
 

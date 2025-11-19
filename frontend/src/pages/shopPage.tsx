@@ -461,7 +461,7 @@ const ShopPage = () => {
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle>{t("shop products")}</CardTitle>
                 <Button onClick={() => navigate("/my-products")}>
-                  {t("manage products")}
+                  {t("manage propertys")}
                 </Button>
               </CardHeader>
               <CardContent>
@@ -472,7 +472,7 @@ const ShopPage = () => {
                       {t("no products yet")}
                     </p>
                     <Button onClick={() => navigate("/my-products")}>
-                      {t("add your first product")}
+                      {t("add your first property")}
                     </Button>
                   </div>
                 ) : (

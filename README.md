@@ -4,7 +4,7 @@ Kamer-Pro is a modern, full-stack e-commerce platform designed to provide a seam
 
 ## Key Features
 
-- **Product Management**: Effortlessly create, update, and manage products.
+- **Product Management**: Effortlessly create, update, and manage propertys.
 - **User Authentication**: Secure user registration and login with JWT-based authentication.
 - **Product Reviews and Ratings**: Allow users to leave reviews and ratings for products.
 - **shopping Cart**: A fully functional shopping cart for a smooth checkout process.
