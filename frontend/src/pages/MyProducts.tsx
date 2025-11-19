@@ -94,6 +94,18 @@ const MyProducts = () => {
   }, [token, navigate, fetchProducts]);
 
 
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const editId = params.get("edit");
+    
+    if (editId && products.length > 0) {
+      const productToEdit = products.find(p => p.id === parseInt(editId));
+      if (productToEdit) {
+        handleEdit(productToEdit);
+      }
+    }
+  }, [location.search, products]);
+
   const onDrop = (acceptedFiles: File[]) => {
     const newFiles = [...files, ...acceptedFiles];
     setFiles(newFiles);

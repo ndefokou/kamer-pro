@@ -494,6 +494,30 @@ const CompanyPage = () => {
                         }}
                         token={token}
                         variant="seller"
+                        onEdit={() => {
+                          // Store product data and navigate to edit
+                          navigate(`/my-products?edit=${product.id}`);
+                        }}
+                        onDelete={async () => {
+                          if (confirm(t("are you sure you want to delete this product"))) {
+                            try {
+                              await apiClient.delete(`/products/${product.id}`);
+                              toast({
+                                title: t("success"),
+                                description: t("product deleted successfully"),
+                              });
+                              // Refresh products
+                              fetchProducts();
+                            } catch (error) {
+                              console.error("Failed to delete product:", error);
+                              toast({
+                                title: t("error"),
+                                description: t("failed to delete product"),
+                                variant: "destructive",
+                              });
+                            }
+                          }
+                        }}
                       />
                     ))}
                   </div>

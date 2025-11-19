@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
 import apiClient from "@/api/client";
 import { Card, CardContent } from "@/components/ui/card";
 import Navbar from "@/components/Navbar";
@@ -17,6 +18,7 @@ interface ArchitectProject {
 
 const ProjectsPage = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [projects, setProjects] = useState<ArchitectProject[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -54,7 +56,11 @@ const ProjectsPage = () => {
         <h1 className="text-3xl font-bold mb-8">All Projects</h1>
         <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {projects.map(project => (
-            <Card key={project.id} className="overflow-hidden">
+            <Card
+              key={project.id}
+              className="overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
+              onClick={() => navigate(`/project/${project.id}`)}
+            >
               <img
                 src={project.maquettes[0] || project.images[0] || "/placeholder.svg"}
                 alt={project.name}
