@@ -22,6 +22,7 @@ import {
 import { useDropzone } from "react-dropzone";
 import Navbar from "@/components/Navbar";
 import { toast } from "@/hooks/use-toast";
+import { getImageUrl } from "@/lib/utils";
 
 interface Architectcompany {
   id: number;
@@ -76,8 +77,8 @@ const ArchitectCompanyPage = () => {
         description: companyData.description || "",
       });
       
-      if (companyData.logo_url) setLogoPreview(`${apiClient.defaults.baseURL}/${companyData.logo_url}`);
-      if (companyData.banner_url) setBannerPreview(`${apiClient.defaults.baseURL}/${companyData.banner_url}`);
+      if (companyData.logo_url) setLogoPreview(getImageUrl(companyData.logo_url));
+      if (companyData.banner_url) setBannerPreview(getImageUrl(companyData.banner_url));
       
       setIsEditing(false);
     } catch (error) {

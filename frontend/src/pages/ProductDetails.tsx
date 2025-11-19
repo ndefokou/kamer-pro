@@ -28,6 +28,7 @@ import { useMessaging } from "@/hooks/useMessaging";
 import { ProductReviews } from "@/components/ProductReviews";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ProductCard from "@/components/ProductCard";
+import { getImageUrl } from "@/lib/utils";
 
 interface Product {
   id: string;
@@ -104,12 +105,6 @@ const ProductDetails = () => {
     fetchProduct();
   }, [id]);
 
-  const getImageUrl = (imagePath: string) => {
-    if (imagePath.startsWith("http")) {
-      return imagePath;
-    }
-    return `${imagePath}`;
-  };
 
   const handleToggleWishlist = () => {
     if (!token) {
@@ -419,7 +414,6 @@ const ProductDetails = () => {
                   token={token}
                   isInWishlist={isInWishlist}
                   handleToggleWishlist={handleSimilarToggleWishlist}
-                  getImageUrl={getImageUrl}
                 />
               ))}
             </div>

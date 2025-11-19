@@ -23,6 +23,7 @@ import { useDropzone } from "react-dropzone";
 import Navbar from "@/components/Navbar";
 import ProductCard from "@/components/ProductCard";
 import { toast } from "@/hooks/use-toast";
+import { getImageUrl } from "@/lib/utils";
 
 interface Company {
   id: number;
@@ -91,8 +92,8 @@ const CompanyPage = () => {
         description: companyData.description || "",
       });
       
-      if (companyData.logo_url) setLogoPreview(`${apiClient.defaults.baseURL}/${companyData.logo_url}`);
-      if (companyData.banner_url) setBannerPreview(`${apiClient.defaults.baseURL}/${companyData.banner_url}`);
+      if (companyData.logo_url) setLogoPreview(getImageUrl(companyData.logo_url));
+      if (companyData.banner_url) setBannerPreview(getImageUrl(companyData.banner_url));
       
       setIsEditing(false);
     } catch (error) {
@@ -197,10 +198,6 @@ const CompanyPage = () => {
     }
   };
 
-  const getImageUrl = (imagePath: string) => {
-    if (imagePath.startsWith("http")) return imagePath;
-    return `${imagePath}`;
-  };
 
   if (isLoading) {
     return (
@@ -496,7 +493,6 @@ const CompanyPage = () => {
                           images: product.images || [],
                         }}
                         token={token}
-                        getImageUrl={getImageUrl}
                         variant="seller"
                       />
                     ))}

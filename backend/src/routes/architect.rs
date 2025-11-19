@@ -179,7 +179,7 @@ pub async fn create_or_update_architect_company(req: HttpRequest, pool: web::Dat
             "description" => description = String::from_utf8(bytes).unwrap_or_default(),
             "logo" => {
                 let filename = format!("architect_logo_{}.png", Uuid::new_v4());
-                let filepath = format!("./public/uploads/{}", filename);
+                let filepath = format!("../public/uploads/{}", filename);
                 if let Some(p) = std::path::Path::new(&filepath).parent() {
                     if !p.exists() {
                         std::fs::create_dir_all(p).map_err(|e| {
@@ -196,7 +196,7 @@ pub async fn create_or_update_architect_company(req: HttpRequest, pool: web::Dat
             }
             "banner" => {
                 let filename = format!("architect_banner_{}.png", Uuid::new_v4());
-                let filepath = format!("./public/uploads/{}", filename);
+                let filepath = format!("../public/uploads/{}", filename);
                 if let Some(p) = std::path::Path::new(&filepath).parent() {
                     if !p.exists() {
                         std::fs::create_dir_all(p).map_err(|e| {
@@ -401,7 +401,7 @@ pub async fn create_architect_project(req: HttpRequest, pool: web::Data<SqlitePo
             "location" => location = String::from_utf8(bytes).unwrap_or_default(),
             "house_plan" => {
                 let filename = format!("architect_house_plan_{}.png", Uuid::new_v4());
-                let filepath = format!("./public/uploads/{}", filename);
+                let filepath = format!("../public/uploads/{}", filename);
                 if let Some(p) = std::path::Path::new(&filepath).parent() {
                     if !p.exists() {
                         std::fs::create_dir_all(p).map_err(|e| {
@@ -419,7 +419,7 @@ pub async fn create_architect_project(req: HttpRequest, pool: web::Data<SqlitePo
             "maquette[]" => {
                 if !bytes.is_empty() {
                     let filename = format!("architect_maquette_{}.png", Uuid::new_v4());
-                    let filepath = format!("./public/uploads/{}", filename);
+                    let filepath = format!("../public/uploads/{}", filename);
                     if let Some(p) = std::path::Path::new(&filepath).parent() {
                         if !p.exists() {
                             std::fs::create_dir_all(p).map_err(|e| {
@@ -438,7 +438,7 @@ pub async fn create_architect_project(req: HttpRequest, pool: web::Data<SqlitePo
             "images[]" => {
                 if !bytes.is_empty() {
                     let filename = format!("architect_image_{}.png", Uuid::new_v4());
-                    let filepath = format!("./public/uploads/{}", filename);
+                    let filepath = format!("../public/uploads/{}", filename);
                     if let Some(p) = std::path::Path::new(&filepath).parent() {
                         if !p.exists() {
                             std::fs::create_dir_all(p).map_err(|e| {

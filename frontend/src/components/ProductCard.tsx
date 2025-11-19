@@ -19,6 +19,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { getImageUrl } from "@/lib/utils";
 
 interface Product {
   id: string;
@@ -40,7 +41,6 @@ interface ProductCardProps {
   token: string | null;
   isInWishlist?: (productId: number) => boolean;
   handleToggleWishlist?: (productId: string) => void;
-  getImageUrl: (imagePath: string) => string;
   variant?: "marketplace" | "seller" | "wishlist";
   onEdit?: () => void;
   onDelete?: () => void;
@@ -52,7 +52,6 @@ const ProductCard = ({
   token,
   isInWishlist,
   handleToggleWishlist,
-  getImageUrl,
   variant = "marketplace",
   onEdit,
   onDelete,

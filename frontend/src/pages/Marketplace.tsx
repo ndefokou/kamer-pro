@@ -19,6 +19,7 @@ import { Package } from "lucide-react";
 import { useNavigate, Link } from "react-router-dom";
 import { getProducts } from "@/api/client";
 import { useWishlist } from "@/hooks/useWishlist";
+import { getImageUrl } from "@/lib/utils";
 
 interface Product {
   id: string;
@@ -126,12 +127,6 @@ const Marketplace = () => {
     };
   }, [fetchProducts]);
 
-  const getImageUrl = (imagePath: string) => {
-    if (typeof imagePath === "string" && imagePath.startsWith("http")) {
-      return imagePath;
-    }
-    return `${imagePath}`;
-  };
 
   const handleToggleWishlist = (productId: string) => {
     if (!token) {
@@ -268,7 +263,6 @@ const Marketplace = () => {
                 token={token}
                 isInWishlist={isInWishlist}
                 handleToggleWishlist={handleToggleWishlist}
-                getImageUrl={getImageUrl}
                 onContactSeller={handleContactSeller}
               />
             ))}
