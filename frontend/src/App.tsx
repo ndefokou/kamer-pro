@@ -20,6 +20,8 @@ import {
   SellerProtectedRoute,
 } from "./components/ProtectedRoute";
 import companyPage from "./pages/companyPage";
+import ArchitectCompanyPage from "./pages/ArchitectCompanyPage";
+import ArchitectProjectsPage from "./pages/ArchitectProjectsPage";
 
 const queryClient = new QueryClient();
 
@@ -41,6 +43,8 @@ const router = createBrowserRouter(
         { path: "/wishlist", Component: Wishlist },
         { path: "/messages", Component: Messages },
         { path: "/company", Component: companyPage },
+        { path: "/architect-company", Component: ArchitectCompanyPage },
+        { path: "/architect-projects", Component: ArchitectProjectsPage },
       ],
     },
     { path: "*", Component: NotFound },

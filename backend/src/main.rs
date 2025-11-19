@@ -97,11 +97,23 @@ async fn main() -> std::io::Result<()> {
                             .service(routes::company::get_company_by_id)
                             .service(routes::company::create_or_update_company)
                             .service(routes::company::delete_company),
-                    ),
-            )
-            .service(fs::Files::new("/uploads", "./public/uploads"))
-    })
-    .bind("0.0.0.0:8082")?
-    .run()
-    .await
-}
+                           )
+                           .service(
+                               web::scope("/architect-company")
+                                   .route("", web::get().to(routes::architect::get_architect_company))
+                                   .route("", web::post().to(routes::architect::create_or_update_architect_company))
+                           )
+                           .service(
+                               web::scope("/architect-projects")
+                                   .route("", web::get().to(routes::architect::get_architect_projects))
+                                   .route("", web::post().to(routes::architect::create_architect_project))
+                                   .route("/{id}", web::put().to(routes::architect::update_architect_project))
+                                   .route("/{id}", web::delete().to(routes::architect::delete_architect_project))
+                           ),
+                   )
+                   .service(fs::Files::new("/uploads", "./public/uploads"))
+           })
+           .bind("0.0.0.0:8082")?
+           .run()
+           .await
+       }

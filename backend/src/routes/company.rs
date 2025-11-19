@@ -233,6 +233,14 @@ pub async fn create_or_update_company(
                 let filename = format!("company_logo_{}.png", Uuid::new_v4());
                 let filepath = format!("./public/uploads/{}", filename);
                 println!("Attempting to save logo to: {}", filepath);
+                if let Some(p) = std::path::Path::new(&filepath).parent() {
+                    if !p.exists() {
+                        std::fs::create_dir_all(p).map_err(|e| {
+                            eprintln!("Failed to create directory for {}: {}", filepath, e);
+                            actix_web::error::ErrorInternalServerError("Failed to save file")
+                        })?;
+                    }
+                }
                 let mut f = match std::fs::File::create(&filepath) {
                     Ok(file) => file,
                     Err(e) => {
@@ -252,6 +260,14 @@ pub async fn create_or_update_company(
                 let filename = format!("company_banner_{}.png", Uuid::new_v4());
                 let filepath = format!("./public/uploads/{}", filename);
                 println!("Attempting to save banner to: {}", filepath);
+                if let Some(p) = std::path::Path::new(&filepath).parent() {
+                    if !p.exists() {
+                        std::fs::create_dir_all(p).map_err(|e| {
+                            eprintln!("Failed to create directory for {}: {}", filepath, e);
+                            actix_web::error::ErrorInternalServerError("Failed to save file")
+                        })?;
+                    }
+                }
                 let mut f = match std::fs::File::create(&filepath) {
                     Ok(file) => file,
                     Err(e) => {

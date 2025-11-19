@@ -7,3 +7,4 @@ pub mod wishlist;
 pub mod reviews;
 pub mod messages;
 pub mod company;
+pub mod architect;

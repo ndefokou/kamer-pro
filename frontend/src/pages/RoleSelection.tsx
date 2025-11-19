@@ -11,7 +11,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
-import { ShoppingBag, Store, Loader2 } from "lucide-react";
+import { ShoppingBag, Store, Loader2, Building2 } from "lucide-react";
 import axios from "axios";
 
 const RoleSelection = () => {
@@ -35,7 +35,7 @@ const RoleSelection = () => {
     fetchUserCompany();
   }, [navigate]);
 
-  const handleRoleSelection = async (role: "buyer" | "seller") => {
+  const handleRoleSelection = async (role: "buyer" | "seller" | "architect") => {
     setIsLoading(true);
     try {
       await apiClient.post("/roles", { role });
@@ -48,6 +48,8 @@ const RoleSelection = () => {
       localStorage.setItem("role", role);
       if (role === "seller") {
         navigate("/company");
+      } else if (role === "architect") {
+        navigate("/architect-company");
       } else {
         navigate("/marketplace");
       }
@@ -80,7 +82,7 @@ const RoleSelection = () => {
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-6">
+        <div className="grid md:grid-cols-3 gap-6">
           <Card className="shadow-elevated hover:shadow-lg transition-shadow">
             <CardHeader className="text-center">
               <div className="flex justify-center mb-4">
@@ -138,6 +140,36 @@ const RoleSelection = () => {
               >
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {t("continue as seller")}
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="shadow-elevated hover:shadow-lg transition-shadow">
+            <CardHeader className="text-center">
+              <div className="flex justify-center mb-4">
+                <div className="bg-blue-500 p-4 rounded-full">
+                  <Building2 className="h-10 w-10 text-primary-foreground" />
+                </div>
+              </div>
+              <CardTitle className="text-2xl">{t("architect")}</CardTitle>
+              <CardDescription>
+                {t("design and showcase house plans")}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ul className="space-y-2 mb-6 text-sm text-muted-foreground">
+                <li>• {t("create your firm profile")}</li>
+                <li>• {t("upload house plans and maquettes")}</li>
+                <li>• {t("set project costs and details")}</li>
+                <li>• {t("reach clients seeking designs")}</li>
+              </ul>
+              <Button
+                onClick={() => handleRoleSelection("architect")}
+                disabled={isLoading}
+                className="w-full bg-blue-500 hover:bg-blue-600"
+              >
+                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {t("register as an architect")}
               </Button>
             </CardContent>
           </Card>
