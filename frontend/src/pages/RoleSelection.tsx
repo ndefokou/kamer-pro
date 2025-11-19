@@ -11,18 +11,31 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
-import { shoppingBag, Store, Loader2 } from "lucide-react";
+import { ShoppingBag, Store, Loader2 } from "lucide-react";
 import axios from "axios";
 
 const RoleSelection = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
-  const userId = 1; // Hardcoded user ID
+
+  useEffect(() => {
+    const fetchUserCompany = async () => {
+      try {
+        const response = await apiClient.get("/company");
+        if (response.data) {
+          navigate("/company");
+        }
+      } catch (error) {
+        // Handle error silently or show a toast
+        console.error("Failed to fetch user company:", error);
+      }
+    };
+
+    fetchUserCompany();
+  }, [navigate]);
 
   const handleRoleSelection = async (role: "buyer" | "seller") => {
-    if (!userId) return;
-
     setIsLoading(true);
     try {
       await apiClient.post("/roles", { role });
@@ -34,7 +47,7 @@ const RoleSelection = () => {
 
       localStorage.setItem("role", role);
       if (role === "seller") {
-        navigate("/shop");
+        navigate("/company");
       } else {
         navigate("/marketplace");
       }
@@ -72,7 +85,7 @@ const RoleSelection = () => {
             <CardHeader className="text-center">
               <div className="flex justify-center mb-4">
                 <div className="bg-secondary p-4 rounded-full">
-                  <shoppingBag className="h-10 w-10 text-secondary-foreground" />
+                  <ShoppingBag className="h-10 w-10 text-secondary-foreground" />
                 </div>
               </div>
               <CardTitle className="text-2xl">{t("buyer")}</CardTitle>

@@ -33,16 +33,14 @@ const router = createBrowserRouter(
     { path: "/webauth-register", Component: WebAuthRegister },
     {
       element: <SellerProtectedRoute />,
-      children: [
-        { path: "/company", Component: companyPage },
-        { path: "/my-products", Component: MyProducts },
-      ],
+      children: [{ path: "/my-products", Component: MyProducts }],
     },
     {
       element: <ProtectedRoute />,
       children: [
         { path: "/wishlist", Component: Wishlist },
         { path: "/messages", Component: Messages },
+        { path: "/company", Component: companyPage },
       ],
     },
     { path: "*", Component: NotFound },
