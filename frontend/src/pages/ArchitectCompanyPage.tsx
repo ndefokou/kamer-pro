@@ -90,14 +90,14 @@ const ArchitectCompanyPage = () => {
         console.error("Failed to fetch architect company:", error);
         toast({
           title: t("error"),
-          description: "Failed to fetch architect company details.",
+          description: t("architectCompanyPage.fetchError", "Failed to fetch architect company details."),
           variant: "destructive",
         });
       }
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     if (!token) {
@@ -135,7 +135,7 @@ const ArchitectCompanyPage = () => {
     multiple: false,
   });
 
-  const handleSave = async () => {
+  const handleSave = useCallback(async () => {
     setIsSaving(true);
     
     const data = new FormData();
@@ -157,7 +157,7 @@ const ArchitectCompanyPage = () => {
       
       toast({
         title: t("success"),
-        description: "Architect company saved successfully",
+        description: t("architectCompanyPage.saveSuccess", "Architect company saved successfully"),
       });
       
       setIsEditing(false);
@@ -165,13 +165,13 @@ const ArchitectCompanyPage = () => {
       console.error("Failed to save architect company:", error);
       toast({
         title: t("error"),
-        description: "Failed to save architect company",
+        description: t("architectCompanyPage.saveError", "Failed to save architect company"),
         variant: "destructive",
       });
     } finally {
       setIsSaving(false);
     }
-  };
+  }, [formData, logoFile, bannerFile, t]);
 
   if (isLoading) {
     return (

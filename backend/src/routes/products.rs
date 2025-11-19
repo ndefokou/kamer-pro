@@ -24,7 +24,7 @@ pub struct Product {
 }
 
 #[derive(sqlx::FromRow)]
-struct company {
+struct Company {
     id: i32,
     location: String,
     phone: String,
@@ -289,7 +289,7 @@ pub async fn create_product(
     log::info!("Attempting to create product for user_id: {}", user_id);
     // Get company info to inherit location and contact details
     log::info!("Fetching company for user_id: {}", user_id);
-    let company: Result<company, _> =
+    let company: Result<Company, _> =
         sqlx::query_as("SELECT id, location, phone, email FROM companies WHERE user_id = ?")
             .bind(user_id)
             .fetch_one(pool.get_ref())
@@ -316,26 +316,33 @@ pub async fn create_product(
         let field_name = content_disposition.get_name().unwrap_or_default();
 
         match field_name {
-            "name" => product_payload.name = extract_string_from_field(&mut field).await.unwrap(),
-            "description" => {
-                product_payload.description = extract_string_from_field(&mut field).await.unwrap()
-            }
-            "price" => {
-                product_payload.price = extract_string_from_field(&mut field)
-                    .await
-                    .unwrap()
-                    .parse()
-                    .unwrap()
-            }
-            "condition" => {
-                product_payload.condition = extract_string_from_field(&mut field).await.unwrap()
-            }
-            "category" => {
-                product_payload.category = extract_string_from_field(&mut field).await.unwrap()
-            }
-            "location" => {
-                product_payload.location = extract_string_from_field(&mut field).await.unwrap()
-            }
+            "name" => match extract_string_from_field(&mut field).await {
+                Ok(name) => product_payload.name = name,
+                Err(_) => return HttpResponse::BadRequest().json(ErrorResponse { message: "Invalid name".to_string() }),
+            },
+            "description" => match extract_string_from_field(&mut field).await {
+                Ok(description) => product_payload.description = description,
+                Err(_) => return HttpResponse::BadRequest().json(ErrorResponse { message: "Invalid description".to_string() }),
+            },
+            "price" => match extract_string_from_field(&mut field).await {
+                Ok(price_str) => match price_str.parse() {
+                    Ok(price) => product_payload.price = price,
+                    Err(_) => return HttpResponse::BadRequest().json(ErrorResponse { message: "Invalid price".to_string() }),
+                },
+                Err(_) => return HttpResponse::BadRequest().json(ErrorResponse { message: "Invalid price".to_string() }),
+            },
+            "condition" => match extract_string_from_field(&mut field).await {
+                Ok(condition) => product_payload.condition = condition,
+                Err(_) => return HttpResponse::BadRequest().json(ErrorResponse { message: "Invalid condition".to_string() }),
+            },
+            "category" => match extract_string_from_field(&mut field).await {
+                Ok(category) => product_payload.category = category,
+                Err(_) => return HttpResponse::BadRequest().json(ErrorResponse { message: "Invalid category".to_string() }),
+            },
+            "location" => match extract_string_from_field(&mut field).await {
+                Ok(location) => product_payload.location = location,
+                Err(_) => return HttpResponse::BadRequest().json(ErrorResponse { message: "Invalid location".to_string() }),
+            },
             "images[]" => {
                 let filename = format!("product_{}.png", Uuid::new_v4());
                 let filepath = format!("./public/uploads/{}", filename);
@@ -400,19 +407,25 @@ pub async fn create_product(
         Ok(res) => {
             let product_id = res.last_insert_rowid() as i32;
             for path in image_paths {
-                sqlx::query("INSERT INTO product_images (image_url, product_id) VALUES (?, ?)")
+                if let Err(e) = sqlx::query("INSERT INTO product_images (image_url, product_id) VALUES (?, ?)")
                     .bind(path)
                     .bind(product_id)
                     .execute(pool.get_ref())
-                    .await
-                    .unwrap();
+                    .await {
+                        log::error!("Failed to insert product image: {}", e);
+                    }
             }
 
-            let product: Product = sqlx::query_as("SELECT * FROM products WHERE id = ?")
-                .bind(product_id)
-                .fetch_one(pool.get_ref())
-                .await
-                .unwrap();
+           let product: Product = match sqlx::query_as("SELECT * FROM products WHERE id = ?")
+               .bind(product_id)
+               .fetch_one(pool.get_ref())
+               .await {
+                   Ok(p) => p,
+                   Err(e) => {
+                       log::error!("Failed to fetch product after creation: {}", e);
+                       return HttpResponse::InternalServerError().json(ErrorResponse { message: "Failed to create product".to_string() });
+                   }
+               };
             let images: Vec<ProductImage> =
                 sqlx::query_as("SELECT * FROM product_images WHERE product_id = ?")
                     .bind(product_id)
@@ -479,23 +492,29 @@ pub async fn update_product(
         let field_name = content_disposition.get_name().unwrap_or_default();
 
         match field_name {
-            "name" => product_payload.name = extract_string_from_field(&mut field).await.unwrap(),
-            "description" => {
-                product_payload.description = extract_string_from_field(&mut field).await.unwrap()
-            }
-            "price" => {
-                product_payload.price = extract_string_from_field(&mut field)
-                    .await
-                    .unwrap()
-                    .parse()
-                    .unwrap()
-            }
-            "condition" => {
-                product_payload.condition = extract_string_from_field(&mut field).await.unwrap()
-            }
-            "category" => {
-                product_payload.category = extract_string_from_field(&mut field).await.unwrap()
-            }
+            "name" => match extract_string_from_field(&mut field).await {
+                Ok(name) => product_payload.name = name,
+                Err(_) => return HttpResponse::BadRequest().json(ErrorResponse { message: "Invalid name".to_string() }),
+            },
+            "description" => match extract_string_from_field(&mut field).await {
+                Ok(description) => product_payload.description = description,
+                Err(_) => return HttpResponse::BadRequest().json(ErrorResponse { message: "Invalid description".to_string() }),
+            },
+            "price" => match extract_string_from_field(&mut field).await {
+                Ok(price_str) => match price_str.parse() {
+                    Ok(price) => product_payload.price = price,
+                    Err(_) => return HttpResponse::BadRequest().json(ErrorResponse { message: "Invalid price".to_string() }),
+                },
+                Err(_) => return HttpResponse::BadRequest().json(ErrorResponse { message: "Invalid price".to_string() }),
+            },
+            "condition" => match extract_string_from_field(&mut field).await {
+                Ok(condition) => product_payload.condition = condition,
+                Err(_) => return HttpResponse::BadRequest().json(ErrorResponse { message: "Invalid condition".to_string() }),
+            },
+            "category" => match extract_string_from_field(&mut field).await {
+                Ok(category) => product_payload.category = category,
+                Err(_) => return HttpResponse::BadRequest().json(ErrorResponse { message: "Invalid category".to_string() }),
+            },
             "images[]" => {
                 let filename = format!("product_{}.png", Uuid::new_v4());
                 let filepath = format!("./public/uploads/{}", filename);
@@ -538,7 +557,7 @@ pub async fn update_product(
     .bind(&product_payload.price)
     .bind(&product_payload.condition)
     .bind(&product_payload.category)
-    .bind(&product.as_ref().unwrap().location)
+    .bind(&product.as_ref().expect("Product should exist here").location)
     .bind(id)
     .execute(pool.get_ref())
     .await;
@@ -546,26 +565,33 @@ pub async fn update_product(
     match result {
         Ok(_) => {
             if !image_paths.is_empty() {
-                sqlx::query("DELETE FROM product_images WHERE product_id = ?")
-                    .bind(id)
-                    .execute(pool.get_ref())
-                    .await
-                    .unwrap();
-                for path in image_paths {
-                    sqlx::query("INSERT INTO product_images (image_url, product_id) VALUES (?, ?)")
-                        .bind(path)
-                        .bind(id)
-                        .execute(pool.get_ref())
-                        .await
-                        .unwrap();
-                }
+               if let Err(e) = sqlx::query("DELETE FROM product_images WHERE product_id = ?")
+                   .bind(id)
+                   .execute(pool.get_ref())
+                   .await {
+                       log::error!("Failed to delete product images: {}", e);
+               }
+               for path in image_paths {
+                   if let Err(e) = sqlx::query("INSERT INTO product_images (image_url, product_id) VALUES (?, ?)")
+                       .bind(path)
+                       .bind(id)
+                       .execute(pool.get_ref())
+                       .await {
+                           log::error!("Failed to insert product image: {}", e);
+                       }
+               }
             }
 
-            let product: Product = sqlx::query_as("SELECT * FROM products WHERE id = ?")
-                .bind(id)
-                .fetch_one(pool.get_ref())
-                .await
-                .unwrap();
+           let product: Product = match sqlx::query_as("SELECT * FROM products WHERE id = ?")
+               .bind(id)
+               .fetch_one(pool.get_ref())
+               .await {
+                   Ok(p) => p,
+                   Err(e) => {
+                       log::error!("Failed to fetch product after update: {}", e);
+                       return HttpResponse::InternalServerError().json(ErrorResponse { message: "Failed to update product".to_string() });
+                   }
+               };
             let images: Vec<ProductImage> =
                 sqlx::query_as("SELECT * FROM product_images WHERE product_id = ?")
                     .bind(id)
