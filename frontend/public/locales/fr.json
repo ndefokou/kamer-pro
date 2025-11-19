@@ -105,7 +105,7 @@
   "total products": "Produits totaux",
   "active listings": "Annonces actives",
   "my products": "Mes produits",
-  "my shop": "Ma boutique",
+  "my company": "Ma boutique",
   "save changes": "Enregistrer les modifications",
   "all": "Tous",
   "active": "Actif",
@@ -116,7 +116,7 @@
     "bedroom": "chambre",
     "villa": "villa",
     "office": "bureau",
-    "shop": "boutique",
+    "company": "boutique",
     "other": "Autre"
   },
   "conditions": {
@@ -147,8 +147,8 @@
   "not available": "Indisponible",
   "your cart is empty": "Votre panier est vide",
   "add items to your cart to see them here": "Ajoutez des articles à votre panier pour les voir ici",
-  "continue shopping": "Continuer vos achats",
-  "shopping cart": "Panier d'achat",
+  "continue companyping": "Continuer vos achats",
+  "companyping cart": "Panier d'achat",
   "clear cart": "Vider le panier",
   "product not available": "Produit non disponible",
   "subtotal": "Sous-total",

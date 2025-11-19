@@ -20,7 +20,7 @@ const RoleSelection = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    const fetchUserCompany = async () => {
+    const fetchUsercompany = async () => {
       try {
         const response = await apiClient.get("/company");
         if (response.data) {
@@ -37,7 +37,7 @@ const RoleSelection = () => {
       }
     };
 
-    fetchUserCompany();
+    fetchUsercompany();
   }, [navigate]);
 
 const handleRoleSelection = async (role: "buyer" | "seller" | "architect") => {

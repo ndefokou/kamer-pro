@@ -59,9 +59,6 @@ pub async fn get_my_company(req: HttpRequest, pool: web::Data<SqlitePool>) -> im
         }
     };
 
-    let host = req.connection_info().host().to_string();
-    let scheme = req.connection_info().scheme().to_string();
-
     let company_option = match sqlx::query_as::<_, Company>("SELECT * FROM companies WHERE user_id = ?")
         .bind(user_id)
         .fetch_optional(pool.get_ref())
@@ -79,10 +76,10 @@ pub async fn get_my_company(req: HttpRequest, pool: web::Data<SqlitePool>) -> im
     if let Some(mut company) = company_option {
         // Convert relative URLs to absolute
         if let Some(ref logo) = company.logo_url {
-            company.logo_url = Some(format!("{}://{}{}", scheme, host, logo));
+            company.logo_url = Some(logo.replace("/public", ""));
         }
         if let Some(ref banner) = company.banner_url {
-            company.banner_url = Some(format!("{}://{}{}", scheme, host, banner));
+            company.banner_url = Some(banner.replace("/public", ""));
         }
 
         // Get product count
@@ -100,21 +97,15 @@ pub async fn get_my_company(req: HttpRequest, pool: web::Data<SqlitePool>) -> im
         })
     } else {
         HttpResponse::NotFound().json(ErrorResponse {
-            message: "company not found".to_string(),
+            message: "Company not found".to_string(),
         })
     }
 }
 
 // Get company by ID (public)
 #[get("/{company_id}")]
-pub async fn get_company_by_id(
-    req: HttpRequest,
-    pool: web::Data<SqlitePool>,
-    path: web::Path<i32>,
-) -> impl Responder {
+pub async fn get_company_by_id(pool: web::Data<SqlitePool>, path: web::Path<i32>) -> impl Responder {
     let company_id = path.into_inner();
-    let host = req.connection_info().host().to_string();
-    let scheme = req.connection_info().scheme().to_string();
 
     let company_option = match sqlx::query_as::<_, Company>("SELECT * FROM companies WHERE id = ?")
         .bind(company_id)
@@ -132,10 +123,16 @@ pub async fn get_company_by_id(
 
     if let Some(mut company) = company_option {
         if let Some(ref logo) = company.logo_url {
-            company.logo_url = Some(format!("{}://{}{}", scheme, host, logo));
+            company.logo_url = Some(format!(
+                "http://localhost:8081{}",
+                logo.replace("/public", "")
+            ));
         }
         if let Some(ref banner) = company.banner_url {
-            company.banner_url = Some(format!("{}://{}{}", scheme, host, banner));
+            company.banner_url = Some(format!(
+                "http://localhost:8081{}",
+                banner.replace("/public", "")
+            ));
         }
 
         let count: Result<(i32,), _> =
@@ -152,7 +149,7 @@ pub async fn get_company_by_id(
         })
     } else {
         HttpResponse::NotFound().json(ErrorResponse {
-            message: "company not found".to_string(),
+            message: "Company not found".to_string(),
         })
     }
 }
@@ -233,14 +230,6 @@ pub async fn create_or_update_company(
                 let filename = format!("company_logo_{}.png", Uuid::new_v4());
                 let filepath = format!("./public/uploads/{}", filename);
                 println!("Attempting to save logo to: {}", filepath);
-                if let Some(p) = std::path::Path::new(&filepath).parent() {
-                    if !p.exists() {
-                        std::fs::create_dir_all(p).map_err(|e| {
-                            eprintln!("Failed to create directory for {}: {}", filepath, e);
-                            actix_web::error::ErrorInternalServerError("Failed to save file")
-                        })?;
-                    }
-                }
                 let mut f = match std::fs::File::create(&filepath) {
                     Ok(file) => file,
                     Err(e) => {
@@ -260,14 +249,6 @@ pub async fn create_or_update_company(
                 let filename = format!("company_banner_{}.png", Uuid::new_v4());
                 let filepath = format!("./public/uploads/{}", filename);
                 println!("Attempting to save banner to: {}", filepath);
-                if let Some(p) = std::path::Path::new(&filepath).parent() {
-                    if !p.exists() {
-                        std::fs::create_dir_all(p).map_err(|e| {
-                            eprintln!("Failed to create directory for {}: {}", filepath, e);
-                            actix_web::error::ErrorInternalServerError("Failed to save file")
-                        })?;
-                    }
-                }
                 let mut f = match std::fs::File::create(&filepath) {
                     Ok(file) => file,
                     Err(e) => {
@@ -348,12 +329,6 @@ pub async fn create_or_update_company(
         }
         None => {
             // Create new company
-            if name.is_empty() || email.is_empty() || phone.is_empty() || location.is_empty() {
-                return Ok(HttpResponse::BadRequest().json(ErrorResponse {
-                    message: "Name, email, phone, and location are required fields".to_string(),
-                }));
-            }
-
             let new_company = sqlx::query_as::<_, Company>(
                 "INSERT INTO companies (user_id, name, email, phone, location, description, logo_url, banner_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING *"
             )

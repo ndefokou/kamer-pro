@@ -20,11 +20,11 @@ pub struct Product {
     pub contact_email: Option<String>,
     pub user_id: i32,
     pub status: String,
-    pub shop_id: Option<i32>,
+    pub company_id: Option<i32>,
 }
 
 #[derive(sqlx::FromRow)]
-struct Shop {
+struct company {
     id: i32,
     location: String,
     phone: String,
@@ -287,15 +287,15 @@ pub async fn create_product(
     };
 
     log::info!("Attempting to create product for user_id: {}", user_id);
-    // Get shop info to inherit location and contact details
+    // Get company info to inherit location and contact details
     log::info!("Fetching company for user_id: {}", user_id);
-    let shop: Result<Shop, _> =
+    let company: Result<company, _> =
         sqlx::query_as("SELECT id, location, phone, email FROM companies WHERE user_id = ?")
             .bind(user_id)
             .fetch_one(pool.get_ref())
             .await;
 
-    let shop = match shop {
+    let company = match company {
         Ok(s) => {
             log::info!("Successfully fetched company id: {} for user_id: {}", s.id, user_id);
             s
@@ -369,30 +369,30 @@ pub async fn create_product(
         }
     }
 
-    // Use shop's location, phone, and email
+    // Use company's location, phone, and email
     // Format phone number for WhatsApp (remove spaces and ensure it starts with country code)
-    let formatted_phone = shop.phone.replace(" ", "").replace("-", "");
+    let formatted_phone = company.phone.replace(" ", "").replace("-", "");
     let formatted_phone = if !formatted_phone.starts_with("+") {
         format!("+{}", formatted_phone)
     } else {
         formatted_phone
     };
 
-    println!("Using shop location for new product: {}", &shop.location);
+    println!("Using company location for new product: {}", &company.location);
     let result = sqlx::query(
-        "INSERT INTO products (name, description, price, condition, category, location, contact_phone, contact_email, user_id, status, shop_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+        "INSERT INTO products (name, description, price, condition, category, location, contact_phone, contact_email, user_id, status, company_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
     )
     .bind(&product_payload.name)
     .bind(&product_payload.description)
     .bind(&product_payload.price)
     .bind(&product_payload.condition)
     .bind(&product_payload.category)
-    .bind(if product_payload.location.is_empty() { &shop.location } else { &product_payload.location })
-    .bind(&formatted_phone)      // Use shop phone (formatted)
-    .bind(&shop.email)      // Use shop email
+    .bind(if product_payload.location.is_empty() { &company.location } else { &product_payload.location })
+    .bind(&formatted_phone)      // Use company phone (formatted)
+    .bind(&company.email)      // Use company email
     .bind(user_id)
     .bind("active")
-    .bind(shop.id)
+    .bind(company.id)
     .execute(pool.get_ref())
     .await;
 

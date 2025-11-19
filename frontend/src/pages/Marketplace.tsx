@@ -41,7 +41,7 @@ const CATEGORIES = [
   { key: "bedroom", value: "bedroom" },
   { key: "villa", value: "villa" },
   { key: "office", value: "office" },
-  { key: "shop", value: "shop" },
+  { key: "company", value: "company" },
   { key: "other", value: "Other" },
 ];
 

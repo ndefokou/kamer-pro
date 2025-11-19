@@ -23,7 +23,7 @@ import { useDropzone } from "react-dropzone";
 import Navbar from "@/components/Navbar";
 import { toast } from "@/hooks/use-toast";
 
-interface ArchitectCompany {
+interface Architectcompany {
   id: number;
   user_id: number;
   name: string;
@@ -41,7 +41,7 @@ interface ArchitectCompany {
 const ArchitectCompanyPage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const [company, setCompany] = useState<ArchitectCompany | null>(null);
+  const [company, setcompany] = useState<Architectcompany | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -61,12 +61,12 @@ const ArchitectCompanyPage = () => {
 
   const token = localStorage.getItem("token");
 
-  const fetchCompany = useCallback(async () => {
+  const fetchcompany = useCallback(async () => {
     setIsLoading(true);
     try {
       const response = await apiClient.get("/architect-company");
       const companyData = response.data.company || response.data;
-      setCompany(companyData);
+      setcompany(companyData);
       
       setFormData({
         name: companyData.name || "",
@@ -76,14 +76,14 @@ const ArchitectCompanyPage = () => {
         description: companyData.description || "",
       });
       
-      if (companyData.logo_url) setLogoPreview(companyData.logo_url);
-      if (companyData.banner_url) setBannerPreview(companyData.banner_url);
+      if (companyData.logo_url) setLogoPreview(`${apiClient.defaults.baseURL}/${companyData.logo_url}`);
+      if (companyData.banner_url) setBannerPreview(`${apiClient.defaults.baseURL}/${companyData.banner_url}`);
       
       setIsEditing(false);
     } catch (error) {
       const axiosError = error as AxiosError;
       if (axiosError.response?.status === 404) {
-        setCompany(null);
+        setcompany(null);
         setIsEditing(true);
       } else {
         console.error("Failed to fetch architect company:", error);
@@ -103,8 +103,8 @@ const ArchitectCompanyPage = () => {
       navigate("/webauth-login");
       return;
     }
-    fetchCompany();
-  }, [token, navigate, fetchCompany]);
+    fetchcompany();
+  }, [token, navigate, fetchcompany]);
 
   const onLogoDrop = (acceptedFiles: File[]) => {
     if (acceptedFiles.length > 0) {
@@ -151,8 +151,8 @@ const ArchitectCompanyPage = () => {
       const response = await apiClient.post("/architect-company", data, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-      const savedCompany = response.data.company || response.data;
-      setCompany(savedCompany);
+      const savedcompany = response.data.company || response.data;
+      setcompany(savedcompany);
       
       toast({
         title: t("success"),

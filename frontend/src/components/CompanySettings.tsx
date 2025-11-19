@@ -8,41 +8,41 @@ import { Loader2 } from "lucide-react";
 import apiClient from "@/api/client";
 import { useToast } from "@/components/ui/use-toast";
 
-interface shopData {
+interface companyData {
   email: string;
   phone: string;
   location: string;
 }
 
 interface companyettingsProps {
-  shopData: shopData;
-  onshopDataChange: (newshopData: shopData) => void;
+  companyData: companyData;
+  oncompanyDataChange: (newcompanyData: companyData) => void;
 }
 
-const companyettings = ({ shopData, onshopDataChange }: companyettingsProps) => {
+const companyettings = ({ companyData, oncompanyDataChange }: companyettingsProps) => {
   const { t } = useTranslation();
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target;
-    onshopDataChange({ ...shopData, [id]: value });
+    oncompanyDataChange({ ...companyData, [id]: value });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     try {
-      await apiClient.post("/shop", shopData);
+      await apiClient.post("/company", companyData);
       toast({
-        title: t("shop settings saved"),
-        description: t("your shop information has been updated"),
+        title: t("company settings saved"),
+        description: t("your company information has been updated"),
       });
     } catch (error) {
-      console.error("Failed to save shop settings:", error);
+      console.error("Failed to save company settings:", error);
       toast({
         title: t("error"),
-        description: t("failed to save shop settings"),
+        description: t("failed to save company settings"),
         variant: "destructive",
       });
     } finally {
@@ -53,7 +53,7 @@ const companyettings = ({ shopData, onshopDataChange }: companyettingsProps) => 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{t("my shop")}</CardTitle>
+        <CardTitle>{t("my company")}</CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -62,9 +62,9 @@ const companyettings = ({ shopData, onshopDataChange }: companyettingsProps) => 
             <Input
               id="email"
               type="email"
-              value={shopData.email}
+              value={companyData.email}
               onChange={handleChange}
-              placeholder="shop@example.com"
+              placeholder="company@example.com"
             />
           </div>
           <div className="space-y-2">
@@ -72,7 +72,7 @@ const companyettings = ({ shopData, onshopDataChange }: companyettingsProps) => 
             <Input
               id="phone"
               type="tel"
-              value={shopData.phone}
+              value={companyData.phone}
               onChange={handleChange}
               placeholder="+1234567890"
             />
@@ -81,7 +81,7 @@ const companyettings = ({ shopData, onshopDataChange }: companyettingsProps) => 
             <Label htmlFor="location">{t("location")}</Label>
             <Input
               id="location"
-              value={shopData.location}
+              value={companyData.location}
               onChange={handleChange}
               placeholder="e.g., Douala, Akwa"
             />

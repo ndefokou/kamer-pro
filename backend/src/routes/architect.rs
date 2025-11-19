@@ -8,7 +8,7 @@ use sqlx::SqlitePool;
 use uuid::Uuid;
 
 #[derive(Serialize, Deserialize, sqlx::FromRow, Clone)]
-pub struct ArchitectCompany {
+pub struct Architectcompany {
     pub id: i32,
     pub user_id: i32,
     pub name: String,
@@ -69,7 +69,7 @@ pub struct ArchitectProjectResponse {
 }
 
 #[derive(Serialize)]
-pub struct ArchitectCompanyResponse {
+pub struct ArchitectcompanyResponse {
     pub id: i32,
     pub user_id: i32,
     pub name: String,
@@ -83,8 +83,8 @@ pub struct ArchitectCompanyResponse {
     pub updated_at: String,
 }
 
-impl From<ArchitectCompany> for ArchitectCompanyResponse {
-    fn from(company: ArchitectCompany) -> Self {
+impl From<Architectcompany> for ArchitectcompanyResponse {
+    fn from(company: Architectcompany) -> Self {
         let base_url = std::env::var("BACKEND_URL").unwrap_or_else(|_| "http://localhost:8082".to_string());
 
         Self {
@@ -127,14 +127,14 @@ pub async fn get_architect_company(req: HttpRequest, pool: web::Data<SqlitePool>
         Err(e) => return HttpResponse::Unauthorized().json(ErrorResponse { message: e.to_string() }),
     };
 
-    let company = sqlx::query_as::<_, ArchitectCompany>("SELECT * FROM architect_companies WHERE user_id = ?")
+    let company = sqlx::query_as::<_, Architectcompany>("SELECT * FROM architect_companies WHERE user_id = ?")
         .bind(user_id)
         .fetch_optional(pool.get_ref())
         .await;
 
     match company {
         Ok(Some(company)) => {
-            let response = ArchitectCompanyResponse::from(company);
+            let response = ArchitectcompanyResponse::from(company);
             HttpResponse::Ok().json(response)
         }
         Ok(None) => HttpResponse::NotFound().json(ErrorResponse { message: "Architect company not found".to_string() }),
@@ -215,7 +215,7 @@ pub async fn create_or_update_architect_company(req: HttpRequest, pool: web::Dat
         }
     }
 
-    let existing_company = sqlx::query_as::<_, ArchitectCompany>("SELECT * FROM architect_companies WHERE user_id = ?")
+    let existing_company = sqlx::query_as::<_, Architectcompany>("SELECT * FROM architect_companies WHERE user_id = ?")
         .bind(user_id)
         .fetch_optional(pool.get_ref())
         .await
@@ -225,7 +225,7 @@ pub async fn create_or_update_architect_company(req: HttpRequest, pool: web::Dat
         })?;
 
     if let Some(company) = existing_company {
-        let updated_company = sqlx::query_as::<_, ArchitectCompany>(
+        let updated_company = sqlx::query_as::<_, Architectcompany>(
             "UPDATE architect_companies SET name = ?, email = ?, phone = ?, location = ?, description = ?, logo_url = ?, banner_url = ?, updated_at = CURRENT_TIMESTAMP WHERE user_id = ? RETURNING *"
         )
         .bind(if name.is_empty() { &company.name } else { &name })
@@ -242,10 +242,10 @@ pub async fn create_or_update_architect_company(req: HttpRequest, pool: web::Dat
             eprintln!("Failed to update architect company: {}", e);
             actix_web::error::ErrorInternalServerError("Failed to process request")
         })?;
-        let response = ArchitectCompanyResponse::from(updated_company);
+        let response = ArchitectcompanyResponse::from(updated_company);
         Ok(HttpResponse::Ok().json(response))
     } else {
-        let new_company = sqlx::query_as::<_, ArchitectCompany>(
+        let new_company = sqlx::query_as::<_, Architectcompany>(
             "INSERT INTO architect_companies (user_id, name, email, phone, location, description, logo_url, banner_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING *"
         )
         .bind(user_id)
@@ -262,7 +262,7 @@ pub async fn create_or_update_architect_company(req: HttpRequest, pool: web::Dat
             eprintln!("Failed to create new architect company: {}", e);
             actix_web::error::ErrorInternalServerError("Failed to process request")
         })?;
-        let response = ArchitectCompanyResponse::from(new_company);
+        let response = ArchitectcompanyResponse::from(new_company);
         Ok(HttpResponse::Created().json(response))
     }
 }
@@ -367,7 +367,7 @@ pub async fn get_all_architect_projects(pool: web::Data<SqlitePool>) -> impl Res
 
 pub async fn create_architect_project(req: HttpRequest, pool: web::Data<SqlitePool>, mut payload: Multipart) -> Result<HttpResponse, actix_web::Error> {
     let user_id = get_user_id_from_headers(&req)?;
-    let company = sqlx::query_as::<_, ArchitectCompany>("SELECT * FROM architect_companies WHERE user_id = ?")
+    let company = sqlx::query_as::<_, Architectcompany>("SELECT * FROM architect_companies WHERE user_id = ?")
         .bind(user_id)
         .fetch_one(pool.get_ref())
         .await.map_err(|_| actix_web::error::ErrorBadRequest("Architect company not found"))?;

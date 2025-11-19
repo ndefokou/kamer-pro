@@ -137,7 +137,7 @@ const Navbar = () => {
                 variant="ghost"
                 className="text-primary-foreground hover:bg-primary-foreground/10"
               >
-                My Company
+                My company
               </Button>
             </Link>
 
@@ -291,7 +291,7 @@ const Navbar = () => {
                     onClick={() => handleNavigation("/company")}
                   >
                     <Store className="h-5 w-5 mr-2" />
-                    My Company
+                    My company
                   </Button>
 
                   {token && (

@@ -149,7 +149,7 @@ const MyProducts = () => {
       
       await fetchProducts();
       resetForm();
-      navigate("/shop");
+      navigate("/company");
     } catch (error) {
       console.error("Failed to save product:", error);
       let errorMessage = t("failed to save product");
@@ -302,7 +302,7 @@ const MyProducts = () => {
                             <SelectItem value="bedroom">{t("bedroom")}</SelectItem>
                             <SelectItem value="villa">{t("villa")}</SelectItem>
                             <SelectItem value="office">{t("office")}</SelectItem>
-                            <SelectItem value="shop">{t("shop")}</SelectItem>
+                            <SelectItem value="company">{t("company")}</SelectItem>
                             <SelectItem value="Other">{t("Other")}</SelectItem>
                           </SelectContent>
                         </Select>

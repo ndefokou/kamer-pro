@@ -15,11 +15,8 @@ import Wishlist from "./pages/Wishlist";
 import Messages from "./pages/Messages";
 import { WebAuthLogin } from "./pages/WebAuthLogin";
 import { WebAuthRegister } from "./pages/WebAuthRegister";
-import {
-  ProtectedRoute,
-  SellerProtectedRoute,
-} from "./components/ProtectedRoute";
-import companyPage from "./pages/companyPage";
+import { ProtectedRoute } from "./components/ProtectedRoute";
+import CompanyPage from "./pages/CompanyPage";
 import ArchitectCompanyPage from "./pages/ArchitectCompanyPage";
 import ArchitectProjectsPage from "./pages/ArchitectProjectsPage";
 import ProjectsPage from "./pages/ProjectsPage";
@@ -36,7 +33,7 @@ const router = createBrowserRouter(
     { path: "/webauth-login", Component: WebAuthLogin },
     { path: "/webauth-register", Component: WebAuthRegister },
     {
-      element: <SellerProtectedRoute />,
+      element: <ProtectedRoute />,
       children: [{ path: "/my-products", Component: MyProducts }],
     },
     {
@@ -44,7 +41,7 @@ const router = createBrowserRouter(
       children: [
         { path: "/wishlist", Component: Wishlist },
         { path: "/messages", Component: Messages },
-        { path: "/company", Component: companyPage },
+        { path: "/company", Component: CompanyPage },
         { path: "/architect-company", Component: ArchitectCompanyPage },
         { path: "/architect-projects", Component: ArchitectProjectsPage },
       ],
