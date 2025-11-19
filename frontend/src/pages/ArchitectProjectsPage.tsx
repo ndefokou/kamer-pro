@@ -36,10 +36,10 @@ interface ArchitectProject {
   name: string;
   description: string;
   project_cost: number;
-  location: string;
   house_plan_url?: string;
-  maquette_url?: string;
-  images?: { image_url: string }[];
+  location: string;
+  maquettes: string[];
+  images: string[];
   created_at: string;
 }
 
@@ -61,10 +61,10 @@ const ArchitectProjectsPage = () => {
   });
   
   const [housePlanFile, setHousePlanFile] = useState<File | null>(null);
-  const [maquetteFile, setMaquetteFile] = useState<File | null>(null);
+  const [maquetteFiles, setMaquetteFiles] = useState<File[]>([]);
   const [images, setImages] = useState<File[]>([]);
   const [housePlanPreview, setHousePlanPreview] = useState<string>("");
-  const [maquettePreview, setMaquettePreview] = useState<string>("");
+  const [maquettePreviews, setMaquettePreviews] = useState<string[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
 
   const token = localStorage.getItem("token");
@@ -105,13 +105,10 @@ const ArchitectProjectsPage = () => {
   };
 
   const onMaquetteDrop = (acceptedFiles: File[]) => {
-    if (acceptedFiles.length > 0) {
-      const file = acceptedFiles[0];
-      setMaquetteFile(file);
-      if (file.type.startsWith('image/')) {
-        setMaquettePreview(URL.createObjectURL(file));
-      }
-    }
+    const newFiles = [...maquetteFiles, ...acceptedFiles];
+    setMaquetteFiles(newFiles);
+    const newPreviews = newFiles.map(file => URL.createObjectURL(file));
+    setMaquettePreviews(newPreviews);
   };
 
   const onImagesDrop = (acceptedFiles: File[]) => {
@@ -133,7 +130,7 @@ const ArchitectProjectsPage = () => {
   const { getRootProps: getMaquetteRootProps, getInputProps: getMaquetteInputProps } = useDropzone({
     onDrop: onMaquetteDrop,
     accept: { "image/*": [".jpeg", ".png", ".jpg"] },
-    multiple: false,
+    multiple: true,
   });
 
   const { getRootProps: getImagesRootProps, getInputProps: getImagesInputProps } = useDropzone({
@@ -147,6 +144,13 @@ const ArchitectProjectsPage = () => {
     setImages(newImages);
     const newPreviews = newImages.map(file => URL.createObjectURL(file));
     setImagePreviews(newPreviews);
+  };
+
+  const removeMaquette = (index: number) => {
+    const newFiles = maquetteFiles.filter((_, i) => i !== index);
+    setMaquetteFiles(newFiles);
+    const newPreviews = newFiles.map(file => URL.createObjectURL(file));
+    setMaquettePreviews(newPreviews);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -164,7 +168,9 @@ const ArchitectProjectsPage = () => {
     });
     
     if (housePlanFile) data.append("house_plan", housePlanFile);
-    if (maquetteFile) data.append("maquette", maquetteFile);
+    maquetteFiles.forEach(file => {
+      data.append("maquette[]", file);
+    });
     images.forEach(file => {
       data.append("images[]", file);
     });
@@ -208,10 +214,10 @@ const ArchitectProjectsPage = () => {
       location: "",
     });
     setHousePlanFile(null);
-    setMaquetteFile(null);
+    setMaquetteFiles([]);
     setImages([]);
     setHousePlanPreview("");
-    setMaquettePreview("");
+    setMaquettePreviews([]);
     setImagePreviews([]);
     setIsEditing(null);
     setShowForm(false);
@@ -226,9 +232,9 @@ const ArchitectProjectsPage = () => {
       location: project.location,
     });
     if (project.house_plan_url) setHousePlanPreview(project.house_plan_url);
-    if (project.maquette_url) setMaquettePreview(project.maquette_url);
+    setMaquettePreviews(project.maquettes || []);
     setImages([]);
-    setImagePreviews(project.images?.map(img => img.image_url) || []);
+    setImagePreviews(project.images || []);
     setShowForm(true);
   };
 
@@ -325,13 +331,13 @@ const ArchitectProjectsPage = () => {
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="location">Location *</Label>
-                          <Input 
-                            id="location" 
-                            name="location" 
-                            value={formData.location} 
-                            onChange={handleInputChange} 
-                            placeholder="e.g., Douala" 
-                            required 
+                          <Input
+                            id="location"
+                            name="location"
+                            value={formData.location}
+                            onChange={handleInputChange}
+                            placeholder="e.g., Douala, Bonapriso"
+                            required
                           />
                         </div>
                       </div>
@@ -373,14 +379,24 @@ const ArchitectProjectsPage = () => {
                     <CardContent>
                       <div {...getMaquetteRootProps()} className="border-2 border-dashed rounded-lg p-6 text-center cursor-pointer hover:border-primary">
                         <input {...getMaquetteInputProps()} />
-                        {maquettePreview ? (
-                          <img src={maquettePreview} alt="Maquette" className="max-h-32 mx-auto" />
-                        ) : (
-                          <div>
-                            <Upload className="h-8 w-8 mx-auto mb-2" />
-                            <p className="text-sm">Upload 3D maquette</p>
+                        <Upload className="h-8 w-8 mx-auto mb-2" />
+                        <p className="text-sm">Upload 3D maquette(s)</p>
+                      </div>
+                      <div className="flex flex-wrap gap-2 mt-4">
+                        {maquettePreviews.map((preview, index) => (
+                          <div key={index} className="relative">
+                            <img src={preview} alt={`preview ${index}`} className="h-20 w-20 object-cover rounded" />
+                            <Button
+                              type="button"
+                              variant="destructive"
+                              size="icon"
+                              className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
+                              onClick={() => removeMaquette(index)}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
                           </div>
-                        )}
+                        ))}
                       </div>
                     </CardContent>
                   </Card>
@@ -442,7 +458,7 @@ const ArchitectProjectsPage = () => {
               {projects.map(project => (
                 <Card key={project.id} className="overflow-hidden">
                   <img
-                    src={project.maquette_url || project.images?.[0]?.image_url || "/placeholder.svg"}
+                    src={project.maquettes[0] || project.images[0] || "/placeholder.svg"}
                     alt={project.name}
                     className="h-48 w-full object-cover"
                   />

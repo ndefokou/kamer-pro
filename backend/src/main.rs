@@ -107,9 +107,10 @@ async fn main() -> std::io::Result<()> {
                                web::scope("/architect-projects")
                                    .route("", web::get().to(routes::architect::get_architect_projects))
                                    .route("", web::post().to(routes::architect::create_architect_project))
+                                   .route("/all", web::get().to(routes::architect::get_all_architect_projects))
                                    .route("/{id}", web::put().to(routes::architect::update_architect_project))
                                    .route("/{id}", web::delete().to(routes::architect::delete_architect_project))
-                           ),
+                          ),
                    )
                    .service(fs::Files::new("/uploads", "./public/uploads"))
            })

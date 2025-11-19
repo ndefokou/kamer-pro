@@ -22,6 +22,7 @@ import {
 import companyPage from "./pages/companyPage";
 import ArchitectCompanyPage from "./pages/ArchitectCompanyPage";
 import ArchitectProjectsPage from "./pages/ArchitectProjectsPage";
+import ProjectsPage from "./pages/ProjectsPage";
 
 const queryClient = new QueryClient();
 
@@ -31,6 +32,7 @@ const router = createBrowserRouter(
     { path: "/role-selection", Component: RoleSelection },
     { path: "/marketplace", Component: Marketplace },
     { path: "/product/:id", Component: ProductDetails },
+    { path: "/projects", Component: ProjectsPage },
     { path: "/webauth-login", Component: WebAuthLogin },
     { path: "/webauth-register", Component: WebAuthRegister },
     {

@@ -2,9 +2,9 @@ use crate::routes::middleware::extract_user_id_from_token;
 use actix_multipart::Multipart;
 use actix_web::{get, web, HttpRequest, HttpResponse, Responder};
 use futures_util::TryStreamExt;
+use log;
 use serde::{Deserialize, Serialize};
 use sqlx::SqlitePool;
-use std::io::Write;
 use uuid::Uuid;
 
 #[derive(Serialize, Deserialize, sqlx::FromRow, Clone)]
@@ -171,7 +171,7 @@ pub async fn get_products(
                     .into_iter()
                     .map(|img| ProductImageResponse {
                         id: img.id,
-                        image_url: img.image_url.replace("/public", ""), // Remove /public prefix
+                        image_url: format!("{}/{}", std::env::var("BACKEND_URL").unwrap_or_else(|_| "http://localhost:8082".to_string()).trim_end_matches('/'), img.image_url.trim_start_matches('/')),
                         product_id: img.product_id,
                     })
                     .collect();
@@ -210,7 +210,7 @@ pub async fn get_product(pool: web::Data<SqlitePool>, path: web::Path<i32>) -> i
                 .into_iter()
                 .map(|img| ProductImageResponse {
                     id: img.id,
-                    image_url: img.image_url.replace("/public", ""), // Remove /public prefix
+                    image_url: format!("{}/{}", std::env::var("BACKEND_URL").unwrap_or_else(|_| "http://localhost:8082".to_string()).trim_end_matches('/'), img.image_url.trim_start_matches('/')),
                     product_id: img.product_id,
                 })
                 .collect();
@@ -255,7 +255,7 @@ pub async fn get_my_products(req: HttpRequest, pool: web::Data<SqlitePool>) -> i
                     .into_iter()
                     .map(|img| ProductImageResponse {
                         id: img.id,
-                        image_url: img.image_url.replace("/public", ""), // Remove /public prefix
+                        image_url: format!("{}/{}", std::env::var("BACKEND_URL").unwrap_or_else(|_| "http://localhost:8082".to_string()).trim_end_matches('/'), img.image_url.trim_start_matches('/')),
                         product_id: img.product_id,
                     })
                     .collect();
@@ -286,18 +286,24 @@ pub async fn create_product(
         }
     };
 
+    log::info!("Attempting to create product for user_id: {}", user_id);
     // Get shop info to inherit location and contact details
+    log::info!("Fetching company for user_id: {}", user_id);
     let shop: Result<Shop, _> =
-        sqlx::query_as("SELECT id, location, phone, email FROM company WHERE user_id = ?")
+        sqlx::query_as("SELECT id, location, phone, email FROM companies WHERE user_id = ?")
             .bind(user_id)
             .fetch_one(pool.get_ref())
             .await;
 
     let shop = match shop {
-        Ok(s) => s,
-        Err(_) => {
+        Ok(s) => {
+            log::info!("Successfully fetched company id: {} for user_id: {}", s.id, user_id);
+            s
+        }
+        Err(e) => {
+            log::error!("Failed to fetch company for user_id {}: {}", user_id, e);
             return HttpResponse::BadRequest().json(ErrorResponse {
-                message: "You must create a shop before adding products.".to_string(),
+                message: "You must create a company before adding products.".to_string(),
             })
         }
     };
@@ -331,15 +337,33 @@ pub async fn create_product(
                 product_payload.location = extract_string_from_field(&mut field).await.unwrap()
             }
             "images[]" => {
-                let filename = format!("{}.png", Uuid::new_v4());
-                let filepath = format!("./public/uploads/{}", filename);
-                println!("Saving image to: {}", filepath);
-                let mut f = std::fs::File::create(&filepath).unwrap();
-                while let Some(chunk) = field.try_next().await.unwrap() {
-                    f.write_all(&chunk).unwrap();
+                let filename = format!("product_{}.png", Uuid::new_v4());
+                let filepath = format!("../public/uploads/{}", filename);
+                
+                let mut bytes = Vec::new();
+                while let Some(chunk_result) = field.try_next().await.transpose() {
+                    match chunk_result {
+                        Ok(chunk) => bytes.extend_from_slice(&chunk),
+                        Err(e) => {
+                            log::error!("Error reading multipart chunk: {}", e);
+                            return HttpResponse::InternalServerError().json(ErrorResponse { message: "Failed to read file chunk".to_string() });
+                        }
+                    }
+                }
+
+                if let Some(p) = std::path::Path::new(&filepath).parent() {
+                    if !p.exists() {
+                        if let Err(e) = std::fs::create_dir_all(p) {
+                             log::error!("Failed to create directory for {}: {}", filepath, e);
+                             return HttpResponse::InternalServerError().json(ErrorResponse { message: "Failed to save file".to_string() });
+                        }
+                    }
+                }
+                if let Err(e) = std::fs::write(&filepath, &bytes) {
+                    log::error!("Failed to write file to {}: {}", filepath, e);
+                    return HttpResponse::InternalServerError().json(ErrorResponse { message: "Failed to save file".to_string() });
                 }
                 image_paths.push(format!("/uploads/{}", filename));
-                println!("Current image paths: {:?}", image_paths);
             }
             _ => (),
         }
@@ -399,7 +423,7 @@ pub async fn create_product(
                 .into_iter()
                 .map(|img| ProductImageResponse {
                     id: img.id,
-                    image_url: img.image_url.replace("/public", ""), // Remove /public prefix
+                    image_url: format!("{}/{}", std::env::var("BACKEND_URL").unwrap_or_else(|_| "http://localhost:8082".to_string()).trim_end_matches('/'), img.image_url.trim_start_matches('/')),
                     product_id: img.product_id,
                 })
                 .collect();
@@ -473,15 +497,33 @@ pub async fn update_product(
                 product_payload.category = extract_string_from_field(&mut field).await.unwrap()
             }
             "images[]" => {
-                let filename = format!("{}.png", Uuid::new_v4());
-                let filepath = format!("./public/uploads/{}", filename);
-                println!("Saving image to: {}", filepath);
-                let mut f = std::fs::File::create(&filepath).unwrap();
-                while let Some(chunk) = field.try_next().await.unwrap() {
-                    f.write_all(&chunk).unwrap();
+                let filename = format!("product_{}.png", Uuid::new_v4());
+                let filepath = format!("../public/uploads/{}", filename);
+
+                let mut bytes = Vec::new();
+                while let Some(chunk_result) = field.try_next().await.transpose() {
+                    match chunk_result {
+                        Ok(chunk) => bytes.extend_from_slice(&chunk),
+                        Err(e) => {
+                            log::error!("Error reading multipart chunk: {}", e);
+                            return HttpResponse::InternalServerError().json(ErrorResponse { message: "Failed to read file chunk".to_string() });
+                        }
+                    }
+                }
+
+                if let Some(p) = std::path::Path::new(&filepath).parent() {
+                    if !p.exists() {
+                        if let Err(e) = std::fs::create_dir_all(p) {
+                             log::error!("Failed to create directory for {}: {}", filepath, e);
+                             return HttpResponse::InternalServerError().json(ErrorResponse { message: "Failed to save file".to_string() });
+                        }
+                    }
+                }
+                if let Err(e) = std::fs::write(&filepath, &bytes) {
+                    log::error!("Failed to write file to {}: {}", filepath, e);
+                    return HttpResponse::InternalServerError().json(ErrorResponse { message: "Failed to save file".to_string() });
                 }
                 image_paths.push(format!("/uploads/{}", filename));
-                println!("Current image paths: {:?}", image_paths);
             }
             _ => (),
         }
@@ -534,7 +576,7 @@ pub async fn update_product(
                 .into_iter()
                 .map(|img| ProductImageResponse {
                     id: img.id,
-                    image_url: img.image_url.replace("/public", ""), // Remove /public prefix
+                    image_url: format!("{}/{}", std::env::var("BACKEND_URL").unwrap_or_else(|_| "http://localhost:8082".to_string()).trim_end_matches('/'), img.image_url.trim_start_matches('/')),
                     product_id: img.product_id,
                 })
                 .collect();

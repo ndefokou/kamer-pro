@@ -1,7 +1,7 @@
 -- Create architect_companies table
 CREATE TABLE IF NOT EXISTS architect_companies (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER NOT NULL UNIQUE,
+    user_id INTEGER NOT NULL,
     name TEXT NOT NULL,
     email TEXT NOT NULL,
     phone TEXT NOT NULL,
@@ -24,7 +24,6 @@ CREATE TABLE IF NOT EXISTS architect_projects (
     project_cost REAL NOT NULL,
     location TEXT NOT NULL,
     house_plan_url TEXT,
-    maquette_url TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (architect_company_id) REFERENCES architect_companies(id) ON DELETE CASCADE,
@@ -33,6 +32,15 @@ CREATE TABLE IF NOT EXISTS architect_projects (
 
 -- Create architect_project_images table
 CREATE TABLE IF NOT EXISTS architect_project_images (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    project_id INTEGER NOT NULL,
+    image_url TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (project_id) REFERENCES architect_projects(id) ON DELETE CASCADE
+);
+
+-- Create architect_project_maquettes table
+CREATE TABLE IF NOT EXISTS architect_project_maquettes (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     project_id INTEGER NOT NULL,
     image_url TEXT NOT NULL,

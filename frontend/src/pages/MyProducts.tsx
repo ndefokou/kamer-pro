@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { AxiosError } from "axios";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import apiClient from "@/api/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -44,11 +44,15 @@ interface Product {
 const MyProducts = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const location = useLocation();
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isEditing, setIsEditing] = useState<number | null>(null);
-  const [showForm, setShowForm] = useState(false);
+  const [showForm, setShowForm] = useState(() => {
+    const params = new URLSearchParams(location.search);
+    return params.get("showAddForm") === "true";
+  });
   const [deleteProductId, setDeleteProductId] = useState<number | null>(null);
 
   const [formData, setFormData] = useState({
@@ -88,6 +92,7 @@ const MyProducts = () => {
     }
     fetchProducts();
   }, [token, navigate, fetchProducts]);
+
 
   const onDrop = (acceptedFiles: File[]) => {
     const newFiles = [...files, ...acceptedFiles];

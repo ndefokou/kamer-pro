@@ -460,7 +460,7 @@ const CompanyPage = () => {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle>{t("company products")}</CardTitle>
-                <Button onClick={() => navigate("/my-products")}>
+                <Button onClick={() => navigate("/my-products?showAddForm=true")}>
                   {t("manage propertys")}
                 </Button>
               </CardHeader>
@@ -471,7 +471,7 @@ const CompanyPage = () => {
                     <p className="text-muted-foreground mb-4">
                       {t("no products yet")}
                     </p>
-                    <Button onClick={() => navigate("/my-products")}>
+                    <Button onClick={() => navigate("/my-products?showAddForm=true")}>
                       {t("add your first property")}
                     </Button>
                   </div>
