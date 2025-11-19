@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, Link } from "react-router-dom";
 import { WebAuthService } from "@/services/webAuthService";
+import apiClient from "@/api/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -87,7 +88,24 @@ export const WebAuthLogin = () => {
         description: t("logged in successfully"),
       });
 
-      navigate("/role-selection");
+      // Fetch user roles
+      try {
+        const rolesResponse = await apiClient.get("/roles");
+        if (rolesResponse.data && rolesResponse.data.roles) {
+          localStorage.setItem("roles", JSON.stringify(rolesResponse.data.roles));
+          // Redirect based on roles
+          if (rolesResponse.data.roles.length > 0) {
+            navigate("/marketplace"); // Or to a dashboard page
+          } else {
+            navigate("/role-selection");
+          }
+        } else {
+          navigate("/role-selection");
+        }
+      } catch (error) {
+        console.error("Failed to fetch roles, proceeding to role selection:", error);
+        navigate("/role-selection");
+      }
     } catch (error) {
       console.error("Authentication error:", error);
       let errorMessage = t("authentication failed");

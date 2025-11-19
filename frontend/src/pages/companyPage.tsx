@@ -99,8 +99,9 @@ const CompanyPage = () => {
       const axiosError = error as AxiosError;
       if (axiosError.response?.status === 404) {
         setIsEditing(true);
+      } else {
+        console.error("Failed to fetch company:", error);
       }
-      console.error("Failed to fetch company:", error);
     } finally {
       setIsLoading(false);
     }
@@ -211,6 +212,13 @@ const CompanyPage = () => {
       </div>
     );
   }
+
+  const handleAddProduct = () => {
+    // Ensure seller role is set
+    localStorage.setItem("role", "seller");
+    // Navigate to products page
+    navigate("/my-products?showAddForm=true");
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -460,8 +468,8 @@ const CompanyPage = () => {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle>{t("company products")}</CardTitle>
-                <Button onClick={() => navigate("/my-products?showAddForm=true")}>
-                  {t("manage propertys")}
+                <Button onClick={handleAddProduct}>
+                  {t("manage properties")}
                 </Button>
               </CardHeader>
               <CardContent>
@@ -471,8 +479,8 @@ const CompanyPage = () => {
                     <p className="text-muted-foreground mb-4">
                       {t("no products yet")}
                     </p>
-                    <Button onClick={() => navigate("/my-products?showAddForm=true")}>
-                      {t("add your first property")}
+                    <Button onClick={handleAddProduct}>
+                      {t("add your first product")}
                     </Button>
                   </div>
                 ) : (
