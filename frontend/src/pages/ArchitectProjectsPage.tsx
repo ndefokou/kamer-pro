@@ -35,7 +35,6 @@ interface ArchitectProject {
   id: number;
   name: string;
   description: string;
-  project_cost: number;
   house_plan_url?: string;
   location: string;
   maquettes: string[];
@@ -56,7 +55,6 @@ const ArchitectProjectsPage = () => {
   const [formData, setFormData] = useState({
     name: "",
     description: "",
-    project_cost: "",
     location: "",
   });
   
@@ -210,7 +208,6 @@ const ArchitectProjectsPage = () => {
     setFormData({
       name: "",
       description: "",
-      project_cost: "",
       location: "",
     });
     setHousePlanFile(null);
@@ -228,7 +225,6 @@ const ArchitectProjectsPage = () => {
     setFormData({
       name: project.name,
       description: project.description,
-      project_cost: project.project_cost.toString(),
       location: project.location,
     });
     if (project.house_plan_url) setHousePlanPreview(project.house_plan_url);
@@ -280,7 +276,7 @@ const ArchitectProjectsPage = () => {
           <>
             <div className="mb-8">
               <h1 className="text-3xl font-bold text-gray-800">
-                {isEditing ? "Edit House Plan" : "Add New House Plan"}
+                {isEditing ? "Edit House Plan" : "Add a project"}
               </h1>
             </div>
 
@@ -317,18 +313,6 @@ const ArchitectProjectsPage = () => {
                         />
                       </div>
                       <div className="grid md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="project_cost">Project Cost (XAF) *</Label>
-                          <Input 
-                            id="project_cost" 
-                            name="project_cost" 
-                            type="number" 
-                            value={formData.project_cost} 
-                            onChange={handleInputChange} 
-                            placeholder="5000000" 
-                            required 
-                          />
-                        </div>
                         <div className="space-y-2">
                           <Label htmlFor="location">Location *</Label>
                           <Input
@@ -465,12 +449,6 @@ const ArchitectProjectsPage = () => {
                   <CardContent className="p-4">
                     <h3 className="font-semibold text-lg line-clamp-1">{project.name}</h3>
                     <p className="text-muted-foreground text-sm line-clamp-2 mt-1">{project.description}</p>
-                    <p className="font-bold text-xl mt-2">
-                      {new Intl.NumberFormat("fr-FR", {
-                        style: "currency",
-                        currency: "XAF",
-                      }).format(project.project_cost)}
-                    </p>
                     <div className="flex gap-2 mt-4">
                       <Button size="sm" variant="outline" onClick={() => handleEdit(project)}>
                         <Edit2 className="h-4 w-4 mr-2" />

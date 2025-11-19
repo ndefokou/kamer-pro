@@ -21,7 +21,6 @@ CREATE TABLE IF NOT EXISTS architect_projects (
     user_id INTEGER NOT NULL,
     name TEXT NOT NULL,
     description TEXT NOT NULL,
-    project_cost REAL NOT NULL,
     location TEXT NOT NULL,
     house_plan_url TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,

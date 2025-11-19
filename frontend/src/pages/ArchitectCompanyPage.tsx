@@ -23,6 +23,7 @@ import { useDropzone } from "react-dropzone";
 import Navbar from "@/components/Navbar";
 import { toast } from "@/hooks/use-toast";
 import { getImageUrl } from "@/lib/utils";
+import ProjectCard from "@/components/ProjectCard";
 
 interface Architectcompany {
   id: number;
@@ -39,14 +40,27 @@ interface Architectcompany {
   project_count?: number;
 }
 
+interface ArchitectProject {
+  id: number;
+  name: string;
+  description: string;
+  project_cost: number;
+  location: string;
+  house_plan_url?: string;
+  images: string[];
+  maquettes: string[];
+  architect_company_id: number;
+}
+
 const ArchitectCompanyPage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [company, setcompany] = useState<Architectcompany | null>(null);
+  const [projects, setProjects] = useState<ArchitectProject[]>([]);
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  
+  console.log("Reloading component");
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -106,6 +120,25 @@ const ArchitectCompanyPage = () => {
     }
     fetchcompany();
   }, [token, navigate, fetchcompany]);
+
+  const fetchProjects = useCallback(async () => {
+    if (!company) return;
+    try {
+      const response = await apiClient.get(`/architect-projects`);
+      const filteredProjects = response.data.filter(
+        (project: ArchitectProject) => project.architect_company_id === company.id
+      );
+      setProjects(filteredProjects);
+    } catch (error) {
+      console.error("Failed to fetch projects:", error);
+    }
+  }, [company]);
+
+  useEffect(() => {
+    if (company) {
+      fetchProjects();
+    }
+  }, [company, fetchProjects]);
 
   const onLogoDrop = (acceptedFiles: File[]) => {
     if (acceptedFiles.length > 0) {
@@ -430,15 +463,27 @@ const ArchitectCompanyPage = () => {
                 </Button>
               </CardHeader>
               <CardContent>
-                <div className="text-center py-12">
-                  <FileText className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-                  <p className="text-muted-foreground mb-4">
-                    No projects yet
-                  </p>
-                  <Button onClick={() => navigate("/architect-projects")}>
-                    Add Your First Project
-                  </Button>
-                </div>
+                {projects.length === 0 ? (
+                  <div className="text-center py-12">
+                    <FileText className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
+                    <p className="text-muted-foreground mb-4">
+                      No projects yet
+                    </p>
+                    <Button onClick={() => navigate("/architect-projects")}>
+                      Add Your First Project
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                    {projects.map((project) => (
+                      <ProjectCard
+                        key={project.id}
+                        project={project}
+                        className="w-full"
+                      />
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </>

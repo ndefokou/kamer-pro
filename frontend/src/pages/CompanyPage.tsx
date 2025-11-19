@@ -466,7 +466,7 @@ const CompanyPage = () => {
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle>{t("company products")}</CardTitle>
                 <Button onClick={handleAddProduct}>
-                  {t("manage properties")}
+                  {t("add a new property")}
                 </Button>
               </CardHeader>
               <CardContent>
