@@ -425,7 +425,7 @@ const CompanyPage = () => {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm text-muted-foreground">{t("total products")}</p>
-                      <p className="text-2xl font-bold">{company.product_count || products.length}</p>
+                      <p className="text-2xl font-bold">{company.product_count}</p>
                     </div>
                     <Package className="h-8 w-8 text-muted-foreground" />
                   </div>

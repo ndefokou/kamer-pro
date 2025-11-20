@@ -79,26 +79,7 @@ pub struct ArchitectcompanyResponse {
     pub description: Option<String>,
     pub created_at: String,
     pub updated_at: String,
-}
-
-impl From<Architectcompany> for ArchitectcompanyResponse {
-    fn from(company: Architectcompany) -> Self {
-        let base_url = std::env::var("BACKEND_URL").unwrap_or_else(|_| "http://localhost:8082".to_string());
-
-        Self {
-            id: company.id,
-            user_id: company.user_id,
-            name: company.name,
-            email: company.email,
-            phone: company.phone,
-            location: company.location,
-            logo_url: company.logo_url.map(|p| format!("{}/{}", base_url.trim_end_matches('/'), p.trim_start_matches('/'))),
-            banner_url: company.banner_url.map(|p| format!("{}/{}", base_url.trim_end_matches('/'), p.trim_start_matches('/'))),
-            description: company.description,
-            created_at: company.created_at,
-            updated_at: company.updated_at,
-        }
-    }
+    pub project_count: i64,
 }
 
 #[derive(Serialize)]
@@ -132,7 +113,26 @@ pub async fn get_architect_company(req: HttpRequest, pool: web::Data<SqlitePool>
 
     match company {
         Ok(Some(company)) => {
-            let response = ArchitectcompanyResponse::from(company);
+            let project_count: (i64,) = sqlx::query_as("SELECT COUNT(*) FROM architect_projects WHERE architect_company_id = ?")
+                .bind(company.id)
+                .fetch_one(pool.get_ref())
+                .await
+                .unwrap_or((0,));
+
+            let response = ArchitectcompanyResponse {
+                id: company.id,
+                user_id: company.user_id,
+                name: company.name,
+                email: company.email,
+                phone: company.phone,
+                location: company.location,
+                logo_url: company.logo_url,
+                banner_url: company.banner_url,
+                description: company.description,
+                created_at: company.created_at,
+                updated_at: company.updated_at,
+                project_count: project_count.0,
+            };
             HttpResponse::Ok().json(response)
         }
         Ok(None) => HttpResponse::NotFound().json(ErrorResponse { message: "Architect company not found".to_string() }),
@@ -240,7 +240,25 @@ pub async fn create_or_update_architect_company(req: HttpRequest, pool: web::Dat
             eprintln!("Failed to update architect company: {}", e);
             actix_web::error::ErrorInternalServerError("Failed to process request")
         })?;
-        let response = ArchitectcompanyResponse::from(updated_company);
+        let project_count: (i64,) = sqlx::query_as("SELECT COUNT(*) FROM architect_projects WHERE architect_company_id = ?")
+            .bind(updated_company.id)
+            .fetch_one(pool.get_ref())
+            .await
+            .unwrap_or((0,));
+        let response = ArchitectcompanyResponse {
+            id: updated_company.id,
+            user_id: updated_company.user_id,
+            name: updated_company.name,
+            email: updated_company.email,
+            phone: updated_company.phone,
+            location: updated_company.location,
+            logo_url: updated_company.logo_url,
+            banner_url: updated_company.banner_url,
+            description: updated_company.description,
+            created_at: updated_company.created_at,
+            updated_at: updated_company.updated_at,
+            project_count: project_count.0,
+        };
         Ok(HttpResponse::Ok().json(response))
     } else {
         let new_company = sqlx::query_as::<_, Architectcompany>(
@@ -260,7 +278,20 @@ pub async fn create_or_update_architect_company(req: HttpRequest, pool: web::Dat
             eprintln!("Failed to create new architect company: {}", e);
             actix_web::error::ErrorInternalServerError("Failed to process request")
         })?;
-        let response = ArchitectcompanyResponse::from(new_company);
+        let response = ArchitectcompanyResponse {
+            id: new_company.id,
+            user_id: new_company.user_id,
+            name: new_company.name,
+            email: new_company.email,
+            phone: new_company.phone,
+            location: new_company.location,
+            logo_url: new_company.logo_url,
+            banner_url: new_company.banner_url,
+            description: new_company.description,
+            created_at: new_company.created_at,
+            updated_at: new_company.updated_at,
+            project_count: 0,
+        };
         Ok(HttpResponse::Created().json(response))
     }
 }

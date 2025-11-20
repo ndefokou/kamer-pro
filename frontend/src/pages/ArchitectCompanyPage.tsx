@@ -414,7 +414,7 @@ const ArchitectCompanyPage = () => {
             </Card>
 
             {/* Stats */}
-            <div className="grid md:grid-cols-3 gap-4 mb-8">
+            <div className="grid md:grid-cols-2 gap-4 mb-8">
               <Card>
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between">
@@ -441,17 +441,6 @@ const ArchitectCompanyPage = () => {
                 </CardContent>
               </Card>
 
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Active Plans</p>
-                      <p className="text-2xl font-bold">{company.project_count || 0}</p>
-                    </div>
-                    <TrendingUp className="h-8 w-8 text-muted-foreground" />
-                  </div>
-                </CardContent>
-              </Card>
             </div>
 
             {/* Projects Section */}

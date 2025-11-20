@@ -12,16 +12,12 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Phone,
   Mail,
   MapPin,
   MessageCircle,
   Heart,
-  Plus,
-  Minus,
 } from "lucide-react";
 import { useWishlist } from "@/hooks/useWishlist";
 import { useMessaging } from "@/hooks/useMessaging";
@@ -51,7 +47,6 @@ const ProductDetails = () => {
   const [product, setProduct] = useState<Product | null>(null);
   const [similarProducts, setSimilarProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const { addToWishlist, isInWishlist, removeFromWishlistByProduct } =
     useWishlist();
@@ -131,13 +126,6 @@ const ProductDetails = () => {
       removeFromWishlistByProduct(productIdNum);
     } else {
       addToWishlist(productIdNum);
-    }
-  };
-
-  const handleQuantityChange = (change: number) => {
-    const newQuantity = quantity + change;
-    if (newQuantity > 0) {
-      setQuantity(newQuantity);
     }
   };
 
@@ -235,39 +223,6 @@ const ProductDetails = () => {
 
               {token && (
                 <div className="space-y-4 border-t pt-4">
-                  <div className="flex items-center space-x-4">
-                    <Label htmlFor="quantity">{t("quantity")}</Label>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => handleQuantityChange(-1)}
-                        disabled={quantity <= 1}
-                      >
-                        <Minus className="h-4 w-4" />
-                      </Button>
-                      <Input
-                        id="quantity"
-                        type="number"
-                        value={quantity}
-                        onChange={(e) => {
-                          const value = parseInt(e.target.value);
-                          if (value > 0) {
-                            setQuantity(value);
-                          }
-                        }}
-                        className="w-20 text-center"
-                      />
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => handleQuantityChange(1)}
-                      >
-                        <Plus className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-
                   <div className="flex gap-2">
                     <Button
                       className="flex-1"

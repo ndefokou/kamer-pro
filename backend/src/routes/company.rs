@@ -83,13 +83,14 @@ pub async fn get_my_company(req: HttpRequest, pool: web::Data<SqlitePool>) -> im
         }
 
         // Get product count
-        let count: Result<(i32,), _> =
-            sqlx::query_as("SELECT COUNT(*) FROM products WHERE user_id = ?")
-                .bind(user_id)
+        let count: (i64,) =
+            sqlx::query_as("SELECT COUNT(*) FROM products WHERE company_id = ?")
+                .bind(company.id)
                 .fetch_one(pool.get_ref())
-                .await;
+                .await
+                .unwrap_or((0,));
 
-        let product_count = count.unwrap_or((0,)).0;
+        let product_count = count.0 as i32;
 
         HttpResponse::Ok().json(CompanyWithProducts {
             company,
@@ -135,13 +136,14 @@ pub async fn get_company_by_id(pool: web::Data<SqlitePool>, path: web::Path<i32>
             ));
         }
 
-        let count: Result<(i32,), _> =
-            sqlx::query_as("SELECT COUNT(*) FROM products WHERE user_id = ?")
-                .bind(company.user_id)
+        let count: (i64,) =
+            sqlx::query_as("SELECT COUNT(*) FROM products WHERE company_id = ?")
+                .bind(company.id)
                 .fetch_one(pool.get_ref())
-                .await;
+                .await
+                .unwrap_or((0,));
 
-        let product_count = count.unwrap_or((0,)).0;
+        let product_count = count.0 as i32;
 
         HttpResponse::Ok().json(CompanyWithProducts {
             company,
