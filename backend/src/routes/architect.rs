@@ -142,6 +142,129 @@ pub async fn get_architect_company(req: HttpRequest, pool: web::Data<SqlitePool>
         }
     }
 }
+pub async fn get_architect_company_by_id(pool: web::Data<SqlitePool>, path: web::Path<i32>) -> impl Responder {
+    let company_id = path.into_inner();
+    let company = sqlx::query_as::<_, Architectcompany>("SELECT * FROM architect_companies WHERE id = ?")
+        .bind(company_id)
+        .fetch_optional(pool.get_ref())
+        .await;
+
+    match company {
+        Ok(Some(company)) => {
+            let project_count: (i64,) = sqlx::query_as("SELECT COUNT(*) FROM architect_projects WHERE architect_company_id = ?")
+                .bind(company.id)
+                .fetch_one(pool.get_ref())
+                .await
+                .unwrap_or((0,));
+
+            let response = ArchitectcompanyResponse {
+                id: company.id,
+                user_id: company.user_id,
+                name: company.name,
+                email: company.email,
+                phone: company.phone,
+                location: company.location,
+                logo_url: company.logo_url,
+                banner_url: company.banner_url,
+                description: company.description,
+                created_at: company.created_at,
+                updated_at: company.updated_at,
+                project_count: project_count.0,
+            };
+            HttpResponse::Ok().json(response)
+        }
+        Ok(None) => HttpResponse::NotFound().json(ErrorResponse { message: "Architect company not found".to_string() }),
+        Err(e) => {
+            eprintln!("Failed to fetch architect company: {}", e);
+            HttpResponse::InternalServerError().json(ErrorResponse { message: "Failed to fetch architect company".to_string() })
+        }
+    }
+}
+
+pub async fn get_architect_projects_by_company(pool: web::Data<SqlitePool>, path: web::Path<i32>) -> impl Responder {
+    let company_id = path.into_inner();
+    let projects = sqlx::query_as::<_, ArchitectProject>("SELECT * FROM architect_projects WHERE architect_company_id = ?")
+        .bind(company_id)
+        .fetch_all(pool.get_ref())
+        .await;
+
+    match projects {
+        Ok(projects) => {
+            let mut response_projects = Vec::new();
+            for project in projects {
+                let maquettes = sqlx::query_as::<_, ArchitectProjectMaquette>("SELECT * FROM architect_project_maquettes WHERE project_id = ?")
+                    .bind(project.id)
+                    .fetch_all(pool.get_ref())
+                    .await
+                    .unwrap_or_default();
+
+                let images = sqlx::query_as::<_, ArchitectProjectImage>("SELECT * FROM architect_project_images WHERE project_id = ?")
+                    .bind(project.id)
+                    .fetch_all(pool.get_ref())
+                    .await
+                    .unwrap_or_default();
+
+                let base_url = std::env::var("BACKEND_URL").unwrap_or_else(|_| "http://localhost:8082".to_string());
+                response_projects.push(ArchitectProjectResponse {
+                    id: project.id,
+                    architect_company_id: project.architect_company_id,
+                    user_id: project.user_id,
+                    name: project.name,
+                    description: project.description,
+                    location: project.location,
+                    house_plan_url: project.house_plan_url.map(|p| format!("{}/{}", base_url.trim_end_matches('/'), p.trim_start_matches('/'))),
+                    created_at: project.created_at,
+                    updated_at: project.updated_at,
+                    maquettes: maquettes.into_iter().map(|m| format!("{}/{}", base_url.trim_end_matches('/'), m.image_url.trim_start_matches('/'))).collect(),
+                    images: images.into_iter().map(|i| format!("{}/{}", base_url.trim_end_matches('/'), i.image_url.trim_start_matches('/'))).collect(),
+                });
+            }
+            HttpResponse::Ok().json(response_projects)
+        },
+        Err(e) => {
+            eprintln!("Failed to fetch architect projects: {}", e);
+            HttpResponse::InternalServerError().json(ErrorResponse { message: "Failed to fetch architect projects".to_string() })
+        }
+    }
+}
+pub async fn get_all_architect_companies(pool: web::Data<SqlitePool>) -> impl Responder {
+    let companies = sqlx::query_as::<_, Architectcompany>("SELECT * FROM architect_companies")
+        .fetch_all(pool.get_ref())
+        .await;
+
+    match companies {
+        Ok(companies) => {
+            let mut response_companies = Vec::new();
+            for company in companies {
+                let project_count: (i64,) = sqlx::query_as("SELECT COUNT(*) FROM architect_projects WHERE architect_company_id = ?")
+                    .bind(company.id)
+                    .fetch_one(pool.get_ref())
+                    .await
+                    .unwrap_or((0,));
+
+                response_companies.push(ArchitectcompanyResponse {
+                    id: company.id,
+                    user_id: company.user_id,
+                    name: company.name,
+                    email: company.email,
+                    phone: company.phone,
+                    location: company.location,
+                    logo_url: company.logo_url,
+                    banner_url: company.banner_url,
+                    description: company.description,
+                    created_at: company.created_at,
+                    updated_at: company.updated_at,
+                    project_count: project_count.0,
+                });
+            }
+            HttpResponse::Ok().json(response_companies)
+        }
+        Err(e) => {
+            eprintln!("Failed to fetch architect companies: {}", e);
+            HttpResponse::InternalServerError().json(ErrorResponse { message: "Failed to fetch architect companies".to_string() })
+        }
+    }
+}
 
 pub async fn create_or_update_architect_company(req: HttpRequest, pool: web::Data<SqlitePool>, mut payload: Multipart) -> Result<HttpResponse, actix_web::Error> {
     log::info!("Attempting to create or update architect company...");

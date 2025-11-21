@@ -19,7 +19,8 @@ import { ProtectedRoute } from "./components/ProtectedRoute";
 import CompanyPage from "./pages/CompanyPage";
 import ArchitectCompanyPage from "./pages/ArchitectCompanyPage";
 import ArchitectProjectsPage from "./pages/ArchitectProjectsPage";
-import ProjectsPage from "./pages/ProjectsPage";
+import FindArchitectPage from "./pages/FindArchitectPage";
+import ArchitectFirmPage from "./pages/ArchitectFirmPage";
 import ProjectDetails from "./pages/ProjectDetails";
 
 const queryClient = new QueryClient();
@@ -30,7 +31,8 @@ const router = createBrowserRouter(
     { path: "/role-selection", Component: RoleSelection },
     { path: "/marketplace", Component: Marketplace },
     { path: "/product/:id", Component: ProductDetails },
-    { path: "/projects", Component: ProjectsPage },
+    { path: "/find-architect", Component: FindArchitectPage },
+    { path: "/architect-firm/:id", Component: ArchitectFirmPage },
     { path: "/project/:id", Component: ProjectDetails },
     { path: "/webauth-login", Component: WebAuthLogin },
     { path: "/webauth-register", Component: WebAuthRegister },

@@ -114,12 +114,12 @@ const Navbar = () => {
               </Button>
             </Link>
 
-            <Link to="/projects">
+            <Link to="/find-architect">
               <Button
                 variant="ghost"
                 className="text-primary-foreground hover:bg-primary-foreground/10"
               >
-                Projects
+                {t("findArchitect", "Find an Architect")}
               </Button>
             </Link>
 
@@ -270,10 +270,10 @@ const Navbar = () => {
                   <Button
                     variant="ghost"
                     className="justify-start"
-                    onClick={() => handleNavigation("/projects")}
+                    onClick={() => handleNavigation("/find-architect")}
                   >
                     <Store className="h-5 w-5 mr-2" />
-                    Projects
+                    {t("findArchitect", "Find an Architect")}
                   </Button>
 
                   <Button

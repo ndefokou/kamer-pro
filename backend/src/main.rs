@@ -106,18 +106,24 @@ async fn main() -> std::io::Result<()> {
                             .service(routes::company::delete_company),
                            )
                            .service(
-                               web::scope("/architect-company")
-                                   .route("", web::get().to(routes::architect::get_architect_company))
-                                   .route("", web::post().to(routes::architect::create_or_update_architect_company))
+                                web::scope("/architect-companies")
+                                    .route("", web::get().to(routes::architect::get_all_architect_companies))
                            )
                            .service(
-                               web::scope("/architect-projects")
-                                   .route("", web::get().to(routes::architect::get_architect_projects))
-                                   .route("", web::post().to(routes::architect::create_architect_project))
-                                   .route("/all", web::get().to(routes::architect::get_all_architect_projects))
-                                   .route("/{id}", web::put().to(routes::architect::update_architect_project))
-                                   .route("/{id}", web::delete().to(routes::architect::delete_architect_project))
-                          ),
+                                web::scope("/architect-company")
+                                    .route("", web::get().to(routes::architect::get_architect_company))
+                                    .route("", web::post().to(routes::architect::create_or_update_architect_company))
+                                    .route("/{id}", web::get().to(routes::architect::get_architect_company_by_id))
+                           )
+                           .service(
+                                web::scope("/architect-projects")
+                                    .route("", web::get().to(routes::architect::get_architect_projects))
+                                    .route("/company/{id}", web::get().to(routes::architect::get_architect_projects_by_company))
+                                    .route("", web::post().to(routes::architect::create_architect_project))
+                                    .route("/all", web::get().to(routes::architect::get_all_architect_projects))
+                                    .route("/{id}", web::put().to(routes::architect::update_architect_project))
+                                    .route("/{id}", web::delete().to(routes::architect::delete_architect_project))
+                           ),
                    )
            .service(fs::Files::new("/uploads", "../public/uploads"))
            })
