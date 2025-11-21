@@ -208,5 +208,7 @@
   "product updated successfully": "Product updated successfully",
   "product created successfully": "Product created successfully",
   "failed to delete product": "Failed to delete product",
-  "product deleted successfully": "Product deleted successfully"
+  "product deleted successfully": "Product deleted successfully",
+  "findArchitect": "Find an Architect",
+  "contact seller via chat": "Contact seller via chat"
 }

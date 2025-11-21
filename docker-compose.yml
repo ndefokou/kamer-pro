@@ -8,6 +8,7 @@ services:
       - RUST_LOG=info
     volumes:
       - db-data:/app/data
+      - uploads-data:/app/public/uploads
 
   frontend:
     build: ./frontend
@@ -20,4 +21,4 @@ services:
 
 volumes:
   db-data:
-  
+  uploads-data:

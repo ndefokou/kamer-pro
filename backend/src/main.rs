@@ -29,7 +29,7 @@ async fn main() -> std::io::Result<()> {
     }
 
     // Create the uploads directory if it doesn't exist
-    let uploads_dir = std::path::Path::new("../public/uploads");
+    let uploads_dir = std::path::Path::new("public/uploads");
     if !uploads_dir.exists() {
         std::fs::create_dir_all(uploads_dir).expect("Failed to create uploads directory");
     }
@@ -125,7 +125,7 @@ async fn main() -> std::io::Result<()> {
                                     .route("/{id}", web::delete().to(routes::architect::delete_architect_project))
                            ),
                    )
-           .service(fs::Files::new("/uploads", "../public/uploads"))
+           .service(fs::Files::new("/uploads", "public/uploads"))
            })
            .bind("0.0.0.0:8082")?
            .run()
