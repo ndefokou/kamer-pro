@@ -29,9 +29,10 @@ async fn main() -> std::io::Result<()> {
     }
 
     // Create the uploads directory if it doesn't exist
-    let uploads_dir = std::path::Path::new("../public/uploads");
+    let manifest_dir = env!("CARGO_MANIFEST_DIR");
+    let uploads_dir = std::path::Path::new(manifest_dir).join("public/uploads");
     if !uploads_dir.exists() {
-        std::fs::create_dir_all(uploads_dir).expect("Failed to create uploads directory");
+        std::fs::create_dir_all(&uploads_dir).expect("Failed to create uploads directory");
     }
 
     let pool = SqlitePoolOptions::new()
@@ -41,7 +42,7 @@ async fn main() -> std::io::Result<()> {
         .expect("Failed to create pool.");
 
     HttpServer::new(move || {
-        let cors = Cors::permissive(); 
+        let cors = Cors::permissive();
         App::new()
             .wrap(cors)
             .app_data(web::Data::new(pool.clone()))
@@ -125,7 +126,7 @@ async fn main() -> std::io::Result<()> {
                                     .route("/{id}", web::delete().to(routes::architect::delete_architect_project))
                            ),
                    )
-           .service(fs::Files::new("/uploads", "../public/uploads"))
+           .service(fs::Files::new("/uploads", uploads_dir.clone()))
            })
            .bind("0.0.0.0:8082")?
            .run()

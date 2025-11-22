@@ -303,34 +303,34 @@ pub async fn create_or_update_architect_company(req: HttpRequest, pool: web::Dat
             "description" => description = String::from_utf8(bytes).unwrap_or_default(),
             "logo" => {
                 let filename = format!("architect_logo_{}.png", Uuid::new_v4());
-                let filepath = format!("./public/uploads/{}", filename);
-                if let Some(p) = std::path::Path::new(&filepath).parent() {
-                    if !p.exists() {
-                        std::fs::create_dir_all(p).map_err(|e| {
-                            eprintln!("Failed to create directory for {}: {}", filepath, e);
-                            actix_web::error::ErrorInternalServerError("Failed to save file")
-                        })?;
-                    }
+                let manifest_dir = env!("CARGO_MANIFEST_DIR");
+                let uploads_dir = std::path::Path::new(manifest_dir).join("public/uploads");
+                let filepath = uploads_dir.join(&filename);
+                if !uploads_dir.exists() {
+                    std::fs::create_dir_all(&uploads_dir).map_err(|e| {
+                        eprintln!("Failed to create directory for {}: {}", uploads_dir.display(), e);
+                        actix_web::error::ErrorInternalServerError("Failed to save file")
+                    })?;
                 }
                 std::fs::write(&filepath, &bytes).map_err(|e| {
-                    eprintln!("Failed to write file to {}: {}", filepath, e);
+                    eprintln!("Failed to write file to {}: {}", filepath.display(), e);
                     actix_web::error::ErrorInternalServerError("Failed to save file")
                 })?;
                 logo_path = Some(format!("uploads/{}", filename));
             }
             "banner" => {
                 let filename = format!("architect_banner_{}.png", Uuid::new_v4());
-                let filepath = format!("./public/uploads/{}", filename);
-                if let Some(p) = std::path::Path::new(&filepath).parent() {
-                    if !p.exists() {
-                        std::fs::create_dir_all(p).map_err(|e| {
-                            eprintln!("Failed to create directory for {}: {}", filepath, e);
-                            actix_web::error::ErrorInternalServerError("Failed to save file")
-                        })?;
-                    }
+                let manifest_dir = env!("CARGO_MANIFEST_DIR");
+                let uploads_dir = std::path::Path::new(manifest_dir).join("public/uploads");
+                let filepath = uploads_dir.join(&filename);
+                if !uploads_dir.exists() {
+                    std::fs::create_dir_all(&uploads_dir).map_err(|e| {
+                        eprintln!("Failed to create directory for {}: {}", uploads_dir.display(), e);
+                        actix_web::error::ErrorInternalServerError("Failed to save file")
+                    })?;
                 }
                 std::fs::write(&filepath, &bytes).map_err(|e| {
-                    eprintln!("Failed to write file to {}: {}", filepath, e);
+                    eprintln!("Failed to write file to {}: {}", filepath.display(), e);
                     actix_web::error::ErrorInternalServerError("Failed to save file")
                 })?;
                 banner_path = Some(format!("uploads/{}", filename));
@@ -556,17 +556,17 @@ pub async fn create_architect_project(req: HttpRequest, pool: web::Data<SqlitePo
             "project_cost" => project_cost = String::from_utf8(bytes).unwrap_or_default(),
             "house_plan" => {
                 let filename = format!("architect_house_plan_{}.png", Uuid::new_v4());
-                let filepath = format!("./public/uploads/{}", filename);
-                if let Some(p) = std::path::Path::new(&filepath).parent() {
-                    if !p.exists() {
-                        std::fs::create_dir_all(p).map_err(|e| {
-                            eprintln!("Failed to create directory for {}: {}", filepath, e);
-                            actix_web::error::ErrorInternalServerError("Failed to save file")
-                        })?;
-                    }
+                let manifest_dir = env!("CARGO_MANIFEST_DIR");
+                let uploads_dir = std::path::Path::new(manifest_dir).join("public/uploads");
+                let filepath = uploads_dir.join(&filename);
+                if !uploads_dir.exists() {
+                    std::fs::create_dir_all(&uploads_dir).map_err(|e| {
+                        eprintln!("Failed to create directory for {}: {}", uploads_dir.display(), e);
+                        actix_web::error::ErrorInternalServerError("Failed to save file")
+                    })?;
                 }
                 std::fs::write(&filepath, &bytes).map_err(|e| {
-                    eprintln!("Failed to write file to {}: {}", filepath, e);
+                    eprintln!("Failed to write file to {}: {}", filepath.display(), e);
                     actix_web::error::ErrorInternalServerError("Failed to save file")
                 })?;
                 house_plan_path = Some(format!("uploads/{}", filename));
@@ -574,17 +574,17 @@ pub async fn create_architect_project(req: HttpRequest, pool: web::Data<SqlitePo
             "maquette[]" => {
                 if !bytes.is_empty() {
                     let filename = format!("architect_maquette_{}.png", Uuid::new_v4());
-                    let filepath = format!("./public/uploads/{}", filename);
-                    if let Some(p) = std::path::Path::new(&filepath).parent() {
-                        if !p.exists() {
-                            std::fs::create_dir_all(p).map_err(|e| {
-                                eprintln!("Failed to create directory for {}: {}", filepath, e);
-                                actix_web::error::ErrorInternalServerError("Failed to save file")
-                            })?;
-                        }
+                    let manifest_dir = env!("CARGO_MANIFEST_DIR");
+                    let uploads_dir = std::path::Path::new(manifest_dir).join("public/uploads");
+                    let filepath = uploads_dir.join(&filename);
+                    if !uploads_dir.exists() {
+                        std::fs::create_dir_all(&uploads_dir).map_err(|e| {
+                            eprintln!("Failed to create directory for {}: {}", uploads_dir.display(), e);
+                            actix_web::error::ErrorInternalServerError("Failed to save file")
+                        })?;
                     }
                     std::fs::write(&filepath, &bytes).map_err(|e| {
-                        eprintln!("Failed to write file to {}: {}", filepath, e);
+                        eprintln!("Failed to write file to {}: {}", filepath.display(), e);
                         actix_web::error::ErrorInternalServerError("Failed to save file")
                     })?;
                     maquette_paths.push(format!("uploads/{}", filename));
@@ -593,17 +593,17 @@ pub async fn create_architect_project(req: HttpRequest, pool: web::Data<SqlitePo
             "images[]" => {
                 if !bytes.is_empty() {
                     let filename = format!("architect_image_{}.png", Uuid::new_v4());
-                    let filepath = format!("./public/uploads/{}", filename);
-                    if let Some(p) = std::path::Path::new(&filepath).parent() {
-                        if !p.exists() {
-                            std::fs::create_dir_all(p).map_err(|e| {
-                                eprintln!("Failed to create directory for {}: {}", filepath, e);
-                                actix_web::error::ErrorInternalServerError("Failed to save file")
-                            })?;
-                        }
+                    let manifest_dir = env!("CARGO_MANIFEST_DIR");
+                    let uploads_dir = std::path::Path::new(manifest_dir).join("public/uploads");
+                    let filepath = uploads_dir.join(&filename);
+                    if !uploads_dir.exists() {
+                        std::fs::create_dir_all(&uploads_dir).map_err(|e| {
+                            eprintln!("Failed to create directory for {}: {}", uploads_dir.display(), e);
+                            actix_web::error::ErrorInternalServerError("Failed to save file")
+                        })?;
                     }
                     std::fs::write(&filepath, &bytes).map_err(|e| {
-                        eprintln!("Failed to write file to {}: {}", filepath, e);
+                        eprintln!("Failed to write file to {}: {}", filepath.display(), e);
                         actix_web::error::ErrorInternalServerError("Failed to save file")
                     })?;
                     image_paths.push(format!("uploads/{}", filename));
