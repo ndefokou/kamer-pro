@@ -66,7 +66,7 @@ const ProductCard = ({
     >
       <Link to={`/product/${product.id}`}>
         {product.images && product.images.length > 0 && (
-          <div className="h-32 sm:h-40 md:h-48 overflow-hidden rounded-t-lg relative flex-shrink-0">
+          <div className="h-28 sm:h-40 md:h-48 overflow-hidden rounded-t-lg relative flex-shrink-0">
             <img
               src={getImageUrl(product.images[0].image_url)}
               alt={product.name}

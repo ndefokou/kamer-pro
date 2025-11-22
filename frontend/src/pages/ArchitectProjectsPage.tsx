@@ -36,6 +36,7 @@ interface ArchitectProject {
   name: string;
   description: string;
   house_plan_url?: string;
+  project_cost: number;
   location: string;
   maquettes: string[];
   images: string[];
@@ -56,6 +57,7 @@ const ArchitectProjectsPage = () => {
     name: "",
     description: "",
     location: "",
+    project_cost: "",
   });
   
   const [housePlanFile, setHousePlanFile] = useState<File | null>(null);
@@ -209,6 +211,7 @@ const ArchitectProjectsPage = () => {
       name: "",
       description: "",
       location: "",
+      project_cost: "",
     });
     setHousePlanFile(null);
     setMaquetteFiles([]);
@@ -226,6 +229,7 @@ const ArchitectProjectsPage = () => {
       name: project.name,
       description: project.description,
       location: project.location,
+      project_cost: project.project_cost.toString(),
     });
     if (project.house_plan_url) setHousePlanPreview(project.house_plan_url);
     setMaquettePreviews(project.maquettes || []);
@@ -321,6 +325,18 @@ const ArchitectProjectsPage = () => {
                             value={formData.location}
                             onChange={handleInputChange}
                             placeholder="e.g., Douala, Bonapriso"
+                            required
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="project_cost">Project Cost (XAF) *</Label>
+                          <Input
+                            id="project_cost"
+                            name="project_cost"
+                            type="number"
+                            value={formData.project_cost}
+                            onChange={handleInputChange}
+                            placeholder="e.g., 5000000"
                             required
                           />
                         </div>

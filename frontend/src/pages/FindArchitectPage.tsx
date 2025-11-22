@@ -55,7 +55,7 @@ const FindArchitectPage = () => {
       <Navbar />
       <div className="container mx-auto px-4 py-8">
         <h1 className="text-3xl font-bold mb-8">{t("findArchitectPage.title", "Find an Architect")}</h1>
-        <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {architects.map(architect => (
             <Card
               key={architect.id}

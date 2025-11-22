@@ -37,7 +37,7 @@ const ProjectCard = ({ project, className }: ProjectCardProps) => {
     <Card className={`shadow-soft hover:shadow-elevated transition-shadow flex flex-col h-full ${className}`}>
       <Link to={`/project/${project.id}`}>
         {displayImage && (
-          <div className="h-32 sm:h-40 md:h-48 overflow-hidden rounded-t-lg relative flex-shrink-0">
+          <div className="h-28 sm:h-40 md:h-48 overflow-hidden rounded-t-lg relative flex-shrink-0">
             <img
               src={getImageUrl(displayImage)}
               alt={project.name}

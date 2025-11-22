@@ -30,6 +30,7 @@ pub struct ArchitectProject {
     pub name: String,
     pub description: String,
     pub location: String,
+    pub project_cost: f64,
     pub house_plan_url: Option<String>,
     pub created_at: String,
     pub updated_at: String,
@@ -60,6 +61,7 @@ pub struct ArchitectProjectResponse {
     pub description: String,
     pub location: String,
     pub house_plan_url: Option<String>,
+    pub project_cost: f64,
     pub created_at: String,
     pub updated_at: String,
     pub maquettes: Vec<String>,
@@ -212,6 +214,7 @@ pub async fn get_architect_projects_by_company(pool: web::Data<SqlitePool>, path
                     name: project.name,
                     description: project.description,
                     location: project.location,
+                    project_cost: project.project_cost,
                     house_plan_url: project.house_plan_url.map(|p| format!("{}/{}", base_url.trim_end_matches('/'), p.trim_start_matches('/'))),
                     created_at: project.created_at,
                     updated_at: project.updated_at,
@@ -454,6 +457,7 @@ pub async fn get_architect_projects(req: HttpRequest, pool: web::Data<SqlitePool
                     name: project.name,
                     description: project.description,
                     location: project.location,
+                    project_cost: project.project_cost,
                     house_plan_url: project.house_plan_url.map(|p| format!("{}/{}", base_url.trim_end_matches('/'), p.trim_start_matches('/'))),
                     created_at: project.created_at,
                     updated_at: project.updated_at,
@@ -499,6 +503,7 @@ pub async fn get_all_architect_projects(pool: web::Data<SqlitePool>) -> impl Res
                     name: project.name,
                     description: project.description,
                     location: project.location,
+                    project_cost: project.project_cost,
                     house_plan_url: project.house_plan_url.map(|p| format!("{}/{}", base_url.trim_end_matches('/'), p.trim_start_matches('/'))),
                     created_at: project.created_at,
                     updated_at: project.updated_at,
@@ -525,6 +530,7 @@ pub async fn create_architect_project(req: HttpRequest, pool: web::Data<SqlitePo
     let mut name = String::new();
     let mut description = String::new();
     let mut location = String::new();
+    let mut project_cost = String::new();
     let mut house_plan_path: Option<String> = None;
     let mut maquette_paths: Vec<String> = Vec::new();
     let mut image_paths: Vec<String> = Vec::new();
@@ -547,6 +553,7 @@ pub async fn create_architect_project(req: HttpRequest, pool: web::Data<SqlitePo
             "name" => name = String::from_utf8(bytes).unwrap_or_default(),
             "description" => description = String::from_utf8(bytes).unwrap_or_default(),
             "location" => location = String::from_utf8(bytes).unwrap_or_default(),
+            "project_cost" => project_cost = String::from_utf8(bytes).unwrap_or_default(),
             "house_plan" => {
                 let filename = format!("architect_house_plan_{}.png", Uuid::new_v4());
                 let filepath = format!("./public/uploads/{}", filename);
@@ -608,15 +615,18 @@ pub async fn create_architect_project(req: HttpRequest, pool: web::Data<SqlitePo
         }
     }
 
+    let cost: f64 = project_cost.parse().unwrap_or(0.0);
+
     log::info!("Executing INSERT query for new project...");
     let result = sqlx::query(
-        "INSERT INTO architect_projects (architect_company_id, user_id, name, description, location, house_plan_url) VALUES (?, ?, ?, ?, ?, ?)"
+        "INSERT INTO architect_projects (architect_company_id, user_id, name, description, location, project_cost, house_plan_url) VALUES (?, ?, ?, ?, ?, ?, ?)"
     )
     .bind(company.id)
     .bind(user_id)
     .bind(&name)
     .bind(&description)
     .bind(&location)
+    .bind(cost)
     .bind(&house_plan_path)
     .execute(pool.get_ref())
     .await
@@ -666,6 +676,7 @@ pub async fn create_architect_project(req: HttpRequest, pool: web::Data<SqlitePo
         name: new_project.name,
         description: new_project.description,
         location: new_project.location,
+        project_cost: new_project.project_cost,
         house_plan_url: new_project.house_plan_url.map(|p| format!("{}/{}", base_url.trim_end_matches('/'), p.trim_start_matches('/'))),
         created_at: new_project.created_at,
         updated_at: new_project.updated_at,
@@ -683,6 +694,7 @@ pub async fn update_architect_project(req: HttpRequest, pool: web::Data<SqlitePo
     let mut name = String::new();
     let mut description = String::new();
     let mut location = String::new();
+    let mut project_cost = String::new();
 
     while let Some(mut field) = payload.try_next().await? {
         let field_name = field
@@ -700,16 +712,20 @@ pub async fn update_architect_project(req: HttpRequest, pool: web::Data<SqlitePo
             "name" => name = String::from_utf8(bytes).unwrap_or_default(),
             "description" => description = String::from_utf8(bytes).unwrap_or_default(),
             "location" => location = String::from_utf8(bytes).unwrap_or_default(),
+            "project_cost" => project_cost = String::from_utf8(bytes).unwrap_or_default(),
             _ => {}
         }
     }
 
+    let cost: f64 = project_cost.parse().unwrap_or(0.0);
+
     let updated_project = sqlx::query_as::<_, ArchitectProject>(
-        "UPDATE architect_projects SET name = ?, description = ?, location = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ? RETURNING *"
+        "UPDATE architect_projects SET name = ?, description = ?, location = ?, project_cost = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ? RETURNING *"
     )
     .bind(&name)
     .bind(&description)
     .bind(&location)
+    .bind(cost)
     .bind(project_id)
     .bind(user_id)
     .fetch_one(pool.get_ref())
@@ -736,6 +752,7 @@ pub async fn update_architect_project(req: HttpRequest, pool: web::Data<SqlitePo
         name: updated_project.name,
         description: updated_project.description,
         location: updated_project.location,
+        project_cost: updated_project.project_cost,
         house_plan_url: updated_project.house_plan_url.map(|p| format!("{}/{}", base_url.trim_end_matches('/'), p.trim_start_matches('/'))),
         created_at: updated_project.created_at,
         updated_at: updated_project.updated_at,
