@@ -109,21 +109,21 @@ pub async fn get_products(
         sqlx::QueryBuilder::new("SELECT * FROM products WHERE status = 'active'");
 
     if let Some(category) = &query.category {
-        if category != "All" {
+        if !category.is_empty() && category != "All" {
             query_builder.push(" AND category = ");
             query_builder.push_bind(category);
         }
     }
 
     if let Some(location) = &query.location {
-        if location != "All" {
+        if !location.is_empty() && location != "All" {
             query_builder.push(" AND location = ");
             query_builder.push_bind(location);
         }
     }
 
     if let Some(condition) = &query.condition {
-        if condition != "All" {
+        if !condition.is_empty() && condition != "All" {
             query_builder.push(" AND condition = ");
             query_builder.push_bind(condition);
         }
