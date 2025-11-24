@@ -64,9 +64,18 @@ const ArchitectFirmPage = () => {
   }, [id]);
 
   useEffect(() => {
-    fetchCompany();
-    fetchProjects();
+    const fetchData = async () => {
+      await fetchCompany();
+      await fetchProjects();
+    };
+    fetchData();
   }, [fetchCompany, fetchProjects]);
+
+  useEffect(() => {
+    if (company && projects.length !== company.project_count) {
+      setCompany(c => c ? { ...c, project_count: projects.length } : null);
+    }
+  }, [projects, company]);
 
   if (isLoading) {
     return (
