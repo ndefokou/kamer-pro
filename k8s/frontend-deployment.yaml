@@ -1,19 +1,19 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: shop-frontend
+  name: company-frontend
 spec:
   replicas: 2
   selector:
     matchLabels:
-      app: shop-frontend
+      app: company-frontend
   template:
     metadata:
       labels:
-        app: shop-frontend
+        app: company-frontend
     spec:
       containers:
-        - name: shop-frontend
-          image: your-dockerhub-username/shop-frontend:latest
+        - name: company-frontend
+          image: your-dockerhub-username/company-frontend:latest
           ports:
             - containerPort: 80

@@ -1,13 +1,13 @@
 # Kamer-Pro E-Commerce Platform
 
-Kamer-Pro is a modern, full-stack e-commerce platform designed to provide a seamless and feature-rich online shopping experience. The project is built with a powerful and scalable architecture, featuring a React frontend and a high-performance Rust backend.
+Kamer-Pro is a modern, full-stack e-commerce platform designed to provide a seamless and feature-rich online companyping experience. The project is built with a powerful and scalable architecture, featuring a React frontend and a high-performance Rust backend.
 
 ## Key Features
 
 - **Product Management**: Effortlessly create, update, and manage propertys.
 - **User Authentication**: Secure user registration and login with JWT-based authentication.
 - **Product Reviews and Ratings**: Allow users to leave reviews and ratings for products.
-- **shopping Cart**: A fully functional shopping cart for a smooth checkout process.
+- **companyping Cart**: A fully functional companyping cart for a smooth checkout process.
 - **Wishlist**: Users can save their favorite products to a wishlist for future purchase.
 - **Seller Dashboard**: A dedicated dashboard for sellers to manage their products and view sales analytics.
 - **Internationalization**: Support for multiple languages to cater to a global audience.

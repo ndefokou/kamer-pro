@@ -6,6 +6,7 @@ import { Heart } from "lucide-react";
 import ProductCard from "@/components/ProductCard";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { getImageUrl } from "@/lib/utils";
 
 const Wishlist = () => {
   const { t } = useTranslation();
@@ -19,11 +20,6 @@ const Wishlist = () => {
     }
   };
 
-  const getImageUrl = (imagePath: string) => {
-    if (!imagePath) return "/placeholder-image.png";
-    if (imagePath.startsWith("http")) return imagePath;
-    return `${imagePath}`;
-  };
 
   if (wishlistItems.length === 0) {
     return (
@@ -76,7 +72,6 @@ const Wishlist = () => {
               token={localStorage.getItem("token")}
               isInWishlist={() => true}
               handleToggleWishlist={handleToggleWishlist}
-              getImageUrl={getImageUrl}
               variant="wishlist"
             />
           ))}

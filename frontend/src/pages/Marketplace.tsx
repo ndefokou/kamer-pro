@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import { useSearchParams } from "react-router-dom";
-import { useMessaging } from "@/hooks/useMessaging";
+import { useSearchParams, Link } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -13,12 +12,25 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import Navbar from "@/components/Navbar";
-import ProductCard from "@/components/ProductCard";
-import { Package } from "lucide-react";
-import { useNavigate, Link } from "react-router-dom";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import { Package, Filter, X, Search } from "lucide-react";
 import { getProducts } from "@/api/client";
-import { useWishlist } from "@/hooks/useWishlist";
+import Navbar from "@/components/Navbar";
+import { Card } from "@/components/ui/card";
+import {
+  PROPERTY_CATEGORIES,
+  PROPERTY_CONDITIONS,
+  PROPERTY_LOCATIONS,
+} from "@/constants/propertyConstants";
+
+// Constants are now imported from shared file
 
 interface Product {
   id: string;
@@ -27,6 +39,7 @@ interface Product {
   price: number;
   category: string;
   location: string;
+  condition?: string;
   contact_phone: string | null;
   contact_email: string | null;
   images: { image_url: string }[];
@@ -34,246 +47,363 @@ interface Product {
   user_id: number;
 }
 
-const CATEGORIES = [
-  { key: "all", value: "All" },
-  { key: "apartment", value: "apartment" },
-  { key: "studio", value: "studio" },
-  { key: "bedroom", value: "bedroom" },
-  { key: "villa", value: "villa" },
-  { key: "office", value: "office" },
-  { key: "shop", value: "shop" },
-  { key: "other", value: "Other" },
-];
-
-const CONDITIONS = [
-  { key: "All", value: "All" },
-  { key: "for_sale", value: "For sale" },
-  { key: "for_rent", value: "For rent" },
-];
-
-const LOCATIONS = [
-  { key: "all", value: "All" },
-  { key: "douala", value: "Douala" },
-  { key: "yaounde", value: "Yaoundé" },
-  { key: "garoua", value: "Garoua" },
-  { key: "bamenda", value: "Bamenda" },
-  { key: "maroua", value: "Maroua" },
-  { key: "bafoussam", value: "Bafoussam" },
-  { key: "ngaoundere", value: "Ngaoundéré" },
-  { key: "bertoua", value: "Bertoua" },
-  { key: "ebolowa", value: "Ebolowa" },
-  { key: "kumba", value: "Kumba" },
-  { key: "limbe", value: "Limbe" },
-  { key: "buea", value: "Buea" },
-];
-
 const Marketplace = () => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const { addToWishlist, isInWishlist, removeFromWishlistByProduct } =
-    useWishlist();
-  const { createConversation } = useMessaging();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
-  const [searchQuery, setSearchQuery] = useState(
-    searchParams.get("search") || ""
-  );
+  const [searchQuery, setSearchQuery] = useState(searchParams.get("search") || "");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [selectedLocation, setSelectedLocation] = useState("All");
   const [selectedCondition, setSelectedCondition] = useState("All");
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
-  const [isLoading, setIsLoading] = useState(true);
-  const token = localStorage.getItem("token");
+  const [isLoading, setIsLoading] = useState(false);
+  const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
+  const [activeFiltersCount, setActiveFiltersCount] = useState(0);
+
+  // Debounced search
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      fetchProducts();
+    }, 500);
+
+    return () => clearTimeout(handler);
+  }, [searchQuery, selectedCategory, selectedLocation, selectedCondition, minPrice, maxPrice]);
+
+  // Count active filters
+  useEffect(() => {
+    let count = 0;
+    if (selectedCategory !== "All") count++;
+    if (selectedLocation !== "All") count++;
+    if (selectedCondition !== "All") count++;
+    if (minPrice) count++;
+    if (maxPrice) count++;
+    if (searchQuery) count++;
+    setActiveFiltersCount(count);
+  }, [selectedCategory, selectedLocation, selectedCondition, minPrice, maxPrice, searchQuery]);
 
   const fetchProducts = useCallback(async () => {
     setIsLoading(true);
     try {
       const filters = {
         search: searchQuery,
-        category: selectedCategory,
-        location: selectedLocation,
-        condition: selectedCondition,
+        category: selectedCategory !== "All" ? selectedCategory : "",
+        location: selectedLocation !== "All" ? selectedLocation : "",
+        condition: selectedCondition !== "All" ? selectedCondition : "",
         min_price: minPrice,
         max_price: maxPrice,
       };
+
       const data = await getProducts(filters);
       setFilteredProducts(data);
     } catch (error) {
       console.error("Failed to fetch products:", error);
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
-  }, [
-    searchQuery,
-    selectedCategory,
-    selectedLocation,
-    selectedCondition,
-    minPrice,
-    maxPrice,
-  ]);
+  }, [searchQuery, selectedCategory, selectedLocation, selectedCondition, minPrice, maxPrice]);
 
-  useEffect(() => {
-    setSearchQuery(searchParams.get("search") || "");
-  }, [searchParams]);
-
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      fetchProducts();
-    }, 500);
-
-    return () => {
-      clearTimeout(handler);
-    };
-  }, [fetchProducts]);
-
-  const getImageUrl = (imagePath: string) => {
-    if (typeof imagePath === "string" && imagePath.startsWith("http")) {
-      return imagePath;
-    }
-    return `${imagePath}`;
+  const clearFilters = () => {
+    setSelectedCategory("All");
+    setSelectedLocation("All");
+    setSelectedCondition("All");
+    setMinPrice("");
+    setMaxPrice("");
+    setSearchQuery("");
   };
 
-  const handleToggleWishlist = (productId: string) => {
-    if (!token) {
-      navigate("/webauth-login");
-      return;
-    }
-    const productIdNum = parseInt(productId);
-    if (isInWishlist(productIdNum)) {
-      removeFromWishlistByProduct(productIdNum);
-    } else {
-      addToWishlist(productIdNum);
-    }
-  };
+  const FilterContent = () => (
+    <div className="space-y-4 md:space-y-6">
+      {/* Search */}
+      <div className="space-y-2">
+        <Label htmlFor="search" className="text-sm md:text-base font-semibold">
+          {t("search")}
+        </Label>
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            id="search"
+            placeholder={t("search products")}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10 h-9 md:h-10"
+          />
+        </div>
+      </div>
 
-  const handleContactSeller = async (product: Product) => {
-    if (!token) {
-      navigate("/webauth-login");
-      return;
-    }
-    const conversationId = await createConversation(
-      product.user_id,
-      parseInt(product.id),
-    );
-    if (conversationId) {
-      navigate(`/messages?conversationId=${conversationId}`);
-    }
-  };
+      {/* Category */}
+      <div className="space-y-2">
+        <Label className="text-sm md:text-base font-semibold">{t("category")}</Label>
+        <div className="grid grid-cols-2 gap-2">
+          {PROPERTY_CATEGORIES.map((category) => (
+            <Button
+              key={category.key}
+              variant={selectedCategory === category.value ? "default" : "outline"}
+              onClick={() => setSelectedCategory(category.value)}
+              className="text-xs h-8 md:h-auto md:py-2"
+            >
+              {t(`categories.${category.key}`)}
+            </Button>
+          ))}
+        </div>
+      </div>
+
+      {/* Location */}
+      <div className="space-y-2">
+        <Label htmlFor="location" className="text-sm md:text-base font-semibold">
+          {t("location")}
+        </Label>
+        <Select value={selectedLocation} onValueChange={setSelectedLocation}>
+          <SelectTrigger id="location" className="h-9 md:h-10">
+            <SelectValue placeholder={t("location")} />
+          </SelectTrigger>
+          <SelectContent>
+            {PROPERTY_LOCATIONS.map((location) => (
+              <SelectItem key={location.key} value={location.value}>
+                {t(`locations.${location.key}`)}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Condition */}
+      <div className="space-y-2">
+        <Label htmlFor="condition" className="text-sm md:text-base font-semibold">
+          {t("condition")}
+        </Label>
+        <Select value={selectedCondition} onValueChange={setSelectedCondition}>
+          <SelectTrigger id="condition" className="h-9 md:h-10">
+            <SelectValue placeholder={t("condition")} />
+          </SelectTrigger>
+          <SelectContent>
+            {PROPERTY_CONDITIONS.map((condition) => (
+              <SelectItem key={condition.key} value={condition.value}>
+                {t(`conditions.${condition.key}`)}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Price Range */}
+      <div className="space-y-2">
+        <Label className="text-sm md:text-base font-semibold">{t("price range")}</Label>
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <Label htmlFor="min-price" className="text-xs text-muted-foreground">
+              {t("min")}
+            </Label>
+            <Input
+              id="min-price"
+              placeholder="0"
+              type="number"
+              value={minPrice}
+              onChange={(e) => setMinPrice(e.target.value)}
+              className="h-9 md:h-10"
+            />
+          </div>
+          <div>
+            <Label htmlFor="max-price" className="text-xs text-muted-foreground">
+              {t("max")}
+            </Label>
+            <Input
+              id="max-price"
+              placeholder="1000000"
+              type="number"
+              value={maxPrice}
+              onChange={(e) => setMaxPrice(e.target.value)}
+              className="h-9 md:h-10"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Clear Filters */}
+      {activeFiltersCount > 0 && (
+        <Button
+          variant="outline"
+          onClick={clearFilters}
+          className="w-full h-9 md:h-10"
+        >
+          <X className="h-4 w-4 mr-2" />
+          {t("clear all filters")} ({activeFiltersCount})
+        </Button>
+      )}
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
+      {/* Header */}
+      <div className="border-b bg-white sticky top-[64px] z-40">
+        <div className="container mx-auto px-3 sm:px-4 py-3 md:py-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">
+                {t("marketplace")}
+              </h1>
+            </div>
 
-      <div className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl md:text-4xl font-bold mb-2">{t("marketplace")}</h1>
-          <p className="text-muted-foreground">{t("discover products")}</p>
-        </div>
-
-        <div className="mb-8 p-4 border rounded-lg space-y-4">
-          <div>
-            <Label className="mb-2 block">{t("category")}</Label>
-            <div className="flex flex-wrap gap-2">
-              {CATEGORIES.map((category) => (
-                <Button
-                  key={category.key}
-                  variant={
-                    selectedCategory === category.value ? "default" : "outline"
-                  }
-                  onClick={() => setSelectedCategory(category.value)}
-                  className="text-xs px-3 py-1 h-auto"
-                >
-                  {t(`categories.${category.key}`)}
+            {/* Mobile Filter Button */}
+            <Sheet open={isMobileFilterOpen} onOpenChange={setIsMobileFilterOpen}>
+              <SheetTrigger asChild className="lg:hidden">
+                <Button variant="outline" size="sm" className="relative w-full sm:w-auto">
+                  <Filter className="h-4 w-4 mr-2" />
+                  {t("filters")}
+                  {activeFiltersCount > 0 && (
+                    <Badge
+                      variant="default"
+                      className="ml-2 h-5 w-5 rounded-full p-0 flex items-center justify-center"
+                    >
+                      {activeFiltersCount}
+                    </Badge>
+                  )}
                 </Button>
-              ))}
-            </div>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-[280px] sm:w-[320px] overflow-y-auto">
+                <SheetHeader>
+                  <SheetTitle>{t("filters")}</SheetTitle>
+                  <SheetDescription>
+                    {t("filter products by your preferences")}
+                  </SheetDescription>
+                </SheetHeader>
+                <div className="mt-6">
+                  <FilterContent />
+                </div>
+              </SheetContent>
+            </Sheet>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="space-y-1">
-              <Label htmlFor="location">{t("location")}</Label>
-              <Select
-                value={selectedLocation}
-                onValueChange={setSelectedLocation}
-              >
-                <SelectTrigger id="location" className="w-full">
-                  <SelectValue placeholder={t("location")} />
-                </SelectTrigger>
-                <SelectContent>
-                  {LOCATIONS.map((location) => (
-                    <SelectItem key={location.key} value={location.value}>
-                      {t(`locations.${location.key}`)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+
+          {/* Active Filters Display */}
+          {activeFiltersCount > 0 && (
+            <div className="flex flex-wrap gap-2 mt-3">
+              {searchQuery && (
+                <Badge variant="secondary" className="gap-1 text-xs h-6">
+                  {t("search")}: {searchQuery.length > 15 ? searchQuery.substring(0, 15) + "..." : searchQuery}
+                  <X
+                    className="h-3 w-3 cursor-pointer"
+                    onClick={() => setSearchQuery("")}
+                  />
+                </Badge>
+              )}
+              {selectedCategory !== "All" && (
+                <Badge variant="secondary" className="gap-1 text-xs h-6">
+                  {t(`categories.${PROPERTY_CATEGORIES.find(c => c.value === selectedCategory)?.key || "all"}`)}
+                  <X
+                    className="h-3 w-3 cursor-pointer"
+                    onClick={() => setSelectedCategory("All")}
+                  />
+                </Badge>
+              )}
+              {selectedLocation !== "All" && (
+                <Badge variant="secondary" className="gap-1 text-xs h-6">
+                  {selectedLocation}
+                  <X
+                    className="h-3 w-3 cursor-pointer"
+                    onClick={() => setSelectedLocation("All")}
+                  />
+                </Badge>
+              )}
+              {selectedCondition !== "All" && (
+                <Badge variant="secondary" className="gap-1 text-xs h-6">
+                  {t(`conditions.${PROPERTY_CONDITIONS.find(c => c.value === selectedCondition)?.key || "all"}`)}
+                  <X
+                    className="h-3 w-3 cursor-pointer"
+                    onClick={() => setSelectedCondition("All")}
+                  />
+                </Badge>
+              )}
+              {(minPrice || maxPrice) && (
+                <Badge variant="secondary" className="gap-1 text-xs h-6">
+                  {minPrice && `${minPrice} XAF`}
+                  {minPrice && maxPrice && " - "}
+                  {maxPrice && `${maxPrice} XAF`}
+                  <X
+                    className="h-3 w-3 cursor-pointer"
+                    onClick={() => {
+                      setMinPrice("");
+                      setMaxPrice("");
+                    }}
+                  />
+                </Badge>
+              )}
             </div>
-            <div className="space-y-1">
-              <Label htmlFor="condition">{t("condition")}</Label>
-              <Select
-                value={selectedCondition}
-                onValueChange={setSelectedCondition}
-              >
-                <SelectTrigger id="condition" className="w-full">
-                  <SelectValue placeholder={t("condition")} />
-                </SelectTrigger>
-                <SelectContent>
-                  {CONDITIONS.map((condition) => (
-                    <SelectItem key={condition.key} value={condition.value}>
-                      {t(`conditions.${condition.key}`)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+          )}
+        </div>
+      </div>
+
+      <div className="container mx-auto px-3 sm:px-4 py-4 md:py-6">
+        <div className="grid lg:grid-cols-4 gap-4 md:gap-6">
+          {/* Desktop Sidebar Filters */}
+          <aside className="hidden lg:block lg:col-span-1">
+            <div className="sticky top-24">
+              <Card className="p-4">
+                <h2 className="text-lg font-semibold mb-4">{t("filters")}</h2>
+                <FilterContent />
+              </Card>
             </div>
-            <div className="space-y-1">
-              <Label htmlFor="min-price">{t("min price")}</Label>
-              <Input
-                id="min-price"
-                placeholder={t("min price")}
-                type="number"
-                value={minPrice}
-                onChange={(e) => setMinPrice(e.target.value)}
-                className="w-full"
-              />
-            </div>
-            <div className="space-y-1">
-              <Label htmlFor="max-price">{t("max price")}</Label>
-              <Input
-                id="max-price"
-                placeholder={t("max price")}
-                type="number"
-                value={maxPrice}
-                onChange={(e) => setMaxPrice(e.target.value)}
-                className="w-full"
-              />
-            </div>
+          </aside>
+
+          {/* Products Grid */}
+          <div className="lg:col-span-3">
+            {isLoading ? (
+              <div className="flex items-center justify-center py-12 md:py-16">
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-10 w-10 md:h-12 md:w-12 border-b-2 border-primary mx-auto mb-4" />
+                  <p className="text-sm md:text-base text-muted-foreground">{t("loading products")}</p>
+                </div>
+              </div>
+            ) : filteredProducts.length === 0 ? (
+              <div className="text-center py-12 md:py-16">
+                <Package className="h-12 w-12 md:h-16 md:w-16 mx-auto text-muted-foreground mb-4" />
+                <h3 className="text-lg md:text-xl font-semibold mb-2">{t("no products found")}</h3>
+                <p className="text-sm md:text-base text-muted-foreground mb-4">
+                  {t("try adjusting your filters")}
+                </p>
+                {activeFiltersCount > 0 && (
+                  <Button onClick={clearFilters} variant="outline" size="sm">
+                    {t("clear all filters")}
+                  </Button>
+                )}
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-3 md:gap-4">
+                {filteredProducts.map((product) => (
+                  <Link to={`/product/${product.id}`} key={product.id} className="block h-full">
+                    <div className="bg-card rounded-lg border overflow-hidden hover:shadow-lg transition-shadow h-full flex flex-col">
+                      <div className="aspect-square relative bg-muted">
+                        {product.images?.[0] && (
+                          <img
+                            src={product.images[0].image_url}
+                            alt={product.name}
+                            className="w-full h-full object-cover"
+                          />
+                        )}
+                      </div>
+                      <div className="p-2 sm:p-3 flex-1 flex flex-col">
+                        <h3 className="font-semibold text-xs sm:text-sm line-clamp-2 mb-1">
+                          {product.name}
+                        </h3>
+                        <p className="text-xs text-muted-foreground line-clamp-1 mb-2">
+                          {product.location}
+                        </p>
+                        <p className="font-bold text-sm sm:text-base text-primary mt-auto">
+                          {new Intl.NumberFormat("fr-FR", {
+                            style: "currency",
+                            currency: "XAF",
+                            maximumFractionDigits: 0,
+                          }).format(product.price)}
+                        </p>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
           </div>
         </div>
-
-        {isLoading ? (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground">{t("loading products")}</p>
-          </div>
-        ) : filteredProducts.length === 0 ? (
-          <div className="text-center py-12">
-            <Package className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-            <p className="text-muted-foreground">{t("no products found")}</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-2 sm:gap-4">
-            {filteredProducts.map((product) => (
-              <ProductCard
-                key={product.id}
-                product={product}
-                token={token}
-                isInWishlist={isInWishlist}
-                handleToggleWishlist={handleToggleWishlist}
-                getImageUrl={getImageUrl}
-                onContactSeller={handleContactSeller}
-              />
-            ))}
-          </div>
-        )}
       </div>
     </div>
   );

@@ -15,11 +15,13 @@ import Wishlist from "./pages/Wishlist";
 import Messages from "./pages/Messages";
 import { WebAuthLogin } from "./pages/WebAuthLogin";
 import { WebAuthRegister } from "./pages/WebAuthRegister";
-import {
-  ProtectedRoute,
-  SellerProtectedRoute,
-} from "./components/ProtectedRoute";
-import companyPage from "./pages/companyPage";
+import { ProtectedRoute } from "./components/ProtectedRoute";
+import CompanyPage from "./pages/CompanyPage";
+import ArchitectCompanyPage from "./pages/ArchitectCompanyPage";
+import ArchitectProjectsPage from "./pages/ArchitectProjectsPage";
+import FindArchitectPage from "./pages/FindArchitectPage";
+import ArchitectFirmPage from "./pages/ArchitectFirmPage";
+import ProjectDetails from "./pages/ProjectDetails";
 
 const queryClient = new QueryClient();
 
@@ -29,20 +31,23 @@ const router = createBrowserRouter(
     { path: "/role-selection", Component: RoleSelection },
     { path: "/marketplace", Component: Marketplace },
     { path: "/product/:id", Component: ProductDetails },
+    { path: "/find-architect", Component: FindArchitectPage },
+    { path: "/architect-firm/:id", Component: ArchitectFirmPage },
+    { path: "/project/:id", Component: ProjectDetails },
     { path: "/webauth-login", Component: WebAuthLogin },
     { path: "/webauth-register", Component: WebAuthRegister },
     {
-      element: <SellerProtectedRoute />,
-      children: [
-        { path: "/company", Component: companyPage },
-        { path: "/my-products", Component: MyProducts },
-      ],
+      element: <ProtectedRoute />,
+      children: [{ path: "/my-products", Component: MyProducts }],
     },
     {
       element: <ProtectedRoute />,
       children: [
         { path: "/wishlist", Component: Wishlist },
         { path: "/messages", Component: Messages },
+        { path: "/company", Component: CompanyPage },
+        { path: "/architect-company", Component: ArchitectCompanyPage },
+        { path: "/architect-projects", Component: ArchitectProjectsPage },
       ],
     },
     { path: "*", Component: NotFound },

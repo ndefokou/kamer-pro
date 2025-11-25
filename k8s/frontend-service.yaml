@@ -1,11 +1,11 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: shop-frontend
+  name: company-frontend
 spec:
   type: LoadBalancer
   selector:
-    app: shop-frontend
+    app: company-frontend
   ports:
     - protocol: TCP
       port: 80

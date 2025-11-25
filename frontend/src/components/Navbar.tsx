@@ -83,7 +83,7 @@ const Navbar = () => {
           <Link to="/marketplace" className="flex items-center space-x-2">
             <Store className="h-6 w-6" />
             <span className="text-xl font-bold hidden sm:inline">
-              KamerLink
+              MboaMaison
             </span>
             <span className="text-xl font-bold sm:hidden">KL</span>
           </Link>
@@ -111,6 +111,24 @@ const Navbar = () => {
                 className="text-primary-foreground hover:bg-primary-foreground/10"
               >
                 {t("marketplace")}
+              </Button>
+            </Link>
+
+            <Link to="/find-architect">
+              <Button
+                variant="ghost"
+                className="text-primary-foreground hover:bg-primary-foreground/10"
+              >
+                {t("findArchitect", "Find an Architect")}
+              </Button>
+            </Link>
+
+            <Link to="/architect-company">
+              <Button
+                variant="ghost"
+                className="text-primary-foreground hover:bg-primary-foreground/10"
+              >
+                My Firm
               </Button>
             </Link>
 
@@ -146,23 +164,6 @@ const Navbar = () => {
               </>
             )}
 
-            <Link to="/messages" className="relative">
-             <Button
-               variant="ghost"
-               size="icon"
-               className="text-primary-foreground hover:bg-primary-foreground/10"
-             >
-               <MessageSquare className="h-5 w-5" />
-               {unreadCount > 0 && (
-                 <Badge
-                   className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-secondary text-secondary-foreground"
-                   variant="secondary"
-                 >
-                   {unreadCount}
-                 </Badge>
-               )}
-             </Button>
-           </Link>
 
             {token ? (
               <DropdownMenu>
@@ -182,10 +183,6 @@ const Navbar = () => {
                     <Heart className="h-4 w-4 mr-2" />
                     Wishlist
                   </DropdownMenuItem>
-                 <DropdownMenuItem onClick={() => navigate("/messages")}>
-                   <MessageSquare className="h-4 w-4 mr-2" />
-                   Messages
-                 </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleLogout}>
                     <LogOut className="h-4 w-4 mr-2" />
@@ -233,23 +230,6 @@ const Navbar = () => {
               </>
             )}
 
-           <Link to="/messages" className="relative">
-             <Button
-               variant="ghost"
-               size="icon"
-               className="text-primary-foreground hover:bg-primary-foreground/10"
-             >
-               <MessageSquare className="h-5 w-5" />
-               {unreadCount > 0 && (
-                 <Badge
-                   className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-secondary text-secondary-foreground text-xs"
-                   variant="secondary"
-                 >
-                   {unreadCount}
-                 </Badge>
-               )}
-             </Button>
-           </Link>
 
             <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
               <SheetTrigger asChild>
@@ -290,6 +270,24 @@ const Navbar = () => {
                   <Button
                     variant="ghost"
                     className="justify-start"
+                    onClick={() => handleNavigation("/find-architect")}
+                  >
+                    <Store className="h-5 w-5 mr-2" />
+                    {t("findArchitect", "Find an Architect")}
+                  </Button>
+
+                  <Button
+                    variant="ghost"
+                    className="justify-start"
+                    onClick={() => handleNavigation("/architect-company")}
+                  >
+                    <Store className="h-5 w-5 mr-2" />
+                    My Firm
+                  </Button>
+
+                  <Button
+                    variant="ghost"
+                    className="justify-start"
                     onClick={() => handleNavigation("/company")}
                   >
                     <Store className="h-5 w-5 mr-2" />
@@ -312,19 +310,6 @@ const Navbar = () => {
                         )}
                       </Button>
 
-                     <Button
-                       variant="ghost"
-                       className="justify-start"
-                       onClick={() => handleNavigation("/messages")}
-                     >
-                       <MessageSquare className="h-5 w-5 mr-2" />
-                       Messages
-                       {unreadCount > 0 && (
-                         <Badge variant="secondary" className="ml-auto">
-                           {unreadCount}
-                         </Badge>
-                       )}
-                     </Button>
 
                       <div className="border-t pt-4 mt-4">
                         <Button

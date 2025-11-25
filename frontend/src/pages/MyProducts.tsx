@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { AxiosError } from "axios";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import apiClient from "@/api/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -29,6 +29,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { PROPERTY_CATEGORIES } from "@/constants/propertyConstants";
 
 interface Product {
   id: number;
@@ -44,11 +45,15 @@ interface Product {
 const MyProducts = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const location = useLocation();
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isEditing, setIsEditing] = useState<number | null>(null);
-  const [showForm, setShowForm] = useState(false);
+  const [showForm, setShowForm] = useState(() => {
+    const params = new URLSearchParams(location.search);
+    return params.get("showAddForm") === "true";
+  });
   const [deleteProductId, setDeleteProductId] = useState<number | null>(null);
 
   const [formData, setFormData] = useState({
@@ -88,6 +93,19 @@ const MyProducts = () => {
     }
     fetchProducts();
   }, [token, navigate, fetchProducts]);
+
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const editId = params.get("edit");
+
+    if (editId && products.length > 0) {
+      const productToEdit = products.find(p => p.id === parseInt(editId));
+      if (productToEdit) {
+        handleEdit(productToEdit);
+      }
+    }
+  }, [location.search, products]);
 
   const onDrop = (acceptedFiles: File[]) => {
     const newFiles = [...files, ...acceptedFiles];
@@ -141,10 +159,10 @@ const MyProducts = () => {
         });
         toast({ title: t("success"), description: t("product created successfully") });
       }
-      
+
       await fetchProducts();
       resetForm();
-      navigate("/shop");
+      navigate("/company");
     } catch (error) {
       console.error("Failed to save product:", error);
       let errorMessage = t("failed to save product");
@@ -292,13 +310,11 @@ const MyProducts = () => {
                         <Select name="category" value={formData.category} onValueChange={(value) => handleSelectChange("category", value)} required>
                           <SelectTrigger><SelectValue placeholder={t("select a category")} /></SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="apartment">{t("apartment")}</SelectItem>
-                            <SelectItem value="studio">{t("studio")}</SelectItem>
-                            <SelectItem value="bedroom">{t("bedroom")}</SelectItem>
-                            <SelectItem value="villa">{t("villa")}</SelectItem>
-                            <SelectItem value="office">{t("office")}</SelectItem>
-                            <SelectItem value="shop">{t("shop")}</SelectItem>
-                            <SelectItem value="Other">{t("Other")}</SelectItem>
+                            {PROPERTY_CATEGORIES.filter(cat => cat.value !== "All").map((category) => (
+                              <SelectItem key={category.key} value={category.value}>
+                                {t(`categories.${category.key}`)}
+                              </SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                       </div>

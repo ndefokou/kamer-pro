@@ -55,6 +55,14 @@ pub async fn upload_images(
             let filepath = format!("./public/uploads/{}", unique_filename);
 
             // Create a new file and write the content to it
+            if let Some(p) = std::path::Path::new(&filepath).parent() {
+                if !p.exists() {
+                    std::fs::create_dir_all(p).map_err(|e| {
+                        eprintln!("Failed to create directory for {}: {}", filepath, e);
+                        actix_web::error::ErrorInternalServerError("Failed to save file")
+                    })?;
+                }
+            }
             let mut f = web::block(move || std::fs::File::create(filepath)).await??;
             while let Some(chunk) = field.next().await {
                 let data = chunk.unwrap();

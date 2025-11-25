@@ -54,7 +54,7 @@ export const WebAuthRegister = () => {
       const credentialCreationOptions: PublicKeyCredentialCreationOptions = {
         challenge: new TextEncoder().encode(startResponse.challenge),
         rp: {
-          name: "KamerLink",
+          name: "MboaMaison",
           id: "localhost",
         },
         user: {

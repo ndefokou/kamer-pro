@@ -19,6 +19,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { getImageUrl } from "@/lib/utils";
 
 interface Product {
   id: string;
@@ -40,7 +41,6 @@ interface ProductCardProps {
   token: string | null;
   isInWishlist?: (productId: number) => boolean;
   handleToggleWishlist?: (productId: string) => void;
-  getImageUrl: (imagePath: string) => string;
   variant?: "marketplace" | "seller" | "wishlist";
   onEdit?: () => void;
   onDelete?: () => void;
@@ -52,7 +52,6 @@ const ProductCard = ({
   token,
   isInWishlist,
   handleToggleWishlist,
-  getImageUrl,
   variant = "marketplace",
   onEdit,
   onDelete,
@@ -67,7 +66,7 @@ const ProductCard = ({
     >
       <Link to={`/product/${product.id}`}>
         {product.images && product.images.length > 0 && (
-          <div className="h-32 sm:h-40 md:h-48 overflow-hidden rounded-t-lg relative flex-shrink-0">
+          <div className="h-28 sm:h-40 md:h-48 overflow-hidden rounded-t-lg relative flex-shrink-0">
             <img
               src={getImageUrl(product.images[0].image_url)}
               alt={product.name}

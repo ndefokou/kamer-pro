@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Store, shoppingBag, TrendingUp, MapPin } from "lucide-react";
+import { Store, ShoppingBag, TrendingUp, MapPin } from "lucide-react";
 
 const Index = () => {
   return (
@@ -14,7 +14,7 @@ const Index = () => {
             </div>
           </div>
           <h1 className="text-5xl md:text-6xl font-bold mb-6">
-            Welcome to KamerLink
+            Welcome to MboaMaison
           </h1>
           <p className="text-xl md:text-2xl mb-8 max-w-3xl mx-auto opacity-95">
             The premier marketplace connecting buyers and sellers in Yaoundé,
@@ -47,13 +47,13 @@ const Index = () => {
       <section className="py-20 px-4 bg-background">
         <div className="container mx-auto">
           <h2 className="text-4xl font-bold text-center mb-12">
-            Why Choose KamerLink?
+            Why Choose MboaMaison?
           </h2>
           <div className="grid md:grid-cols-3 gap-8">
             <div className="text-center p-6 rounded-lg bg-gradient-card shadow-soft">
               <div className="flex justify-center mb-4">
                 <div className="bg-primary p-3 rounded-full">
-                  <shoppingBag className="h-8 w-8 text-primary-foreground" />
+                  <ShoppingBag className="h-8 w-8 text-primary-foreground" />
                 </div>
               </div>
               <h3 className="text-2xl font-bold mb-3">Easy Buying</h3>
@@ -99,7 +99,7 @@ const Index = () => {
             Ready to Start?
           </h2>
           <p className="text-xl mb-8 opacity-95">
-            Join KamerLink today and discover the best local marketplace in
+            Join MboaMaison today and discover the best local marketplace in
             Yaoundé
           </p>
           <Link to="/webauth-login">
@@ -116,7 +116,7 @@ const Index = () => {
           <div className="flex justify-center mb-4">
             <Store className="h-8 w-8" />
           </div>
-          <p className="text-sm">© 2025 KamerLink. All rights reserved.</p>
+          <p className="text-sm">© 2025 MboaMaison. All rights reserved.</p>
         </div>
       </footer>
     </div>
