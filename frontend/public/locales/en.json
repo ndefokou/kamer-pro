@@ -109,18 +109,21 @@
   "active": "Active",
   "categories": {
     "all": "All",
-    "apartment": "apartment",
-    "studio": "studio",
-    "bedroom": "bedroom",
-    "villa": "villa",
-    "office": "office",
-    "company": "company",
-    "other": "Other"
+    "room": "Room",
+    "villa": "Villa",
+    "apartment": "Apartment",
+    "studio": "Studio",
+    "furnished_apartment": "Furnished Apartment",
+    "furnished_studio": "Furnished Studio",
+    "furnished_room": "Furnished Room",
+    "shop": "Boutique / Shop",
+    "office": "Office",
+    "hotel": "Hotel"
   },
   "conditions": {
     "all": "All",
-    "for_sale": "For sale",
-    "for_rent": "For rent"
+    "for_sale": "For Sale",
+    "for_rent": "For Rent"
   },
   "locations": {
     "all": "All",

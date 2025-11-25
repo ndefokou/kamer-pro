@@ -111,15 +111,19 @@
   "active": "Actif",
   "categories": {
     "all": "Toutes",
-    "apartment": "appartement",
-    "studio": "studio",
-    "bedroom": "chambre",
-    "villa": "villa",
-    "office": "bureau",
-    "company": "boutique",
-    "other": "Autre"
+    "room": "Chambre",
+    "villa": "Villa",
+    "apartment": "Appartement",
+    "studio": "Studio",
+    "furnished_apartment": "Appartement meublé",
+    "furnished_studio": "Studio meublé",
+    "furnished_room": "Chambre meublée",
+    "shop": "Boutique / Magasin",
+    "office": "Bureau",
+    "hotel": "Hôtel"
   },
   "conditions": {
+    "all": "Toutes",
     "for_sale": "À vendre",
     "for_rent": "À louer"
   },

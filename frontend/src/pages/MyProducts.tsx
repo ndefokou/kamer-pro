@@ -29,6 +29,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { PROPERTY_CATEGORIES } from "@/constants/propertyConstants";
 
 interface Product {
   id: number;
@@ -97,7 +98,7 @@ const MyProducts = () => {
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const editId = params.get("edit");
-    
+
     if (editId && products.length > 0) {
       const productToEdit = products.find(p => p.id === parseInt(editId));
       if (productToEdit) {
@@ -158,7 +159,7 @@ const MyProducts = () => {
         });
         toast({ title: t("success"), description: t("product created successfully") });
       }
-      
+
       await fetchProducts();
       resetForm();
       navigate("/company");
@@ -309,13 +310,11 @@ const MyProducts = () => {
                         <Select name="category" value={formData.category} onValueChange={(value) => handleSelectChange("category", value)} required>
                           <SelectTrigger><SelectValue placeholder={t("select a category")} /></SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="apartment">{t("apartment")}</SelectItem>
-                            <SelectItem value="studio">{t("studio")}</SelectItem>
-                            <SelectItem value="bedroom">{t("bedroom")}</SelectItem>
-                            <SelectItem value="villa">{t("villa")}</SelectItem>
-                            <SelectItem value="office">{t("office")}</SelectItem>
-                            <SelectItem value="company">{t("company")}</SelectItem>
-                            <SelectItem value="Other">{t("Other")}</SelectItem>
+                            {PROPERTY_CATEGORIES.filter(cat => cat.value !== "All").map((category) => (
+                              <SelectItem key={category.key} value={category.value}>
+                                {t(`categories.${category.key}`)}
+                              </SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                       </div>

@@ -24,42 +24,13 @@ import { Package, Filter, X, Search } from "lucide-react";
 import { getProducts } from "@/api/client";
 import Navbar from "@/components/Navbar";
 import { Card } from "@/components/ui/card";
+import {
+  PROPERTY_CATEGORIES,
+  PROPERTY_CONDITIONS,
+  PROPERTY_LOCATIONS,
+} from "@/constants/propertyConstants";
 
-const CATEGORIES = [
-  { key: "all", value: "All" },
-  { key: "apartment", value: "apartment" },
-  { key: "studio", value: "studio" },
-  { key: "bedroom", value: "bedroom" },
-  { key: "villa", value: "villa" },
-  { key: "office", value: "office" },
-  { key: "magasin", value: "magasin" },
-  { key: "shop", value: "shop" },
-  { key: "Hotel", value: "Hotel" },
-  { key: "Guest house", value: "Guest house" },
-  { key: "studio meublees", value: "studio meublees" },
-];
-
-const CONDITIONS = [
-  { key: "All", value: "All" },
-  { key: "for sale", value: "For sale" },
-  { key: "for rent", value: "For rent" },
-];
-
-const LOCATIONS = [
-  { key: "all", value: "All" },
-  { key: "douala", value: "Douala" },
-  { key: "yaounde", value: "Yaoundé" },
-  { key: "garoua", value: "Garoua" },
-  { key: "bamenda", value: "Bamenda" },
-  { key: "maroua", value: "Maroua" },
-  { key: "bafoussam", value: "Bafoussam" },
-  { key: "ngaoundere", value: "Ngaoundéré" },
-  { key: "bertoua", value: "Bertoua" },
-  { key: "ebolowa", value: "Ebolowa" },
-  { key: "kumba", value: "Kumba" },
-  { key: "limbe", value: "Limbe" },
-  { key: "buea", value: "Buea" },
-];
+// Constants are now imported from shared file
 
 interface Product {
   id: string;
@@ -164,7 +135,7 @@ const Marketplace = () => {
       <div className="space-y-2">
         <Label className="text-sm md:text-base font-semibold">{t("category")}</Label>
         <div className="grid grid-cols-2 gap-2">
-          {CATEGORIES.map((category) => (
+          {PROPERTY_CATEGORIES.map((category) => (
             <Button
               key={category.key}
               variant={selectedCategory === category.value ? "default" : "outline"}
@@ -187,7 +158,7 @@ const Marketplace = () => {
             <SelectValue placeholder={t("location")} />
           </SelectTrigger>
           <SelectContent>
-            {LOCATIONS.map((location) => (
+            {PROPERTY_LOCATIONS.map((location) => (
               <SelectItem key={location.key} value={location.value}>
                 {t(`locations.${location.key}`)}
               </SelectItem>
@@ -206,7 +177,7 @@ const Marketplace = () => {
             <SelectValue placeholder={t("condition")} />
           </SelectTrigger>
           <SelectContent>
-            {CONDITIONS.map((condition) => (
+            {PROPERTY_CONDITIONS.map((condition) => (
               <SelectItem key={condition.key} value={condition.value}>
                 {t(`conditions.${condition.key}`)}
               </SelectItem>
@@ -270,19 +241,9 @@ const Marketplace = () => {
         <div className="container mx-auto px-3 sm:px-4 py-3 md:py-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
-              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold mb-1">
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">
                 {t("marketplace")}
               </h1>
-              <p className="text-xs sm:text-sm text-muted-foreground">
-                {isLoading ? (
-                  t("loading products")
-                ) : (
-                  <>
-                    {filteredProducts.length}{" "}
-                    {filteredProducts.length === 1 ? t("product") : t("products")}
-                  </>
-                )}
-              </p>
             </div>
 
             {/* Mobile Filter Button */}
@@ -329,7 +290,7 @@ const Marketplace = () => {
               )}
               {selectedCategory !== "All" && (
                 <Badge variant="secondary" className="gap-1 text-xs h-6">
-                  {t(`categories.${CATEGORIES.find(c => c.value === selectedCategory)?.key || "all"}`)}
+                  {t(`categories.${PROPERTY_CATEGORIES.find(c => c.value === selectedCategory)?.key || "all"}`)}
                   <X
                     className="h-3 w-3 cursor-pointer"
                     onClick={() => setSelectedCategory("All")}
@@ -347,7 +308,7 @@ const Marketplace = () => {
               )}
               {selectedCondition !== "All" && (
                 <Badge variant="secondary" className="gap-1 text-xs h-6">
-                  {t(`conditions.${CONDITIONS.find(c => c.value === selectedCondition)?.key || "All"}`)}
+                  {t(`conditions.${PROPERTY_CONDITIONS.find(c => c.value === selectedCondition)?.key || "all"}`)}
                   <X
                     className="h-3 w-3 cursor-pointer"
                     onClick={() => setSelectedCondition("All")}
