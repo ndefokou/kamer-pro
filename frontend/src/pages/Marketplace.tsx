@@ -32,14 +32,17 @@ const CATEGORIES = [
   { key: "bedroom", value: "bedroom" },
   { key: "villa", value: "villa" },
   { key: "office", value: "office" },
-  { key: "company", value: "company" },
-  { key: "other", value: "Other" },
+  { key: "magasin", value: "magasin" },
+  { key: "shop", value: "shop" },
+  { key: "Hotel", value: "Hotel" },
+  { key: "Guest house", value: "Guest house" },
+  { key: "studio meublees", value: "studio meublees" },
 ];
 
 const CONDITIONS = [
   { key: "All", value: "All" },
-  { key: "for_sale", value: "For sale" },
-  { key: "for_rent", value: "For rent" },
+  { key: "for sale", value: "For sale" },
+  { key: "for rent", value: "For rent" },
 ];
 
 const LOCATIONS = [
@@ -119,7 +122,7 @@ const Marketplace = () => {
         min_price: minPrice,
         max_price: maxPrice,
       };
-      
+
       const data = await getProducts(filters);
       setFilteredProducts(data);
     } catch (error) {
@@ -139,10 +142,10 @@ const Marketplace = () => {
   };
 
   const FilterContent = () => (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       {/* Search */}
       <div className="space-y-2">
-        <Label htmlFor="search" className="text-base font-semibold">
+        <Label htmlFor="search" className="text-sm md:text-base font-semibold">
           {t("search")}
         </Label>
         <div className="relative">
@@ -152,21 +155,21 @@ const Marketplace = () => {
             placeholder={t("search products")}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
+            className="pl-10 h-9 md:h-10"
           />
         </div>
       </div>
 
       {/* Category */}
       <div className="space-y-2">
-        <Label className="text-base font-semibold">{t("category")}</Label>
+        <Label className="text-sm md:text-base font-semibold">{t("category")}</Label>
         <div className="grid grid-cols-2 gap-2">
           {CATEGORIES.map((category) => (
             <Button
               key={category.key}
               variant={selectedCategory === category.value ? "default" : "outline"}
               onClick={() => setSelectedCategory(category.value)}
-              className="text-xs h-auto py-2"
+              className="text-xs h-8 md:h-auto md:py-2"
             >
               {t(`categories.${category.key}`)}
             </Button>
@@ -176,11 +179,11 @@ const Marketplace = () => {
 
       {/* Location */}
       <div className="space-y-2">
-        <Label htmlFor="location" className="text-base font-semibold">
+        <Label htmlFor="location" className="text-sm md:text-base font-semibold">
           {t("location")}
         </Label>
         <Select value={selectedLocation} onValueChange={setSelectedLocation}>
-          <SelectTrigger id="location">
+          <SelectTrigger id="location" className="h-9 md:h-10">
             <SelectValue placeholder={t("location")} />
           </SelectTrigger>
           <SelectContent>
@@ -195,11 +198,11 @@ const Marketplace = () => {
 
       {/* Condition */}
       <div className="space-y-2">
-        <Label htmlFor="condition" className="text-base font-semibold">
+        <Label htmlFor="condition" className="text-sm md:text-base font-semibold">
           {t("condition")}
         </Label>
         <Select value={selectedCondition} onValueChange={setSelectedCondition}>
-          <SelectTrigger id="condition">
+          <SelectTrigger id="condition" className="h-9 md:h-10">
             <SelectValue placeholder={t("condition")} />
           </SelectTrigger>
           <SelectContent>
@@ -214,7 +217,7 @@ const Marketplace = () => {
 
       {/* Price Range */}
       <div className="space-y-2">
-        <Label className="text-base font-semibold">{t("price range")}</Label>
+        <Label className="text-sm md:text-base font-semibold">{t("price range")}</Label>
         <div className="grid grid-cols-2 gap-2">
           <div>
             <Label htmlFor="min-price" className="text-xs text-muted-foreground">
@@ -226,6 +229,7 @@ const Marketplace = () => {
               type="number"
               value={minPrice}
               onChange={(e) => setMinPrice(e.target.value)}
+              className="h-9 md:h-10"
             />
           </div>
           <div>
@@ -238,6 +242,7 @@ const Marketplace = () => {
               type="number"
               value={maxPrice}
               onChange={(e) => setMaxPrice(e.target.value)}
+              className="h-9 md:h-10"
             />
           </div>
         </div>
@@ -248,7 +253,7 @@ const Marketplace = () => {
         <Button
           variant="outline"
           onClick={clearFilters}
-          className="w-full"
+          className="w-full h-9 md:h-10"
         >
           <X className="h-4 w-4 mr-2" />
           {t("clear all filters")} ({activeFiltersCount})
@@ -261,14 +266,14 @@ const Marketplace = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
       {/* Header */}
-      <div className="border-b">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
+      <div className="border-b bg-white sticky top-[64px] z-40">
+        <div className="container mx-auto px-3 sm:px-4 py-3 md:py-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
-              <h1 className="text-2xl md:text-3xl font-bold mb-1">
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold mb-1">
                 {t("marketplace")}
               </h1>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-xs sm:text-sm text-muted-foreground">
                 {isLoading ? (
                   t("loading products")
                 ) : (
@@ -282,8 +287,8 @@ const Marketplace = () => {
 
             {/* Mobile Filter Button */}
             <Sheet open={isMobileFilterOpen} onOpenChange={setIsMobileFilterOpen}>
-              <SheetTrigger asChild className="md:hidden">
-                <Button variant="outline" size="sm" className="relative">
+              <SheetTrigger asChild className="lg:hidden">
+                <Button variant="outline" size="sm" className="relative w-full sm:w-auto">
                   <Filter className="h-4 w-4 mr-2" />
                   {t("filters")}
                   {activeFiltersCount > 0 && (
@@ -296,7 +301,7 @@ const Marketplace = () => {
                   )}
                 </Button>
               </SheetTrigger>
-              <SheetContent side="left" className="w-[300px] overflow-y-auto">
+              <SheetContent side="left" className="w-[280px] sm:w-[320px] overflow-y-auto">
                 <SheetHeader>
                   <SheetTitle>{t("filters")}</SheetTitle>
                   <SheetDescription>
@@ -312,10 +317,10 @@ const Marketplace = () => {
 
           {/* Active Filters Display */}
           {activeFiltersCount > 0 && (
-            <div className="flex flex-wrap gap-2 mt-4">
+            <div className="flex flex-wrap gap-2 mt-3">
               {searchQuery && (
-                <Badge variant="secondary" className="gap-1">
-                  {t("search")}: {searchQuery}
+                <Badge variant="secondary" className="gap-1 text-xs h-6">
+                  {t("search")}: {searchQuery.length > 15 ? searchQuery.substring(0, 15) + "..." : searchQuery}
                   <X
                     className="h-3 w-3 cursor-pointer"
                     onClick={() => setSearchQuery("")}
@@ -323,7 +328,7 @@ const Marketplace = () => {
                 </Badge>
               )}
               {selectedCategory !== "All" && (
-                <Badge variant="secondary" className="gap-1">
+                <Badge variant="secondary" className="gap-1 text-xs h-6">
                   {t(`categories.${CATEGORIES.find(c => c.value === selectedCategory)?.key || "all"}`)}
                   <X
                     className="h-3 w-3 cursor-pointer"
@@ -332,7 +337,7 @@ const Marketplace = () => {
                 </Badge>
               )}
               {selectedLocation !== "All" && (
-                <Badge variant="secondary" className="gap-1">
+                <Badge variant="secondary" className="gap-1 text-xs h-6">
                   {selectedLocation}
                   <X
                     className="h-3 w-3 cursor-pointer"
@@ -341,7 +346,7 @@ const Marketplace = () => {
                 </Badge>
               )}
               {selectedCondition !== "All" && (
-                <Badge variant="secondary" className="gap-1">
+                <Badge variant="secondary" className="gap-1 text-xs h-6">
                   {t(`conditions.${CONDITIONS.find(c => c.value === selectedCondition)?.key || "All"}`)}
                   <X
                     className="h-3 w-3 cursor-pointer"
@@ -350,7 +355,7 @@ const Marketplace = () => {
                 </Badge>
               )}
               {(minPrice || maxPrice) && (
-                <Badge variant="secondary" className="gap-1">
+                <Badge variant="secondary" className="gap-1 text-xs h-6">
                   {minPrice && `${minPrice} XAF`}
                   {minPrice && maxPrice && " - "}
                   {maxPrice && `${maxPrice} XAF`}
@@ -368,11 +373,11 @@ const Marketplace = () => {
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-6">
-        <div className="grid md:grid-cols-4 gap-6">
+      <div className="container mx-auto px-3 sm:px-4 py-4 md:py-6">
+        <div className="grid lg:grid-cols-4 gap-4 md:gap-6">
           {/* Desktop Sidebar Filters */}
-          <aside className="hidden md:block md:col-span-1">
-            <div className="sticky top-4">
+          <aside className="hidden lg:block lg:col-span-1">
+            <div className="sticky top-24">
               <Card className="p-4">
                 <h2 className="text-lg font-semibold mb-4">{t("filters")}</h2>
                 <FilterContent />
@@ -381,59 +386,57 @@ const Marketplace = () => {
           </aside>
 
           {/* Products Grid */}
-          <div className="md:col-span-3">
+          <div className="lg:col-span-3">
             {isLoading ? (
-              <div className="flex items-center justify-center py-16">
+              <div className="flex items-center justify-center py-12 md:py-16">
                 <div className="text-center">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4" />
-                  <p className="text-muted-foreground">{t("loading products")}</p>
+                  <div className="animate-spin rounded-full h-10 w-10 md:h-12 md:w-12 border-b-2 border-primary mx-auto mb-4" />
+                  <p className="text-sm md:text-base text-muted-foreground">{t("loading products")}</p>
                 </div>
               </div>
             ) : filteredProducts.length === 0 ? (
-              <div className="text-center py-16">
-                <Package className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-                <h3 className="text-xl font-semibold mb-2">{t("no products found")}</h3>
-                <p className="text-muted-foreground mb-4">
+              <div className="text-center py-12 md:py-16">
+                <Package className="h-12 w-12 md:h-16 md:w-16 mx-auto text-muted-foreground mb-4" />
+                <h3 className="text-lg md:text-xl font-semibold mb-2">{t("no products found")}</h3>
+                <p className="text-sm md:text-base text-muted-foreground mb-4">
                   {t("try adjusting your filters")}
                 </p>
                 {activeFiltersCount > 0 && (
-                  <Button onClick={clearFilters} variant="outline">
+                  <Button onClick={clearFilters} variant="outline" size="sm">
                     {t("clear all filters")}
                   </Button>
                 )}
               </div>
             ) : (
-              <div className="grid grid-cols-2 xs:grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-3 md:gap-4">
                 {filteredProducts.map((product) => (
                   <Link to={`/product/${product.id}`} key={product.id} className="block h-full">
-                  <div
-                    className="bg-card rounded-lg border overflow-hidden hover:shadow-lg transition-shadow h-full"
-                  >
-                    <div className="aspect-square relative bg-muted">
-                      {product.images?.[0] && (
-                        <img
-                          src={product.images[0].image_url}
-                          alt={product.name}
-                          className="w-full h-full object-cover"
-                        />
-                      )}
+                    <div className="bg-card rounded-lg border overflow-hidden hover:shadow-lg transition-shadow h-full flex flex-col">
+                      <div className="aspect-square relative bg-muted">
+                        {product.images?.[0] && (
+                          <img
+                            src={product.images[0].image_url}
+                            alt={product.name}
+                            className="w-full h-full object-cover"
+                          />
+                        )}
+                      </div>
+                      <div className="p-2 sm:p-3 flex-1 flex flex-col">
+                        <h3 className="font-semibold text-xs sm:text-sm line-clamp-2 mb-1">
+                          {product.name}
+                        </h3>
+                        <p className="text-xs text-muted-foreground line-clamp-1 mb-2">
+                          {product.location}
+                        </p>
+                        <p className="font-bold text-sm sm:text-base text-primary mt-auto">
+                          {new Intl.NumberFormat("fr-FR", {
+                            style: "currency",
+                            currency: "XAF",
+                            maximumFractionDigits: 0,
+                          }).format(product.price)}
+                        </p>
+                      </div>
                     </div>
-                    <div className="p-3">
-                      <h3 className="font-semibold text-sm line-clamp-2 mb-1">
-                        {product.name}
-                      </h3>
-                      <p className="text-xs text-muted-foreground line-clamp-1 mb-2">
-                        {product.location}
-                      </p>
-                      <p className="font-bold text-primary">
-                        {new Intl.NumberFormat("fr-FR", {
-                          style: "currency",
-                          currency: "XAF",
-                          maximumFractionDigits: 0,
-                        }).format(product.price)}
-                      </p>
-                    </div>
-                  </div>
                   </Link>
                 ))}
               </div>

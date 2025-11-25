@@ -177,7 +177,7 @@ export const WebAuthLogin = () => {
                 </div>
                 <div className="relative flex justify-center text-sm">
                   <span className="px-2 bg-white dark:bg-gray-950">
-                    {t("new to kamerlink")}
+                    {t("new to MboaMaison")}
                   </span>
                 </div>
               </div>

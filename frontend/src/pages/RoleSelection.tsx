@@ -89,7 +89,7 @@ const handleRoleSelection = async (role: "buyer" | "seller" | "architect") => {
             {t("choose your role")}
           </h1>
           <p className="text-primary-foreground/90">
-            {t("how would you like to use kamerlink")}
+            {t("how would you like to use MboaMaison")}
           </p>
         </div>
 

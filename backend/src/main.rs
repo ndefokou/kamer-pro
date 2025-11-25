@@ -30,9 +30,13 @@ async fn main() -> std::io::Result<()> {
 
     // Create the uploads directory if it doesn't exist
     let manifest_dir = env!("CARGO_MANIFEST_DIR");
-    let uploads_dir = std::path::Path::new(manifest_dir).join("public/uploads");
+    let uploads_dir = std::path::Path::new(manifest_dir).join("public").join("uploads");
+    
+    println!("Uploads directory: {}", uploads_dir.display());
+    
     if !uploads_dir.exists() {
         std::fs::create_dir_all(&uploads_dir).expect("Failed to create uploads directory");
+        println!("Created uploads directory");
     }
 
     let pool = SqlitePoolOptions::new()
@@ -40,6 +44,8 @@ async fn main() -> std::io::Result<()> {
         .connect(&database_url)
         .await
         .expect("Failed to create pool.");
+
+    let uploads_dir_clone = uploads_dir.clone();
 
     HttpServer::new(move || {
         let cors = Cors::permissive();
@@ -105,30 +111,31 @@ async fn main() -> std::io::Result<()> {
                             .service(routes::company::get_company_by_id)
                             .service(routes::company::create_or_update_company)
                             .service(routes::company::delete_company),
-                           )
-                           .service(
-                                web::scope("/architect-companies")
-                                    .route("", web::get().to(routes::architect::get_all_architect_companies))
-                           )
-                           .service(
-                                web::scope("/architect-company")
-                                    .route("", web::get().to(routes::architect::get_architect_company))
-                                    .route("", web::post().to(routes::architect::create_or_update_architect_company))
-                                    .route("/{id}", web::get().to(routes::architect::get_architect_company_by_id))
-                           )
-                           .service(
-                                web::scope("/architect-projects")
-                                    .route("", web::get().to(routes::architect::get_architect_projects))
-                                    .route("/company/{id}", web::get().to(routes::architect::get_architect_projects_by_company))
-                                    .route("", web::post().to(routes::architect::create_architect_project))
-                                    .route("/all", web::get().to(routes::architect::get_all_architect_projects))
-                                    .route("/{id}", web::put().to(routes::architect::update_architect_project))
-                                    .route("/{id}", web::delete().to(routes::architect::delete_architect_project))
-                           ),
-                   )
-           .service(fs::Files::new("/uploads", uploads_dir.clone()))
-           })
-           .bind("0.0.0.0:8082")?
-           .run()
-           .await
-       }
+                    )
+                    .service(
+                        web::scope("/architect-companies")
+                            .route("", web::get().to(routes::architect::get_all_architect_companies))
+                    )
+                    .service(
+                        web::scope("/architect-company")
+                            .route("", web::get().to(routes::architect::get_architect_company))
+                            .route("", web::post().to(routes::architect::create_or_update_architect_company))
+                            .route("/{id}", web::get().to(routes::architect::get_architect_company_by_id))
+                    )
+                    .service(
+                        web::scope("/architect-projects")
+                            .route("", web::get().to(routes::architect::get_architect_projects))
+                            .route("/company/{id}", web::get().to(routes::architect::get_architect_projects_by_company))
+                            .route("", web::post().to(routes::architect::create_architect_project))
+                            .route("/all", web::get().to(routes::architect::get_all_architect_projects))
+                            .route("/{id}", web::put().to(routes::architect::update_architect_project))
+                            .route("/{id}", web::delete().to(routes::architect::delete_architect_project))
+                    ),
+            )
+            // Serve static files from /uploads route
+            .service(fs::Files::new("/uploads", uploads_dir_clone.clone()).show_files_listing())
+    })
+    .bind("0.0.0.0:8082")?
+    .run()
+    .await
+}

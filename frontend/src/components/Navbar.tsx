@@ -83,7 +83,7 @@ const Navbar = () => {
           <Link to="/marketplace" className="flex items-center space-x-2">
             <Store className="h-6 w-6" />
             <span className="text-xl font-bold hidden sm:inline">
-              KamerLink
+              MboaMaison
             </span>
             <span className="text-xl font-bold sm:hidden">KL</span>
           </Link>

@@ -8,12 +8,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { 
-  Building2, 
-  MapPin, 
-  Mail, 
-  Phone, 
-  Upload, 
+import {
+  Building2,
+  MapPin,
+  Mail,
+  Phone,
+  Upload,
   Loader2,
   Edit2,
   FileText,
@@ -68,7 +68,7 @@ const ArchitectCompanyPage = () => {
     location: "",
     description: "",
   });
-  
+
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [bannerFile, setBannerFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string>("");
@@ -82,7 +82,7 @@ const ArchitectCompanyPage = () => {
       const response = await apiClient.get("/architect-company");
       const companyData = response.data.company || response.data;
       setcompany(companyData);
-      
+
       setFormData({
         name: companyData.name || "",
         email: companyData.email || "",
@@ -90,10 +90,10 @@ const ArchitectCompanyPage = () => {
         location: companyData.location || "",
         description: companyData.description || "",
       });
-      
+
       if (companyData.logo_url) setLogoPreview(getImageUrl(companyData.logo_url));
       if (companyData.banner_url) setBannerPreview(getImageUrl(companyData.banner_url));
-      
+
       setIsEditing(false);
     } catch (error) {
       const axiosError = error as AxiosError;
@@ -170,14 +170,14 @@ const ArchitectCompanyPage = () => {
 
   const handleSave = useCallback(async () => {
     setIsSaving(true);
-    
+
     const data = new FormData();
     data.append("name", formData.name);
     data.append("email", formData.email);
     data.append("phone", formData.phone);
     data.append("location", formData.location);
     data.append("description", formData.description);
-    
+
     if (logoFile) data.append("logo", logoFile);
     if (bannerFile) data.append("banner", bannerFile);
 
@@ -187,12 +187,12 @@ const ArchitectCompanyPage = () => {
       });
       const savedcompany = response.data.company || response.data;
       setcompany(savedcompany);
-      
+
       toast({
         title: t("success"),
         description: t("architectCompanyPage.saveSuccess", "Architect company saved successfully"),
       });
-      
+
       setIsEditing(false);
     } catch (error) {
       console.error("Failed to save architect company:", error);
@@ -220,7 +220,7 @@ const ArchitectCompanyPage = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      
+
       <div className="container mx-auto px-4 py-8">
         <div className="flex flex-col sm:flex-row justify-between sm:items-center mb-8 gap-4">
           <div>
@@ -375,7 +375,7 @@ const ArchitectCompanyPage = () => {
                     />
                   </div>
                 )}
-                
+
                 <div className="p-6">
                   <div className="flex flex-col md:flex-row gap-6">
                     {/* Logo */}
@@ -386,13 +386,13 @@ const ArchitectCompanyPage = () => {
                         className="h-24 w-24 rounded-full border-4 border-background -mt-16 md:-mt-20"
                       />
                     )}
-                    
+
                     <div className="flex-1">
                       <h2 className="text-2xl font-bold mb-2">{company.name}</h2>
                       {company.description && (
                         <p className="text-muted-foreground mb-4">{company.description}</p>
                       )}
-                      
+
                       <div className="grid md:grid-cols-3 gap-4">
                         <div className="flex items-center gap-2">
                           <MapPin className="h-4 w-4 text-muted-foreground" />
@@ -426,7 +426,7 @@ const ArchitectCompanyPage = () => {
                   </div>
                 </CardContent>
               </Card>
-              
+
               <Card>
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between">
@@ -463,7 +463,7 @@ const ArchitectCompanyPage = () => {
                     </Button>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-3">
                     {projects.map((project) => (
                       <ProjectCard
                         key={project.id}

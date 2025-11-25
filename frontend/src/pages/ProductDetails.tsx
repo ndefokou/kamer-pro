@@ -18,6 +18,7 @@ import {
   MapPin,
   MessageCircle,
   Heart,
+  ChevronLeft,
 } from "lucide-react";
 import { useWishlist } from "@/hooks/useWishlist";
 import { useMessaging } from "@/hooks/useMessaging";
@@ -48,8 +49,7 @@ const ProductDetails = () => {
   const [similarProducts, setSimilarProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const { addToWishlist, isInWishlist, removeFromWishlistByProduct } =
-    useWishlist();
+  const { addToWishlist, isInWishlist, removeFromWishlistByProduct } = useWishlist();
   const token = localStorage.getItem("token");
   const { createOrGetConversation } = useMessaging();
 
@@ -65,7 +65,6 @@ const ProductDetails = () => {
           product.user_id,
         );
         navigate(`/messages`);
-        // navigate(`/messages?conversationId=${conversationId}`);
       } catch (error) {
         console.error("Failed to start conversation", error);
       }
@@ -99,7 +98,6 @@ const ProductDetails = () => {
 
     fetchProduct();
   }, [id]);
-
 
   const handleToggleWishlist = () => {
     if (!token) {
@@ -154,32 +152,44 @@ const ProductDetails = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-3 sm:px-4 py-4 md:py-8">
+        {/* Back Button */}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => navigate(-1)}
+          className="mb-4"
+        >
+          <ChevronLeft className="h-4 w-4 mr-1" />
+          {t("back")}
+        </Button>
+
         <Card>
-          <CardHeader>
-            <CardTitle className="text-3xl font-bold">{product.name}</CardTitle>
-            <CardDescription className="text-lg text-muted-foreground">
-              {t(
-                `categories.${product.category.toLowerCase().replace(" & ", "_")}`,
-              )}
+          <CardHeader className="px-4 sm:px-6 pt-4 sm:pt-6 pb-3 sm:pb-6">
+            <CardTitle className="text-xl sm:text-2xl md:text-3xl font-bold">
+              {product.name}
+            </CardTitle>
+            <CardDescription className="text-sm sm:text-base md:text-lg text-muted-foreground">
+              {t(`categories.${product.category.toLowerCase().replace(" & ", "_")}`)}
             </CardDescription>
           </CardHeader>
-          <CardContent className="grid md:grid-cols-2 gap-8">
+          <CardContent className="grid md:grid-cols-2 gap-4 md:gap-8 px-4 sm:px-6 pb-4 sm:pb-6">
+            {/* Image Section */}
             <div>
-              <div className="mb-4">
+              <div className="mb-3 md:mb-4">
                 <img
                   src={getImageUrl(selectedImage || "")}
                   alt={product.name}
-                  className="w-full max-h-96 object-contain rounded-lg border bg-muted"
+                  className="w-full h-64 sm:h-80 md:max-h-96 object-contain rounded-lg border bg-muted"
                 />
               </div>
-              <div className="flex space-x-2 overflow-x-auto">
+              <div className="flex space-x-2 overflow-x-auto pb-2">
                 {product.images.map((image) => (
                   <img
                     key={image.image_url}
                     src={getImageUrl(image.image_url)}
                     alt="product thumbnail"
-                    className={`h-20 w-20 object-cover rounded-md cursor-pointer border-2 ${
+                    className={`h-16 w-16 sm:h-20 sm:w-20 flex-shrink-0 object-cover rounded-md cursor-pointer border-2 ${
                       selectedImage === image.image_url
                         ? "border-primary"
                         : "border-transparent"
@@ -189,76 +199,73 @@ const ProductDetails = () => {
                 ))}
               </div>
             </div>
-            <div className="space-y-6">
+
+            {/* Details Section */}
+            <div className="space-y-4 md:space-y-6">
               <div>
-                <h3 className="text-xl font-semibold mb-2">
+                <h3 className="text-lg sm:text-xl font-semibold mb-2">
                   {t("description")}
                 </h3>
-                <p className="text-muted-foreground">{product.description}</p>
+                <p className="text-sm sm:text-base text-muted-foreground">
+                  {product.description}
+                </p>
               </div>
-              <div className="text-3xl font-bold text-primary">
+              
+              <div className="text-2xl sm:text-3xl font-bold text-primary">
                 {new Intl.NumberFormat("fr-FR", {
                   style: "currency",
                   currency: "XAF",
                 }).format(product.price)}
               </div>
-              <div className="flex items-center text-muted-foreground">
+              
+              <div className="flex items-center text-sm sm:text-base text-muted-foreground">
                 <MapPin className="h-4 w-4 mr-1" />
                 {product.location}
               </div>
+              
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <h3 className="text-lg font-semibold mb-2">
+                  <h3 className="text-base sm:text-lg font-semibold mb-2">
                     {t("condition")}
                   </h3>
                   {product.condition && (
-                    <Badge variant="outline">
-                      {t(
-                        `conditions.${product.condition.toLowerCase().replace("-", "_")}`,
-                      )}
+                    <Badge variant="outline" className="text-xs sm:text-sm">
+                      {t(`conditions.${product.condition.toLowerCase().replace("-", "_")}`)}
                     </Badge>
                   )}
                 </div>
               </div>
 
               {token && (
-                <div className="space-y-4 border-t pt-4">
-                  <div className="flex gap-2">
+                <div className="space-y-3 md:space-y-4 border-t pt-4">
+                  <div className="flex flex-col sm:flex-row gap-2">
                     <Button
                       className="flex-1"
                       size="lg"
                       onClick={() => {
                         if (product && product.contact_phone) {
-                          // Clean the phone number: remove spaces, dashes, parentheses
-                          let cleanedPhone = product.contact_phone.replace(
-                            /[-\s()]/g,
-                            ""
-                          );
-
-                          // Ensure it has a country code (default to +237 for Cameroon if missing)
+                          let cleanedPhone = product.contact_phone.replace(/[-\s()]/g, "");
                           if (!cleanedPhone.startsWith("+")) {
                             cleanedPhone = `+237${cleanedPhone}`;
                           }
-
                           const message = `Hello, I'm interested in your product "${product.name}" listed for ${product.price}.`;
-                          const whatsappUrl = `https://wa.me/${cleanedPhone}?text=${encodeURIComponent(
-                            message
-                          )}`;
+                          const whatsappUrl = `https://wa.me/${cleanedPhone}?text=${encodeURIComponent(message)}`;
                           window.open(whatsappUrl, "_blank");
                         }
                       }}
                       disabled={!product.contact_phone}
                     >
-                      <MessageCircle className="h-5 w-5 mr-2" />
-                      {t("contact on whatsapp")}
+                      <MessageCircle className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
+                      <span className="text-sm sm:text-base">{t("contact on whatsapp")}</span>
                     </Button>
                     <Button
                       variant="outline"
                       size="lg"
                       onClick={handleToggleWishlist}
+                      className="sm:w-auto"
                     >
                       <Heart
-                        className={`h-5 w-5 ${isInWishlist(parseInt(product.id)) ? "fill-current text-red-500" : ""}`}
+                        className={`h-4 w-4 sm:h-5 sm:w-5 ${isInWishlist(parseInt(product.id)) ? "fill-current text-red-500" : ""}`}
                       />
                     </Button>
                   </div>
@@ -266,27 +273,27 @@ const ProductDetails = () => {
               )}
 
               <div>
-                <h3 className="text-xl font-semibold mb-2">
+                <h3 className="text-lg sm:text-xl font-semibold mb-2">
                   {t("contact seller")}
                 </h3>
                 <div className="space-y-2">
                   {product.contact_phone && (
-                    <div className="flex items-center">
-                      <Phone className="h-4 w-4 mr-2 text-primary" />
+                    <div className="flex items-center text-sm sm:text-base">
+                      <Phone className="h-4 w-4 mr-2 text-primary flex-shrink-0" />
                       <a
                         href={`tel:${product.contact_phone}`}
-                        className="hover:underline"
+                        className="hover:underline break-all"
                       >
                         {product.contact_phone}
                       </a>
                     </div>
                   )}
                   {product.contact_email && (
-                    <div className="flex items-center">
-                      <Mail className="h-4 w-4 mr-2 text-primary" />
+                    <div className="flex items-center text-sm sm:text-base">
+                      <Mail className="h-4 w-4 mr-2 text-primary flex-shrink-0" />
                       <a
                         href={`mailto:${product.contact_email}`}
-                        className="hover:underline"
+                        className="hover:underline break-all"
                       >
                         {product.contact_email}
                       </a>
@@ -294,51 +301,49 @@ const ProductDetails = () => {
                   )}
                 </div>
                 {token && (
-                 <Button onClick={handleContactSeller} className="mt-2">
-                   <Mail className="h-4 w-4 mr-2" />
-                   {t("contact seller via chat")}
-                 </Button>
-               )}
+                  <Button onClick={handleContactSeller} className="mt-2 w-full sm:w-auto" size="sm">
+                    <Mail className="h-4 w-4 mr-2" />
+                    {t("contact seller via chat")}
+                  </Button>
+                )}
               </div>
             </div>
           </CardContent>
         </Card>
 
         {/* Product Details Tabs */}
-        <Card className="mt-8">
+        <Card className="mt-6 md:mt-8">
           <Tabs defaultValue="description" className="w-full">
             <TabsList className="w-full justify-start border-b rounded-none h-auto p-0">
               <TabsTrigger
                 value="description"
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary text-sm sm:text-base"
               >
                 {t("description")}
               </TabsTrigger>
               <TabsTrigger
                 value="reviews"
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary text-sm sm:text-base"
               >
                 {t("reviews")}
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="description" className="p-6">
+            <TabsContent value="description" className="p-4 sm:p-6">
               <div className="prose max-w-none">
-                <h3 className="text-xl font-semibold mb-4">
+                <h3 className="text-lg sm:text-xl font-semibold mb-4">
                   {t("product description")}
                 </h3>
-                <p className="text-muted-foreground whitespace-pre-wrap">
+                <p className="text-sm sm:text-base text-muted-foreground whitespace-pre-wrap">
                   {product.description}
                 </p>
 
-                <div className="mt-6 grid grid-cols-2 gap-4">
+                <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <h4 className="font-semibold mb-2">{t("condition")}</h4>
+                    <h4 className="text-sm sm:text-base font-semibold mb-2">{t("condition")}</h4>
                     {product.condition && (
-                      <Badge variant="outline">
-                        {t(
-                          `conditions.${product.condition.toLowerCase().replace("-", "_")}`,
-                        )}
+                      <Badge variant="outline" className="text-xs sm:text-sm">
+                        {t(`conditions.${product.condition.toLowerCase().replace("-", "_")}`)}
                       </Badge>
                     )}
                   </div>
@@ -346,7 +351,7 @@ const ProductDetails = () => {
               </div>
             </TabsContent>
 
-            <TabsContent value="reviews" className="p-6">
+            <TabsContent value="reviews" className="p-4 sm:p-6">
               <ProductReviews
                 productId={parseInt(product.id)}
                 isProductOwner={
@@ -359,9 +364,9 @@ const ProductDetails = () => {
         </Card>
 
         {similarProducts.length > 0 && (
-          <div className="mt-12">
-            <h2 className="text-3xl font-bold mb-6">{t("similar products")}</h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-2 sm:gap-4">
+          <div className="mt-8 md:mt-12">
+            <h2 className="text-2xl sm:text-3xl font-bold mb-4 md:mb-6">{t("similar products")}</h2>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-4">
               {similarProducts.map((p) => (
                 <ProductCard
                   key={p.id}
