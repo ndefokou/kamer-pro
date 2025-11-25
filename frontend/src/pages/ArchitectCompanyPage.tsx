@@ -60,7 +60,6 @@ const ArchitectCompanyPage = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  console.log("Reloading component");
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -98,9 +97,11 @@ const ArchitectCompanyPage = () => {
     } catch (error) {
       const axiosError = error as AxiosError;
       if (axiosError.response?.status === 404) {
+        // Expected: User hasn't created their architect company yet
         setcompany(null);
         setIsEditing(true);
       } else {
+        // Unexpected error - log and show toast
         console.error("Failed to fetch architect company:", error);
         toast({
           title: t("error"),

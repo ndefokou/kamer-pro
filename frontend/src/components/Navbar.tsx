@@ -128,7 +128,7 @@ const Navbar = () => {
                 variant="ghost"
                 className="text-primary-foreground hover:bg-primary-foreground/10"
               >
-                My Firm
+                {t("my firm")}
               </Button>
             </Link>
 
@@ -137,7 +137,7 @@ const Navbar = () => {
                 variant="ghost"
                 className="text-primary-foreground hover:bg-primary-foreground/10"
               >
-                My company
+                {t("my company")}
               </Button>
             </Link>
 
@@ -181,18 +181,18 @@ const Navbar = () => {
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem onClick={() => navigate("/wishlist")}>
                     <Heart className="h-4 w-4 mr-2" />
-                    Wishlist
+                    {t("wishlist")}
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleLogout}>
                     <LogOut className="h-4 w-4 mr-2" />
-                    Logout
+                    {t("logout")}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
               <Link to="/webauth-login">
-                <Button variant="secondary">Login</Button>
+                <Button variant="secondary">{t("login")}</Button>
               </Link>
             )}
             <Button
@@ -243,9 +243,9 @@ const Navbar = () => {
               </SheetTrigger>
               <SheetContent side="right" className="w-[300px] sm:w-[400px]">
                 <SheetHeader>
-                  <SheetTitle>Menu</SheetTitle>
+                  <SheetTitle>{t("menu")}</SheetTitle>
                   <SheetDescription>
-                    Navigate through the application
+                    {t("navigate through the application")}
                   </SheetDescription>
                 </SheetHeader>
                 <div className="flex flex-col space-y-4 mt-8">
@@ -253,7 +253,7 @@ const Navbar = () => {
                     <div className="flex items-center space-x-2 pb-4 border-b">
                       <User className="h-5 w-5" />
                       <span className="font-semibold">
-                        {username || "User"}
+                        {username || t("user")}
                       </span>
                     </div>
                   )}
@@ -282,7 +282,7 @@ const Navbar = () => {
                     onClick={() => handleNavigation("/architect-company")}
                   >
                     <Store className="h-5 w-5 mr-2" />
-                    My Firm
+                    {t("my firm")}
                   </Button>
 
                   <Button
@@ -291,7 +291,7 @@ const Navbar = () => {
                     onClick={() => handleNavigation("/company")}
                   >
                     <Store className="h-5 w-5 mr-2" />
-                    My company
+                    {t("my company")}
                   </Button>
 
                   {token && (
@@ -302,7 +302,7 @@ const Navbar = () => {
                         onClick={() => handleNavigation("/wishlist")}
                       >
                         <Heart className="h-5 w-5 mr-2" />
-                        Wishlist
+                        {t("wishlist")}
                         {wishlistCount > 0 && (
                           <Badge variant="secondary" className="ml-auto">
                             {wishlistCount}
@@ -318,7 +318,7 @@ const Navbar = () => {
                           onClick={handleLogout}
                         >
                           <LogOut className="h-5 w-5 mr-2" />
-                          Logout
+                          {t("logout")}
                         </Button>
                       </div>
                     </>
@@ -330,7 +330,7 @@ const Navbar = () => {
                       className="w-full"
                       onClick={() => handleNavigation("/webauth-login")}
                     >
-                      Login
+                      {t("login")}
                     </Button>
                   )}
                   <Button

@@ -19,67 +19,49 @@ const RoleSelection = () => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    const fetchUsercompany = async () => {
-      try {
-        const response = await apiClient.get("/company");
-        if (response.data) {
-          navigate("/company");
-        }
-      } catch (error) {
-        if (axios.isAxiosError(error) && error.response?.status === 404) {
-          // This is expected if the user has not created a company yet.
-          // No action needed.
-        } else {
-          // For other errors, log them.
-          console.error("Failed to fetch user company:", error);
-        }
+  // Removed automatic company fetch to prevent 404 errors
+  // Users will be redirected based on their role selection
+
+  const handleRoleSelection = async (role: "buyer" | "seller" | "architect") => {
+    setIsLoading(true);
+    try {
+      await apiClient.post("/roles", { role });
+
+      toast({
+        title: t("success"),
+        description: t("role_registered_successfully", { role }),
+      });
+
+      // Store role in localStorage
+      localStorage.setItem("role", role);
+
+      // Small delay to ensure localStorage is updated
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Navigate based on role
+      if (role === "seller") {
+        navigate("/company");
+      } else if (role === "architect") {
+        navigate("/architect-company");
+      } else {
+        navigate("/marketplace");
       }
-    };
-
-    fetchUsercompany();
-  }, [navigate]);
-
-const handleRoleSelection = async (role: "buyer" | "seller" | "architect") => {
-  setIsLoading(true);
-  try {
-    await apiClient.post("/roles", { role });
-
-    toast({
-      title: t("success"),
-      description: t("role_registered_successfully", { role }),
-    });
-
-    // Store role in localStorage
-    localStorage.setItem("role", role);
-    
-    // Small delay to ensure localStorage is updated
-    await new Promise(resolve => setTimeout(resolve, 100));
-    
-    // Navigate based on role
-    if (role === "seller") {
-      navigate("/company");
-    } else if (role === "architect") {
-      navigate("/architect-company");
-    } else {
-      navigate("/marketplace");
+    } catch (error) {
+      let errorMessage = "An unexpected error occurred.";
+      if (axios.isAxiosError(error) && error.response) {
+        errorMessage = error.response.data.message || error.message;
+      } else if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      toast({
+        title: t("error"),
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
     }
-  } catch (error) {
-    let errorMessage = "An unexpected error occurred.";
-    if (axios.isAxiosError(error) && error.response) {
-      errorMessage = error.response.data.message || error.message;
-    } else if (error instanceof Error) {
-      errorMessage = error.message;
-    }
-    toast({
-      title: t("error"),
-      description: errorMessage,
-      variant: "destructive",
-    });
-  } finally {
-    setIsLoading(false);
-  }
-};
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-hero p-4">

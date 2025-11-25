@@ -88,24 +88,8 @@ export const WebAuthLogin = () => {
         description: t("logged in successfully"),
       });
 
-      // Fetch user roles
-      try {
-        const rolesResponse = await apiClient.get("/roles");
-        if (rolesResponse.data && rolesResponse.data.roles) {
-          localStorage.setItem("roles", JSON.stringify(rolesResponse.data.roles));
-          // Redirect based on roles
-          if (rolesResponse.data.roles.length > 0) {
-            navigate("/marketplace"); // Or to a dashboard page
-          } else {
-            navigate("/role-selection");
-          }
-        } else {
-          navigate("/role-selection");
-        }
-      } catch (error) {
-        console.error("Failed to fetch roles, proceeding to role selection:", error);
-        navigate("/role-selection");
-      }
+      // Always redirect to role selection page after login
+      navigate("/role-selection");
     } catch (error) {
       console.error("Authentication error:", error);
       let errorMessage = t("authentication failed");
