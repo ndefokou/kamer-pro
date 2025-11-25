@@ -30,10 +30,12 @@ async fn main() -> std::io::Result<()> {
 
     // Create the uploads directory if it doesn't exist
     let manifest_dir = env!("CARGO_MANIFEST_DIR");
-    let uploads_dir = std::path::Path::new(manifest_dir).join("public").join("uploads");
-    
+    let uploads_dir = std::path::Path::new(manifest_dir)
+        .join("public")
+        .join("uploads");
+
     println!("Uploads directory: {}", uploads_dir.display());
-    
+
     if !uploads_dir.exists() {
         std::fs::create_dir_all(&uploads_dir).expect("Failed to create uploads directory");
         println!("Created uploads directory");
@@ -72,18 +74,16 @@ async fn main() -> std::io::Result<()> {
                             .route("/seller", web::get().to(routes::products::get_my_products))
                             .service(
                                 web::resource("")
-                                    .route(web::post().to(routes::products::create_product))
+                                    .route(web::post().to(routes::products::create_product)),
                             )
                             .service(
                                 web::resource("/{id}")
                                     .route(web::get().to(routes::products::get_product))
                                     .route(web::put().to(routes::products::update_product))
-                                    .route(web::delete().to(routes::products::delete_product))
-                            )
+                                    .route(web::delete().to(routes::products::delete_product)),
+                            ),
                     )
-                    .service(
-                        web::scope("/upload").service(routes::upload::upload_images),
-                    )
+                    .service(web::scope("/upload").service(routes::upload::upload_images))
                     .service(
                         web::scope("/wishlist")
                             .service(routes::wishlist::clear_wishlist)
@@ -112,24 +112,59 @@ async fn main() -> std::io::Result<()> {
                             .service(routes::company::create_or_update_company)
                             .service(routes::company::delete_company),
                     )
-                    .service(
-                        web::scope("/architect-companies")
-                            .route("", web::get().to(routes::architect::get_all_architect_companies))
-                    )
+                    .service(web::scope("/architect-companies").route(
+                        "",
+                        web::get().to(routes::architect::get_all_architect_companies),
+                    ))
                     .service(
                         web::scope("/architect-company")
                             .route("", web::get().to(routes::architect::get_architect_company))
-                            .route("", web::post().to(routes::architect::create_or_update_architect_company))
-                            .route("/{id}", web::get().to(routes::architect::get_architect_company_by_id))
+                            .route(
+                                "",
+                                web::post()
+                                    .to(routes::architect::create_or_update_architect_company),
+                            )
+                            .route(
+                                "/{id}",
+                                web::get().to(routes::architect::get_architect_company_by_id),
+                            ),
                     )
                     .service(
                         web::scope("/architect-projects")
                             .route("", web::get().to(routes::architect::get_architect_projects))
-                            .route("/company/{id}", web::get().to(routes::architect::get_architect_projects_by_company))
-                            .route("", web::post().to(routes::architect::create_architect_project))
-                            .route("/all", web::get().to(routes::architect::get_all_architect_projects))
-                            .route("/{id}", web::put().to(routes::architect::update_architect_project))
-                            .route("/{id}", web::delete().to(routes::architect::delete_architect_project))
+                            .route(
+                                "/company/{id}",
+                                web::get().to(routes::architect::get_architect_projects_by_company),
+                            )
+                            .route(
+                                "",
+                                web::post().to(routes::architect::create_architect_project),
+                            )
+                            .route(
+                                "/all",
+                                web::get().to(routes::architect::get_all_architect_projects),
+                            )
+                            .route(
+                                "/{id}",
+                                web::put().to(routes::architect::update_architect_project),
+                            )
+                            .route(
+                                "/{id}",
+                                web::delete().to(routes::architect::delete_architect_project),
+                            ),
+                    )
+                    .service(
+                        web::scope("/admin")
+                            .service(routes::admin::admin_login)
+                            .service(routes::admin::get_all_architects)
+                            .service(routes::admin::create_architect)
+                            .service(routes::admin::update_architect)
+                            .service(routes::admin::delete_architect)
+                            .service(routes::admin::reset_architect_password),
+                    )
+                    .service(
+                        web::scope("/architect")
+                            .route("/login", web::post().to(routes::architect::architect_login)),
                     ),
             )
             // Serve static files from /uploads route

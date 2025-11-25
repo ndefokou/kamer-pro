@@ -157,12 +157,12 @@ const RoleSelection = () => {
                 <li>• {t("reach clients seeking designs")}</li>
               </ul>
               <Button
-                onClick={() => handleRoleSelection("architect")}
+                onClick={() => navigate("/architect-login")}
                 disabled={isLoading}
                 className="w-full bg-blue-500 hover:bg-blue-600"
               >
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {t("register as an architect")}
+                {t("continue as architect")}
               </Button>
             </CardContent>
           </Card>

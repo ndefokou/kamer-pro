@@ -123,23 +123,25 @@ const Navbar = () => {
               </Button>
             </Link>
 
-            <Link to="/architect-company">
-              <Button
-                variant="ghost"
-                className="text-primary-foreground hover:bg-primary-foreground/10"
-              >
-                {t("my firm")}
-              </Button>
-            </Link>
-
-            <Link to="/company">
-              <Button
-                variant="ghost"
-                className="text-primary-foreground hover:bg-primary-foreground/10"
-              >
-                {t("my company")}
-              </Button>
-            </Link>
+            {localStorage.getItem("role") === "architect" ? (
+              <Link to="/architect-company">
+                <Button
+                  variant="ghost"
+                  className="text-primary-foreground hover:bg-primary-foreground/10"
+                >
+                  {t("my firm")}
+                </Button>
+              </Link>
+            ) : (
+              <Link to="/company">
+                <Button
+                  variant="ghost"
+                  className="text-primary-foreground hover:bg-primary-foreground/10"
+                >
+                  {t("my company")}
+                </Button>
+              </Link>
+            )}
 
             {token && (
               <>
@@ -276,23 +278,25 @@ const Navbar = () => {
                     {t("findArchitect", "Find an Architect")}
                   </Button>
 
-                  <Button
-                    variant="ghost"
-                    className="justify-start"
-                    onClick={() => handleNavigation("/architect-company")}
-                  >
-                    <Store className="h-5 w-5 mr-2" />
-                    {t("my firm")}
-                  </Button>
-
-                  <Button
-                    variant="ghost"
-                    className="justify-start"
-                    onClick={() => handleNavigation("/company")}
-                  >
-                    <Store className="h-5 w-5 mr-2" />
-                    {t("my company")}
-                  </Button>
+                  {localStorage.getItem("role") === "architect" ? (
+                    <Button
+                      variant="ghost"
+                      className="justify-start"
+                      onClick={() => handleNavigation("/architect-company")}
+                    >
+                      <Store className="h-5 w-5 mr-2" />
+                      {t("my firm")}
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="ghost"
+                      className="justify-start"
+                      onClick={() => handleNavigation("/company")}
+                    >
+                      <Store className="h-5 w-5 mr-2" />
+                      {t("my company")}
+                    </Button>
+                  )}
 
                   {token && (
                     <>

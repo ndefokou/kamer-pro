@@ -22,6 +22,10 @@ import ArchitectProjectsPage from "./pages/ArchitectProjectsPage";
 import FindArchitectPage from "./pages/FindArchitectPage";
 import ArchitectFirmPage from "./pages/ArchitectFirmPage";
 import ProjectDetails from "./pages/ProjectDetails";
+import AdminLogin from "./pages/AdminLogin";
+import AdminDashboard from "./pages/AdminDashboard";
+import ArchitectManagement from "./pages/ArchitectManagement";
+import ArchitectLogin from "./pages/ArchitectLogin";
 
 const queryClient = new QueryClient();
 
@@ -36,6 +40,10 @@ const router = createBrowserRouter(
     { path: "/project/:id", Component: ProjectDetails },
     { path: "/webauth-login", Component: WebAuthLogin },
     { path: "/webauth-register", Component: WebAuthRegister },
+    { path: "/admin-login", Component: AdminLogin },
+    { path: "/admin/dashboard", Component: AdminDashboard },
+    { path: "/admin/architects", Component: ArchitectManagement },
+    { path: "/architect-login", Component: ArchitectLogin },
     {
       element: <ProtectedRoute />,
       children: [{ path: "/my-products", Component: MyProducts }],
@@ -66,10 +74,10 @@ const App = () => (
       <WishlistProvider>
         <TooltipProvider>
           <Toaster />
-            <Sonner />
-            <RouterProvider router={router} />
-          </TooltipProvider>
-        </WishlistProvider>
+          <Sonner />
+          <RouterProvider router={router} />
+        </TooltipProvider>
+      </WishlistProvider>
     </MessagingProvider>
   </QueryClientProvider>
 );

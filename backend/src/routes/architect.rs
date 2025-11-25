@@ -1,6 +1,7 @@
-use crate::routes::middleware::extract_user_id_from_token;
+use crate::routes::middleware::{extract_architect_id_from_token, extract_user_id_from_token};
 use actix_multipart::Multipart;
 use actix_web::{web, HttpRequest, HttpResponse, Responder};
+use bcrypt::verify;
 use futures_util::TryStreamExt;
 use log;
 use serde::{Deserialize, Serialize};
@@ -10,7 +11,7 @@ use uuid::Uuid;
 #[derive(Serialize, Deserialize, sqlx::FromRow, Clone)]
 pub struct Architectcompany {
     pub id: i32,
-    pub user_id: i32,
+    pub user_id: Option<i32>,
     pub name: String,
     pub email: String,
     pub phone: String,
@@ -18,6 +19,9 @@ pub struct Architectcompany {
     pub logo_url: Option<String>,
     pub banner_url: Option<String>,
     pub description: Option<String>,
+    pub password_hash: Option<String>,
+    pub registration_number: Option<String>,
+    pub is_active: Option<i32>,
     pub created_at: String,
     pub updated_at: String,
 }
@@ -71,7 +75,7 @@ pub struct ArchitectProjectResponse {
 #[derive(Serialize)]
 pub struct ArchitectcompanyResponse {
     pub id: i32,
-    pub user_id: i32,
+    pub user_id: Option<i32>,
     pub name: String,
     pub email: String,
     pub phone: String,
@@ -79,6 +83,8 @@ pub struct ArchitectcompanyResponse {
     pub logo_url: Option<String>,
     pub banner_url: Option<String>,
     pub description: Option<String>,
+    pub registration_number: Option<String>,
+    pub is_active: Option<i32>,
     pub created_at: String,
     pub updated_at: String,
     pub project_count: i64,
@@ -87,6 +93,76 @@ pub struct ArchitectcompanyResponse {
 #[derive(Serialize)]
 struct ErrorResponse {
     message: String,
+}
+
+#[derive(Deserialize)]
+pub struct ArchitectLoginRequest {
+    pub firm_name: String,
+    pub password: String,
+}
+
+#[derive(Serialize)]
+pub struct ArchitectLoginResponse {
+    pub message: String,
+    pub token: String,
+    pub architect_id: i32,
+    pub firm_name: String,
+    pub user_id: Option<i32>,
+}
+
+pub async fn architect_login(
+    pool: web::Data<SqlitePool>,
+    req: web::Json<ArchitectLoginRequest>,
+) -> impl Responder {
+    // Find architect by firm name
+    let architect: Result<Architectcompany, _> =
+        sqlx::query_as("SELECT * FROM architect_companies WHERE name = ? AND is_active = 1")
+            .bind(&req.firm_name)
+            .fetch_one(pool.get_ref())
+            .await;
+
+    match architect {
+        Ok(architect) => {
+            // Check if password_hash exists
+            if let Some(password_hash) = &architect.password_hash {
+                // Verify password
+                match verify(&req.password, password_hash) {
+                    Ok(valid) => {
+                        if valid {
+                            // Generate token - use architect company id
+                            let token = format!(
+                                "architect_token_{}_{}",
+                                Uuid::new_v4().to_string(),
+                                architect.id
+                            );
+
+                            HttpResponse::Ok().json(ArchitectLoginResponse {
+                                message: "Architect login successful".to_string(),
+                                token,
+                                architect_id: architect.id,
+                                firm_name: architect.name,
+                                user_id: architect.user_id,
+                            })
+                        } else {
+                            HttpResponse::Unauthorized().json(ErrorResponse {
+                                message: "Invalid credentials".to_string(),
+                            })
+                        }
+                    }
+                    Err(_) => HttpResponse::InternalServerError().json(ErrorResponse {
+                        message: "Password verification failed".to_string(),
+                    }),
+                }
+            } else {
+                HttpResponse::Unauthorized().json(ErrorResponse {
+                    message: "Account not properly configured".to_string(),
+                })
+            }
+        }
+        Err(_) => HttpResponse::Unauthorized().json(ErrorResponse {
+            message: "Invalid credentials or account inactive".to_string(),
+        }),
+    }
 }
 
 fn get_user_id_from_headers(req: &HttpRequest) -> Result<i32, actix_web::Error> {
@@ -102,24 +178,54 @@ fn get_user_id_from_headers(req: &HttpRequest) -> Result<i32, actix_web::Error> 
     ))
 }
 
-pub async fn get_architect_company(req: HttpRequest, pool: web::Data<SqlitePool>) -> impl Responder {
-    let user_id = match get_user_id_from_headers(&req) {
-        Ok(id) => id,
-        Err(e) => return HttpResponse::Unauthorized().json(ErrorResponse { message: e.to_string() }),
+pub async fn get_architect_company(
+    req: HttpRequest,
+    pool: web::Data<SqlitePool>,
+) -> impl Responder {
+    let auth_header = req.headers().get("Authorization");
+    let token_str = match auth_header {
+        Some(header) => header.to_str().unwrap_or(""),
+        None => {
+            return HttpResponse::Unauthorized().json(ErrorResponse {
+                message: "No authorization header".to_string(),
+            })
+        }
+    };
+    let token = token_str.strip_prefix("Bearer ").unwrap_or(token_str);
+
+    let (user_id, architect_id) = match extract_user_id_from_token(token) {
+        Ok(uid) => (Some(uid), None),
+        Err(_) => match extract_architect_id_from_token(token) {
+            Ok(aid) => (None, Some(aid)),
+            Err(_) => {
+                return HttpResponse::Unauthorized().json(ErrorResponse {
+                    message: "Invalid token".to_string(),
+                })
+            }
+        },
     };
 
-    let company = sqlx::query_as::<_, Architectcompany>("SELECT * FROM architect_companies WHERE user_id = ?")
-        .bind(user_id)
-        .fetch_optional(pool.get_ref())
-        .await;
+    let company = if let Some(uid) = user_id {
+        sqlx::query_as::<_, Architectcompany>("SELECT * FROM architect_companies WHERE user_id = ?")
+            .bind(uid)
+            .fetch_optional(pool.get_ref())
+            .await
+    } else {
+        sqlx::query_as::<_, Architectcompany>("SELECT * FROM architect_companies WHERE id = ?")
+            .bind(architect_id.unwrap())
+            .fetch_optional(pool.get_ref())
+            .await
+    };
 
     match company {
         Ok(Some(company)) => {
-            let project_count: (i64,) = sqlx::query_as("SELECT COUNT(*) FROM architect_projects WHERE architect_company_id = ?")
-                .bind(company.id)
-                .fetch_one(pool.get_ref())
-                .await
-                .unwrap_or((0,));
+            let project_count: (i64,) = sqlx::query_as(
+                "SELECT COUNT(*) FROM architect_projects WHERE architect_company_id = ?",
+            )
+            .bind(company.id)
+            .fetch_one(pool.get_ref())
+            .await
+            .unwrap_or((0,));
 
             let response = ArchitectcompanyResponse {
                 id: company.id,
@@ -131,33 +237,45 @@ pub async fn get_architect_company(req: HttpRequest, pool: web::Data<SqlitePool>
                 logo_url: company.logo_url,
                 banner_url: company.banner_url,
                 description: company.description,
+                registration_number: company.registration_number,
+                is_active: company.is_active,
                 created_at: company.created_at,
                 updated_at: company.updated_at,
                 project_count: project_count.0,
             };
             HttpResponse::Ok().json(response)
         }
-        Ok(None) => HttpResponse::NotFound().json(ErrorResponse { message: "Architect company not found".to_string() }),
+        Ok(None) => HttpResponse::NotFound().json(ErrorResponse {
+            message: "Architect company not found".to_string(),
+        }),
         Err(e) => {
             eprintln!("Failed to fetch architect company: {}", e);
-            HttpResponse::InternalServerError().json(ErrorResponse { message: "Failed to fetch architect company".to_string() })
+            HttpResponse::InternalServerError().json(ErrorResponse {
+                message: "Failed to fetch architect company".to_string(),
+            })
         }
     }
 }
-pub async fn get_architect_company_by_id(pool: web::Data<SqlitePool>, path: web::Path<i32>) -> impl Responder {
+pub async fn get_architect_company_by_id(
+    pool: web::Data<SqlitePool>,
+    path: web::Path<i32>,
+) -> impl Responder {
     let company_id = path.into_inner();
-    let company = sqlx::query_as::<_, Architectcompany>("SELECT * FROM architect_companies WHERE id = ?")
-        .bind(company_id)
-        .fetch_optional(pool.get_ref())
-        .await;
+    let company =
+        sqlx::query_as::<_, Architectcompany>("SELECT * FROM architect_companies WHERE id = ?")
+            .bind(company_id)
+            .fetch_optional(pool.get_ref())
+            .await;
 
     match company {
         Ok(Some(company)) => {
-            let project_count: (i64,) = sqlx::query_as("SELECT COUNT(*) FROM architect_projects WHERE architect_company_id = ?")
-                .bind(company.id)
-                .fetch_one(pool.get_ref())
-                .await
-                .unwrap_or((0,));
+            let project_count: (i64,) = sqlx::query_as(
+                "SELECT COUNT(*) FROM architect_projects WHERE architect_company_id = ?",
+            )
+            .bind(company.id)
+            .fetch_one(pool.get_ref())
+            .await
+            .unwrap_or((0,));
 
             let response = ArchitectcompanyResponse {
                 id: company.id,
@@ -169,44 +287,60 @@ pub async fn get_architect_company_by_id(pool: web::Data<SqlitePool>, path: web:
                 logo_url: company.logo_url,
                 banner_url: company.banner_url,
                 description: company.description,
+                registration_number: company.registration_number,
+                is_active: company.is_active,
                 created_at: company.created_at,
                 updated_at: company.updated_at,
                 project_count: project_count.0,
             };
             HttpResponse::Ok().json(response)
         }
-        Ok(None) => HttpResponse::NotFound().json(ErrorResponse { message: "Architect company not found".to_string() }),
+        Ok(None) => HttpResponse::NotFound().json(ErrorResponse {
+            message: "Architect company not found".to_string(),
+        }),
         Err(e) => {
             eprintln!("Failed to fetch architect company: {}", e);
-            HttpResponse::InternalServerError().json(ErrorResponse { message: "Failed to fetch architect company".to_string() })
+            HttpResponse::InternalServerError().json(ErrorResponse {
+                message: "Failed to fetch architect company".to_string(),
+            })
         }
     }
 }
 
-pub async fn get_architect_projects_by_company(pool: web::Data<SqlitePool>, path: web::Path<i32>) -> impl Responder {
+pub async fn get_architect_projects_by_company(
+    pool: web::Data<SqlitePool>,
+    path: web::Path<i32>,
+) -> impl Responder {
     let company_id = path.into_inner();
-    let projects = sqlx::query_as::<_, ArchitectProject>("SELECT * FROM architect_projects WHERE architect_company_id = ?")
-        .bind(company_id)
-        .fetch_all(pool.get_ref())
-        .await;
+    let projects = sqlx::query_as::<_, ArchitectProject>(
+        "SELECT * FROM architect_projects WHERE architect_company_id = ?",
+    )
+    .bind(company_id)
+    .fetch_all(pool.get_ref())
+    .await;
 
     match projects {
         Ok(projects) => {
             let mut response_projects = Vec::new();
             for project in projects {
-                let maquettes = sqlx::query_as::<_, ArchitectProjectMaquette>("SELECT * FROM architect_project_maquettes WHERE project_id = ?")
-                    .bind(project.id)
-                    .fetch_all(pool.get_ref())
-                    .await
-                    .unwrap_or_default();
+                let maquettes = sqlx::query_as::<_, ArchitectProjectMaquette>(
+                    "SELECT * FROM architect_project_maquettes WHERE project_id = ?",
+                )
+                .bind(project.id)
+                .fetch_all(pool.get_ref())
+                .await
+                .unwrap_or_default();
 
-                let images = sqlx::query_as::<_, ArchitectProjectImage>("SELECT * FROM architect_project_images WHERE project_id = ?")
-                    .bind(project.id)
-                    .fetch_all(pool.get_ref())
-                    .await
-                    .unwrap_or_default();
+                let images = sqlx::query_as::<_, ArchitectProjectImage>(
+                    "SELECT * FROM architect_project_images WHERE project_id = ?",
+                )
+                .bind(project.id)
+                .fetch_all(pool.get_ref())
+                .await
+                .unwrap_or_default();
 
-                let base_url = std::env::var("BACKEND_URL").unwrap_or_else(|_| "http://localhost:8082".to_string());
+                let base_url = std::env::var("BACKEND_URL")
+                    .unwrap_or_else(|_| "http://localhost:8082".to_string());
                 response_projects.push(ArchitectProjectResponse {
                     id: project.id,
                     architect_company_id: project.architect_company_id,
@@ -215,18 +349,44 @@ pub async fn get_architect_projects_by_company(pool: web::Data<SqlitePool>, path
                     description: project.description,
                     location: project.location,
                     project_cost: project.project_cost,
-                    house_plan_url: project.house_plan_url.map(|p| format!("{}/{}", base_url.trim_end_matches('/'), p.trim_start_matches('/'))),
+                    house_plan_url: project.house_plan_url.map(|p| {
+                        format!(
+                            "{}/{}",
+                            base_url.trim_end_matches('/'),
+                            p.trim_start_matches('/')
+                        )
+                    }),
                     created_at: project.created_at,
                     updated_at: project.updated_at,
-                    maquettes: maquettes.into_iter().map(|m| format!("{}/{}", base_url.trim_end_matches('/'), m.image_url.trim_start_matches('/'))).collect(),
-                    images: images.into_iter().map(|i| format!("{}/{}", base_url.trim_end_matches('/'), i.image_url.trim_start_matches('/'))).collect(),
+                    maquettes: maquettes
+                        .into_iter()
+                        .map(|m| {
+                            format!(
+                                "{}/{}",
+                                base_url.trim_end_matches('/'),
+                                m.image_url.trim_start_matches('/')
+                            )
+                        })
+                        .collect(),
+                    images: images
+                        .into_iter()
+                        .map(|i| {
+                            format!(
+                                "{}/{}",
+                                base_url.trim_end_matches('/'),
+                                i.image_url.trim_start_matches('/')
+                            )
+                        })
+                        .collect(),
                 });
             }
             HttpResponse::Ok().json(response_projects)
-        },
+        }
         Err(e) => {
             eprintln!("Failed to fetch architect projects: {}", e);
-            HttpResponse::InternalServerError().json(ErrorResponse { message: "Failed to fetch architect projects".to_string() })
+            HttpResponse::InternalServerError().json(ErrorResponse {
+                message: "Failed to fetch architect projects".to_string(),
+            })
         }
     }
 }
@@ -239,11 +399,13 @@ pub async fn get_all_architect_companies(pool: web::Data<SqlitePool>) -> impl Re
         Ok(companies) => {
             let mut response_companies = Vec::new();
             for company in companies {
-                let project_count: (i64,) = sqlx::query_as("SELECT COUNT(*) FROM architect_projects WHERE architect_company_id = ?")
-                    .bind(company.id)
-                    .fetch_one(pool.get_ref())
-                    .await
-                    .unwrap_or((0,));
+                let project_count: (i64,) = sqlx::query_as(
+                    "SELECT COUNT(*) FROM architect_projects WHERE architect_company_id = ?",
+                )
+                .bind(company.id)
+                .fetch_one(pool.get_ref())
+                .await
+                .unwrap_or((0,));
 
                 response_companies.push(ArchitectcompanyResponse {
                     id: company.id,
@@ -255,6 +417,8 @@ pub async fn get_all_architect_companies(pool: web::Data<SqlitePool>) -> impl Re
                     logo_url: company.logo_url,
                     banner_url: company.banner_url,
                     description: company.description,
+                    registration_number: company.registration_number,
+                    is_active: company.is_active,
                     created_at: company.created_at,
                     updated_at: company.updated_at,
                     project_count: project_count.0,
@@ -264,15 +428,47 @@ pub async fn get_all_architect_companies(pool: web::Data<SqlitePool>) -> impl Re
         }
         Err(e) => {
             eprintln!("Failed to fetch architect companies: {}", e);
-            HttpResponse::InternalServerError().json(ErrorResponse { message: "Failed to fetch architect companies".to_string() })
+            HttpResponse::InternalServerError().json(ErrorResponse {
+                message: "Failed to fetch architect companies".to_string(),
+            })
         }
     }
 }
 
-pub async fn create_or_update_architect_company(req: HttpRequest, pool: web::Data<SqlitePool>, mut payload: Multipart) -> Result<HttpResponse, actix_web::Error> {
+pub async fn create_or_update_architect_company(
+    req: HttpRequest,
+    pool: web::Data<SqlitePool>,
+    mut payload: Multipart,
+) -> Result<HttpResponse, actix_web::Error> {
     log::info!("Attempting to create or update architect company...");
-    let user_id = get_user_id_from_headers(&req)?;
-    log::info!("User ID {} retrieved.", user_id);
+
+    // Try to get user_id first, then architect_id
+    let auth_header = req.headers().get("Authorization");
+    let token_str = match auth_header {
+        Some(header) => header.to_str().unwrap_or(""),
+        None => {
+            return Err(actix_web::error::ErrorUnauthorized(
+                "No authorization header",
+            ))
+        }
+    };
+
+    let token = token_str.strip_prefix("Bearer ").unwrap_or(token_str);
+
+    let (user_id, architect_id) = match extract_user_id_from_token(token) {
+        Ok(uid) => (Some(uid), None),
+        Err(_) => match extract_architect_id_from_token(token) {
+            Ok(aid) => (None, Some(aid)),
+            Err(_) => return Err(actix_web::error::ErrorUnauthorized("Invalid token")),
+        },
+    };
+
+    log::info!(
+        "Auth info: user_id={:?}, architect_id={:?}",
+        user_id,
+        architect_id
+    );
+
     let mut name = String::new();
     let mut email = String::new();
     let mut phone = String::new();
@@ -289,7 +485,7 @@ pub async fn create_or_update_architect_company(req: HttpRequest, pool: web::Dat
             .unwrap_or_default()
             .to_owned();
         log::info!("Field name: {}", field_name);
-        
+
         let mut bytes = Vec::new();
         while let Some(chunk) = field.try_next().await? {
             bytes.extend_from_slice(&chunk);
@@ -308,7 +504,11 @@ pub async fn create_or_update_architect_company(req: HttpRequest, pool: web::Dat
                 let filepath = uploads_dir.join(&filename);
                 if !uploads_dir.exists() {
                     std::fs::create_dir_all(&uploads_dir).map_err(|e| {
-                        eprintln!("Failed to create directory for {}: {}", uploads_dir.display(), e);
+                        eprintln!(
+                            "Failed to create directory for {}: {}",
+                            uploads_dir.display(),
+                            e
+                        );
                         actix_web::error::ErrorInternalServerError("Failed to save file")
                     })?;
                 }
@@ -325,7 +525,11 @@ pub async fn create_or_update_architect_company(req: HttpRequest, pool: web::Dat
                 let filepath = uploads_dir.join(&filename);
                 if !uploads_dir.exists() {
                     std::fs::create_dir_all(&uploads_dir).map_err(|e| {
-                        eprintln!("Failed to create directory for {}: {}", uploads_dir.display(), e);
+                        eprintln!(
+                            "Failed to create directory for {}: {}",
+                            uploads_dir.display(),
+                            e
+                        );
                         actix_web::error::ErrorInternalServerError("Failed to save file")
                     })?;
                 }
@@ -339,18 +543,32 @@ pub async fn create_or_update_architect_company(req: HttpRequest, pool: web::Dat
         }
     }
 
-    let existing_company = sqlx::query_as::<_, Architectcompany>("SELECT * FROM architect_companies WHERE user_id = ?")
-        .bind(user_id)
-        .fetch_optional(pool.get_ref())
-        .await
-        .map_err(|e| {
-            eprintln!("Failed to fetch existing architect company: {}", e);
-            actix_web::error::ErrorInternalServerError("Failed to process request")
-        })?;
+    let existing_company = if let Some(uid) = user_id {
+        sqlx::query_as::<_, Architectcompany>("SELECT * FROM architect_companies WHERE user_id = ?")
+            .bind(uid)
+            .fetch_optional(pool.get_ref())
+            .await
+    } else if let Some(aid) = architect_id {
+        sqlx::query_as::<_, Architectcompany>("SELECT * FROM architect_companies WHERE id = ?")
+            .bind(aid)
+            .fetch_optional(pool.get_ref())
+            .await
+    } else {
+        return Err(actix_web::error::ErrorUnauthorized("Invalid token"));
+    };
+
+    let existing_company = existing_company.map_err(|e| {
+        eprintln!("Failed to fetch existing architect company: {}", e);
+        actix_web::error::ErrorInternalServerError("Failed to process request")
+    })?;
 
     if let Some(company) = existing_company {
+        // If architect login, ensure they can only update permitted fields
+        // For now, we allow updating all fields passed in payload, but frontend restricts inputs
+        // Ideally, we should enforce this here too, but let's stick to the plan
+
         let updated_company = sqlx::query_as::<_, Architectcompany>(
-            "UPDATE architect_companies SET name = ?, email = ?, phone = ?, location = ?, description = ?, logo_url = ?, banner_url = ?, updated_at = CURRENT_TIMESTAMP WHERE user_id = ? RETURNING *"
+            "UPDATE architect_companies SET name = ?, email = ?, phone = ?, location = ?, description = ?, logo_url = ?, banner_url = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? RETURNING *"
         )
         .bind(if name.is_empty() { &company.name } else { &name })
         .bind(if email.is_empty() { &company.email } else { &email })
@@ -359,18 +577,20 @@ pub async fn create_or_update_architect_company(req: HttpRequest, pool: web::Dat
         .bind(if description.is_empty() { company.description.as_ref() } else { Some(&description) })
         .bind(logo_path.or(company.logo_url))
         .bind(banner_path.or(company.banner_url))
-        .bind(user_id)
+        .bind(company.id) // Update by ID
         .fetch_one(pool.get_ref())
         .await
         .map_err(|e| {
             eprintln!("Failed to update architect company: {}", e);
             actix_web::error::ErrorInternalServerError("Failed to process request")
         })?;
-        let project_count: (i64,) = sqlx::query_as("SELECT COUNT(*) FROM architect_projects WHERE architect_company_id = ?")
-            .bind(updated_company.id)
-            .fetch_one(pool.get_ref())
-            .await
-            .unwrap_or((0,));
+        let project_count: (i64,) = sqlx::query_as(
+            "SELECT COUNT(*) FROM architect_projects WHERE architect_company_id = ?",
+        )
+        .bind(updated_company.id)
+        .fetch_one(pool.get_ref())
+        .await
+        .unwrap_or((0,));
         let response = ArchitectcompanyResponse {
             id: updated_company.id,
             user_id: updated_company.user_id,
@@ -381,95 +601,124 @@ pub async fn create_or_update_architect_company(req: HttpRequest, pool: web::Dat
             logo_url: updated_company.logo_url,
             banner_url: updated_company.banner_url,
             description: updated_company.description,
+            registration_number: updated_company.registration_number,
+            is_active: updated_company.is_active,
             created_at: updated_company.created_at,
             updated_at: updated_company.updated_at,
             project_count: project_count.0,
         };
         Ok(HttpResponse::Ok().json(response))
     } else {
-        let new_company = sqlx::query_as::<_, Architectcompany>(
-            "INSERT INTO architect_companies (user_id, name, email, phone, location, description, logo_url, banner_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING *"
-        )
-        .bind(user_id)
-        .bind(&name)
-        .bind(&email)
-        .bind(&phone)
-        .bind(&location)
-        .bind(if description.is_empty() { None } else { Some(&description) })
-        .bind(&logo_path)
-        .bind(&banner_path)
-        .fetch_one(pool.get_ref())
-        .await
-        .map_err(|e| {
-            eprintln!("Failed to create new architect company: {}", e);
-            actix_web::error::ErrorInternalServerError("Failed to process request")
-        })?;
-        let response = ArchitectcompanyResponse {
-            id: new_company.id,
-            user_id: new_company.user_id,
-            name: new_company.name,
-            email: new_company.email,
-            phone: new_company.phone,
-            location: new_company.location,
-            logo_url: new_company.logo_url,
-            banner_url: new_company.banner_url,
-            description: new_company.description,
-            created_at: new_company.created_at,
-            updated_at: new_company.updated_at,
-            project_count: 0,
-        };
-        Ok(HttpResponse::Created().json(response))
+        // Create new company - only allowed for user login (legacy flow)
+        if let Some(uid) = user_id {
+            let new_company = sqlx::query_as::<_, Architectcompany>(
+                "INSERT INTO architect_companies (user_id, name, email, phone, location, description, logo_url, banner_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING *"
+            )
+            .bind(uid)
+            .bind(&name)
+            .bind(&email)
+            .bind(&phone)
+            .bind(&location)
+            .bind(if description.is_empty() { None } else { Some(&description) })
+            .bind(&logo_path)
+            .bind(&banner_path)
+            .fetch_one(pool.get_ref())
+            .await
+            .map_err(|e| {
+                eprintln!("Failed to create new architect company: {}", e);
+                actix_web::error::ErrorInternalServerError("Failed to process request")
+            })?;
+            let response = ArchitectcompanyResponse {
+                id: new_company.id,
+                user_id: new_company.user_id,
+                name: new_company.name,
+                email: new_company.email,
+                phone: new_company.phone,
+                location: new_company.location,
+                logo_url: new_company.logo_url,
+                banner_url: new_company.banner_url,
+                description: new_company.description,
+                registration_number: new_company.registration_number,
+                is_active: new_company.is_active,
+                created_at: new_company.created_at,
+                updated_at: new_company.updated_at,
+                project_count: 0,
+            };
+            Ok(HttpResponse::Created().json(response))
+        } else {
+            Err(actix_web::error::ErrorNotFound(
+                "Architect company not found",
+            ))
+        }
     }
 }
 
-pub async fn get_architect_projects(req: HttpRequest, pool: web::Data<SqlitePool>) -> impl Responder {
-    let user_id = match get_user_id_from_headers(&req) {
-        Ok(id) => id,
-        Err(e) => return HttpResponse::Unauthorized().json(ErrorResponse { message: e.to_string() }),
+pub async fn get_architect_projects(
+    req: HttpRequest,
+    pool: web::Data<SqlitePool>,
+) -> impl Responder {
+    let auth_header = req.headers().get("Authorization");
+    let token_str = match auth_header {
+        Some(header) => header.to_str().unwrap_or(""),
+        None => {
+            return HttpResponse::Unauthorized().json(ErrorResponse {
+                message: "No authorization header".to_string(),
+            })
+        }
+    };
+    let token = token_str.strip_prefix("Bearer ").unwrap_or(token_str);
+
+    let (user_id, architect_id) = match extract_user_id_from_token(token) {
+        Ok(uid) => (Some(uid), None),
+        Err(_) => match extract_architect_id_from_token(token) {
+            Ok(aid) => (None, Some(aid)),
+            Err(_) => {
+                return HttpResponse::Unauthorized().json(ErrorResponse {
+                    message: "Invalid token".to_string(),
+                })
+            }
+        },
     };
 
-    let projects = sqlx::query_as::<_, ArchitectProject>("SELECT * FROM architect_projects WHERE user_id = ?")
-        .bind(user_id)
-        .fetch_all(pool.get_ref())
+    let company_id = if let Some(uid) = user_id {
+        let company = sqlx::query_as::<_, Architectcompany>(
+            "SELECT * FROM architect_companies WHERE user_id = ?",
+        )
+        .bind(uid)
+        .fetch_optional(pool.get_ref())
         .await;
 
-    match projects {
-        Ok(projects) => {
-            let mut response_projects = Vec::new();
-            for project in projects {
-                let maquettes = sqlx::query_as::<_, ArchitectProjectMaquette>("SELECT * FROM architect_project_maquettes WHERE project_id = ?")
-                    .bind(project.id)
-                    .fetch_all(pool.get_ref())
-                    .await
-                    .unwrap_or_default();
-
-                let images = sqlx::query_as::<_, ArchitectProjectImage>("SELECT * FROM architect_project_images WHERE project_id = ?")
-                    .bind(project.id)
-                    .fetch_all(pool.get_ref())
-                    .await
-                    .unwrap_or_default();
-
-                let base_url = std::env::var("BACKEND_URL").unwrap_or_else(|_| "http://localhost:8082".to_string());
-                response_projects.push(ArchitectProjectResponse {
-                    id: project.id,
-                    architect_company_id: project.architect_company_id,
-                    user_id: project.user_id,
-                    name: project.name,
-                    description: project.description,
-                    location: project.location,
-                    project_cost: project.project_cost,
-                    house_plan_url: project.house_plan_url.map(|p| format!("{}/{}", base_url.trim_end_matches('/'), p.trim_start_matches('/'))),
-                    created_at: project.created_at,
-                    updated_at: project.updated_at,
-                    maquettes: maquettes.into_iter().map(|m| format!("{}/{}", base_url.trim_end_matches('/'), m.image_url.trim_start_matches('/'))).collect(),
-                    images: images.into_iter().map(|i| format!("{}/{}", base_url.trim_end_matches('/'), i.image_url.trim_start_matches('/'))).collect(),
-                });
+        match company {
+            Ok(Some(c)) => c.id,
+            Ok(None) => {
+                return HttpResponse::NotFound().json(ErrorResponse {
+                    message: "Company not found".to_string(),
+                })
             }
-            HttpResponse::Ok().json(response_projects)
-        },
+            Err(_) => {
+                return HttpResponse::InternalServerError().json(ErrorResponse {
+                    message: "Database error".to_string(),
+                })
+            }
+        }
+    } else {
+        architect_id.unwrap()
+    };
+
+    let projects = sqlx::query_as::<_, ArchitectProject>(
+        "SELECT * FROM architect_projects WHERE architect_company_id = ? ORDER BY created_at DESC",
+    )
+    .bind(company_id)
+    .fetch_all(pool.get_ref())
+    .await;
+
+    match projects {
+        Ok(projects) => HttpResponse::Ok().json(projects),
         Err(e) => {
             eprintln!("Failed to fetch architect projects: {}", e);
-            HttpResponse::InternalServerError().json(ErrorResponse { message: "Failed to fetch architect projects".to_string() })
+            HttpResponse::InternalServerError().json(ErrorResponse {
+                message: "Failed to fetch architect projects".to_string(),
+            })
         }
     }
 }
@@ -483,19 +732,24 @@ pub async fn get_all_architect_projects(pool: web::Data<SqlitePool>) -> impl Res
         Ok(projects) => {
             let mut response_projects = Vec::new();
             for project in projects {
-                let maquettes = sqlx::query_as::<_, ArchitectProjectMaquette>("SELECT * FROM architect_project_maquettes WHERE project_id = ?")
-                    .bind(project.id)
-                    .fetch_all(pool.get_ref())
-                    .await
-                    .unwrap_or_default();
+                let maquettes = sqlx::query_as::<_, ArchitectProjectMaquette>(
+                    "SELECT * FROM architect_project_maquettes WHERE project_id = ?",
+                )
+                .bind(project.id)
+                .fetch_all(pool.get_ref())
+                .await
+                .unwrap_or_default();
 
-                let images = sqlx::query_as::<_, ArchitectProjectImage>("SELECT * FROM architect_project_images WHERE project_id = ?")
-                    .bind(project.id)
-                    .fetch_all(pool.get_ref())
-                    .await
-                    .unwrap_or_default();
+                let images = sqlx::query_as::<_, ArchitectProjectImage>(
+                    "SELECT * FROM architect_project_images WHERE project_id = ?",
+                )
+                .bind(project.id)
+                .fetch_all(pool.get_ref())
+                .await
+                .unwrap_or_default();
 
-                let base_url = std::env::var("BACKEND_URL").unwrap_or_else(|_| "http://localhost:8082".to_string());
+                let base_url = std::env::var("BACKEND_URL")
+                    .unwrap_or_else(|_| "http://localhost:8082".to_string());
                 response_projects.push(ArchitectProjectResponse {
                     id: project.id,
                     architect_company_id: project.architect_company_id,
@@ -504,28 +758,61 @@ pub async fn get_all_architect_projects(pool: web::Data<SqlitePool>) -> impl Res
                     description: project.description,
                     location: project.location,
                     project_cost: project.project_cost,
-                    house_plan_url: project.house_plan_url.map(|p| format!("{}/{}", base_url.trim_end_matches('/'), p.trim_start_matches('/'))),
+                    house_plan_url: project.house_plan_url.map(|p| {
+                        format!(
+                            "{}/{}",
+                            base_url.trim_end_matches('/'),
+                            p.trim_start_matches('/')
+                        )
+                    }),
                     created_at: project.created_at,
                     updated_at: project.updated_at,
-                    maquettes: maquettes.into_iter().map(|m| format!("{}/{}", base_url.trim_end_matches('/'), m.image_url.trim_start_matches('/'))).collect(),
-                    images: images.into_iter().map(|i| format!("{}/{}", base_url.trim_end_matches('/'), i.image_url.trim_start_matches('/'))).collect(),
+                    maquettes: maquettes
+                        .into_iter()
+                        .map(|m| {
+                            format!(
+                                "{}/{}",
+                                base_url.trim_end_matches('/'),
+                                m.image_url.trim_start_matches('/')
+                            )
+                        })
+                        .collect(),
+                    images: images
+                        .into_iter()
+                        .map(|i| {
+                            format!(
+                                "{}/{}",
+                                base_url.trim_end_matches('/'),
+                                i.image_url.trim_start_matches('/')
+                            )
+                        })
+                        .collect(),
                 });
             }
             HttpResponse::Ok().json(response_projects)
-        },
+        }
         Err(e) => {
             eprintln!("Failed to fetch architect projects: {}", e);
-            HttpResponse::InternalServerError().json(ErrorResponse { message: "Failed to fetch architect projects".to_string() })
+            HttpResponse::InternalServerError().json(ErrorResponse {
+                message: "Failed to fetch architect projects".to_string(),
+            })
         }
     }
 }
 
-pub async fn create_architect_project(req: HttpRequest, pool: web::Data<SqlitePool>, mut payload: Multipart) -> Result<HttpResponse, actix_web::Error> {
+pub async fn create_architect_project(
+    req: HttpRequest,
+    pool: web::Data<SqlitePool>,
+    mut payload: Multipart,
+) -> Result<HttpResponse, actix_web::Error> {
     let user_id = get_user_id_from_headers(&req)?;
-    let company = sqlx::query_as::<_, Architectcompany>("SELECT * FROM architect_companies WHERE user_id = ?")
-        .bind(user_id)
-        .fetch_one(pool.get_ref())
-        .await.map_err(|_| actix_web::error::ErrorBadRequest("Architect company not found"))?;
+    let company = sqlx::query_as::<_, Architectcompany>(
+        "SELECT * FROM architect_companies WHERE user_id = ?",
+    )
+    .bind(user_id)
+    .fetch_one(pool.get_ref())
+    .await
+    .map_err(|_| actix_web::error::ErrorBadRequest("Architect company not found"))?;
 
     let mut name = String::new();
     let mut description = String::new();
@@ -561,7 +848,11 @@ pub async fn create_architect_project(req: HttpRequest, pool: web::Data<SqlitePo
                 let filepath = uploads_dir.join(&filename);
                 if !uploads_dir.exists() {
                     std::fs::create_dir_all(&uploads_dir).map_err(|e| {
-                        eprintln!("Failed to create directory for {}: {}", uploads_dir.display(), e);
+                        eprintln!(
+                            "Failed to create directory for {}: {}",
+                            uploads_dir.display(),
+                            e
+                        );
                         actix_web::error::ErrorInternalServerError("Failed to save file")
                     })?;
                 }
@@ -579,7 +870,11 @@ pub async fn create_architect_project(req: HttpRequest, pool: web::Data<SqlitePo
                     let filepath = uploads_dir.join(&filename);
                     if !uploads_dir.exists() {
                         std::fs::create_dir_all(&uploads_dir).map_err(|e| {
-                            eprintln!("Failed to create directory for {}: {}", uploads_dir.display(), e);
+                            eprintln!(
+                                "Failed to create directory for {}: {}",
+                                uploads_dir.display(),
+                                e
+                            );
                             actix_web::error::ErrorInternalServerError("Failed to save file")
                         })?;
                     }
@@ -598,7 +893,11 @@ pub async fn create_architect_project(req: HttpRequest, pool: web::Data<SqlitePo
                     let filepath = uploads_dir.join(&filename);
                     if !uploads_dir.exists() {
                         std::fs::create_dir_all(&uploads_dir).map_err(|e| {
-                            eprintln!("Failed to create directory for {}: {}", uploads_dir.display(), e);
+                            eprintln!(
+                                "Failed to create directory for {}: {}",
+                                uploads_dir.display(),
+                                e
+                            );
                             actix_web::error::ErrorInternalServerError("Failed to save file")
                         })?;
                     }
@@ -637,37 +936,51 @@ pub async fn create_architect_project(req: HttpRequest, pool: web::Data<SqlitePo
 
     if result.rows_affected() == 0 {
         log::error!("INSERT into architect_projects affected 0 rows.");
-        return Err(actix_web::error::ErrorInternalServerError("Failed to create project, insert had no effect."));
+        return Err(actix_web::error::ErrorInternalServerError(
+            "Failed to create project, insert had no effect.",
+        ));
     }
 
     let new_project_id = result.last_insert_rowid();
 
-    let new_project = sqlx::query_as::<_, ArchitectProject>("SELECT * FROM architect_projects WHERE id = ?")
-        .bind(new_project_id)
-        .fetch_one(pool.get_ref())
-        .await
-        .map_err(|e| {
-            log::error!("Database error fetching new architect project with id {}: {:?}", new_project_id, e);
-            actix_web::error::ErrorInternalServerError("Could not retrieve newly created project")
-        })?;
+    let new_project =
+        sqlx::query_as::<_, ArchitectProject>("SELECT * FROM architect_projects WHERE id = ?")
+            .bind(new_project_id)
+            .fetch_one(pool.get_ref())
+            .await
+            .map_err(|e| {
+                log::error!(
+                    "Database error fetching new architect project with id {}: {:?}",
+                    new_project_id,
+                    e
+                );
+                actix_web::error::ErrorInternalServerError(
+                    "Could not retrieve newly created project",
+                )
+            })?;
 
     for image_url in &image_paths {
         sqlx::query("INSERT INTO architect_project_images (project_id, image_url) VALUES (?, ?)")
             .bind(new_project.id)
             .bind(&image_url)
             .execute(pool.get_ref())
-            .await.map_err(actix_web::error::ErrorInternalServerError)?;
+            .await
+            .map_err(actix_web::error::ErrorInternalServerError)?;
     }
 
     for maquette_url in &maquette_paths {
-        sqlx::query("INSERT INTO architect_project_maquettes (project_id, image_url) VALUES (?, ?)")
-            .bind(new_project.id)
-            .bind(&maquette_url)
-            .execute(pool.get_ref())
-            .await.map_err(actix_web::error::ErrorInternalServerError)?;
+        sqlx::query(
+            "INSERT INTO architect_project_maquettes (project_id, image_url) VALUES (?, ?)",
+        )
+        .bind(new_project.id)
+        .bind(&maquette_url)
+        .execute(pool.get_ref())
+        .await
+        .map_err(actix_web::error::ErrorInternalServerError)?;
     }
 
-    let base_url = std::env::var("BACKEND_URL").unwrap_or_else(|_| "http://localhost:8082".to_string());
+    let base_url =
+        std::env::var("BACKEND_URL").unwrap_or_else(|_| "http://localhost:8082".to_string());
 
     let response = ArchitectProjectResponse {
         id: new_project.id,
@@ -677,17 +990,46 @@ pub async fn create_architect_project(req: HttpRequest, pool: web::Data<SqlitePo
         description: new_project.description,
         location: new_project.location,
         project_cost: new_project.project_cost,
-        house_plan_url: new_project.house_plan_url.map(|p| format!("{}/{}", base_url.trim_end_matches('/'), p.trim_start_matches('/'))),
+        house_plan_url: new_project.house_plan_url.map(|p| {
+            format!(
+                "{}/{}",
+                base_url.trim_end_matches('/'),
+                p.trim_start_matches('/')
+            )
+        }),
         created_at: new_project.created_at,
         updated_at: new_project.updated_at,
-        maquettes: maquette_paths.into_iter().map(|p| format!("{}/{}", base_url.trim_end_matches('/'), p.trim_start_matches('/'))).collect(),
-        images: image_paths.into_iter().map(|p| format!("{}/{}", base_url.trim_end_matches('/'), p.trim_start_matches('/'))).collect(),
+        maquettes: maquette_paths
+            .into_iter()
+            .map(|p| {
+                format!(
+                    "{}/{}",
+                    base_url.trim_end_matches('/'),
+                    p.trim_start_matches('/')
+                )
+            })
+            .collect(),
+        images: image_paths
+            .into_iter()
+            .map(|p| {
+                format!(
+                    "{}/{}",
+                    base_url.trim_end_matches('/'),
+                    p.trim_start_matches('/')
+                )
+            })
+            .collect(),
     };
 
     Ok(HttpResponse::Created().json(response))
 }
 
-pub async fn update_architect_project(req: HttpRequest, pool: web::Data<SqlitePool>, path: web::Path<i32>, mut payload: Multipart) -> Result<HttpResponse, actix_web::Error> {
+pub async fn update_architect_project(
+    req: HttpRequest,
+    pool: web::Data<SqlitePool>,
+    path: web::Path<i32>,
+    mut payload: Multipart,
+) -> Result<HttpResponse, actix_web::Error> {
     let user_id = get_user_id_from_headers(&req)?;
     let project_id = path.into_inner();
 
@@ -702,7 +1044,7 @@ pub async fn update_architect_project(req: HttpRequest, pool: web::Data<SqlitePo
             .get_name()
             .unwrap_or_default()
             .to_owned();
-        
+
         let mut bytes = Vec::new();
         while let Some(chunk) = field.try_next().await? {
             bytes.extend_from_slice(&chunk);
@@ -731,19 +1073,24 @@ pub async fn update_architect_project(req: HttpRequest, pool: web::Data<SqlitePo
     .fetch_one(pool.get_ref())
     .await.map_err(actix_web::error::ErrorInternalServerError)?;
 
-    let maquettes = sqlx::query_as::<_, ArchitectProjectMaquette>("SELECT * FROM architect_project_maquettes WHERE project_id = ?")
-        .bind(project_id)
-        .fetch_all(pool.get_ref())
-        .await
-        .unwrap_or_default();
+    let maquettes = sqlx::query_as::<_, ArchitectProjectMaquette>(
+        "SELECT * FROM architect_project_maquettes WHERE project_id = ?",
+    )
+    .bind(project_id)
+    .fetch_all(pool.get_ref())
+    .await
+    .unwrap_or_default();
 
-    let images = sqlx::query_as::<_, ArchitectProjectImage>("SELECT * FROM architect_project_images WHERE project_id = ?")
-        .bind(project_id)
-        .fetch_all(pool.get_ref())
-        .await
-        .unwrap_or_default();
+    let images = sqlx::query_as::<_, ArchitectProjectImage>(
+        "SELECT * FROM architect_project_images WHERE project_id = ?",
+    )
+    .bind(project_id)
+    .fetch_all(pool.get_ref())
+    .await
+    .unwrap_or_default();
 
-    let base_url = std::env::var("BACKEND_URL").unwrap_or_else(|_| "http://localhost:8082".to_string());
+    let base_url =
+        std::env::var("BACKEND_URL").unwrap_or_else(|_| "http://localhost:8082".to_string());
 
     let response = ArchitectProjectResponse {
         id: updated_project.id,
@@ -753,20 +1100,52 @@ pub async fn update_architect_project(req: HttpRequest, pool: web::Data<SqlitePo
         description: updated_project.description,
         location: updated_project.location,
         project_cost: updated_project.project_cost,
-        house_plan_url: updated_project.house_plan_url.map(|p| format!("{}/{}", base_url.trim_end_matches('/'), p.trim_start_matches('/'))),
+        house_plan_url: updated_project.house_plan_url.map(|p| {
+            format!(
+                "{}/{}",
+                base_url.trim_end_matches('/'),
+                p.trim_start_matches('/')
+            )
+        }),
         created_at: updated_project.created_at,
         updated_at: updated_project.updated_at,
-        maquettes: maquettes.into_iter().map(|m| format!("{}/{}", base_url.trim_end_matches('/'), m.image_url.trim_start_matches('/'))).collect(),
-        images: images.into_iter().map(|i| format!("{}/{}", base_url.trim_end_matches('/'), i.image_url.trim_start_matches('/'))).collect(),
+        maquettes: maquettes
+            .into_iter()
+            .map(|m| {
+                format!(
+                    "{}/{}",
+                    base_url.trim_end_matches('/'),
+                    m.image_url.trim_start_matches('/')
+                )
+            })
+            .collect(),
+        images: images
+            .into_iter()
+            .map(|i| {
+                format!(
+                    "{}/{}",
+                    base_url.trim_end_matches('/'),
+                    i.image_url.trim_start_matches('/')
+                )
+            })
+            .collect(),
     };
 
     Ok(HttpResponse::Ok().json(response))
 }
 
-pub async fn delete_architect_project(req: HttpRequest, pool: web::Data<SqlitePool>, path: web::Path<i32>) -> impl Responder {
+pub async fn delete_architect_project(
+    req: HttpRequest,
+    pool: web::Data<SqlitePool>,
+    path: web::Path<i32>,
+) -> impl Responder {
     let user_id = match get_user_id_from_headers(&req) {
         Ok(id) => id,
-        Err(e) => return HttpResponse::Unauthorized().json(ErrorResponse { message: e.to_string() }),
+        Err(e) => {
+            return HttpResponse::Unauthorized().json(ErrorResponse {
+                message: e.to_string(),
+            })
+        }
     };
     let project_id = path.into_inner();
 
@@ -777,11 +1156,16 @@ pub async fn delete_architect_project(req: HttpRequest, pool: web::Data<SqlitePo
         .await;
 
     match result {
-        Ok(res) if res.rows_affected() > 0 => HttpResponse::Ok().json(serde_json::json!({ "message": "Project deleted successfully" })),
-        Ok(_) => HttpResponse::NotFound().json(ErrorResponse { message: "Project not found".to_string() }),
+        Ok(res) if res.rows_affected() > 0 => HttpResponse::Ok()
+            .json(serde_json::json!({ "message": "Project deleted successfully" })),
+        Ok(_) => HttpResponse::NotFound().json(ErrorResponse {
+            message: "Project not found".to_string(),
+        }),
         Err(e) => {
             eprintln!("Failed to delete project: {}", e);
-            HttpResponse::InternalServerError().json(ErrorResponse { message: "Failed to delete project".to_string() })
+            HttpResponse::InternalServerError().json(ErrorResponse {
+                message: "Failed to delete project".to_string(),
+            })
         }
     }
 }

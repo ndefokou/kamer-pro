@@ -78,7 +78,18 @@ const ArchitectCompanyPage = () => {
   const fetchcompany = useCallback(async () => {
     setIsLoading(true);
     try {
-      const response = await apiClient.get("/architect-company");
+      // Check if user logged in as architect
+      const architectId = localStorage.getItem("architectId");
+
+      let response;
+      if (architectId) {
+        // Architect logged in - fetch their company by ID
+        response = await apiClient.get(`/architect-company/${architectId}`);
+      } else {
+        // Regular user flow - fetch by user_id
+        response = await apiClient.get("/architect-company");
+      }
+
       const companyData = response.data.company || response.data;
       setcompany(companyData);
 
@@ -298,7 +309,12 @@ const ArchitectCompanyPage = () => {
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     placeholder="Enter firm name"
                     required
+                    disabled={!!localStorage.getItem("architectId")}
+                    className={localStorage.getItem("architectId") ? "bg-muted" : ""}
                   />
+                  {localStorage.getItem("architectId") && (
+                    <p className="text-xs text-muted-foreground">Set by administrator</p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -309,7 +325,12 @@ const ArchitectCompanyPage = () => {
                     onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                     placeholder="e.g., Douala, Akwa"
                     required
+                    disabled={!!localStorage.getItem("architectId")}
+                    className={localStorage.getItem("architectId") ? "bg-muted" : ""}
                   />
+                  {localStorage.getItem("architectId") && (
+                    <p className="text-xs text-muted-foreground">Set by administrator</p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -321,7 +342,12 @@ const ArchitectCompanyPage = () => {
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     placeholder="firm@example.com"
                     required
+                    disabled={!!localStorage.getItem("architectId")}
+                    className={localStorage.getItem("architectId") ? "bg-muted" : ""}
                   />
+                  {localStorage.getItem("architectId") && (
+                    <p className="text-xs text-muted-foreground">Set by administrator</p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -333,7 +359,12 @@ const ArchitectCompanyPage = () => {
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                     placeholder="+2376XXXXXXXX"
                     required
+                    disabled={!!localStorage.getItem("architectId")}
+                    className={localStorage.getItem("architectId") ? "bg-muted" : ""}
                   />
+                  {localStorage.getItem("architectId") && (
+                    <p className="text-xs text-muted-foreground">Set by administrator</p>
+                  )}
                 </div>
               </div>
 

@@ -17,3 +17,19 @@ pub fn extract_user_id_from_token(token: &str) -> Result<i32, Error> {
     log::error!("Invalid token format: {}", token);
     Err(ErrorUnauthorized("Invalid token"))
 }
+
+pub fn extract_architect_id_from_token(token: &str) -> Result<i32, Error> {
+    // Extract architect_id from token format: "architect_token_{uuid}_{architect_id}"
+    log::debug!("Attempting to extract architect_id from token: {}", token);
+    if let Some(id_str) = token.strip_prefix("architect_token_") {
+        let parts: Vec<&str> = id_str.split('_').collect();
+        if let Some(id_part) = parts.last() {
+            if let Ok(id) = id_part.parse::<i32>() {
+                log::debug!("Successfully extracted architect_id: {}", id);
+                return Ok(id);
+            }
+        }
+    }
+    // Don't log error here as we might fall back to user token
+    Err(ErrorUnauthorized("Invalid architect token"))
+}

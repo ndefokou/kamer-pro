@@ -369,10 +369,10 @@ const Marketplace = () => {
                 )}
               </div>
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-3 md:gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-3 md:gap-4">
                 {filteredProducts.map((product) => (
                   <Link to={`/product/${product.id}`} key={product.id} className="block h-full">
-                    <div className="bg-card rounded-lg border overflow-hidden hover:shadow-lg transition-shadow h-full flex flex-col">
+                    <div className="bg-card rounded-md sm:rounded-lg border overflow-hidden hover:shadow-lg transition-shadow h-full flex flex-col">
                       <div className="aspect-square relative bg-muted">
                         {product.images?.[0] && (
                           <img
@@ -382,14 +382,14 @@ const Marketplace = () => {
                           />
                         )}
                       </div>
-                      <div className="p-2 sm:p-3 flex-1 flex flex-col">
-                        <h3 className="font-semibold text-xs sm:text-sm line-clamp-2 mb-1">
+                      <div className="p-1.5 sm:p-2 md:p-3 flex-1 flex flex-col">
+                        <h3 className="font-semibold text-[10px] sm:text-xs md:text-sm line-clamp-2 mb-0.5 sm:mb-1">
                           {product.name}
                         </h3>
-                        <p className="text-xs text-muted-foreground line-clamp-1 mb-2">
+                        <p className="text-[9px] sm:text-xs text-muted-foreground line-clamp-1 mb-1 sm:mb-2">
                           {product.location}
                         </p>
-                        <p className="font-bold text-sm sm:text-base text-primary mt-auto">
+                        <p className="font-bold text-[11px] sm:text-sm md:text-base text-primary mt-auto">
                           {new Intl.NumberFormat("fr-FR", {
                             style: "currency",
                             currency: "XAF",
