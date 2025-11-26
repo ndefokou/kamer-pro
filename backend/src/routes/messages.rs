@@ -1,4 +1,4 @@
-use crate::routes::middleware::extract_user_id_from_token;
+use crate::routes::middleware::{extract_architect_id_from_token, extract_user_id_from_token};
 use actix_multipart::Multipart;
 use actix_web::{delete, get, post, web, HttpRequest, HttpResponse, Responder};
 use futures_util::TryStreamExt;
@@ -82,29 +82,57 @@ struct ErrorResponse {
     message: String,
 }
 
-fn get_user_id_from_headers(req: &HttpRequest) -> Result<i32, actix_web::Error> {
-    if let Some(auth_header) = req.headers().get("Authorization") {
-        if let Ok(auth_str) = auth_header.to_str() {
-            if let Some(token) = auth_str.strip_prefix("Bearer ") {
-                return extract_user_id_from_token(token);
-            }
+async fn get_authenticated_user_id(
+    req: &HttpRequest,
+    pool: &SqlitePool,
+) -> Result<i32, actix_web::Error> {
+    let auth_header = req.headers().get("Authorization");
+    let token_str = match auth_header {
+        Some(header) => header.to_str().unwrap_or(""),
+        None => {
+            return Err(actix_web::error::ErrorUnauthorized(
+                "Missing or invalid authorization header",
+            ))
+        }
+    };
+    let token = token_str.strip_prefix("Bearer ").unwrap_or(token_str);
+
+    // Try user token first
+    if let Ok(user_id) = extract_user_id_from_token(token) {
+        return Ok(user_id);
+    }
+
+    // Try architect token
+    if let Ok(architect_id) = extract_architect_id_from_token(token) {
+        // Look up user_id for this architect
+        let user_id: Option<i32> =
+            sqlx::query_scalar("SELECT user_id FROM architect_companies WHERE id = ?")
+                .bind(architect_id)
+                .fetch_optional(pool)
+                .await
+                .map_err(|e| {
+                    eprintln!("Database error looking up architect: {}", e);
+                    actix_web::error::ErrorInternalServerError("Database error")
+                })?;
+
+        if let Some(uid) = user_id {
+            return Ok(uid);
+        } else {
+            return Err(actix_web::error::ErrorUnauthorized(
+                "Architect has no linked user account",
+            ));
         }
     }
-    Err(actix_web::error::ErrorUnauthorized(
-        "Missing or invalid authorization header",
-    ))
+
+    Err(actix_web::error::ErrorUnauthorized("Invalid token"))
 }
 
 // Get all conversations for the logged-in user
 #[get("")]
 pub async fn get_conversations(req: HttpRequest, pool: web::Data<SqlitePool>) -> impl Responder {
-    let user_id = match get_user_id_from_headers(&req) {
+    let user_id = match get_authenticated_user_id(&req, pool.get_ref()).await {
         Ok(id) => id,
-        Err(_) => {
-            return HttpResponse::Unauthorized().json(ErrorResponse {
-                message: "Unauthorized - Please log in".to_string(),
-            })
-        }
+        Err(e) => return HttpResponse::from_error(e),
     };
 
     let conversations: Result<Vec<ConversationWithDetails>, _> = sqlx::query_as(
@@ -164,13 +192,9 @@ pub async fn create_conversation(
     pool: web::Data<SqlitePool>,
     payload: web::Json<CreateConversationRequest>,
 ) -> impl Responder {
-    let buyer_id = match get_user_id_from_headers(&req) {
+    let buyer_id = match get_authenticated_user_id(&req, pool.get_ref()).await {
         Ok(id) => id,
-        Err(_) => {
-            return HttpResponse::Unauthorized().json(ErrorResponse {
-                message: "Unauthorized - Please log in".to_string(),
-            })
-        }
+        Err(e) => return HttpResponse::from_error(e),
     };
 
     // Check if conversation already exists
@@ -222,13 +246,9 @@ pub async fn get_messages(
     pool: web::Data<SqlitePool>,
     path: web::Path<i32>,
 ) -> impl Responder {
-    let user_id = match get_user_id_from_headers(&req) {
+    let user_id = match get_authenticated_user_id(&req, pool.get_ref()).await {
         Ok(id) => id,
-        Err(_) => {
-            return HttpResponse::Unauthorized().json(ErrorResponse {
-                message: "Unauthorized - Please log in".to_string(),
-            })
-        }
+        Err(e) => return HttpResponse::from_error(e),
     };
 
     let conversation_id = path.into_inner();
@@ -317,13 +337,9 @@ pub async fn send_message(
     pool: web::Data<SqlitePool>,
     payload: web::Json<SendMessageRequest>,
 ) -> impl Responder {
-    let sender_id = match get_user_id_from_headers(&req) {
+    let sender_id = match get_authenticated_user_id(&req, pool.get_ref()).await {
         Ok(id) => id,
-        Err(_) => {
-            return HttpResponse::Unauthorized().json(ErrorResponse {
-                message: "Unauthorized - Please log in".to_string(),
-            })
-        }
+        Err(e) => return HttpResponse::from_error(e),
     };
 
     let message_type = payload.message_type.as_deref().unwrap_or("text");
@@ -370,7 +386,7 @@ pub async fn send_image_message(
     pool: web::Data<SqlitePool>,
     mut payload: Multipart,
 ) -> Result<HttpResponse, actix_web::Error> {
-    let sender_id = get_user_id_from_headers(&req)?;
+    let sender_id = get_authenticated_user_id(&req, pool.get_ref()).await?;
 
     let mut conversation_id: Option<i32> = None;
     let mut content = String::new();
@@ -500,13 +516,9 @@ pub async fn get_message_templates(
 // Get unread message count
 #[get("/unread-count")]
 pub async fn get_unread_count(req: HttpRequest, pool: web::Data<SqlitePool>) -> impl Responder {
-    let user_id = match get_user_id_from_headers(&req) {
+    let user_id = match get_authenticated_user_id(&req, pool.get_ref()).await {
         Ok(id) => id,
-        Err(_) => {
-            return HttpResponse::Unauthorized().json(ErrorResponse {
-                message: "Unauthorized - Please log in".to_string(),
-            })
-        }
+        Err(e) => return HttpResponse::from_error(e),
     };
 
     let count: Result<(i32,), _> = sqlx::query_as(
@@ -539,13 +551,9 @@ pub async fn delete_conversation(
     pool: web::Data<SqlitePool>,
     path: web::Path<i32>,
 ) -> impl Responder {
-    let user_id = match get_user_id_from_headers(&req) {
+    let user_id = match get_authenticated_user_id(&req, pool.get_ref()).await {
         Ok(id) => id,
-        Err(_) => {
-            return HttpResponse::Unauthorized().json(ErrorResponse {
-                message: "Unauthorized - Please log in".to_string(),
-            })
-        }
+        Err(e) => return HttpResponse::from_error(e),
     };
 
     let conversation_id = path.into_inner();

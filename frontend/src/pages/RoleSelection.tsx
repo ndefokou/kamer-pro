@@ -67,6 +67,9 @@ const RoleSelection = () => {
     <div className="min-h-screen flex items-center justify-center bg-gradient-hero p-4">
       <div className="w-full max-w-4xl">
         <div className="text-center mb-8">
+          <div className="flex justify-center mb-4">
+            <img src="/logo.jpg" alt="MboaMaison Logo" className="h-24 w-24 object-contain" />
+          </div>
           <h1 className="text-4xl font-bold text-primary-foreground mb-2">
             {t("choose your role")}
           </h1>

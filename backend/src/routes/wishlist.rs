@@ -1,4 +1,4 @@
-use crate::routes::middleware::extract_user_id_from_token;
+use crate::routes::middleware::{extract_architect_id_from_token, extract_user_id_from_token};
 use actix_web::{delete, get, post, web, HttpRequest, HttpResponse, Responder};
 use serde::{Deserialize, Serialize};
 use sqlx::SqlitePool;
@@ -34,29 +34,57 @@ struct ErrorResponse {
     message: String,
 }
 
-fn get_user_id_from_headers(req: &HttpRequest) -> Result<i32, actix_web::Error> {
-    if let Some(auth_header) = req.headers().get("Authorization") {
-        if let Ok(auth_str) = auth_header.to_str() {
-            if let Some(token) = auth_str.strip_prefix("Bearer ") {
-                return extract_user_id_from_token(token);
-            }
+async fn get_authenticated_user_id(
+    req: &HttpRequest,
+    pool: &SqlitePool,
+) -> Result<i32, actix_web::Error> {
+    let auth_header = req.headers().get("Authorization");
+    let token_str = match auth_header {
+        Some(header) => header.to_str().unwrap_or(""),
+        None => {
+            return Err(actix_web::error::ErrorUnauthorized(
+                "Missing or invalid authorization header",
+            ))
+        }
+    };
+    let token = token_str.strip_prefix("Bearer ").unwrap_or(token_str);
+
+    // Try user token first
+    if let Ok(user_id) = extract_user_id_from_token(token) {
+        return Ok(user_id);
+    }
+
+    // Try architect token
+    if let Ok(architect_id) = extract_architect_id_from_token(token) {
+        // Look up user_id for this architect
+        let user_id: Option<i32> =
+            sqlx::query_scalar("SELECT user_id FROM architect_companies WHERE id = ?")
+                .bind(architect_id)
+                .fetch_optional(pool)
+                .await
+                .map_err(|e| {
+                    eprintln!("Database error looking up architect: {}", e);
+                    actix_web::error::ErrorInternalServerError("Database error")
+                })?;
+
+        if let Some(uid) = user_id {
+            return Ok(uid);
+        } else {
+            return Err(actix_web::error::ErrorUnauthorized(
+                "Architect has no linked user account",
+            ));
         }
     }
-    Err(actix_web::error::ErrorUnauthorized(
-        "Missing or invalid authorization header",
-    ))
+
+    Err(actix_web::error::ErrorUnauthorized("Invalid token"))
 }
 
 // Get all wishlist items for the logged-in user
 #[get("")]
 pub async fn get_wishlist(req: HttpRequest, pool: web::Data<SqlitePool>) -> impl Responder {
-    let user_id = match get_user_id_from_headers(&req) {
+    let user_id = match get_authenticated_user_id(&req, pool.get_ref()).await {
         Ok(id) => id,
-        Err(_) => {
-            return HttpResponse::Unauthorized().json(ErrorResponse {
-                message: "Unauthorized - Please log in".to_string(),
-            })
-        }
+        Err(e) => return HttpResponse::from_error(e),
     };
 
     let wishlist_items: Result<Vec<WishlistItemWithProduct>, _> = sqlx::query_as(
@@ -110,13 +138,9 @@ pub async fn add_to_wishlist(
     pool: web::Data<SqlitePool>,
     payload: web::Json<AddToWishlistRequest>,
 ) -> impl Responder {
-    let user_id = match get_user_id_from_headers(&req) {
+    let user_id = match get_authenticated_user_id(&req, pool.get_ref()).await {
         Ok(id) => id,
-        Err(_) => {
-            return HttpResponse::Unauthorized().json(ErrorResponse {
-                message: "Unauthorized - Please log in".to_string(),
-            })
-        }
+        Err(e) => return HttpResponse::from_error(e),
     };
 
     // Check if user exists
@@ -195,13 +219,9 @@ pub async fn remove_from_wishlist(
     path: web::Path<i32>,
 ) -> impl Responder {
     let id = path.into_inner();
-    let user_id = match get_user_id_from_headers(&req) {
+    let user_id = match get_authenticated_user_id(&req, pool.get_ref()).await {
         Ok(id) => id,
-        Err(_) => {
-            return HttpResponse::Unauthorized().json(ErrorResponse {
-                message: "Unauthorized - Please log in".to_string(),
-            })
-        }
+        Err(e) => return HttpResponse::from_error(e),
     };
 
     let result = sqlx::query("DELETE FROM wishlist_items WHERE id = ? AND user_id = ?")
@@ -236,13 +256,9 @@ pub async fn remove_from_wishlist_by_product(
     path: web::Path<i32>,
 ) -> impl Responder {
     let product_id = path.into_inner();
-    let user_id = match get_user_id_from_headers(&req) {
+    let user_id = match get_authenticated_user_id(&req, pool.get_ref()).await {
         Ok(id) => id,
-        Err(_) => {
-            return HttpResponse::Unauthorized().json(ErrorResponse {
-                message: "Unauthorized - Please log in".to_string(),
-            })
-        }
+        Err(e) => return HttpResponse::from_error(e),
     };
 
     let result = sqlx::query("DELETE FROM wishlist_items WHERE product_id = ? AND user_id = ?")
@@ -277,13 +293,9 @@ pub async fn check_wishlist(
     path: web::Path<i32>,
 ) -> impl Responder {
     let product_id = path.into_inner();
-    let user_id = match get_user_id_from_headers(&req) {
+    let user_id = match get_authenticated_user_id(&req, pool.get_ref()).await {
         Ok(id) => id,
-        Err(_) => {
-            return HttpResponse::Unauthorized().json(ErrorResponse {
-                message: "Unauthorized - Please log in".to_string(),
-            })
-        }
+        Err(e) => return HttpResponse::from_error(e),
     };
 
     let exists: Result<WishlistItem, _> =
@@ -301,13 +313,9 @@ pub async fn check_wishlist(
 // Get wishlist count
 #[get("/count")]
 pub async fn get_wishlist_count(req: HttpRequest, pool: web::Data<SqlitePool>) -> impl Responder {
-    let user_id = match get_user_id_from_headers(&req) {
+    let user_id = match get_authenticated_user_id(&req, pool.get_ref()).await {
         Ok(id) => id,
-        Err(_) => {
-            return HttpResponse::Unauthorized().json(ErrorResponse {
-                message: "Unauthorized - Please log in".to_string(),
-            })
-        }
+        Err(e) => return HttpResponse::from_error(e),
     };
 
     let count: Result<(i32,), _> =
@@ -327,13 +335,9 @@ pub async fn get_wishlist_count(req: HttpRequest, pool: web::Data<SqlitePool>) -
 // Clear all items from wishlist
 #[delete("/clear")]
 pub async fn clear_wishlist(req: HttpRequest, pool: web::Data<SqlitePool>) -> impl Responder {
-    let user_id = match get_user_id_from_headers(&req) {
+    let user_id = match get_authenticated_user_id(&req, pool.get_ref()).await {
         Ok(id) => id,
-        Err(_) => {
-            return HttpResponse::Unauthorized().json(ErrorResponse {
-                message: "Unauthorized - Please log in".to_string(),
-            })
-        }
+        Err(e) => return HttpResponse::from_error(e),
     };
 
     let result = sqlx::query("DELETE FROM wishlist_items WHERE user_id = ?")

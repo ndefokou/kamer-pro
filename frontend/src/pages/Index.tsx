@@ -9,9 +9,7 @@ const Index = () => {
       <section className="bg-gradient-hero text-primary-foreground py-20 px-4">
         <div className="container mx-auto text-center">
           <div className="flex justify-center mb-6">
-            <div className="bg-secondary p-4 rounded-full">
-              <Store className="h-16 w-16 text-secondary-foreground" />
-            </div>
+            <img src="/logo.jpg" alt="MboaMaison Logo" className="h-32 w-32 object-contain" />
           </div>
           <h1 className="text-5xl md:text-6xl font-bold mb-6">
             Welcome to MboaMaison
@@ -114,7 +112,7 @@ const Index = () => {
       <footer className="bg-foreground text-background py-8 px-4">
         <div className="container mx-auto text-center">
           <div className="flex justify-center mb-4">
-            <Store className="h-8 w-8" />
+            <img src="/logo.jpg" alt="MboaMaison Logo" className="h-12 w-12 object-contain" />
           </div>
           <p className="text-sm">© 2025 MboaMaison. All rights reserved.</p>
         </div>
