@@ -339,8 +339,8 @@ const Marketplace = () => {
           {/* Desktop Sidebar Filters */}
           <aside className="hidden lg:block lg:col-span-1">
             <div className="sticky top-24">
-              <Card className="p-4">
-                <h2 className="text-lg font-semibold mb-4">{t("filters")}</h2>
+              <Card className="p-5 shadow-soft border-border/50 bg-gradient-card">
+                <h2 className="text-xl font-bold mb-6 font-heading gradient-text">{t("filters")}</h2>
                 <FilterContent />
               </Card>
             </div>
@@ -369,27 +369,41 @@ const Marketplace = () => {
                 )}
               </div>
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-3 md:gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 md:gap-5">
                 {filteredProducts.map((product) => (
-                  <Link to={`/product/${product.id}`} key={product.id} className="block h-full">
-                    <div className="bg-card rounded-md sm:rounded-lg border overflow-hidden hover:shadow-lg transition-shadow h-full flex flex-col">
-                      <div className="aspect-square relative bg-muted">
+                  <Link to={`/product/${product.id}`} key={product.id} className="block h-full group">
+                    <div className="bg-card rounded-lg sm:rounded-xl border border-border overflow-hidden hover:shadow-elevated transition-all duration-300 hover:-translate-y-1 h-full flex flex-col shadow-soft">
+                      <div className="aspect-square relative bg-muted overflow-hidden">
                         {product.images?.[0] && (
-                          <img
-                            src={product.images[0].image_url}
-                            alt={product.name}
-                            className="w-full h-full object-cover"
-                          />
+                          <>
+                            <img
+                              src={product.images[0].image_url}
+                              alt={product.name}
+                              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                          </>
+                        )}
+                        {product.condition && (
+                          <div className="absolute top-2 right-2">
+                            <span className="px-2 py-1 text-[10px] sm:text-xs font-semibold bg-white/90 backdrop-blur-sm text-foreground rounded-full shadow-sm">
+                              {product.condition}
+                            </span>
+                          </div>
                         )}
                       </div>
-                      <div className="p-1.5 sm:p-2 md:p-3 flex-1 flex flex-col">
-                        <h3 className="font-semibold text-[10px] sm:text-xs md:text-sm line-clamp-2 mb-0.5 sm:mb-1">
+                      <div className="p-2 sm:p-3 md:p-4 flex-1 flex flex-col">
+                        <h3 className="font-semibold text-xs sm:text-sm md:text-base line-clamp-2 mb-1 sm:mb-2 group-hover:text-primary transition-colors">
                           {product.name}
                         </h3>
-                        <p className="text-[9px] sm:text-xs text-muted-foreground line-clamp-1 mb-1 sm:mb-2">
+                        <p className="text-[10px] sm:text-xs text-muted-foreground line-clamp-1 mb-2 flex items-center gap-1">
+                          <svg className="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                          </svg>
                           {product.location}
                         </p>
-                        <p className="font-bold text-[11px] sm:text-sm md:text-base text-primary mt-auto">
+                        <p className="font-bold text-sm sm:text-base md:text-lg gradient-text mt-auto">
                           {new Intl.NumberFormat("fr-FR", {
                             style: "currency",
                             currency: "XAF",

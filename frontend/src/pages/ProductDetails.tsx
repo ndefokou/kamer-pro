@@ -176,26 +176,31 @@ const ProductDetails = () => {
           <CardContent className="grid md:grid-cols-2 gap-4 md:gap-8 px-4 sm:px-6 pb-4 sm:pb-6">
             {/* Image Section */}
             <div>
-              <div className="mb-3 md:mb-4">
-                <img
-                  src={getImageUrl(selectedImage || "")}
-                  alt={product.name}
-                  className="w-full h-64 sm:h-80 md:max-h-96 object-contain rounded-lg border bg-muted"
-                />
+              <div className="mb-3 md:mb-4 group">
+                <div className="relative overflow-hidden rounded-xl bg-muted shadow-soft">
+                  <img
+                    src={getImageUrl(selectedImage || "")}
+                    alt={product.name}
+                    className="w-full h-64 sm:h-80 md:max-h-96 object-contain transition-transform duration-500 group-hover:scale-105"
+                  />
+                </div>
               </div>
               <div className="flex space-x-2 overflow-x-auto pb-2">
                 {product.images.map((image) => (
-                  <img
+                  <div
                     key={image.image_url}
-                    src={getImageUrl(image.image_url)}
-                    alt="product thumbnail"
-                    className={`h-16 w-16 sm:h-20 sm:w-20 flex-shrink-0 object-cover rounded-md cursor-pointer border-2 ${
-                      selectedImage === image.image_url
-                        ? "border-primary"
-                        : "border-transparent"
-                    }`}
+                    className={`relative flex-shrink-0 rounded-lg overflow-hidden cursor-pointer transition-all duration-300 ${selectedImage === image.image_url
+                        ? "ring-2 ring-primary shadow-glow scale-105"
+                        : "hover:ring-2 hover:ring-primary/50"
+                      }`}
                     onClick={() => setSelectedImage(image.image_url)}
-                  />
+                  >
+                    <img
+                      src={getImageUrl(image.image_url)}
+                      alt="product thumbnail"
+                      className="h-16 w-16 sm:h-20 sm:w-20 object-cover"
+                    />
+                  </div>
                 ))}
               </div>
             </div>
@@ -210,19 +215,19 @@ const ProductDetails = () => {
                   {product.description}
                 </p>
               </div>
-              
-              <div className="text-2xl sm:text-3xl font-bold text-primary">
+
+              <div className="text-3xl sm:text-4xl font-bold gradient-text">
                 {new Intl.NumberFormat("fr-FR", {
                   style: "currency",
                   currency: "XAF",
                 }).format(product.price)}
               </div>
-              
+
               <div className="flex items-center text-sm sm:text-base text-muted-foreground">
                 <MapPin className="h-4 w-4 mr-1" />
                 {product.location}
               </div>
-              
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <h3 className="text-base sm:text-lg font-semibold mb-2">
@@ -240,7 +245,7 @@ const ProductDetails = () => {
                 <div className="space-y-3 md:space-y-4 border-t pt-4">
                   <div className="flex flex-col sm:flex-row gap-2">
                     <Button
-                      className="flex-1"
+                      className="flex-1 bg-gradient-primary hover:opacity-90 shadow-soft hover:shadow-elevated transition-all duration-300 hover:scale-105"
                       size="lg"
                       onClick={() => {
                         if (product && product.contact_phone) {
@@ -262,10 +267,10 @@ const ProductDetails = () => {
                       variant="outline"
                       size="lg"
                       onClick={handleToggleWishlist}
-                      className="sm:w-auto"
+                      className="sm:w-auto border-2 hover:bg-accent/10 hover:border-accent transition-all duration-300"
                     >
                       <Heart
-                        className={`h-4 w-4 sm:h-5 sm:w-5 ${isInWishlist(parseInt(product.id)) ? "fill-current text-red-500" : ""}`}
+                        className={`h-4 w-4 sm:h-5 sm:w-5 transition-all duration-300 ${isInWishlist(parseInt(product.id)) ? "fill-current text-red-500 scale-110" : ""}`}
                       />
                     </Button>
                   </div>

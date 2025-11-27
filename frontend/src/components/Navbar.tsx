@@ -76,7 +76,7 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="bg-primary text-primary-foreground shadow-md sticky top-0 z-50">
+    <nav className="bg-primary/95 backdrop-blur-md text-primary-foreground shadow-elevated sticky top-0 z-50 border-b border-primary-light/20">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
@@ -90,11 +90,11 @@ const Navbar = () => {
           {/* Search Bar */}
           <div className="flex-1 max-w-md mx-4">
             <form onSubmit={handleSearch}>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+              <div className="relative group">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground transition-colors group-focus-within:text-primary" />
                 <Input
                   placeholder={t("search")}
-                  className="w-full pl-10"
+                  className="w-full pl-10 bg-white/90 border-white/20 focus:bg-white focus:ring-2 focus:ring-white/30 transition-all duration-300"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
@@ -153,7 +153,7 @@ const Navbar = () => {
                     <Heart className="h-5 w-5" />
                     {wishlistCount > 0 && (
                       <Badge
-                        className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-secondary text-secondary-foreground"
+                        className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-secondary text-secondary-foreground animate-pulse-slow shadow-glow"
                         variant="secondary"
                       >
                         {wishlistCount}
@@ -219,7 +219,7 @@ const Navbar = () => {
                     <Heart className="h-5 w-5" />
                     {wishlistCount > 0 && (
                       <Badge
-                        className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-secondary text-secondary-foreground text-xs"
+                        className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-secondary text-secondary-foreground text-xs animate-pulse-slow shadow-glow"
                         variant="secondary"
                       >
                         {wishlistCount}
