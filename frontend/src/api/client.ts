@@ -49,3 +49,13 @@ export const getProducts = async (filters: ProductFilters) => {
   const response = await apiClient.get("/products", { params });
   return response.data;
 };
+
+export const createProduct = async (productData: any) => {
+  const response = await apiClient.post("/products", productData);
+  return response.data;
+};
+
+export const getMyProducts = async () => {
+  const response = await apiClient.get("/products/seller");
+  return response.data;
+};
