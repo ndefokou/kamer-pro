@@ -3,53 +3,32 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
-import { WishlistProvider } from "@/contexts/WishlistContext";
-import { MessagingProvider } from "@/contexts/MessagingContext";
-import Index from "./pages/Index";
-import RoleSelection from "./pages/RoleSelection";
-import Marketplace from "./pages/Marketplace";
+import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
-import MyProducts from "./pages/MyProducts";
-import ProductDetails from "./pages/ProductDetails";
-import Wishlist from "./pages/Wishlist";
-import Messages from "./pages/Messages";
-import { WebAuthLogin } from "./pages/WebAuthLogin";
-import { WebAuthRegister } from "./pages/WebAuthRegister";
-import { ProtectedRoute } from "./components/ProtectedRoute";
-import CompanyPage from "./pages/CompanyPage";
-import ArchitectCompanyPage from "./pages/ArchitectCompanyPage";
-import ArchitectProjectsPage from "./pages/ArchitectProjectsPage";
-import FindArchitectPage from "./pages/FindArchitectPage";
-import ArchitectFirmPage from "./pages/ArchitectFirmPage";
-import ProjectDetails from "./pages/ProjectDetails";
+import Intro from "./pages/host/Intro";
+import Amenities from "./pages/host/Amenities";
+import Description from "./pages/host/Description";
+import TitlePage from "./pages/host/TitlePage";
+import PhotoUpload from "./pages/host/PhotoUpload";
+import Pricing from "./pages/host/Pricing";
+import SafetyDetails from "./pages/host/SafetyDetails";
+import BookingSettings from "./pages/host/BookingSettings";
+import Preview from "./pages/host/Preview";
 
 const queryClient = new QueryClient();
 
 const router = createBrowserRouter(
   [
-    { path: "/", Component: Index },
-    { path: "/role-selection", Component: RoleSelection },
-    { path: "/marketplace", Component: Marketplace },
-    { path: "/product/:id", Component: ProductDetails },
-    { path: "/find-architect", Component: FindArchitectPage },
-    { path: "/architect-firm/:id", Component: ArchitectFirmPage },
-    { path: "/project/:id", Component: ProjectDetails },
-    { path: "/webauth-login", Component: WebAuthLogin },
-    { path: "/webauth-register", Component: WebAuthRegister },
-    {
-      element: <ProtectedRoute />,
-      children: [{ path: "/my-products", Component: MyProducts }],
-    },
-    {
-      element: <ProtectedRoute />,
-      children: [
-        { path: "/wishlist", Component: Wishlist },
-        { path: "/messages", Component: Messages },
-        { path: "/company", Component: CompanyPage },
-        { path: "/architect-company", Component: ArchitectCompanyPage },
-        { path: "/architect-projects", Component: ArchitectProjectsPage },
-      ],
-    },
+    { path: "/", Component: Dashboard },
+    { path: "/host/intro", Component: Intro },
+    { path: "/host/amenities", Component: Amenities },
+    { path: "/host/description", Component: Description },
+    { path: "/host/title", Component: TitlePage },
+    { path: "/host/photos", Component: PhotoUpload },
+    { path: "/host/pricing", Component: Pricing },
+    { path: "/host/safety", Component: SafetyDetails },
+    { path: "/host/booking", Component: BookingSettings },
+    { path: "/host/preview", Component: Preview },
     { path: "*", Component: NotFound },
   ],
   {
@@ -62,16 +41,13 @@ const router = createBrowserRouter(
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <MessagingProvider>
-      <WishlistProvider>
-        <TooltipProvider>
-          <Toaster />
-            <Sonner />
-            <RouterProvider router={router} />
-          </TooltipProvider>
-        </WishlistProvider>
-    </MessagingProvider>
+    <TooltipProvider>
+      <Toaster />
+      <Sonner />
+      <RouterProvider router={router} />
+    </TooltipProvider>
   </QueryClientProvider>
 );
 
 export default App;
+
