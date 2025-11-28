@@ -44,8 +44,8 @@ const Intro: React.FC = () => {
                                 key={type.id}
                                 onClick={() => setSelectedType(type.id)}
                                 className={`p-6 rounded-lg border-2 transition-all text-left ${selectedType === type.id
-                                        ? 'border-primary bg-primary/5 shadow-lg'
-                                        : 'border-border hover:border-primary/50 hover:shadow-md'
+                                    ? 'border-primary bg-primary/5 shadow-lg'
+                                    : 'border-border hover:border-primary/50 hover:shadow-md'
                                     }`}
                             >
                                 <Icon className="h-12 w-12 mb-4 text-primary" />

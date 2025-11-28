@@ -86,8 +86,8 @@ const Amenities: React.FC = () => {
                                             key={amenity.id}
                                             onClick={() => toggleAmenity(amenity.id)}
                                             className={`p-4 rounded-lg border-2 transition-all text-left flex items-center gap-3 ${isSelected
-                                                    ? 'border-primary bg-primary/5'
-                                                    : 'border-border hover:border-primary/50'
+                                                ? 'border-primary bg-primary/5'
+                                                : 'border-border hover:border-primary/50'
                                                 }`}
                                         >
                                             <Icon className={`h-6 w-6 ${isSelected ? 'text-primary' : 'text-muted-foreground'}`} />

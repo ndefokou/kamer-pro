@@ -17,6 +17,7 @@ import Pricing from "./pages/host/Pricing";
 import SafetyDetails from "./pages/host/SafetyDetails";
 import BookingSettings from "./pages/host/BookingSettings";
 import Preview from "./pages/host/Preview";
+import HostDashboard from "./pages/host/HostDashboard";
 
 const queryClient = new QueryClient();
 
@@ -30,8 +31,9 @@ const router = createBrowserRouter(
     { path: "/host/photos", Component: PhotoUpload },
     { path: "/host/pricing", Component: Pricing },
     { path: "/host/safety", Component: SafetyDetails },
-    { path: "/host/booking", Component: BookingSettings },
+    { path: "/host/booking-settings", Component: BookingSettings },
     { path: "/host/preview", Component: Preview },
+    { path: "/host/dashboard", Component: HostDashboard },
     { path: "*", Component: NotFound },
   ],
   {

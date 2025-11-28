@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { Heart, Star, ChevronRight, Home as HomeIcon, Compass, Briefcase, Globe, Menu, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getProducts } from "@/api/client";
+import AirbnbSearch from "@/components/AirbnbSearch";
 
 interface Product {
     id: string;
@@ -28,9 +29,6 @@ const Dashboard = () => {
     const [nearbyProperties, setNearbyProperties] = useState<Product[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [favorites, setFavorites] = useState<Set<string>>(new Set());
-    const [destination, setDestination] = useState("");
-    const [dates, setDates] = useState("");
-    const [guests, setGuests] = useState("");
 
     useEffect(() => {
         const fetchProperties = async () => {
@@ -174,45 +172,7 @@ const Dashboard = () => {
             {/* Search Bar */}
             <div className="border-b border-gray-200 bg-white">
                 <div className="container mx-auto px-6 py-6">
-                    <div className="flex items-center gap-0 bg-white border border-gray-300 rounded-full shadow-md hover:shadow-lg transition-shadow max-w-3xl mx-auto">
-                        <div className="flex-1 px-6 py-3 border-r border-gray-300">
-                            <label className="block text-xs font-bold text-gray-900 mb-1">{t("Destination")}</label>
-                            <input
-                                type="text"
-                                placeholder={t("Rechercher une destination")}
-                                value={destination}
-                                onChange={(e) => setDestination(e.target.value)}
-                                className="w-full bg-transparent border-0 p-0 text-sm text-gray-900 placeholder:text-gray-500 focus:outline-none"
-                            />
-                        </div>
-                        <div className="flex-1 px-6 py-3 border-r border-gray-300">
-                            <label className="block text-xs font-bold text-gray-900 mb-1">{t("Dates")}</label>
-                            <input
-                                type="text"
-                                placeholder={t("Quand ?")}
-                                value={dates}
-                                onChange={(e) => setDates(e.target.value)}
-                                className="w-full bg-transparent border-0 p-0 text-sm text-gray-900 placeholder:text-gray-500 focus:outline-none"
-                            />
-                        </div>
-                        <div className="flex-1 px-6 py-3">
-                            <label className="block text-xs font-bold text-gray-900 mb-1">{t("Voyageurs")}</label>
-                            <input
-                                type="text"
-                                placeholder={t("Ajouter des ...")}
-                                value={guests}
-                                onChange={(e) => setGuests(e.target.value)}
-                                className="w-full bg-transparent border-0 p-0 text-sm text-gray-900 placeholder:text-gray-500 focus:outline-none"
-                            />
-                        </div>
-                        <div className="pr-2">
-                            <Button className="h-12 w-12 rounded-full bg-[#FF385C] hover:bg-[#E31C5F] p-0">
-                                <svg className="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                                </svg>
-                            </Button>
-                        </div>
-                    </div>
+                    <AirbnbSearch />
                 </div>
             </div>
 

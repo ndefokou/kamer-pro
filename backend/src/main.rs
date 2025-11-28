@@ -99,7 +99,11 @@ async fn main() -> std::io::Result<()> {
                             .service(routes::listings::set_cover_photo)
                             .service(routes::listings::add_video),
                     )
-                    .service(web::scope("/upload").service(routes::upload::upload_images))
+                    .service(
+                        web::scope("/upload")
+                            .service(routes::upload::upload_images)
+                            .service(routes::upload::upload_images_standalone),
+                    )
                     .service(
                         web::scope("/wishlist")
                             .service(routes::wishlist::clear_wishlist)

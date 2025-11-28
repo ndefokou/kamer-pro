@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import apiClient from '@/api/client';
 
 // ============================================================================
 // Types
@@ -146,18 +147,17 @@ export const HostProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setSaveError(null);
 
         try {
-            const token = localStorage.getItem('token');
             const userId = localStorage.getItem('userId');
 
-            if (!token || !userId) {
-                throw new Error('Not authenticated');
+            if (!userId) {
+                // Redirect to login if no user ID
+                window.location.href = '/';
+                throw new Error('Please log in to save your listing');
             }
 
             const url = draft.id
-                ? `http://localhost:8082/api/listings/${draft.id}`
-                : 'http://localhost:8082/api/listings';
-
-            const method = draft.id ? 'PUT' : 'POST';
+                ? `/listings/${draft.id}`
+                : '/listings';
 
             // Prepare payload
             const payload: any = {
@@ -181,30 +181,19 @@ export const HostProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 country: draft.country,
             };
 
-            const response = await fetch(url, {
-                method,
-                headers: {
-                    'Content-Type': 'application/json',
-                    'x-user-id': userId,
-                },
-                body: JSON.stringify(payload),
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to save listing');
+            let response;
+            if (draft.id) {
+                response = await apiClient.put(url, payload);
+            } else {
+                response = await apiClient.post(url, payload);
             }
 
-            const data = await response.json();
+            const data = response.data;
 
             // Save amenities if listing was created
             if (data.listing?.id && draft.amenities.length > 0) {
-                await fetch(`http://localhost:8082/api/listings/${data.listing.id}/amenities`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'x-user-id': userId,
-                    },
-                    body: JSON.stringify({ amenities: draft.amenities }),
+                await apiClient.post(`/listings/${data.listing.id}/amenities`, {
+                    amenities: draft.amenities
                 });
             }
 
@@ -222,9 +211,15 @@ export const HostProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 lastSaved: new Date().toISOString(),
             }));
 
-        } catch (error) {
+        } catch (error: any) {
             console.error('Failed to save draft:', error);
-            setSaveError(error instanceof Error ? error.message : 'Failed to save');
+            const errorMessage = error.response?.data?.error || error.message || 'Failed to save';
+            setSaveError(errorMessage);
+
+            // If unauthorized, redirect to login
+            if (error.response?.status === 401) {
+                window.location.href = '/';
+            }
         } finally {
             setIsSaving(false);
         }
@@ -245,12 +240,8 @@ export const HostProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
 
         try {
-            const response = await fetch(`http://localhost:8082/api/listings/${id}`);
-            if (!response.ok) {
-                throw new Error('Failed to load listing');
-            }
-
-            const data = await response.json();
+            const response = await apiClient.get(`/listings/${id}`);
+            const data = response.data;
 
             // Convert backend data to draft format
             const loadedDraft: ListingDraft = {
@@ -299,25 +290,14 @@ export const HostProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
 
         try {
-            const token = localStorage.getItem('token');
             const userId = localStorage.getItem('userId');
 
-            if (!token || !userId) {
-                return { success: false, error: 'Not authenticated' };
+            if (!userId) {
+                window.location.href = '/';
+                return { success: false, error: 'Please log in to publish' };
             }
 
-            const response = await fetch(`http://localhost:8082/api/listings/${draft.id}/publish`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'x-user-id': userId,
-                },
-            });
-
-            if (!response.ok) {
-                const error = await response.json();
-                return { success: false, error: error.error || 'Failed to publish listing' };
-            }
+            await apiClient.post(`/listings/${draft.id}/publish`);
 
             // Clear draft after successful publish
             localStorage.removeItem(DRAFT_KEY);
@@ -325,9 +305,10 @@ export const HostProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
             return { success: true };
 
-        } catch (error) {
+        } catch (error: any) {
             console.error('Failed to publish listing:', error);
-            return { success: false, error: error instanceof Error ? error.message : 'Failed to publish' };
+            const errorMessage = error.response?.data?.error || error.message || 'Failed to publish';
+            return { success: false, error: errorMessage };
         }
     }, [draft.id, saveDraft]);
 

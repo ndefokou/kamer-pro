@@ -48,11 +48,13 @@ const AirbnbSearch = () => {
     };
 
     const suggestions = [
-        { name: "Nearby", desc: "Find what's around you", icon: "📍" },
-        { name: "Douala, Cameroon", desc: "For a trip abroad", icon: "🏙️" },
-        { name: "Yaoundé, Cameroon", desc: "Capital city", icon: "🌆" },
-        { name: "Kribi, Cameroon", desc: "For a trip abroad", icon: "🏖️" },
-        { name: "Paris, France", desc: "For its bustling nightlife", icon: "🗼" },
+        { name: "À proximité", desc: "Découvrez les options à proximité", icon: "🧭" },
+        { name: "Centre-ville de Montréal, Canada", desc: "Célèbre pour des sites comme : Basilique Notre-Dame de Montréal", icon: "🏛️" },
+        { name: "Abidjan", desc: "Pour un voyage à l'étranger", icon: "🏖️" },
+        { name: "Paris, Île-de-France", desc: "Parce que vous avez enregistré des logements en favoris pour cette destination : Paris", icon: "🗼" },
+        { name: "Douala, Cameroun", desc: "Pour un voyage à l'étranger", icon: "🏙️" },
+        { name: "Dakar, Sénégal", desc: "Une perle rare", icon: "🌊" },
+        { name: "Marrakech, Maroc", desc: "Célèbre pour des sites comme :", icon: "🕌" },
     ];
 
     return (
@@ -76,7 +78,7 @@ const AirbnbSearch = () => {
                     </PopoverTrigger>
                     <PopoverContent className="w-[350px] p-0 rounded-3xl overflow-hidden shadow-xl border-0 mt-4" align="start">
                         <div className="p-4">
-                            <h3 className="text-xs font-bold text-gray-500 mb-2 px-2">SUGGESTED DESTINATIONS</h3>
+                            <h3 className="text-xs font-bold text-gray-500 mb-4 px-2">Suggestions de destinations</h3>
                             <div className="space-y-1">
                                 {suggestions.map((item) => (
                                     <div
@@ -264,10 +266,10 @@ const AirbnbSearch = () => {
                     <PopoverContent className="w-[350px] p-6 rounded-3xl shadow-xl border-0 mt-4" align="end">
                         <div className="space-y-6">
                             {[
-                                { type: "adults", label: "Adults", sub: "Ages 13 or above" },
-                                { type: "children", label: "Children", sub: "Ages 2 – 12" },
-                                { type: "infants", label: "Infants", sub: "Under 2" },
-                                { type: "pets", label: "Pets", sub: "Bringing a service animal?" },
+                                { type: "adults", label: "Adultes", sub: "13 ans et plus" },
+                                { type: "children", label: "Enfants", sub: "De 2 à 12 ans" },
+                                { type: "infants", label: "Bébés", sub: "- de 2 ans" },
+                                { type: "pets", label: "Animaux domestiques", sub: "Vous voyagez avec un animal d'assistance ?" },
                             ].map((item) => (
                                 <div key={item.type} className="flex items-center justify-between">
                                     <div>
