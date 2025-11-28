@@ -3,6 +3,9 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import { WishlistProvider } from "@/contexts/WishlistContext";
+import { MessagingProvider } from "@/contexts/MessagingContext";
+import { HostProvider } from "@/contexts/HostContext";
 import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
 import Intro from "./pages/host/Intro";
@@ -41,13 +44,21 @@ const router = createBrowserRouter(
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <RouterProvider router={router} />
-    </TooltipProvider>
+    <WishlistProvider>
+      <MessagingProvider>
+        <HostProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <RouterProvider router={router} />
+          </TooltipProvider>
+        </HostProvider>
+      </MessagingProvider>
+    </WishlistProvider>
   </QueryClientProvider>
 );
 
 export default App;
+
+
 
