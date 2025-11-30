@@ -191,7 +191,7 @@ export const HostProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 property_type: draft.propertyType,
                 title: draft.title || null,
                 description: draft.description || null,
-                price_per_night: draft.pricePerNight,
+                price_per_night: draft.pricePerNight || 0,  // Ensure we always send a number
                 currency: draft.currency,
                 cleaning_fee: draft.cleaningFee,
                 max_guests: draft.maxGuests,
@@ -207,6 +207,12 @@ export const HostProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 city: draft.city,
                 country: draft.country,
             };
+
+            console.log('Saving draft with payload:', {
+                ...payload,
+                pricePerNight: draft.pricePerNight,
+                priceInPayload: payload.price_per_night
+            });
 
             let listingId = draft.id;
 

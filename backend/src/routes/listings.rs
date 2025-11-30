@@ -199,25 +199,50 @@ async fn get_listing_with_details(
 }
 
 fn validate_listing_for_publish(listing: &ListingWithDetails) -> Result<(), String> {
-    if listing.listing.title.is_none() || listing.listing.title.as_ref().unwrap().len() < 10 {
-        return Err("Title must be at least 10 characters".to_string());
+    // Title validation - relaxed to 5 characters
+    if listing.listing.title.is_none() || listing.listing.title.as_ref().unwrap().trim().len() < 5 {
+        let title_len = listing.listing.title.as_ref().map(|t| t.len()).unwrap_or(0);
+        log::warn!("Title validation failed: length = {}", title_len);
+        return Err("Title must be at least 5 characters".to_string());
     }
 
+    // Description validation - relaxed to 20 characters
     if listing.listing.description.is_none()
-        || listing.listing.description.as_ref().unwrap().len() < 50
+        || listing.listing.description.as_ref().unwrap().trim().len() < 20
     {
-        return Err("Description must be at least 50 characters".to_string());
+        let desc_len = listing
+            .listing
+            .description
+            .as_ref()
+            .map(|d| d.len())
+            .unwrap_or(0);
+        log::warn!("Description validation failed: length = {}", desc_len);
+        return Err("Description must be at least 20 characters".to_string());
     }
 
+    // Price validation
     if listing.listing.price_per_night.is_none() || listing.listing.price_per_night.unwrap() <= 0.0
     {
+        log::warn!(
+            "Price validation failed: {:?}",
+            listing.listing.price_per_night
+        );
         return Err("Price per night must be greater than 0".to_string());
     }
 
+    // Max guests validation
     if listing.listing.max_guests.is_none() || listing.listing.max_guests.unwrap() < 1 {
+        log::warn!(
+            "Max guests validation failed: {:?}",
+            listing.listing.max_guests
+        );
         return Err("Max guests must be at least 1".to_string());
     }
 
+    log::info!(
+        "Listing validation passed for listing {}",
+        listing.listing.id
+    );
     Ok(())
 }
 
@@ -559,6 +584,7 @@ pub async fn publish_listing(
     };
 
     let listing_id = path.into_inner();
+    log::info!("Publishing listing {} for user {}", listing_id, user_id);
 
     // Verify ownership
     let owner_check = sqlx::query_scalar::<_, i32>("SELECT host_id FROM listings WHERE id = ?")
@@ -568,9 +594,13 @@ pub async fn publish_listing(
 
     match owner_check {
         Ok(Some(host_id)) if host_id == user_id => {
+            log::info!("Ownership verified for listing {}", listing_id);
+            
             // Get listing with details for validation
             match get_listing_with_details(pool.get_ref(), &listing_id).await {
                 Ok(listing) => {
+                    log::info!("Fetched listing details for validation");
+                    
                     // Validate listing
                     if let Err(error) = validate_listing_for_publish(&listing) {
                         log::warn!("Validation failed for listing {}: {}", listing_id, error);
@@ -579,6 +609,8 @@ pub async fn publish_listing(
                         }));
                     }
 
+                    log::info!("Validation passed, updating listing status");
+                    
                     // Publish listing
                     match sqlx::query(
                         "UPDATE listings SET status = 'published', published_at = CURRENT_TIMESTAMP WHERE id = ?"
@@ -588,32 +620,55 @@ pub async fn publish_listing(
                     .await
                     {
                         Ok(_) => {
+                            log::info!("Successfully updated listing status to published");
+                            
                             match get_listing_with_details(pool.get_ref(), &listing_id).await {
-                                Ok(updated_listing) => HttpResponse::Ok().json(updated_listing),
-                                Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
-                                    "error": format!("Failed to fetch published listing: {}", e)
-                                })),
+                                Ok(updated_listing) => {
+                                    log::info!("Successfully fetched updated listing, returning response");
+                                    HttpResponse::Ok().json(updated_listing)
+                                },
+                                Err(e) => {
+                                    log::error!("Failed to fetch published listing: {:?}", e);
+                                    HttpResponse::InternalServerError().json(serde_json::json!({
+                                        "error": format!("Failed to fetch published listing: {}", e)
+                                    }))
+                                },
                             }
                         }
-                        Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
-                            "error": format!("Failed to publish listing: {}", e)
-                        })),
+                        Err(e) => {
+                            log::error!("Failed to update listing status: {:?}", e);
+                            HttpResponse::InternalServerError().json(serde_json::json!({
+                                "error": format!("Failed to publish listing: {}", e)
+                            }))
+                        },
                     }
                 }
-                Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
-                    "error": format!("Failed to fetch listing: {}", e)
-                })),
+                Err(e) => {
+                    log::error!("Failed to fetch listing for validation: {:?}", e);
+                    HttpResponse::InternalServerError().json(serde_json::json!({
+                        "error": format!("Failed to fetch listing: {}", e)
+                    }))
+                }
             }
         }
-        Ok(Some(_)) => HttpResponse::Forbidden().json(serde_json::json!({
-            "error": "You don't have permission to publish this listing"
-        })),
-        Ok(None) => HttpResponse::NotFound().json(serde_json::json!({
-            "error": "Listing not found"
-        })),
-        Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
-            "error": format!("Database error: {}", e)
-        })),
+        Ok(Some(_)) => {
+            log::warn!("User {} does not own listing {}", user_id, listing_id);
+            HttpResponse::Forbidden().json(serde_json::json!({
+                "error": "You don't have permission to publish this listing"
+            }))
+        },
+        Ok(None) => {
+            log::warn!("Listing {} not found", listing_id);
+            HttpResponse::NotFound().json(serde_json::json!({
+                "error": "Listing not found"
+            }))
+        },
+        Err(e) => {
+            log::error!("Database error checking ownership: {:?}", e);
+            HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": format!("Database error: {}", e)
+            }))
+        },
     }
 }
 
