@@ -49,19 +49,19 @@ const Dashboard = () => {
             <div className="relative aspect-square rounded-xl overflow-hidden mb-3">
                 <img
                     src={product.photos[0]?.url || "https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=400&h=400&fit=crop"}
-                    alt={product.title || "Property image"}
+                    alt={product.listing.title || "Property image"}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    onClick={() => navigate(`/property/${product.id}`)}
+                    onClick={() => navigate(`/property/${product.listing.id}`)}
                 />
                 <button
                     onClick={(e) => {
                         e.stopPropagation();
-                        toggleFavorite(product.id);
+                        toggleFavorite(product.listing.id);
                     }}
                     className="absolute top-3 right-3 p-2 rounded-full hover:scale-110 transition-transform"
                 >
                     <Heart
-                        className={`h-6 w-6 ${favorites.has(product.id)
+                        className={`h-6 w-6 ${favorites.has(product.listing.id)
                             ? 'fill-[#FF385C] text-[#FF385C]'
                             : 'fill-black/50 text-white stroke-white stroke-2'
                             }`}
@@ -75,18 +75,18 @@ const Dashboard = () => {
             </div>
             <div className="space-y-1">
                 <div className="flex items-start justify-between">
-                    <h3 className="font-semibold text-gray-900 truncate flex-1">{product.title}</h3>
+                    <h3 className="font-semibold text-gray-900 truncate flex-1">{product.listing.title}</h3>
                     <div className="flex items-center gap-1 ml-2">
                         <Star className="h-4 w-4 fill-current" />
                         <span className="text-sm font-medium">{(4.3 + Math.random() * 0.7).toFixed(2)}</span>
                     </div>
                 </div>
-                <p className="text-sm text-gray-600">{product.city}</p>
+                <p className="text-sm text-gray-600">{product.listing.city}</p>
                 <p className="text-sm text-gray-600">
                     {Math.floor(Math.random() * 30) + 1}-{Math.floor(Math.random() * 7) + 1} {t("janv")} · {t("1 nuit particulier")}
                 </p>
                 <div className="flex items-baseline gap-1 pt-1">
-                    <span className="font-semibold text-gray-900">{product.price_per_night?.toLocaleString()} FCFA</span>
+                    <span className="font-semibold text-gray-900">{product.listing.price_per_night?.toLocaleString()} FCFA</span>
                     <span className="text-sm text-gray-600">{t("pour 2 nuits")}</span>
                 </div>
             </div>
@@ -97,7 +97,7 @@ const Dashboard = () => {
         <div className="mb-12">
             <div className="flex gap-4 overflow-x-auto scrollbar-hide pb-4">
                 {properties.map((product, index) => (
-                    <PropertyCard key={product.id} product={product} index={index} />
+                    <PropertyCard key={product.listing.id} product={product} index={index} />
                 ))}
             </div>
         </div>
