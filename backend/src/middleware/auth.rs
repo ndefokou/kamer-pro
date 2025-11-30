@@ -1,5 +1,5 @@
-use actix_web::{dev::ServiceRequest, Error, HttpMessage};
 use actix_web::error::ErrorUnauthorized;
+use actix_web::{dev::ServiceRequest, Error};
 
 pub fn extract_user_id_from_token(token: &str) -> Result<i32, Error> {
     // Extract user_id from token format: "token_{uuid}_{user_id}"
@@ -12,15 +12,4 @@ pub fn extract_user_id_from_token(token: &str) -> Result<i32, Error> {
         }
     }
     Err(ErrorUnauthorized("Invalid token"))
-}
-
-pub fn get_user_id_from_request(req: &ServiceRequest) -> Result<i32, Error> {
-    if let Some(auth_header) = req.headers().get("Authorization") {
-        if let Ok(auth_str) = auth_header.to_str() {
-            if let Some(token) = auth_str.strip_prefix("Bearer ") {
-                return extract_user_id_from_token(token);
-            }
-        }
-    }
-    Err(ErrorUnauthorized("Missing or invalid authorization header"))
 }

@@ -1,124 +1,89 @@
-import { Link } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Store, ShoppingBag, TrendingUp, MapPin } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { getProducts, Product } from "@/api/client";
+import AirbnbPropertyCard from "@/components/AirbnbPropertyCard";
+import AirbnbSearch from "@/components/AirbnbSearch";
+import HorizontalPropertySection from "@/components/HorizontalPropertySection";
 
 const Index = () => {
+  const {
+    data: products,
+    isLoading,
+    error,
+  } = useQuery<Product[]>({
+    queryKey: ["products"],
+    queryFn: () => getProducts({}),
+  });
+
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
+
+  if (error) {
+    return <div>Error loading products</div>;
+  }
+
+  const popularListings = products?.slice(0, 5) || [];
+  const nextMonthListings = products?.slice(5, 10) || [];
+  const nearbyListings = products?.slice(10, 15) || [];
+
   return (
-    <div className="min-h-screen">
-      {/* Hero Section */}
-      <section className="bg-gradient-hero text-primary-foreground py-20 px-4">
-        <div className="container mx-auto text-center">
-          <div className="flex justify-center mb-6">
-            <div className="bg-secondary p-4 rounded-full">
-              <Store className="h-16 w-16 text-secondary-foreground" />
-            </div>
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto px-4 py-8">
+        <AirbnbSearch />
+
+        <HorizontalPropertySection title="Logements populaires">
+          {popularListings.map((product) => (
+            <AirbnbPropertyCard
+              key={product.listing.id}
+              id={product.listing.id}
+              name={product.listing.title ?? "Untitled"}
+              location={product.listing.city ?? "Unknown"}
+              price={product.listing.price_per_night ?? 0}
+              images={product.photos.map((photo) => ({ image_url: photo.url }))}
+            />
+          ))}
+        </HorizontalPropertySection>
+        <HorizontalPropertySection title="Logements disponibles le mois prochain">
+          {nextMonthListings.map((product) => (
+            <AirbnbPropertyCard
+              key={product.listing.id}
+              id={product.listing.id}
+              name={product.listing.title ?? "Untitled"}
+              location={product.listing.city ?? "Unknown"}
+              price={product.listing.price_per_night ?? 0}
+              images={product.photos.map((photo) => ({ image_url: photo.url }))}
+            />
+          ))}
+        </HorizontalPropertySection>
+        <HorizontalPropertySection title="Logements à proximité">
+          {nearbyListings.map((product) => (
+            <AirbnbPropertyCard
+              key={product.listing.id}
+              id={product.listing.id}
+              name={product.listing.title ?? "Untitled"}
+              location={product.listing.city ?? "Unknown"}
+              price={product.listing.price_per_night ?? 0}
+              images={product.photos.map((photo) => ({ image_url: photo.url }))}
+            />
+          ))}
+        </HorizontalPropertySection>
+
+        {/* All Listings */}
+        <section className="py-12">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+            {products?.map((product) => (
+              <AirbnbPropertyCard
+                key={product.listing.id}
+                id={product.listing.id}
+                name={product.listing.title ?? "Untitled"}
+                location={product.listing.city ?? "Unknown"}
+                price={product.listing.price_per_night ?? 0}
+                images={product.photos.map((photo) => ({ image_url: photo.url }))}
+              />
+            ))}
           </div>
-          <h1 className="text-5xl md:text-6xl font-bold mb-6">
-            Welcome to MboaMaison
-          </h1>
-          <p className="text-xl md:text-2xl mb-8 max-w-3xl mx-auto opacity-95">
-            The premier marketplace connecting buyers and sellers in Yaoundé,
-            Cameroon
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link to="/webauth-login">
-              <Button
-                size="lg"
-                variant="secondary"
-                className="w-full sm:w-auto"
-              >
-                Get Started
-              </Button>
-            </Link>
-            <Link to="/webauth-login">
-              <Button
-                size="lg"
-                variant="outline"
-                className="w-full sm:w-auto bg-primary-foreground/10 border-primary-foreground/20 hover:bg-primary-foreground/20"
-              >
-                Browse Marketplace
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* Features Section */}
-      <section className="py-20 px-4 bg-background">
-        <div className="container mx-auto">
-          <h2 className="text-4xl font-bold text-center mb-12">
-            Why Choose MboaMaison?
-          </h2>
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="text-center p-6 rounded-lg bg-gradient-card shadow-soft">
-              <div className="flex justify-center mb-4">
-                <div className="bg-primary p-3 rounded-full">
-                  <ShoppingBag className="h-8 w-8 text-primary-foreground" />
-                </div>
-              </div>
-              <h3 className="text-2xl font-bold mb-3">Easy Buying</h3>
-              <p className="text-muted-foreground">
-                Browse thousands of products from local sellers. Find exactly
-                what you need with our powerful search and filters.
-              </p>
-            </div>
-
-            <div className="text-center p-6 rounded-lg bg-gradient-card shadow-soft">
-              <div className="flex justify-center mb-4">
-                <div className="bg-secondary p-3 rounded-full">
-                  <TrendingUp className="h-8 w-8 text-secondary-foreground" />
-                </div>
-              </div>
-              <h3 className="text-2xl font-bold mb-3">Grow Your Business</h3>
-              <p className="text-muted-foreground">
-                Reach more customers by listing your products. Simple dashboard
-                to manage your inventory and sales.
-              </p>
-            </div>
-
-            <div className="text-center p-6 rounded-lg bg-gradient-card shadow-soft">
-              <div className="flex justify-center mb-4">
-                <div className="bg-accent p-3 rounded-full">
-                  <MapPin className="h-8 w-8 text-accent-foreground" />
-                </div>
-              </div>
-              <h3 className="text-2xl font-bold mb-3">Local Focus</h3>
-              <p className="text-muted-foreground">
-                Connect with buyers and sellers in your area. Support local
-                businesses and find deals near you.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="bg-primary text-primary-foreground py-16 px-4">
-        <div className="container mx-auto text-center">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            Ready to Start?
-          </h2>
-          <p className="text-xl mb-8 opacity-95">
-            Join MboaMaison today and discover the best local marketplace in
-            Yaoundé
-          </p>
-          <Link to="/webauth-login">
-            <Button size="lg" variant="secondary">
-              Sign Up Now
-            </Button>
-          </Link>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="bg-foreground text-background py-8 px-4">
-        <div className="container mx-auto text-center">
-          <div className="flex justify-center mb-4">
-            <Store className="h-8 w-8" />
-          </div>
-          <p className="text-sm">© 2025 MboaMaison. All rights reserved.</p>
-        </div>
-      </footer>
+        </section>
+      </div>
     </div>
   );
 };

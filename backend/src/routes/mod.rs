@@ -1,11 +1,6 @@
-pub mod architect;
 pub mod auth;
-pub mod company;
 pub mod listings;
-pub mod messages;
-pub mod middleware;
-pub mod products;
-pub mod reviews;
 pub mod roles;
 pub mod upload;
+pub mod messages;
 pub mod wishlist;

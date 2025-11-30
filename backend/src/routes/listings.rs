@@ -10,7 +10,7 @@ use uuid::Uuid;
 #[derive(Debug, Serialize, Deserialize, sqlx::FromRow)]
 pub struct Listing {
     pub id: String,
-    pub host_id: String,
+    pub host_id: i32,
     pub status: String,
     pub property_type: Option<String>,
     pub title: Option<String>,
@@ -106,6 +106,11 @@ pub struct AddAmenitiesRequest {
 }
 
 #[derive(Debug, Deserialize)]
+pub struct SyncPhotosRequest {
+    pub photos: Vec<AddPhotoRequest>,
+}
+
+#[derive(Debug, Deserialize)]
 pub struct AddPhotoRequest {
     pub url: String,
     pub is_cover: Option<bool>,
@@ -117,20 +122,38 @@ pub struct AddVideoRequest {
     pub url: String,
 }
 
+#[derive(Debug, Deserialize)]
+pub struct ListingFilters {
+    pub search: Option<String>,
+    pub category: Option<String>,
+    pub location: Option<String>,
+    pub min_price: Option<f64>,
+    pub max_price: Option<f64>,
+    pub guests: Option<i32>,
+}
+
 // ============================================================================
 // Helper Functions
 // ============================================================================
 
-fn extract_user_id(req: &HttpRequest) -> Result<String, HttpResponse> {
-    req.headers()
-        .get("x-user-id")
-        .and_then(|h| h.to_str().ok())
-        .map(|s| s.to_string())
-        .ok_or_else(|| {
-            HttpResponse::Unauthorized().json(serde_json::json!({
-                "error": "Missing or invalid authentication"
-            }))
-        })
+use crate::middleware::auth::extract_user_id_from_token;
+
+fn extract_user_id(req: &HttpRequest) -> Result<i32, HttpResponse> {
+    if let Some(auth_header) = req.headers().get("Authorization") {
+        if let Ok(auth_str) = auth_header.to_str() {
+            if let Some(token) = auth_str.strip_prefix("Bearer ") {
+                return extract_user_id_from_token(token).map_err(|e| {
+                    log::error!("Failed to extract user ID from token: {:?}", e);
+                    HttpResponse::Unauthorized().json(serde_json::json!({
+                        "error": "Invalid or expired token"
+                    }))
+                });
+            }
+        }
+    }
+    Err(HttpResponse::Unauthorized().json(serde_json::json!({
+        "error": "Missing or invalid authorization header"
+    })))
 }
 
 async fn get_listing_with_details(
@@ -192,10 +215,6 @@ fn validate_listing_for_publish(listing: &ListingWithDetails) -> Result<(), Stri
         return Err("Price per night must be greater than 0".to_string());
     }
 
-    if listing.photos.len() < 3 {
-        return Err("At least 3 photos are required".to_string());
-    }
-
     if listing.listing.max_guests.is_none() || listing.listing.max_guests.unwrap() < 1 {
         return Err("Max guests must be at least 1".to_string());
     }
@@ -219,27 +238,67 @@ pub async fn create_listing(
         Err(response) => return response,
     };
 
+    // Check if user exists
+    let user_exists: Option<i32> = match sqlx::query_scalar("SELECT id FROM users WHERE id = ?")
+        .bind(user_id)
+        .fetch_optional(pool.get_ref())
+        .await
+    {
+        Ok(id) => id,
+        Err(e) => {
+            log::error!("Failed to check user existence: {:?}", e);
+            return HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": "Database error while verifying user"
+            }));
+        }
+    };
+
+    if user_exists.is_none() {
+        log::warn!("User ID {} not found in database", user_id);
+        return HttpResponse::BadRequest().json(serde_json::json!({
+            "error": "Invalid user ID or user does not exist"
+        }));
+    }
+
     let listing_id = Uuid::new_v4().to_string();
+
+    log::debug!(
+        "Creating listing with id: {}, user_id: {}",
+        listing_id,
+        user_id
+    );
 
     let result = sqlx::query(
         "INSERT INTO listings (id, host_id, status, property_type) VALUES (?, ?, 'draft', ?)",
     )
     .bind(&listing_id)
-    .bind(&user_id)
+    .bind(user_id)
     .bind(&body.property_type)
     .execute(pool.get_ref())
     .await;
 
     match result {
-        Ok(_) => match get_listing_with_details(pool.get_ref(), &listing_id).await {
-            Ok(listing) => HttpResponse::Created().json(listing),
-            Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
-                "error": format!("Failed to fetch created listing: {}", e)
-            })),
-        },
-        Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
-            "error": format!("Failed to create listing: {}", e)
-        })),
+        Ok(_) => {
+            log::debug!("Listing created successfully, fetching details...");
+            match get_listing_with_details(pool.get_ref(), &listing_id).await {
+                Ok(listing) => {
+                    log::debug!("Listing details fetched successfully");
+                    HttpResponse::Created().json(listing)
+                }
+                Err(e) => {
+                    log::error!("Failed to fetch created listing: {:?}", e);
+                    HttpResponse::InternalServerError().json(serde_json::json!({
+                        "error": format!("Failed to fetch created listing: {}", e)
+                    }))
+                }
+            }
+        }
+        Err(e) => {
+            log::error!("Failed to create listing: {:?}", e);
+            HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": format!("Failed to create listing: {}", e)
+            }))
+        }
     }
 }
 
@@ -275,95 +334,103 @@ pub async fn update_listing(
     let listing_id = path.into_inner();
 
     // Verify ownership
-    let owner_check = sqlx::query_scalar::<_, String>("SELECT host_id FROM listings WHERE id = ?")
+    let owner_check = sqlx::query_scalar::<_, i32>("SELECT host_id FROM listings WHERE id = ?")
         .bind(&listing_id)
         .fetch_optional(pool.get_ref())
         .await;
 
     match owner_check {
         Ok(Some(host_id)) if host_id == user_id => {
-            // Build dynamic update query
-            let mut updates = Vec::new();
-            let mut query = "UPDATE listings SET updated_at = CURRENT_TIMESTAMP".to_string();
+            // Build dynamic update query using QueryBuilder to prevent SQL injection
+            let mut query_builder: sqlx::QueryBuilder<sqlx::Sqlite> =
+                sqlx::QueryBuilder::new("UPDATE listings SET updated_at = CURRENT_TIMESTAMP");
 
             if let Some(ref property_type) = body.property_type {
-                updates.push(format!("property_type = '{}'", property_type));
+                query_builder.push(", property_type = ");
+                query_builder.push_bind(property_type);
             }
             if let Some(ref title) = body.title {
-                updates.push(format!("title = '{}'", title.replace("'", "''")));
+                query_builder.push(", title = ");
+                query_builder.push_bind(title);
             }
             if let Some(ref description) = body.description {
-                updates.push(format!(
-                    "description = '{}'",
-                    description.replace("'", "''")
-                ));
+                query_builder.push(", description = ");
+                query_builder.push_bind(description);
             }
             if let Some(ref address) = body.address {
-                updates.push(format!("address = '{}'", address.replace("'", "''")));
+                query_builder.push(", address = ");
+                query_builder.push_bind(address);
             }
             if let Some(ref city) = body.city {
-                updates.push(format!("city = '{}'", city.replace("'", "''")));
+                query_builder.push(", city = ");
+                query_builder.push_bind(city);
             }
             if let Some(ref country) = body.country {
-                updates.push(format!("country = '{}'", country.replace("'", "''")));
+                query_builder.push(", country = ");
+                query_builder.push_bind(country);
             }
             if let Some(latitude) = body.latitude {
-                updates.push(format!("latitude = {}", latitude));
+                query_builder.push(", latitude = ");
+                query_builder.push_bind(latitude);
             }
             if let Some(longitude) = body.longitude {
-                updates.push(format!("longitude = {}", longitude));
+                query_builder.push(", longitude = ");
+                query_builder.push_bind(longitude);
             }
             if let Some(price) = body.price_per_night {
-                updates.push(format!("price_per_night = {}", price));
+                query_builder.push(", price_per_night = ");
+                query_builder.push_bind(price);
             }
             if let Some(ref currency) = body.currency {
-                updates.push(format!("currency = '{}'", currency));
+                query_builder.push(", currency = ");
+                query_builder.push_bind(currency);
             }
             if let Some(cleaning_fee) = body.cleaning_fee {
-                updates.push(format!("cleaning_fee = {}", cleaning_fee));
+                query_builder.push(", cleaning_fee = ");
+                query_builder.push_bind(cleaning_fee);
             }
             if let Some(max_guests) = body.max_guests {
-                updates.push(format!("max_guests = {}", max_guests));
+                query_builder.push(", max_guests = ");
+                query_builder.push_bind(max_guests);
             }
             if let Some(bedrooms) = body.bedrooms {
-                updates.push(format!("bedrooms = {}", bedrooms));
+                query_builder.push(", bedrooms = ");
+                query_builder.push_bind(bedrooms);
             }
             if let Some(beds) = body.beds {
-                updates.push(format!("beds = {}", beds));
+                query_builder.push(", beds = ");
+                query_builder.push_bind(beds);
             }
             if let Some(bathrooms) = body.bathrooms {
-                updates.push(format!("bathrooms = {}", bathrooms));
+                query_builder.push(", bathrooms = ");
+                query_builder.push_bind(bathrooms);
             }
             if let Some(instant_book) = body.instant_book {
-                updates.push(format!(
-                    "instant_book = {}",
-                    if instant_book { 1 } else { 0 }
-                ));
+                query_builder.push(", instant_book = ");
+                query_builder.push_bind(if instant_book { 1 } else { 0 });
             }
             if let Some(min_nights) = body.min_nights {
-                updates.push(format!("min_nights = {}", min_nights));
+                query_builder.push(", min_nights = ");
+                query_builder.push_bind(min_nights);
             }
             if let Some(max_nights) = body.max_nights {
-                updates.push(format!("max_nights = {}", max_nights));
+                query_builder.push(", max_nights = ");
+                query_builder.push_bind(max_nights);
             }
             if let Some(ref safety_devices) = body.safety_devices {
                 let json = serde_json::to_string(safety_devices).unwrap_or_default();
-                updates.push(format!("safety_devices = '{}'", json.replace("'", "''")));
+                query_builder.push(", safety_devices = ");
+                query_builder.push_bind(json);
             }
             if let Some(ref house_rules) = body.house_rules {
-                updates.push(format!(
-                    "house_rules = '{}'",
-                    house_rules.replace("'", "''")
-                ));
+                query_builder.push(", house_rules = ");
+                query_builder.push_bind(house_rules);
             }
 
-            if !updates.is_empty() {
-                query.push_str(", ");
-                query.push_str(&updates.join(", "));
-            }
-            query.push_str(&format!(" WHERE id = '{}'", listing_id));
+            query_builder.push(" WHERE id = ");
+            query_builder.push_bind(&listing_id);
 
-            match sqlx::query(&query).execute(pool.get_ref()).await {
+            match query_builder.build().execute(pool.get_ref()).await {
                 Ok(_) => match get_listing_with_details(pool.get_ref(), &listing_id).await {
                     Ok(listing) => HttpResponse::Ok().json(listing),
                     Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
@@ -402,7 +469,7 @@ pub async fn delete_listing(
     let listing_id = path.into_inner();
 
     // Verify ownership
-    let owner_check = sqlx::query_scalar::<_, String>("SELECT host_id FROM listings WHERE id = ?")
+    let owner_check = sqlx::query_scalar::<_, i32>("SELECT host_id FROM listings WHERE id = ?")
         .bind(&listing_id)
         .fetch_optional(pool.get_ref())
         .await;
@@ -481,7 +548,7 @@ pub async fn publish_listing(
     let listing_id = path.into_inner();
 
     // Verify ownership
-    let owner_check = sqlx::query_scalar::<_, String>("SELECT host_id FROM listings WHERE id = ?")
+    let owner_check = sqlx::query_scalar::<_, i32>("SELECT host_id FROM listings WHERE id = ?")
         .bind(&listing_id)
         .fetch_optional(pool.get_ref())
         .await;
@@ -493,6 +560,11 @@ pub async fn publish_listing(
                 Ok(listing) => {
                     // Validate listing
                     if let Err(error) = validate_listing_for_publish(&listing) {
+                        log::warn!(
+                            "Validation failed for listing {}: {}",
+                            listing_id,
+                            error
+                        );
                         return HttpResponse::BadRequest().json(serde_json::json!({
                             "error": error
                         }));
@@ -551,7 +623,7 @@ pub async fn unpublish_listing(
     let listing_id = path.into_inner();
 
     // Verify ownership
-    let owner_check = sqlx::query_scalar::<_, String>("SELECT host_id FROM listings WHERE id = ?")
+    let owner_check = sqlx::query_scalar::<_, i32>("SELECT host_id FROM listings WHERE id = ?")
         .bind(&listing_id)
         .fetch_optional(pool.get_ref())
         .await;
@@ -602,7 +674,7 @@ pub async fn add_amenities(
     let listing_id = path.into_inner();
 
     // Verify ownership
-    let owner_check = sqlx::query_scalar::<_, String>("SELECT host_id FROM listings WHERE id = ?")
+    let owner_check = sqlx::query_scalar::<_, i32>("SELECT host_id FROM listings WHERE id = ?")
         .bind(&listing_id)
         .fetch_optional(pool.get_ref())
         .await;
@@ -645,13 +717,13 @@ pub async fn add_amenities(
     }
 }
 
-/// POST /api/listings/:id/photos - Add photo to listing
+/// POST /api/listings/:id/photos - Sync photos for a listing
 #[post("/{id}/photos")]
-pub async fn add_photo(
+pub async fn sync_photos(
     pool: web::Data<SqlitePool>,
     req: HttpRequest,
     path: web::Path<String>,
-    body: web::Json<AddPhotoRequest>,
+    body: web::Json<SyncPhotosRequest>,
 ) -> impl Responder {
     let user_id = match extract_user_id(&req) {
         Ok(id) => id,
@@ -661,164 +733,69 @@ pub async fn add_photo(
     let listing_id = path.into_inner();
 
     // Verify ownership
-    let owner_check = sqlx::query_scalar::<_, String>("SELECT host_id FROM listings WHERE id = ?")
+    let owner_check = sqlx::query_scalar::<_, i32>("SELECT host_id FROM listings WHERE id = ?")
         .bind(&listing_id)
         .fetch_optional(pool.get_ref())
         .await;
 
     match owner_check {
         Ok(Some(host_id)) if host_id == user_id => {
-            let is_cover = if body.is_cover.unwrap_or(false) { 1 } else { 0 };
-            let display_order = body.display_order.unwrap_or(0);
-
-            // If this is a cover photo, unset other cover photos
-            if is_cover == 1 {
-                let _ = sqlx::query("UPDATE listing_photos SET is_cover = 0 WHERE listing_id = ?")
-                    .bind(&listing_id)
-                    .execute(pool.get_ref())
-                    .await;
-            }
-
-            match sqlx::query(
-                "INSERT INTO listing_photos (listing_id, url, is_cover, display_order) VALUES (?, ?, ?, ?)"
-            )
-            .bind(&listing_id)
-            .bind(&body.url)
-            .bind(is_cover)
-            .bind(display_order)
-            .execute(pool.get_ref())
-            .await
-            {
-                Ok(_) => {
-                    match get_listing_with_details(pool.get_ref(), &listing_id).await {
-                        Ok(listing) => HttpResponse::Ok().json(listing),
-                        Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
-                            "error": format!("Failed to fetch listing: {}", e)
-                        })),
-                    }
+            // Use a transaction to ensure atomicity
+            let mut tx = match pool.begin().await {
+                Ok(tx) => tx,
+                Err(e) => {
+                    return HttpResponse::InternalServerError()
+                        .json(serde_json::json!({"error": format!("Failed to start transaction: {}", e)}));
                 }
-                Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
-                    "error": format!("Failed to add photo: {}", e)
-                })),
-            }
-        }
-        Ok(Some(_)) => HttpResponse::Forbidden().json(serde_json::json!({
-            "error": "You don't have permission to modify this listing"
-        })),
-        Ok(None) => HttpResponse::NotFound().json(serde_json::json!({
-            "error": "Listing not found"
-        })),
-        Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
-            "error": format!("Database error: {}", e)
-        })),
-    }
-}
+            };
 
-/// DELETE /api/listings/:id/photos/:photo_id - Delete photo
-#[delete("/{id}/photos/{photo_id}")]
-pub async fn delete_photo(
-    pool: web::Data<SqlitePool>,
-    req: HttpRequest,
-    path: web::Path<(String, i32)>,
-) -> impl Responder {
-    let user_id = match extract_user_id(&req) {
-        Ok(id) => id,
-        Err(response) => return response,
-    };
-
-    let (listing_id, photo_id) = path.into_inner();
-
-    // Verify ownership
-    let owner_check = sqlx::query_scalar::<_, String>("SELECT host_id FROM listings WHERE id = ?")
-        .bind(&listing_id)
-        .fetch_optional(pool.get_ref())
-        .await;
-
-    match owner_check {
-        Ok(Some(host_id)) if host_id == user_id => {
-            match sqlx::query("DELETE FROM listing_photos WHERE id = ? AND listing_id = ?")
-                .bind(photo_id)
+            // Delete existing photos
+            if let Err(e) = sqlx::query("DELETE FROM listing_photos WHERE listing_id = ?")
                 .bind(&listing_id)
-                .execute(pool.get_ref())
+                .execute(&mut *tx)
                 .await
             {
-                Ok(_) => match get_listing_with_details(pool.get_ref(), &listing_id).await {
-                    Ok(listing) => HttpResponse::Ok().json(listing),
-                    Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
-                        "error": format!("Failed to fetch listing: {}", e)
-                    })),
-                },
-                Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
-                    "error": format!("Failed to delete photo: {}", e)
-                })),
+                let _ = tx.rollback().await;
+                return HttpResponse::InternalServerError().json(
+                    serde_json::json!({"error": format!("Failed to clear existing photos: {}", e)}),
+                );
+            }
+
+            // Insert new photos
+            for photo in &body.photos {
+                let is_cover = if photo.is_cover.unwrap_or(false) { 1 } else { 0 };
+                let display_order = photo.display_order.unwrap_or(0);
+
+                if let Err(e) = sqlx::query("INSERT INTO listing_photos (listing_id, url, is_cover, display_order) VALUES (?, ?, ?, ?)")
+                    .bind(&listing_id)
+                    .bind(&photo.url)
+                    .bind(is_cover)
+                    .bind(display_order)
+                    .execute(&mut *tx)
+                    .await
+                {
+                    let _ = tx.rollback().await;
+                    return HttpResponse::InternalServerError().json(
+                        serde_json::json!({"error": format!("Failed to add photo {}: {}", photo.url, e)}),
+                    );
+                }
+            }
+
+            if let Err(e) = tx.commit().await {
+                return HttpResponse::InternalServerError()
+                    .json(serde_json::json!({"error": format!("Failed to commit transaction: {}", e)}));
+            }
+
+            match get_listing_with_details(pool.get_ref(), &listing_id).await {
+                Ok(listing) => HttpResponse::Ok().json(listing),
+                Err(e) => HttpResponse::InternalServerError()
+                    .json(serde_json::json!({"error": format!("Failed to fetch listing: {}", e)})),
             }
         }
         Ok(Some(_)) => HttpResponse::Forbidden().json(serde_json::json!({
             "error": "You don't have permission to modify this listing"
         })),
-        Ok(None) => HttpResponse::NotFound().json(serde_json::json!({
-            "error": "Listing not found"
-        })),
-        Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
-            "error": format!("Database error: {}", e)
-        })),
-    }
-}
-
-/// PUT /api/listings/:id/photos/:photo_id/cover - Set cover photo
-#[put("/{id}/photos/{photo_id}/cover")]
-pub async fn set_cover_photo(
-    pool: web::Data<SqlitePool>,
-    req: HttpRequest,
-    path: web::Path<(String, i32)>,
-) -> impl Responder {
-    let user_id = match extract_user_id(&req) {
-        Ok(id) => id,
-        Err(response) => return response,
-    };
-
-    let (listing_id, photo_id) = path.into_inner();
-
-    // Verify ownership
-    let owner_check = sqlx::query_scalar::<_, String>("SELECT host_id FROM listings WHERE id = ?")
-        .bind(&listing_id)
-        .fetch_optional(pool.get_ref())
-        .await;
-
-    match owner_check {
-        Ok(Some(host_id)) if host_id == user_id => {
-            // Unset all cover photos
-            let _ = sqlx::query("UPDATE listing_photos SET is_cover = 0 WHERE listing_id = ?")
-                .bind(&listing_id)
-                .execute(pool.get_ref())
-                .await;
-
-            // Set new cover photo
-            match sqlx::query(
-                "UPDATE listing_photos SET is_cover = 1 WHERE id = ? AND listing_id = ?",
-            )
-            .bind(photo_id)
-            .bind(&listing_id)
-            .execute(pool.get_ref())
-            .await
-            {
-                Ok(_) => match get_listing_with_details(pool.get_ref(), &listing_id).await {
-                    Ok(listing) => HttpResponse::Ok().json(listing),
-                    Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
-                        "error": format!("Failed to fetch listing: {}", e)
-                    })),
-                },
-                Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
-                    "error": format!("Failed to set cover photo: {}", e)
-                })),
-            }
-        }
-        Ok(Some(_)) => HttpResponse::Forbidden().json(serde_json::json!({
-            "error": "You don't have permission to modify this listing"
-        })),
-        Ok(None) => HttpResponse::NotFound().json(serde_json::json!({
-            "error": "Listing not found"
-        })),
+        Ok(None) => HttpResponse::NotFound().json(serde_json::json!({ "error": "Listing not found" })),
         Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
             "error": format!("Database error: {}", e)
         })),
@@ -841,7 +818,7 @@ pub async fn add_video(
     let listing_id = path.into_inner();
 
     // Verify ownership
-    let owner_check = sqlx::query_scalar::<_, String>("SELECT host_id FROM listings WHERE id = ?")
+    let owner_check = sqlx::query_scalar::<_, i32>("SELECT host_id FROM listings WHERE id = ?")
         .bind(&listing_id)
         .fetch_optional(pool.get_ref())
         .await;
@@ -885,12 +862,63 @@ pub async fn add_video(
 
 /// GET /api/listings - Get all published listings (for marketplace)
 #[get("")]
-pub async fn get_all_listings(pool: web::Data<SqlitePool>) -> impl Responder {
-    let result = sqlx::query_as::<_, Listing>(
-        "SELECT * FROM listings WHERE status = 'published' ORDER BY created_at DESC",
-    )
-    .fetch_all(pool.get_ref())
-    .await;
+pub async fn get_all_listings(
+    pool: web::Data<SqlitePool>,
+    query: web::Query<ListingFilters>,
+) -> impl Responder {
+    let mut query_builder: sqlx::QueryBuilder<sqlx::Sqlite> =
+        sqlx::QueryBuilder::new("SELECT * FROM listings WHERE status = 'published'");
+
+    if let Some(ref search) = query.search {
+        let pattern = format!("%{}%", search);
+        query_builder.push(" AND (title LIKE ");
+        query_builder.push_bind(pattern.clone());
+        query_builder.push(" OR description LIKE ");
+        query_builder.push_bind(pattern.clone());
+        query_builder.push(" OR city LIKE ");
+        query_builder.push_bind(pattern.clone());
+        query_builder.push(" OR country LIKE ");
+        query_builder.push_bind(pattern);
+        query_builder.push(")");
+    }
+
+    if let Some(ref category) = query.category {
+        query_builder.push(" AND property_type = ");
+        query_builder.push_bind(category);
+    }
+
+    if let Some(ref location) = query.location {
+        let pattern = format!("%{}%", location);
+        query_builder.push(" AND (city LIKE ");
+        query_builder.push_bind(pattern.clone());
+        query_builder.push(" OR country LIKE ");
+        query_builder.push_bind(pattern.clone());
+        query_builder.push(" OR address LIKE ");
+        query_builder.push_bind(pattern);
+        query_builder.push(")");
+    }
+
+    if let Some(min_price) = query.min_price {
+        query_builder.push(" AND price_per_night >= ");
+        query_builder.push_bind(min_price);
+    }
+
+    if let Some(max_price) = query.max_price {
+        query_builder.push(" AND price_per_night <= ");
+        query_builder.push_bind(max_price);
+    }
+
+    if let Some(guests) = query.guests {
+        query_builder.push(" AND max_guests >= ");
+        query_builder.push_bind(guests);
+    }
+
+    query_builder.push(" ORDER BY created_at DESC");
+
+    let result = query_builder
+        .build_query_as::<Listing>()
+        .fetch_all(pool.get_ref())
+        .await;
 
     match result {
         Ok(listings) => {

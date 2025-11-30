@@ -103,12 +103,6 @@ const HostDashboard: React.FC = () => {
                             <tbody className="divide-y">
                                 {listings.map((listing) => (
                                     <tr key={listing.id} className="group cursor-pointer hover:bg-muted/50" onClick={() => navigate(`/host/preview`)}>
-                                        {/* Note: In a real app, this might go to an edit page or details page. 
-                                            For now, I'll point to preview or maybe just stay here since the user only asked for the dashboard. 
-                                            Actually, clicking a listing usually goes to an editor. 
-                                            I'll leave the onClick empty or point to a placeholder for now, 
-                                            but the user didn't explicitly ask for editing functionality yet.
-                                        */}
                                         <td className="py-4 pr-4">
                                             <div className="flex items-center gap-4">
                                                 <div className="h-16 w-16 rounded-lg bg-muted overflow-hidden flex-shrink-0">
@@ -124,7 +118,12 @@ const HostDashboard: React.FC = () => {
                                                         </div>
                                                     )}
                                                 </div>
-                                                <span className="font-medium truncate">{listing.title || 'Untitled Listing'}</span>
+                                                <div className="flex flex-col">
+                                                    <span className="font-medium truncate">{listing.title || 'Untitled Listing'}</span>
+                                                    <span className="text-sm text-muted-foreground">
+                                                        Your listing started {new Date(listing.updated_at || Date.now()).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                                                    </span>
+                                                </div>
                                             </div>
                                         </td>
                                         <td className="py-4 text-sm">{listing.property_type || 'Home'}</td>
@@ -136,7 +135,7 @@ const HostDashboard: React.FC = () => {
                                         <td className="py-4">
                                             <div className="flex items-center gap-2">
                                                 <span className={`h-2 w-2 rounded-full ${listing.status === 'published' ? 'bg-green-500' :
-                                                        listing.status === 'draft' ? 'bg-gray-300' : 'bg-orange-500'
+                                                    listing.status === 'draft' ? 'bg-gray-300' : 'bg-orange-500'
                                                     }`} />
                                                 <span className="text-sm capitalize">{listing.status === 'draft' ? 'In progress' : listing.status}</span>
                                             </div>

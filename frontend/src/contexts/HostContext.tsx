@@ -1,9 +1,40 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { AxiosError } from 'axios';
 import apiClient from '@/api/client';
 
 // ============================================================================
 // Types
 // ============================================================================
+
+interface Photo {
+    url: string;
+    is_cover: number;
+}
+
+interface Video {
+    url: string;
+}
+
+interface UpdateListingPayload {
+    property_type?: string;
+    title?: string | null;
+    description?: string | null;
+    price_per_night?: number;
+    currency?: string;
+    cleaning_fee?: number;
+    max_guests?: number;
+    bedrooms?: number;
+    beds?: number;
+    bathrooms?: number;
+    instant_book?: boolean;
+    min_nights?: number;
+    max_nights?: number;
+    safety_devices?: string[];
+    house_rules?: string;
+    address?: string;
+    city?: string;
+    country?: string;
+}
 
 export interface ListingDraft {
     id?: string;
@@ -57,7 +88,7 @@ export interface ListingDraft {
 interface HostContextType {
     draft: ListingDraft;
     updateDraft: (updates: Partial<ListingDraft>) => void;
-    saveDraft: () => Promise<void>;
+    saveDraft: () => Promise<string | undefined>;
     loadDraft: (id?: string) => Promise<void>;
     publishListing: () => Promise<{ success: boolean; error?: string }>;
     resetDraft: () => void;
@@ -142,7 +173,7 @@ export const HostProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }));
     }, []);
 
-    const saveDraft = useCallback(async () => {
+    const saveDraft = useCallback(async (): Promise<string | undefined> => {
         setIsSaving(true);
         setSaveError(null);
 
@@ -150,17 +181,11 @@ export const HostProvider: React.FC<{ children: React.ReactNode }> = ({ children
             const userId = localStorage.getItem('userId');
 
             if (!userId) {
-                // Redirect to login if no user ID
                 window.location.href = '/';
                 throw new Error('Please log in to save your listing');
             }
 
-            const url = draft.id
-                ? `/listings/${draft.id}`
-                : '/listings';
-
-            // Prepare payload
-            const payload: any = {
+            const payload: UpdateListingPayload = {
                 property_type: draft.propertyType,
                 title: draft.title || null,
                 description: draft.description || null,
@@ -181,45 +206,69 @@ export const HostProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 country: draft.country,
             };
 
-            let response;
-            if (draft.id) {
-                response = await apiClient.put(url, payload);
-            } else {
-                response = await apiClient.post(url, payload);
+            let listingId = draft.id;
+
+            if (!listingId) {
+                // If it's a new listing, create it first to get an ID
+                const createResponse = await apiClient.post('/listings', {
+                    property_type: draft.propertyType,
+                });
+                listingId = createResponse.data.id;
+                if (!listingId) {
+                    throw new Error('Failed to create new listing.');
+                }
             }
 
-            const data = response.data;
+            // Now, with an ID, update the listing with the full payload
+            await apiClient.put(`/listings/${listingId}`, payload);
 
-            // Save amenities if listing was created
-            if (data.listing?.id && draft.amenities.length > 0) {
-                await apiClient.post(`/listings/${data.listing.id}/amenities`, {
-                    amenities: draft.amenities
+            // Sync amenities and photos
+            if (draft.amenities.length > 0) {
+                await apiClient.post(`/listings/${listingId}/amenities`, {
+                    amenities: draft.amenities,
+                });
+            }
+            if (draft.photos.length > 0) {
+                const photoPayload = draft.photos.map((url, index) => ({
+                    url,
+                    is_cover: index === draft.coverPhotoIndex,
+                    display_order: index,
+                }));
+                await apiClient.post(`/listings/${listingId}/photos`, {
+                    photos: photoPayload,
                 });
             }
 
             setDraft(prev => ({
                 ...prev,
-                id: data.listing?.id || prev.id,
+                id: listingId,
                 isDirty: false,
                 lastSaved: new Date().toISOString(),
             }));
 
             localStorage.setItem(DRAFT_KEY, JSON.stringify({
                 ...draft,
-                id: data.listing?.id || draft.id,
+                id: listingId,
                 isDirty: false,
                 lastSaved: new Date().toISOString(),
             }));
 
-        } catch (error: any) {
+            return listingId;
+
+        } catch (error) {
             console.error('Failed to save draft:', error);
-            const errorMessage = error.response?.data?.error || error.message || 'Failed to save';
+            let errorMessage = 'Failed to save';
+            if (error instanceof AxiosError && error.response?.data?.error) {
+                errorMessage = error.response.data.error;
+            } else if (error instanceof Error) {
+                errorMessage = error.message;
+            }
             setSaveError(errorMessage);
 
-            // If unauthorized, redirect to login
-            if (error.response?.status === 401) {
+            if (error instanceof AxiosError && error.response?.status === 401) {
                 window.location.href = '/';
             }
+            return undefined;
         } finally {
             setIsSaving(false);
         }
@@ -245,30 +294,30 @@ export const HostProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
             // Convert backend data to draft format
             const loadedDraft: ListingDraft = {
-                id: data.listing.id,
+                id: data.id,
                 step: draft.step,
-                propertyType: data.listing.property_type,
+                propertyType: data.property_type,
                 amenities: data.amenities || [],
-                photos: data.photos?.map((p: any) => p.url) || [],
-                videos: data.videos?.map((v: any) => v.url) || [],
-                coverPhotoIndex: data.photos?.findIndex((p: any) => p.is_cover === 1) || 0,
-                title: data.listing.title || '',
-                description: data.listing.description || '',
-                instantBook: data.listing.instant_book === 1,
-                minNights: data.listing.min_nights || 1,
-                maxNights: data.listing.max_nights,
-                maxGuests: data.listing.max_guests,
-                bedrooms: data.listing.bedrooms,
-                beds: data.listing.beds,
-                bathrooms: data.listing.bathrooms,
-                pricePerNight: data.listing.price_per_night,
-                cleaningFee: data.listing.cleaning_fee,
-                currency: data.listing.currency || 'XAF',
-                safetyDevices: data.listing.safety_devices ? JSON.parse(data.listing.safety_devices) : [],
-                houseRules: data.listing.house_rules || '',
-                address: data.listing.address,
-                city: data.listing.city,
-                country: data.listing.country || 'Cameroon',
+                photos: data.photos?.map((p: Photo) => p.url) || [],
+                videos: data.videos?.map((v: Video) => v.url) || [],
+                coverPhotoIndex: data.photos?.findIndex((p: Photo) => p.is_cover === 1) || 0,
+                title: data.title || '',
+                description: data.description || '',
+                instantBook: data.instant_book === 1,
+                minNights: data.min_nights || 1,
+                maxNights: data.max_nights,
+                maxGuests: data.max_guests,
+                bedrooms: data.bedrooms,
+                beds: data.beds,
+                bathrooms: data.bathrooms,
+                pricePerNight: data.price_per_night,
+                cleaningFee: data.cleaning_fee,
+                currency: data.currency || 'XAF',
+                safetyDevices: data.safety_devices ? JSON.parse(data.safety_devices) : [],
+                houseRules: data.house_rules || '',
+                address: data.address,
+                city: data.city,
+                country: data.country || 'Cameroon',
                 isDirty: false,
             };
 
@@ -281,10 +330,12 @@ export const HostProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }, [draft.step]);
 
     const publishListing = useCallback(async (): Promise<{ success: boolean; error?: string }> => {
-        if (!draft.id) {
+        let listingId = draft.id;
+
+        if (!listingId) {
             // Save first if not saved
-            await saveDraft();
-            if (!draft.id) {
+            listingId = await saveDraft();
+            if (!listingId) {
                 return { success: false, error: 'Failed to create listing' };
             }
         }
@@ -297,7 +348,7 @@ export const HostProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 return { success: false, error: 'Please log in to publish' };
             }
 
-            await apiClient.post(`/listings/${draft.id}/publish`);
+            await apiClient.post(`/listings/${listingId}/publish`);
 
             // Clear draft after successful publish
             localStorage.removeItem(DRAFT_KEY);
@@ -305,12 +356,17 @@ export const HostProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
             return { success: true };
 
-        } catch (error: any) {
+        } catch (error) {
             console.error('Failed to publish listing:', error);
-            const errorMessage = error.response?.data?.error || error.message || 'Failed to publish';
+            let errorMessage = 'Failed to publish';
+            if (error instanceof AxiosError && error.response?.data?.error) {
+                errorMessage = error.response.data.error;
+            } else if (error instanceof Error) {
+                errorMessage = error.message;
+            }
             return { success: false, error: errorMessage };
         }
-    }, [draft.id, saveDraft]);
+    }, [draft, saveDraft]);
 
     const resetDraft = useCallback(() => {
         setDraft(defaultDraft);

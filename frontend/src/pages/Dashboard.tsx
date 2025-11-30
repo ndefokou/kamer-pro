@@ -3,23 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Heart, Star, ChevronRight, Home as HomeIcon, Compass, Briefcase, Globe, Menu, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { getProducts } from "@/api/client";
+import { getProducts, Product } from "@/api/client";
 import AirbnbSearch from "@/components/AirbnbSearch";
-
-interface Product {
-    id: string;
-    name: string;
-    description: string;
-    price: number;
-    category: string;
-    location: string;
-    condition?: string;
-    contact_phone: string | null;
-    contact_email: string | null;
-    images: { image_url: string }[];
-    created_at: string;
-    user_id: number;
-}
 
 const Dashboard = () => {
     const { t } = useTranslation();
@@ -63,8 +48,8 @@ const Dashboard = () => {
         <div className="flex-shrink-0 w-[280px] cursor-pointer group">
             <div className="relative aspect-square rounded-xl overflow-hidden mb-3">
                 <img
-                    src={product.images[0]?.image_url || "https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=400&h=400&fit=crop"}
-                    alt={product.name}
+                    src={product.photos[0]?.url || "https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=400&h=400&fit=crop"}
+                    alt={product.title || "Property image"}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     onClick={() => navigate(`/property/${product.id}`)}
                 />
@@ -90,18 +75,18 @@ const Dashboard = () => {
             </div>
             <div className="space-y-1">
                 <div className="flex items-start justify-between">
-                    <h3 className="font-semibold text-gray-900 truncate flex-1">{product.name}</h3>
+                    <h3 className="font-semibold text-gray-900 truncate flex-1">{product.title}</h3>
                     <div className="flex items-center gap-1 ml-2">
                         <Star className="h-4 w-4 fill-current" />
                         <span className="text-sm font-medium">{(4.3 + Math.random() * 0.7).toFixed(2)}</span>
                     </div>
                 </div>
-                <p className="text-sm text-gray-600">{product.location}</p>
+                <p className="text-sm text-gray-600">{product.city}</p>
                 <p className="text-sm text-gray-600">
                     {Math.floor(Math.random() * 30) + 1}-{Math.floor(Math.random() * 7) + 1} {t("janv")} · {t("1 nuit particulier")}
                 </p>
                 <div className="flex items-baseline gap-1 pt-1">
-                    <span className="font-semibold text-gray-900">{product.price.toLocaleString()} FCFA</span>
+                    <span className="font-semibold text-gray-900">{product.price_per_night?.toLocaleString()} FCFA</span>
                     <span className="text-sm text-gray-600">{t("pour 2 nuits")}</span>
                 </div>
             </div>
@@ -110,12 +95,6 @@ const Dashboard = () => {
 
     const PropertySection = ({ title, properties }: { title: string; properties: Product[] }) => (
         <div className="mb-12">
-            <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-semibold text-gray-900">{title}</h2>
-                <button className="flex items-center gap-2 text-sm font-semibold hover:underline">
-                    <ChevronRight className="h-5 w-5" />
-                </button>
-            </div>
             <div className="flex gap-4 overflow-x-auto scrollbar-hide pb-4">
                 {properties.map((product, index) => (
                     <PropertyCard key={product.id} product={product} index={index} />
@@ -188,15 +167,15 @@ const Dashboard = () => {
                 ) : (
                     <>
                         <PropertySection
-                            title={t("Logements populaires · Yaoundé")}
+                            title={t("Logements populaires")}
                             properties={featuredProperties}
                         />
                         <PropertySection
-                            title={t("Logements disponibles le mois prochain · Douala")}
+                            title={t("Logements disponibles le mois prochain")}
                             properties={upcomingProperties}
                         />
                         <PropertySection
-                            title={t("Logements · Kribi")}
+                            title={t("Logements à proximité")}
                             properties={nearbyProperties}
                         />
                     </>

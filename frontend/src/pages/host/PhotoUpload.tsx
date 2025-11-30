@@ -34,7 +34,7 @@ const PhotoUpload: React.FC = () => {
         });
 
         try {
-            const response = await fetch('http://localhost:8082/api/upload/images', {
+            const response = await fetch('/api/upload/images', {
                 method: 'POST',
                 body: formData,
             });

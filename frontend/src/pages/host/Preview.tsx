@@ -14,9 +14,6 @@ const Preview: React.FC = () => {
     const handlePublish = async () => {
         setIsPublishing(true);
 
-        // Save draft first
-        await saveDraft();
-
         const result = await publishListing();
 
         if (result.success) {
