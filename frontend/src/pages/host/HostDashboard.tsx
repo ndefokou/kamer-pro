@@ -4,6 +4,7 @@ import apiClient from '@/api/client';
 import { Button } from '@/components/ui/button';
 import { Plus, Search, Bell, Menu } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { getImageUrl } from '@/lib/utils';
 
 interface Listing {
     listing: {
@@ -110,7 +111,7 @@ const HostDashboard: React.FC = () => {
                                                 <div className="h-16 w-16 rounded-lg bg-muted overflow-hidden flex-shrink-0">
                                                     {item.photos?.[0]?.url ? (
                                                         <img
-                                                            src={item.photos[0].url}
+                                                            src={getImageUrl(item.photos[0].url)}
                                                             alt={item.listing.title}
                                                             className="h-full w-full object-cover"
                                                         />

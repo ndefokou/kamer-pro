@@ -4,6 +4,7 @@ import { useHost } from '@/contexts/HostContext';
 import { Button } from '@/components/ui/button';
 import { Upload, X, Star } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { getImageUrl } from '@/lib/utils';
 
 const PhotoUpload: React.FC = () => {
     const navigate = useNavigate();
@@ -136,7 +137,7 @@ const PhotoUpload: React.FC = () => {
                                         }`}
                                 >
                                     <img
-                                        src={photo}
+                                        src={getImageUrl(photo)}
                                         alt={`Photo ${index + 1}`}
                                         className="w-full h-full object-cover"
                                     />
