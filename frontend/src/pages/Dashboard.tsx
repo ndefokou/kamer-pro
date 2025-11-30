@@ -6,6 +6,7 @@ import { Heart, Star, Home as HomeIcon, Globe, Menu, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getProducts, Product } from "@/api/client";
 import AirbnbSearch from "@/components/AirbnbSearch";
+import { getImageUrl } from "@/lib/utils";
 
 const Dashboard = () => {
     const { t } = useTranslation();
@@ -37,7 +38,7 @@ const Dashboard = () => {
         <div className="flex-shrink-0 w-[280px] cursor-pointer group">
             <div className="relative aspect-square rounded-xl overflow-hidden mb-3">
                 <img
-                    src={product.photos[0]?.url || "https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=400&h=400&fit=crop"}
+                    src={getImageUrl(product.photos[0]?.url) || "https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=400&h=400&fit=crop"}
                     alt={product.listing.title || "Property image"}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     onClick={() => navigate(`/property/${product.listing.id}`)}

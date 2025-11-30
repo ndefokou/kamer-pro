@@ -4,6 +4,7 @@ import { Heart, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useWishlist } from "@/hooks/useWishlist";
 import { useToast } from "@/hooks/use-toast";
+import { getImageUrl } from "@/lib/utils";
 
 interface AirbnbPropertyCardProps {
     id: string;
@@ -61,7 +62,7 @@ const AirbnbPropertyCard = ({
                 <div className="relative aspect-[4/3] rounded-xl overflow-hidden bg-gray-200">
                     {images && images.length > 0 ? (
                         <img
-                            src={images[currentImageIndex]?.image_url}
+                            src={getImageUrl(images[currentImageIndex]?.image_url)}
                             alt={name}
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         />
@@ -90,8 +91,8 @@ const AirbnbPropertyCard = ({
                     >
                         <Heart
                             className={`h-5 w-5 ${inWishlist
-                                    ? "fill-[#FF385C] text-[#FF385C]"
-                                    : "fill-black/10 text-white stroke-2"
+                                ? "fill-[#FF385C] text-[#FF385C]"
+                                : "fill-black/10 text-white stroke-2"
                                 }`}
                         />
                     </Button>
@@ -103,8 +104,8 @@ const AirbnbPropertyCard = ({
                                 <button
                                     key={index}
                                     className={`h-1.5 rounded-full transition-all ${index === currentImageIndex
-                                            ? "w-1.5 bg-white"
-                                            : "w-1.5 bg-white/60"
+                                        ? "w-1.5 bg-white"
+                                        : "w-1.5 bg-white/60"
                                         }`}
                                     onClick={(e) => {
                                         e.preventDefault();

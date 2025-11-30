@@ -4,6 +4,7 @@ import { useHost } from '@/contexts/HostContext';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Check } from 'lucide-react';
+import { getImageUrl } from '@/lib/utils';
 
 const Preview: React.FC = () => {
     const navigate = useNavigate();
@@ -73,7 +74,7 @@ const Preview: React.FC = () => {
                     {coverPhoto && (
                         <div className="aspect-video w-full overflow-hidden">
                             <img
-                                src={coverPhoto}
+                                src={getImageUrl(coverPhoto)}
                                 alt={draft.title}
                                 className="w-full h-full object-cover"
                             />

@@ -3,6 +3,7 @@ import { getProducts, Product } from "@/api/client";
 import AirbnbPropertyCard from "@/components/AirbnbPropertyCard";
 import AirbnbSearch from "@/components/AirbnbSearch";
 import HorizontalPropertySection from "@/components/HorizontalPropertySection";
+import { getImageUrl } from "@/lib/utils";
 
 const Index = () => {
   const {
