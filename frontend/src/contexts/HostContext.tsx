@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { AxiosError } from 'axios';
+import { useQueryClient } from '@tanstack/react-query';
 import apiClient from '@/api/client';
 
 // ============================================================================
@@ -88,7 +89,7 @@ export interface ListingDraft {
 interface HostContextType {
     draft: ListingDraft;
     updateDraft: (updates: Partial<ListingDraft>) => void;
-    saveDraft: () => Promise<string | undefined>;
+    saveDraft: () => Promise<{ success: boolean; id?: string; error?: string }>;
     loadDraft: (id?: string) => Promise<void>;
     publishListing: () => Promise<{ success: boolean; error?: string }>;
     resetDraft: () => void;
@@ -133,6 +134,7 @@ export const HostProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [draft, setDraft] = useState<ListingDraft>(defaultDraft);
     const [isSaving, setIsSaving] = useState(false);
     const [saveError, setSaveError] = useState<string | null>(null);
+    const queryClient = useQueryClient();
 
     // Load draft from localStorage on mount
     useEffect(() => {
@@ -173,7 +175,7 @@ export const HostProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }));
     }, []);
 
-    const saveDraft = useCallback(async (): Promise<string | undefined> => {
+    const saveDraft = useCallback(async (): Promise<{ success: boolean; id?: string; error?: string }> => {
         setIsSaving(true);
         setSaveError(null);
 
@@ -181,7 +183,7 @@ export const HostProvider: React.FC<{ children: React.ReactNode }> = ({ children
             const userId = localStorage.getItem('userId');
 
             if (!userId) {
-                window.location.href = '/';
+                // Don't redirect here, let the component handle it or just fail
                 throw new Error('Please log in to save your listing');
             }
 
@@ -213,7 +215,7 @@ export const HostProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 const createResponse = await apiClient.post('/listings', {
                     property_type: draft.propertyType,
                 });
-                listingId = createResponse.data.id;
+                listingId = createResponse.data.listing.id;
                 if (!listingId) {
                     throw new Error('Failed to create new listing.');
                 }
@@ -253,7 +255,7 @@ export const HostProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 lastSaved: new Date().toISOString(),
             }));
 
-            return listingId;
+            return { success: true, id: listingId };
 
         } catch (error) {
             console.error('Failed to save draft:', error);
@@ -265,10 +267,7 @@ export const HostProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }
             setSaveError(errorMessage);
 
-            if (error instanceof AxiosError && error.response?.status === 401) {
-                window.location.href = '/';
-            }
-            return undefined;
+            return { success: false, error: errorMessage };
         } finally {
             setIsSaving(false);
         }
@@ -291,33 +290,36 @@ export const HostProvider: React.FC<{ children: React.ReactNode }> = ({ children
         try {
             const response = await apiClient.get(`/listings/${id}`);
             const data = response.data;
+            const listingData = data.listing;
 
             // Convert backend data to draft format
             const loadedDraft: ListingDraft = {
-                id: data.id,
+                id: listingData.id,
                 step: draft.step,
-                propertyType: data.property_type,
+                propertyType: listingData.property_type,
                 amenities: data.amenities || [],
                 photos: data.photos?.map((p: Photo) => p.url) || [],
                 videos: data.videos?.map((v: Video) => v.url) || [],
                 coverPhotoIndex: data.photos?.findIndex((p: Photo) => p.is_cover === 1) || 0,
-                title: data.title || '',
-                description: data.description || '',
-                instantBook: data.instant_book === 1,
-                minNights: data.min_nights || 1,
-                maxNights: data.max_nights,
-                maxGuests: data.max_guests,
-                bedrooms: data.bedrooms,
-                beds: data.beds,
-                bathrooms: data.bathrooms,
-                pricePerNight: data.price_per_night,
-                cleaningFee: data.cleaning_fee,
-                currency: data.currency || 'XAF',
-                safetyDevices: data.safety_devices ? JSON.parse(data.safety_devices) : [],
-                houseRules: data.house_rules || '',
-                address: data.address,
-                city: data.city,
-                country: data.country || 'Cameroon',
+                title: listingData.title || '',
+                description: listingData.description || '',
+                instantBook: listingData.instant_book === 1,
+                minNights: listingData.min_nights || 1,
+                maxNights: listingData.max_nights,
+                maxGuests: listingData.max_guests,
+                bedrooms: listingData.bedrooms,
+                beds: listingData.beds,
+                bathrooms: listingData.bathrooms,
+                pricePerNight: listingData.price_per_night,
+                cleaningFee: listingData.cleaning_fee,
+                currency: listingData.currency || 'XAF',
+                safetyDevices: listingData.safety_devices
+                    ? JSON.parse(listingData.safety_devices)
+                    : [],
+                houseRules: listingData.house_rules || '',
+                address: listingData.address,
+                city: listingData.city,
+                country: listingData.country || 'Cameroon',
                 isDirty: false,
             };
 
@@ -334,10 +336,11 @@ export const HostProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         if (!listingId) {
             // Save first if not saved
-            listingId = await saveDraft();
-            if (!listingId) {
-                return { success: false, error: 'Failed to create listing' };
+            const saveResult = await saveDraft();
+            if (!saveResult.success || !saveResult.id) {
+                return { success: false, error: saveResult.error || 'Failed to create listing' };
             }
+            listingId = saveResult.id;
         }
 
         try {
@@ -353,6 +356,9 @@ export const HostProvider: React.FC<{ children: React.ReactNode }> = ({ children
             // Clear draft after successful publish
             localStorage.removeItem(DRAFT_KEY);
             setDraft(defaultDraft);
+
+            // Invalidate the products query to refetch the list
+            await queryClient.invalidateQueries({ queryKey: ['products'] });
 
             return { success: true };
 

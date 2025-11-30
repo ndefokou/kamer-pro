@@ -39,7 +39,6 @@ pub struct Listing {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ListingWithDetails {
-    #[serde(flatten)]
     pub listing: Listing,
     pub amenities: Vec<String>,
     pub photos: Vec<ListingPhoto>,
@@ -238,7 +237,7 @@ pub async fn create_listing(
         Err(response) => return response,
     };
 
-    // Check if user exists
+    // Check if user exists, create if not
     let user_exists: Option<i32> = match sqlx::query_scalar("SELECT id FROM users WHERE id = ?")
         .bind(user_id)
         .fetch_optional(pool.get_ref())
@@ -254,10 +253,24 @@ pub async fn create_listing(
     };
 
     if user_exists.is_none() {
-        log::warn!("User ID {} not found in database", user_id);
-        return HttpResponse::BadRequest().json(serde_json::json!({
-            "error": "Invalid user ID or user does not exist"
-        }));
+        log::info!("User ID {} not found, creating new user", user_id);
+
+        // Auto-create user with basic info
+        match sqlx::query("INSERT INTO users (id, username, email) VALUES (?, ?, ?)")
+            .bind(user_id)
+            .bind(format!("host_{}", user_id))
+            .bind(format!("host_{}@mboamaison.com", user_id))
+            .execute(pool.get_ref())
+            .await
+        {
+            Ok(_) => log::info!("Successfully created user {}", user_id),
+            Err(e) => {
+                log::error!("Failed to create user: {:?}", e);
+                return HttpResponse::InternalServerError().json(serde_json::json!({
+                    "error": "Failed to create user account"
+                }));
+            }
+        }
     }
 
     let listing_id = Uuid::new_v4().to_string();
@@ -283,7 +296,7 @@ pub async fn create_listing(
             match get_listing_with_details(pool.get_ref(), &listing_id).await {
                 Ok(listing) => {
                     log::debug!("Listing details fetched successfully");
-                    HttpResponse::Created().json(listing)
+                    HttpResponse::Ok().json(listing)
                 }
                 Err(e) => {
                     log::error!("Failed to fetch created listing: {:?}", e);
@@ -560,11 +573,7 @@ pub async fn publish_listing(
                 Ok(listing) => {
                     // Validate listing
                     if let Err(error) = validate_listing_for_publish(&listing) {
-                        log::warn!(
-                            "Validation failed for listing {}: {}",
-                            listing_id,
-                            error
-                        );
+                        log::warn!("Validation failed for listing {}: {}", listing_id, error);
                         return HttpResponse::BadRequest().json(serde_json::json!({
                             "error": error
                         }));
@@ -744,8 +753,9 @@ pub async fn sync_photos(
             let mut tx = match pool.begin().await {
                 Ok(tx) => tx,
                 Err(e) => {
-                    return HttpResponse::InternalServerError()
-                        .json(serde_json::json!({"error": format!("Failed to start transaction: {}", e)}));
+                    return HttpResponse::InternalServerError().json(
+                        serde_json::json!({"error": format!("Failed to start transaction: {}", e)}),
+                    );
                 }
             };
 
@@ -763,7 +773,11 @@ pub async fn sync_photos(
 
             // Insert new photos
             for photo in &body.photos {
-                let is_cover = if photo.is_cover.unwrap_or(false) { 1 } else { 0 };
+                let is_cover = if photo.is_cover.unwrap_or(false) {
+                    1
+                } else {
+                    0
+                };
                 let display_order = photo.display_order.unwrap_or(0);
 
                 if let Err(e) = sqlx::query("INSERT INTO listing_photos (listing_id, url, is_cover, display_order) VALUES (?, ?, ?, ?)")
@@ -782,8 +796,9 @@ pub async fn sync_photos(
             }
 
             if let Err(e) = tx.commit().await {
-                return HttpResponse::InternalServerError()
-                    .json(serde_json::json!({"error": format!("Failed to commit transaction: {}", e)}));
+                return HttpResponse::InternalServerError().json(
+                    serde_json::json!({"error": format!("Failed to commit transaction: {}", e)}),
+                );
             }
 
             match get_listing_with_details(pool.get_ref(), &listing_id).await {
@@ -795,7 +810,9 @@ pub async fn sync_photos(
         Ok(Some(_)) => HttpResponse::Forbidden().json(serde_json::json!({
             "error": "You don't have permission to modify this listing"
         })),
-        Ok(None) => HttpResponse::NotFound().json(serde_json::json!({ "error": "Listing not found" })),
+        Ok(None) => {
+            HttpResponse::NotFound().json(serde_json::json!({ "error": "Listing not found" }))
+        }
         Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
             "error": format!("Database error: {}", e)
         })),

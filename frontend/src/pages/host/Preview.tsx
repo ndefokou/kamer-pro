@@ -34,12 +34,20 @@ const Preview: React.FC = () => {
     };
 
     const handleSaveDraft = async () => {
-        await saveDraft();
-        toast({
-            title: 'Draft saved',
-            description: 'You can continue editing later',
-        });
-        navigate('/host/dashboard');
+        const result = await saveDraft();
+        if (result.success) {
+            toast({
+                title: 'Draft saved',
+                description: 'You can continue editing later',
+            });
+            navigate('/host/dashboard');
+        } else {
+            toast({
+                title: 'Failed to save draft',
+                description: result.error || 'Please try again',
+                variant: 'destructive',
+            });
+        }
     };
 
     const handleBack = () => {

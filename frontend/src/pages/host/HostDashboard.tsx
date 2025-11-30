@@ -6,14 +6,16 @@ import { Plus, Search, Bell, Menu } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 interface Listing {
-    id: string;
-    title: string;
-    property_type: string;
-    city: string;
-    country: string;
-    status: string;
+    listing: {
+        id: string;
+        title: string;
+        property_type: string;
+        city: string;
+        country: string;
+        status: string;
+        updated_at: string;
+    };
     photos: { url: string }[];
-    updated_at: string;
 }
 
 const HostDashboard: React.FC = () => {
@@ -101,15 +103,15 @@ const HostDashboard: React.FC = () => {
                                 </tr>
                             </thead>
                             <tbody className="divide-y">
-                                {listings.map((listing) => (
-                                    <tr key={listing.id} className="group cursor-pointer hover:bg-muted/50" onClick={() => navigate(`/host/preview`)}>
+                                {listings.map((item) => (
+                                    <tr key={item.listing.id} className="group cursor-pointer hover:bg-muted/50" onClick={() => navigate(`/host/preview`)}>
                                         <td className="py-4 pr-4">
                                             <div className="flex items-center gap-4">
                                                 <div className="h-16 w-16 rounded-lg bg-muted overflow-hidden flex-shrink-0">
-                                                    {listing.photos?.[0]?.url ? (
+                                                    {item.photos?.[0]?.url ? (
                                                         <img
-                                                            src={listing.photos[0].url}
-                                                            alt={listing.title}
+                                                            src={item.photos[0].url}
+                                                            alt={item.listing.title}
                                                             className="h-full w-full object-cover"
                                                         />
                                                     ) : (
@@ -119,25 +121,25 @@ const HostDashboard: React.FC = () => {
                                                     )}
                                                 </div>
                                                 <div className="flex flex-col">
-                                                    <span className="font-medium truncate">{listing.title || 'Untitled Listing'}</span>
+                                                    <span className="font-medium truncate">{item.listing.title || 'Untitled Listing'}</span>
                                                     <span className="text-sm text-muted-foreground">
-                                                        Your listing started {new Date(listing.updated_at || Date.now()).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                                                        Your listing started {new Date(item.listing.updated_at || Date.now()).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
                                                     </span>
                                                 </div>
                                             </div>
                                         </td>
-                                        <td className="py-4 text-sm">{listing.property_type || 'Home'}</td>
+                                        <td className="py-4 text-sm">{item.listing.property_type || 'Home'}</td>
                                         <td className="py-4 text-sm">
-                                            {listing.city && listing.country
-                                                ? `${listing.city}, ${listing.country}`
+                                            {item.listing.city && item.listing.country
+                                                ? `${item.listing.city}, ${item.listing.country}`
                                                 : <span className="text-muted-foreground">-</span>}
                                         </td>
                                         <td className="py-4">
                                             <div className="flex items-center gap-2">
-                                                <span className={`h-2 w-2 rounded-full ${listing.status === 'published' ? 'bg-green-500' :
-                                                    listing.status === 'draft' ? 'bg-gray-300' : 'bg-orange-500'
+                                                <span className={`h-2 w-2 rounded-full ${item.listing.status === 'published' ? 'bg-green-500' :
+                                                    item.listing.status === 'draft' ? 'bg-gray-300' : 'bg-orange-500'
                                                     }`} />
-                                                <span className="text-sm capitalize">{listing.status === 'draft' ? 'In progress' : listing.status}</span>
+                                                <span className="text-sm capitalize">{item.listing.status === 'draft' ? 'In progress' : item.listing.status}</span>
                                             </div>
                                         </td>
                                     </tr>

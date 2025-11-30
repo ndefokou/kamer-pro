@@ -37,6 +37,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           profile_picture_url: decoded.profile_picture_url,
         });
         localStorage.setItem('token', token);
+        localStorage.setItem('userId', decoded.user_id);
       } catch (error) {
         console.error('Failed to decode token:', error);
         setUser(null);
@@ -54,6 +55,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const logout = () => {
     setToken(null);
+    localStorage.removeItem('userId');
   };
 
   return (

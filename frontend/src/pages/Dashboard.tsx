@@ -1,7 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Heart, Star, ChevronRight, Home as HomeIcon, Compass, Briefcase, Globe, Menu, User } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { Heart, Star, Home as HomeIcon, Globe, Menu, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getProducts, Product } from "@/api/client";
 import AirbnbSearch from "@/components/AirbnbSearch";
@@ -9,28 +10,16 @@ import AirbnbSearch from "@/components/AirbnbSearch";
 const Dashboard = () => {
     const { t } = useTranslation();
     const navigate = useNavigate();
-    const [featuredProperties, setFeaturedProperties] = useState<Product[]>([]);
-    const [upcomingProperties, setUpcomingProperties] = useState<Product[]>([]);
-    const [nearbyProperties, setNearbyProperties] = useState<Product[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
     const [favorites, setFavorites] = useState<Set<string>>(new Set());
 
-    useEffect(() => {
-        const fetchProperties = async () => {
-            try {
-                const data = await getProducts({});
-                setFeaturedProperties(data.slice(0, 8));
-                setUpcomingProperties(data.slice(8, 16));
-                setNearbyProperties(data.slice(16, 24));
-            } catch (error) {
-                console.error("Failed to fetch properties:", error);
-            } finally {
-                setIsLoading(false);
-            }
-        };
+    const { data: properties, isLoading, error } = useQuery<Product[]>({
+        queryKey: ["products"],
+        queryFn: () => getProducts({}),
+    });
 
-        fetchProperties();
-    }, []);
+    const featuredProperties = properties?.slice(0, 8) || [];
+    const upcomingProperties = properties?.slice(8, 16) || [];
+    const nearbyProperties = properties?.slice(16, 24) || [];
 
     const toggleFavorite = (id: string) => {
         setFavorites(prev => {
@@ -96,7 +85,7 @@ const Dashboard = () => {
     const PropertySection = ({ title, properties }: { title: string; properties: Product[] }) => (
         <div className="mb-12">
             <div className="flex gap-4 overflow-x-auto scrollbar-hide pb-4">
-                {properties.map((product, index) => (
+                {properties.filter(Boolean).map((product, index) => (
                     <PropertyCard key={product.listing.id} product={product} index={index} />
                 ))}
             </div>
@@ -163,6 +152,10 @@ const Dashboard = () => {
                             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#FF385C] mx-auto mb-4" />
                             <p className="text-gray-600">{t("Chargement...")}</p>
                         </div>
+                    </div>
+                ) : error ? (
+                    <div className="text-center py-20">
+                        <p className="text-red-500">{t("Failed to load properties.")}</p>
                     </div>
                 ) : (
                     <>
