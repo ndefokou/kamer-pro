@@ -81,7 +81,7 @@ const HostToday: React.FC = () => {
                                 Today
                                 <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-900"></span>
                             </a>
-                            <a href="#" className="text-gray-600 hover:text-gray-900 transition-colors">Calendar</a>
+                            <a href="/host/calendar" className="text-gray-600 hover:text-gray-900 transition-colors">Calendar</a>
                             <a href="/host/dashboard" className="text-gray-600 hover:text-gray-900 transition-colors">Listings</a>
                             <a href="#" className="text-gray-600 hover:text-gray-900 transition-colors">Messages</a>
                         </nav>
@@ -129,8 +129,8 @@ const HostToday: React.FC = () => {
                         <button
                             onClick={() => setActiveTab('today')}
                             className={`px-6 py-2 rounded-full text-sm font-medium transition-colors ${activeTab === 'today'
-                                    ? 'bg-gray-900 text-white'
-                                    : 'text-gray-600 hover:text-gray-900'
+                                ? 'bg-gray-900 text-white'
+                                : 'text-gray-600 hover:text-gray-900'
                                 }`}
                         >
                             Today
@@ -138,8 +138,8 @@ const HostToday: React.FC = () => {
                         <button
                             onClick={() => setActiveTab('upcoming')}
                             className={`px-6 py-2 rounded-full text-sm font-medium transition-colors ${activeTab === 'upcoming'
-                                    ? 'bg-gray-900 text-white'
-                                    : 'text-gray-600 hover:text-gray-900'
+                                ? 'bg-gray-900 text-white'
+                                : 'text-gray-600 hover:text-gray-900'
                                 }`}
                         >
                             Upcoming
@@ -209,10 +209,10 @@ const HostToday: React.FC = () => {
                                                 </p>
                                             </div>
                                             <span className={`px-3 py-1 rounded-full text-xs font-medium ${item.booking.status === 'confirmed'
-                                                    ? 'bg-green-100 text-green-700'
-                                                    : item.booking.status === 'pending'
-                                                        ? 'bg-yellow-100 text-yellow-700'
-                                                        : 'bg-gray-100 text-gray-700'
+                                                ? 'bg-green-100 text-green-700'
+                                                : item.booking.status === 'pending'
+                                                    ? 'bg-yellow-100 text-yellow-700'
+                                                    : 'bg-gray-100 text-gray-700'
                                                 }`}>
                                                 {item.booking.status.charAt(0).toUpperCase() + item.booking.status.slice(1)}
                                             </span>

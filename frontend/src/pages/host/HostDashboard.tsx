@@ -175,7 +175,7 @@ const HostDashboard: React.FC = () => {
                                         className="hover:bg-gray-50 cursor-pointer transition-colors"
                                         onClick={() => {
                                             setSelectedListing(item.listing.id);
-                                            navigate(`/host/preview`);
+                                            navigate(`/host/editor/${item.listing.id}`);
                                         }}
                                     >
                                         <td className="py-5 px-6">

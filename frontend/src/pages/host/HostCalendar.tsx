@@ -51,13 +51,27 @@ const HostCalendar: React.FC = () => {
     const [customMinNights, setCustomMinNights] = useState<number>(1);
 
     useEffect(() => {
-        if (!listingId) {
-            navigate('/host/dashboard');
-            return;
-        }
-        fetchListingPrice();
-        fetchCalendarData();
-        fetchSettings();
+        const initCalendar = async () => {
+            if (!listingId) {
+                try {
+                    const response = await apiClient.get('/listings/my-listings');
+                    if (response.data && response.data.length > 0) {
+                        navigate(`/host/calendar?listing=${response.data[0].listing.id}`, { replace: true });
+                    } else {
+                        navigate('/host/dashboard');
+                    }
+                } catch (error) {
+                    console.error('Failed to fetch listings:', error);
+                    navigate('/host/dashboard');
+                }
+                return;
+            }
+            fetchListingPrice();
+            fetchCalendarData();
+            fetchSettings();
+        };
+
+        initCalendar();
     }, [listingId]);
 
     const fetchListingPrice = async () => {

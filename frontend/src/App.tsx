@@ -20,6 +20,7 @@ import Preview from "./pages/host/Preview";
 import HostDashboard from "./pages/host/HostDashboard";
 import HostToday from "./pages/host/HostToday";
 import HostCalendar from "./pages/host/HostCalendar";
+import ListingEditor from "./pages/host/ListingEditor";
 
 const queryClient = new QueryClient();
 
@@ -38,6 +39,7 @@ const router = createBrowserRouter(
     { path: "/host/dashboard", Component: HostDashboard },
     { path: "/host/today", Component: HostToday },
     { path: "/host/calendar", Component: HostCalendar },
+    { path: "/host/editor/:id", Component: ListingEditor },
     { path: "*", Component: NotFound },
   ],
   {
