@@ -18,6 +18,8 @@ import SafetyDetails from "./pages/host/SafetyDetails";
 import BookingSettings from "./pages/host/BookingSettings";
 import Preview from "./pages/host/Preview";
 import HostDashboard from "./pages/host/HostDashboard";
+import HostToday from "./pages/host/HostToday";
+import HostCalendar from "./pages/host/HostCalendar";
 
 const queryClient = new QueryClient();
 
@@ -34,6 +36,8 @@ const router = createBrowserRouter(
     { path: "/host/booking-settings", Component: BookingSettings },
     { path: "/host/preview", Component: Preview },
     { path: "/host/dashboard", Component: HostDashboard },
+    { path: "/host/today", Component: HostToday },
+    { path: "/host/calendar", Component: HostCalendar },
     { path: "*", Component: NotFound },
   ],
   {

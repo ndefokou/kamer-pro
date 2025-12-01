@@ -5,8 +5,8 @@ use dotenv::dotenv;
 use sqlx::sqlite::SqlitePoolOptions;
 use std::env;
 
-mod routes;
 mod middleware;
+mod routes;
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     println!("Rust application starting...");
@@ -98,9 +98,18 @@ async fn main() -> std::io::Result<()> {
                             .service(routes::messages::get_unread_count)
                             .service(routes::messages::get_message_templates),
                     )
+                    .service(web::scope("/wishlist").service(routes::wishlist::get_wishlist))
                     .service(
-                        web::scope("/wishlist")
-                            .service(routes::wishlist::get_wishlist),
+                        web::scope("/bookings")
+                            .service(routes::bookings::get_today_bookings)
+                            .service(routes::bookings::get_upcoming_bookings),
+                    )
+                    .service(
+                        web::scope("/calendar")
+                            .service(routes::calendar::get_calendar)
+                            .service(routes::calendar::update_calendar_dates)
+                            .service(routes::calendar::get_settings)
+                            .service(routes::calendar::update_settings),
                     ),
             )
             // Serve static files from /uploads route
