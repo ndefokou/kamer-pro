@@ -2,8 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import apiClient from '@/api/client';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, Plus, Settings, Home, MapPin, Users, Key, BookOpen, Shield, FileText, Link as LinkIcon, Camera } from 'lucide-react';
+import { ChevronLeft, Plus, Minus, Settings, Home, MapPin, Users, Key, BookOpen, Shield, FileText, Link as LinkIcon, Camera, Eye } from 'lucide-react';
 import { getImageUrl } from '@/lib/utils';
+import { AMENITY_DETAILS } from '@/data/amenities';
+import AddAmenitiesPanel from '@/components/host/AddAmenitiesPanel';
+import HouseRulesSection, { HouseRules, DEFAULT_HOUSE_RULES } from '@/components/host/HouseRulesSection';
+import ListingPreview from '@/components/host/ListingPreview';
+import GuestSafetyModal from '@/components/host/GuestSafetyModal';
+import { SAFETY_CONSIDERATIONS, SAFETY_DEVICES, PROPERTY_INFO } from '@/data/guestSafety';
 
 interface Listing {
     id: string;
@@ -22,6 +28,8 @@ interface Listing {
     amenities: string[];
     photos: { id: string; url: string; caption: string }[];
     status: string;
+    house_rules: string;
+    safety_items: string[];
 }
 
 interface ListingSettings {
@@ -40,6 +48,8 @@ interface ListingSettings {
     availability_window: number;
 }
 
+
+
 const ListingEditor: React.FC = () => {
     const navigate = useNavigate();
     const { id } = useParams<{ id: string }>();
@@ -48,6 +58,12 @@ const ListingEditor: React.FC = () => {
     const [activeSection, setActiveSection] = useState('photos');
     const [photoView, setPhotoView] = useState<'overview' | 'bedroom' | 'bathroom' | 'additional'>('overview');
     const [settings, setSettings] = useState<ListingSettings | null>(null);
+    const [showAddAmenities, setShowAddAmenities] = useState(false);
+    const [showPreview, setShowPreview] = useState(false);
+    const [editingDescriptionSection, setEditingDescriptionSection] = useState<string | null>(null);
+    const [tempDescription, setTempDescription] = useState('');
+    const [showGuestSafety, setShowGuestSafety] = useState(false);
+    const [guestSafetySection, setGuestSafetySection] = useState<'considerations' | 'devices' | 'property_info'>('considerations');
 
     useEffect(() => {
         const fetchListing = async () => {
@@ -85,17 +101,41 @@ const ListingEditor: React.FC = () => {
     }
 
     const sidebarItems = [
-        { id: 'photos', label: 'Photo tour', icon: Camera, description: '1 bedroom · 1 bed · 1 bath' },
-        { id: 'title', label: 'Title', icon: FileText, description: listing.title },
-        { id: 'property_type', label: 'Property type', icon: Home, description: `${listing.property_type} · ${listing.room_type}` },
-        { id: 'pricing', label: 'Pricing', icon: null, description: `$${listing.price_per_night} per night` }, // Custom icon or null
+        { id: 'photos', label: 'Photos', icon: Camera, description: 'Add at least 5 photos' },
+        { id: 'title', label: 'Title', icon: FileText, description: listing?.title || 'Add a title' },
+        {
+            id: 'description',
+            label: 'Description',
+            icon: null,
+            description: (() => {
+                try {
+                    const parsed = listing?.description ? JSON.parse(listing.description) : null;
+                    return parsed?.listingDescription || 'Add a description';
+                } catch {
+                    return listing?.description || 'Add a description';
+                }
+            })()
+        },
+        { id: 'pricing', label: 'Pricing', icon: null, description: `$${listing.price_per_night} per night` },
         { id: 'availability', label: 'Availability', icon: null, description: '1 – 365 night stays' },
-        { id: 'co_hosts', label: 'Co-hosts', icon: Users, description: 'Add details' },
-        { id: 'booking_settings', label: 'Booking settings', icon: Key, description: 'Instant Book on' },
-        { id: 'house_rules', label: 'House rules', icon: BookOpen, description: 'Check-in after 3:00 PM' },
-        { id: 'guest_safety', label: 'Guest safety', icon: Shield, description: 'Carbon monoxide alarm not reported' },
-        { id: 'cancellation_policy', label: 'Cancellation policy', icon: FileText, description: 'Flexible' },
-        { id: 'custom_link', label: 'Custom link', icon: LinkIcon, description: 'Add details' },
+        { id: 'number_of_guests', label: 'Number of guests', icon: Users, description: `${listing.max_guests} guests` },
+        {
+            id: 'amenities', label: 'Amenities', icon: Plus, description: listing.amenities && listing.amenities.length > 0
+                ? listing.amenities.slice(0, 2).map(id => AMENITY_DETAILS[id]?.label).join(' · ') + (listing.amenities.length > 2 ? ` +${listing.amenities.length - 2} more` : '')
+                : 'Add details'
+        },
+        { id: 'house_rules', label: 'House rules', icon: BookOpen, description: 'Guests must agree to your rules' },
+        {
+            id: 'guest_safety',
+            label: 'Guest safety',
+            icon: Shield,
+            description: (() => {
+                const safetyItems = listing?.safety_items || [];
+                const deviceCount = safetyItems.filter(id => SAFETY_DEVICES.some(d => d.id === id)).length;
+                if (deviceCount > 0) return `${deviceCount} safety device${deviceCount > 1 ? 's' : ''}`;
+                return 'Add safety information';
+            })()
+        },
     ];
 
     const photoSidebarItems = [
@@ -132,10 +172,6 @@ const ListingEditor: React.FC = () => {
                             <>
                                 <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-full mb-8 w-fit">
                                     <button className="px-4 py-1.5 bg-white rounded-full text-sm font-semibold shadow-sm">Your space</button>
-                                    <button className="px-4 py-1.5 text-sm font-medium text-gray-600 hover:text-gray-900">Arrival guide</button>
-                                    <button className="p-1.5 text-gray-600 hover:bg-white hover:shadow-sm rounded-full transition-all">
-                                        <Settings className="h-4 w-4" />
-                                    </button>
                                 </div>
 
                                 <div className="mb-8 border border-gray-200 rounded-xl p-4 flex items-center justify-between cursor-pointer hover:border-gray-300 transition-colors">
@@ -163,6 +199,17 @@ const ListingEditor: React.FC = () => {
                                             <div className="text-sm text-gray-500">{item.description}</div>
                                         </button>
                                     ))}
+                                </div>
+
+                                {/* View Button */}
+                                <div className="mt-8 pt-6 border-t border-gray-200">
+                                    <button
+                                        onClick={() => setShowPreview(true)}
+                                        className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors font-medium"
+                                    >
+                                        <Eye className="h-5 w-5" />
+                                        View
+                                    </button>
                                 </div>
                             </>
                         ) : (
@@ -524,6 +571,9 @@ const ListingEditor: React.FC = () => {
                                                     </svg>
                                                 </div>
                                             </div>
+                                            <p className="text-xs text-gray-500 mt-3">
+                                                Guests can book on the same day as check-in until this time.
+                                            </p>
                                         </div>
 
                                         <div className="border border-gray-300 rounded-xl p-4 hover:border-gray-900 transition-colors">
@@ -637,7 +687,403 @@ const ListingEditor: React.FC = () => {
                             </div>
                         )}
 
-                        {photoView === 'overview' && activeSection !== 'photos' && activeSection !== 'title' && activeSection !== 'pricing' && activeSection !== 'availability' && (
+                        {activeSection === 'number_of_guests' && (
+                            <div className="max-w-2xl mx-auto text-center pt-12">
+                                <div className="mb-8 flex justify-center">
+                                    {/* Placeholder for the illustration - using a simple div or icon if no image available */}
+                                    <div className="flex gap-2 items-end">
+                                        <Users className="h-16 w-16 text-gray-800" />
+                                    </div>
+                                </div>
+                                <h2 className="text-xl text-gray-600 mb-12">
+                                    How many guests can fit comfortably in your space?
+                                </h2>
+
+                                <div className="flex items-center justify-center gap-8 mb-12">
+                                    <button
+                                        onClick={() => {
+                                            const newCount = Math.max(1, listing.max_guests - 1);
+                                            setListing({ ...listing, max_guests: newCount });
+                                        }}
+                                        disabled={listing.max_guests <= 1}
+                                        className="w-12 h-12 rounded-full border border-gray-300 flex items-center justify-center hover:border-black disabled:opacity-50 disabled:hover:border-gray-300 transition-colors"
+                                    >
+                                        <Minus className="h-6 w-6 text-gray-600" />
+                                    </button>
+
+                                    <span className="text-8xl font-semibold text-gray-900">
+                                        {listing.max_guests}
+                                    </span>
+
+                                    <button
+                                        onClick={() => {
+                                            const newCount = listing.max_guests + 1;
+                                            setListing({ ...listing, max_guests: newCount });
+                                        }}
+                                        className="w-12 h-12 rounded-full border border-gray-300 flex items-center justify-center hover:border-black transition-colors"
+                                    >
+                                        <Plus className="h-6 w-6 text-gray-600" />
+                                    </button>
+                                </div>
+
+                                <div className="flex justify-center">
+                                    <Button
+                                        onClick={async () => {
+                                            try {
+                                                await apiClient.put(`/listings/${id}`, { max_guests: listing.max_guests });
+                                                // Ideally show a success toast here
+                                            } catch (error) {
+                                                console.error('Failed to update max guests:', error);
+                                            }
+                                        }}
+                                        className="bg-black text-white hover:bg-gray-800 rounded-lg px-8 py-6 text-lg font-semibold"
+                                    >
+                                        Save
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
+
+                        {activeSection === 'amenities' && (
+                            <div className="max-w-2xl">
+                                <div className="flex items-center justify-between mb-8">
+                                    <h2 className="text-2xl font-semibold">Amenities</h2>
+                                    <div className="flex gap-2">
+                                        <Button
+                                            variant="outline"
+                                            className="rounded-full border-gray-300"
+                                            onClick={() => setShowAddAmenities(true)}
+                                        >
+                                            Edit
+                                        </Button>
+                                        <Button
+                                            variant="outline"
+                                            size="icon"
+                                            className="rounded-full border-gray-300 w-10 h-10"
+                                            onClick={() => setShowAddAmenities(true)}
+                                        >
+                                            <Plus className="h-5 w-5" />
+                                        </Button>
+                                    </div>
+                                </div>
+                                <p className="text-gray-500 mb-8">
+                                    You've added these to your listing so far.
+                                </p>
+
+                                <div className="space-y-6">
+                                    {listing.amenities && listing.amenities.length > 0 ? (
+                                        listing.amenities.map((amenityKey) => {
+                                            const details = AMENITY_DETAILS[amenityKey];
+                                            if (!details) return null;
+                                            const Icon = details.icon;
+                                            return (
+                                                <div key={amenityKey} className="flex gap-4 pb-6 border-b border-gray-100 last:border-0">
+                                                    <Icon className="h-6 w-6 text-gray-500 mt-1" />
+                                                    <div>
+                                                        <div className="font-medium text-gray-900">{details.label}</div>
+                                                        <div className="text-sm text-gray-500">{details.description}</div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })
+                                    ) : (
+                                        <div className="text-center py-12 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200">
+                                            <p className="text-gray-500 mb-4">No amenities added yet</p>
+                                            <Button
+                                                variant="outline"
+                                                className="rounded-full"
+                                                onClick={() => setShowAddAmenities(true)}
+                                            >
+                                                Add amenities
+                                            </Button>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
+                        {activeSection === 'house_rules' && listing && (
+                            <HouseRulesSection
+                                rules={(() => {
+                                    try {
+                                        return listing.house_rules ? JSON.parse(listing.house_rules) : DEFAULT_HOUSE_RULES;
+                                    } catch {
+                                        return DEFAULT_HOUSE_RULES;
+                                    }
+                                })()}
+                                maxGuests={listing.max_guests || 1}
+                                onRulesChange={async (newRules) => {
+                                    const rulesJson = JSON.stringify(newRules);
+                                    setListing({ ...listing, house_rules: rulesJson });
+                                    try {
+                                        await apiClient.put(`/listings/${id}`, { house_rules: rulesJson });
+                                    } catch (error) {
+                                        console.error('Failed to update house rules:', error);
+                                    }
+                                }}
+                                onMaxGuestsChange={async (newMaxGuests) => {
+                                    setListing({ ...listing, max_guests: newMaxGuests });
+                                    try {
+                                        await apiClient.put(`/listings/${id}`, { max_guests: newMaxGuests });
+                                    } catch (error) {
+                                        console.error('Failed to update max guests:', error);
+                                    }
+                                }}
+                            />
+                        )}
+
+                        {activeSection === 'description' && (() => {
+                            // Parse description sections from JSON or use defaults
+                            const descriptionData = (() => {
+                                try {
+                                    return listing.description ? JSON.parse(listing.description) : {
+                                        listingDescription: '',
+                                        propertyDetails: '',
+                                        guestAccess: '',
+                                        guestInteraction: '',
+                                        otherDetails: ''
+                                    };
+                                } catch {
+                                    return {
+                                        listingDescription: listing.description || '',
+                                        propertyDetails: '',
+                                        guestAccess: '',
+                                        guestInteraction: '',
+                                        otherDetails: ''
+                                    };
+                                }
+                            })();
+
+                            const sections = [
+                                {
+                                    id: 'listingDescription',
+                                    title: 'Listing description',
+                                    subtitle: descriptionData.listingDescription || 'Add details',
+                                    placeholder: 'Describe your place...',
+                                },
+                                {
+                                    id: 'propertyDetails',
+                                    title: 'Your property',
+                                    subtitle: descriptionData.propertyDetails || 'Add details',
+                                    placeholder: 'Share a general description of your property\'s rooms and spaces so guests know what to expect.',
+                                },
+                                {
+                                    id: 'guestAccess',
+                                    title: 'Guest access',
+                                    subtitle: descriptionData.guestAccess || 'Add details',
+                                    placeholder: 'Describe what areas guests can access...',
+                                },
+                                {
+                                    id: 'guestInteraction',
+                                    title: 'Interaction with guests',
+                                    subtitle: descriptionData.guestInteraction || 'Add details',
+                                    placeholder: 'Describe how you\'ll interact with guests...',
+                                },
+                                {
+                                    id: 'otherDetails',
+                                    title: 'Other details to note',
+                                    subtitle: descriptionData.otherDetails || 'Add details',
+                                    placeholder: 'Add any other important details...',
+                                },
+                            ];
+
+                            const handleSaveSection = async () => {
+                                const updatedData = { ...descriptionData, [editingDescriptionSection!]: tempDescription };
+                                const jsonString = JSON.stringify(updatedData);
+
+                                setListing({ ...listing, description: jsonString });
+
+                                try {
+                                    await apiClient.put(`/listings/${id}`, { description: jsonString });
+                                    setEditingDescriptionSection(null);
+                                } catch (error) {
+                                    console.error('Failed to update description:', error);
+                                }
+                            };
+
+                            return (
+                                <>
+                                    <div className="max-w-2xl">
+                                        <div className="mb-8">
+                                            <h2 className="text-2xl font-semibold mb-2">Description</h2>
+                                        </div>
+
+                                        <div className="space-y-0 border border-gray-200 rounded-xl overflow-hidden">
+                                            {sections.map((section, index) => (
+                                                <button
+                                                    key={section.id}
+                                                    onClick={() => {
+                                                        setEditingDescriptionSection(section.id);
+                                                        setTempDescription(descriptionData[section.id as keyof typeof descriptionData] || '');
+                                                    }}
+                                                    className={`w-full text-left p-4 hover:bg-gray-50 transition-colors flex items-center justify-between ${index !== sections.length - 1 ? 'border-b border-gray-200' : ''
+                                                        }`}
+                                                >
+                                                    <div className="flex-1">
+                                                        <div className="font-medium text-gray-900 mb-1">{section.title}</div>
+                                                        <div className="text-sm text-gray-500 line-clamp-1">{section.subtitle}</div>
+                                                    </div>
+                                                    <ChevronLeft className="h-5 w-5 rotate-180 text-gray-400 flex-shrink-0 ml-4" />
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* Modal for editing */}
+                                    {editingDescriptionSection && (
+                                        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                                            <div className="bg-white rounded-2xl w-full max-w-lg max-h-[90vh] flex flex-col">
+                                                {/* Modal Header */}
+                                                <div className="flex items-center justify-between p-6 border-b border-gray-200">
+                                                    <button
+                                                        onClick={() => setEditingDescriptionSection(null)}
+                                                        className="p-2 hover:bg-gray-100 rounded-full -ml-2"
+                                                    >
+                                                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                                        </svg>
+                                                    </button>
+                                                    <h3 className="text-base font-semibold absolute left-1/2 -translate-x-1/2">
+                                                        {sections.find(s => s.id === editingDescriptionSection)?.title}
+                                                    </h3>
+                                                    <div className="w-8" />
+                                                </div>
+
+                                                {/* Modal Body */}
+                                                <div className="flex-1 overflow-y-auto p-6">
+                                                    {editingDescriptionSection === 'propertyDetails' && (
+                                                        <p className="text-sm text-gray-600 mb-4">
+                                                            Share a general description of your property's rooms and spaces so guests know what to expect.
+                                                        </p>
+                                                    )}
+                                                    <div className="mb-2">
+                                                        <div className="text-xs text-gray-500 mb-2">
+                                                            {tempDescription.length}/500 available
+                                                        </div>
+                                                        <textarea
+                                                            value={tempDescription}
+                                                            onChange={(e) => {
+                                                                if (e.target.value.length <= 500) {
+                                                                    setTempDescription(e.target.value);
+                                                                }
+                                                            }}
+                                                            className="w-full min-h-[400px] text-base border-none p-0 resize-none focus:ring-0 focus:outline-none placeholder-gray-400"
+                                                            placeholder={sections.find(s => s.id === editingDescriptionSection)?.placeholder}
+                                                            autoFocus
+                                                        />
+                                                    </div>
+                                                </div>
+
+                                                {/* Modal Footer */}
+                                                <div className="p-6 border-t border-gray-200 flex items-center justify-between">
+                                                    <button
+                                                        onClick={() => setEditingDescriptionSection(null)}
+                                                        className="text-base font-medium text-gray-900 hover:underline"
+                                                    >
+                                                        Cancel
+                                                    </button>
+                                                    <Button
+                                                        onClick={handleSaveSection}
+                                                        disabled={tempDescription.length === 0}
+                                                        className="bg-gray-900 text-white hover:bg-gray-800 rounded-lg px-6 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                    >
+                                                        Save
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </>
+                            );
+                        })()}
+
+                        {activeSection === 'guest_safety' && listing && (
+                            <div className="max-w-2xl">
+                                <div className="flex items-center justify-between mb-8">
+                                    <h2 className="text-2xl font-semibold">Guest safety</h2>
+                                </div>
+
+                                {/* Safety summary cards */}
+                                <div className="space-y-4 mb-8">
+                                    {(listing.safety_items || []).filter(id => !SAFETY_DEVICES.some(device => device.id === id)).length === 0 && (
+                                        <div className="p-4 border border-gray-200 rounded-xl">
+                                            <div className="font-medium text-gray-900 mb-1">Carbon monoxide alarm not reported</div>
+                                        </div>
+                                    )}
+                                    {!(listing.safety_items || []).some(id => id === 'smoke_alarm') && (
+                                        <div className="p-4 border border-gray-200 rounded-xl">
+                                            <div className="font-medium text-gray-900 mb-1">Smoke alarm not reported</div>
+                                        </div>
+                                    )}
+                                    {(listing.safety_items || []).some(id => id === 'noise_decibel_monitor') && (
+                                        <div className="p-4 border border-gray-200 rounded-xl">
+                                            <div className="font-medium text-gray-900 mb-1">Noise decibel monitor present</div>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <p className="text-gray-500 mb-6">
+                                    The safety devices and considerations you share with guests help them make informed decisions when booking your property.
+                                </p>
+
+                                {/* Action buttons */}
+                                <div className="space-y-4">
+                                    <button
+                                        onClick={() => {
+                                            setGuestSafetySection('considerations');
+                                            setShowGuestSafety(true);
+                                        }}
+                                        className="w-full text-left p-4 border border-gray-200 rounded-xl hover:border-gray-300 transition-colors flex items-center justify-between"
+                                    >
+                                        <div>
+                                            <div className="font-medium text-gray-900 mb-1">Safety considerations</div>
+                                            <div className="text-sm text-gray-500">Add details</div>
+                                        </div>
+                                        <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                        </svg>
+                                    </button>
+
+                                    <button
+                                        onClick={() => {
+                                            setGuestSafetySection('devices');
+                                            setShowGuestSafety(true);
+                                        }}
+                                        className="w-full text-left p-4 border border-gray-200 rounded-xl hover:border-gray-300 transition-colors flex items-center justify-between"
+                                    >
+                                        <div>
+                                            <div className="font-medium text-gray-900 mb-1">Safety devices</div>
+                                            <div className="text-sm text-gray-500">
+                                                {(listing.safety_items || []).filter(id => SAFETY_DEVICES.some(d => d.id === id)).length > 0
+                                                    ? `${(listing.safety_items || []).filter(id => SAFETY_DEVICES.some(d => d.id === id)).length} selected`
+                                                    : 'Noise decibel monitor present'}
+                                            </div>
+                                        </div>
+                                        <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                        </svg>
+                                    </button>
+
+                                    <button
+                                        onClick={() => {
+                                            setGuestSafetySection('property_info');
+                                            setShowGuestSafety(true);
+                                        }}
+                                        className="w-full text-left p-4 border border-gray-200 rounded-xl hover:border-gray-300 transition-colors flex items-center justify-between"
+                                    >
+                                        <div>
+                                            <div className="font-medium text-gray-900 mb-1">Property info</div>
+                                            <div className="text-sm text-gray-500">Add details</div>
+                                        </div>
+                                        <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
+                        {photoView === 'overview' && activeSection !== 'photos' && activeSection !== 'title' && activeSection !== 'description' && activeSection !== 'pricing' && activeSection !== 'availability' && activeSection !== 'number_of_guests' && activeSection !== 'amenities' && activeSection !== 'house_rules' && activeSection !== 'guest_safety' && (
                             <div className="flex items-center justify-center h-full text-gray-500">
                                 Select a section to edit
                             </div>
@@ -645,6 +1091,60 @@ const ListingEditor: React.FC = () => {
                     </div>
                 </main>
             </div>
+
+            {/* Listing Preview Modal */}
+            {listing && (
+                <ListingPreview
+                    listing={listing}
+                    isOpen={showPreview}
+                    onClose={() => setShowPreview(false)}
+                />
+            )}
+
+            {showAddAmenities && listing && (
+                <AddAmenitiesPanel
+                    selectedAmenities={listing.amenities || []}
+                    onToggle={async (amenityId) => {
+                        const currentAmenities = listing.amenities || [];
+                        const newAmenities = currentAmenities.includes(amenityId)
+                            ? currentAmenities.filter(id => id !== amenityId)
+                            : [...currentAmenities, amenityId];
+
+                        setListing({ ...listing, amenities: newAmenities });
+
+                        // Save to backend using the correct amenities endpoint
+                        try {
+                            await apiClient.post(`/listings/${id}/amenities`, { amenities: newAmenities });
+                        } catch (error) {
+                            console.error('Failed to update amenities:', error);
+                            // Revert on failure
+                            setListing({ ...listing, amenities: currentAmenities });
+                        }
+                    }}
+                    onClose={() => setShowAddAmenities(false)}
+                />
+            )}
+
+            {showGuestSafety && listing && (
+                <GuestSafetyModal
+                    isOpen={showGuestSafety}
+                    onClose={() => setShowGuestSafety(false)}
+                    selectedItems={listing.safety_items || []}
+                    initialSection={guestSafetySection}
+                    onSave={async (items) => {
+                        setListing({ ...listing, safety_items: items });
+
+                        // Save to backend
+                        try {
+                            await apiClient.put(`/listings/${id}`, { safety_items: items });
+                        } catch (error) {
+                            console.error('Failed to update safety items:', error);
+                            // Revert on failure
+                            setListing({ ...listing, safety_items: listing.safety_items || [] });
+                        }
+                    }}
+                />
+            )}
         </div>
     );
 };

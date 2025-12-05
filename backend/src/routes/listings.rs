@@ -97,6 +97,7 @@ pub struct UpdateListingRequest {
     pub max_nights: Option<i32>,
     pub safety_devices: Option<Vec<String>>,
     pub house_rules: Option<String>,
+    pub safety_items: Option<Vec<String>>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -463,6 +464,11 @@ pub async fn update_listing(
             if let Some(ref house_rules) = body.house_rules {
                 query_builder.push(", house_rules = ");
                 query_builder.push_bind(house_rules);
+            }
+            if let Some(ref safety_items) = body.safety_items {
+                let json = serde_json::to_string(safety_items).unwrap_or_default();
+                query_builder.push(", safety_devices = ");
+                query_builder.push_bind(json);
             }
 
             query_builder.push(" WHERE id = ");
