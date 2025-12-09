@@ -1,14 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import apiClient from '@/api/client';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, Plus, Minus, Settings, Home, MapPin, Users, Key, BookOpen, Shield, FileText, Link as LinkIcon, Camera, Eye } from 'lucide-react';
+import { ChevronLeft, Plus, Minus, Settings, Home, MapPin, Users, Key, BookOpen, Shield, FileText, Link as LinkIcon, Camera, Eye, X } from 'lucide-react';
 import { getImageUrl } from '@/lib/utils';
 import { AMENITY_DETAILS } from '@/data/amenities';
 import AddAmenitiesPanel from '@/components/host/AddAmenitiesPanel';
 import HouseRulesSection, { HouseRules, DEFAULT_HOUSE_RULES } from '@/components/host/HouseRulesSection';
 import ListingPreview from '@/components/host/ListingPreview';
 import GuestSafetyModal from '@/components/host/GuestSafetyModal';
+import { LocationDetailModals } from '@/components/host/LocationDetailModals';
 import { SAFETY_CONSIDERATIONS, SAFETY_DEVICES, PROPERTY_INFO } from '@/data/guestSafety';
 
 interface Listing {
@@ -64,6 +65,21 @@ const ListingEditor: React.FC = () => {
     const [tempDescription, setTempDescription] = useState('');
     const [showGuestSafety, setShowGuestSafety] = useState(false);
     const [guestSafetySection, setGuestSafetySection] = useState<'considerations' | 'devices' | 'property_info'>('considerations');
+    const [showAllPhotos, setShowAllPhotos] = useState(false);
+    const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
+    const [uploading, setUploading] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    // Location detail modals
+    const [showAddressModal, setShowAddressModal] = useState(false);
+    const [showNeighborhoodModal, setShowNeighborhoodModal] = useState(false);
+    const [showGettingAroundModal, setShowGettingAroundModal] = useState(false);
+    const [showScenicViewsModal, setShowScenicViewsModal] = useState(false);
+    const [showLocationSharingModal, setShowLocationSharingModal] = useState(false);
+    const [neighborhoodDescription, setNeighborhoodDescription] = useState('');
+    const [gettingAroundDescription, setGettingAroundDescription] = useState('');
+    const [scenicViews, setScenicViews] = useState<string[]>([]);
+    const [showGeneralLocation, setShowGeneralLocation] = useState(true);
 
     useEffect(() => {
         const fetchListing = async () => {
@@ -124,6 +140,7 @@ const ListingEditor: React.FC = () => {
                 ? listing.amenities.slice(0, 2).map(id => AMENITY_DETAILS[id]?.label).join(' · ') + (listing.amenities.length > 2 ? ` +${listing.amenities.length - 2} more` : '')
                 : 'Add details'
         },
+        { id: 'location', label: 'Location', icon: MapPin, description: listing.address || listing.city || 'Add location' },
         { id: 'house_rules', label: 'House rules', icon: BookOpen, description: 'Guests must agree to your rules' },
         {
             id: 'guest_safety',
@@ -139,8 +156,6 @@ const ListingEditor: React.FC = () => {
     ];
 
     const photoSidebarItems = [
-        { id: 'bedroom', label: 'Bedroom', image: '/bedroom-placeholder.jpg' },
-        { id: 'bathroom', label: 'Full bathroom', image: '/bathroom-placeholder.jpg' },
         { id: 'additional', label: 'Additional photos', image: listing.photos.length > 0 ? getImageUrl(listing.photos[0].url) : null },
     ];
 
@@ -189,7 +204,13 @@ const ListingEditor: React.FC = () => {
                                     {sidebarItems.map((item) => (
                                         <button
                                             key={item.id}
-                                            onClick={() => setActiveSection(item.id)}
+                                            onClick={() => {
+                                                if ((item as any).isLink && item.id === 'bedroom') {
+                                                    navigate(`/host/editor/${id}/bedroom`);
+                                                } else {
+                                                    setActiveSection(item.id);
+                                                }
+                                            }}
                                             className={`w-full text-left p-4 rounded-xl border transition-all ${activeSection === item.id
                                                 ? 'border-black ring-1 ring-black bg-gray-50'
                                                 : 'border-gray-200 hover:border-gray-300 bg-white'
@@ -249,8 +270,19 @@ const ListingEditor: React.FC = () => {
                                     <div className="flex items-center justify-between mb-2">
                                         <h2 className="text-2xl font-semibold">Photo tour</h2>
                                         <div className="flex gap-2">
-                                            <Button variant="outline" className="rounded-full border-gray-300">All photos</Button>
-                                            <Button variant="outline" size="icon" className="rounded-full border-gray-300 w-10 h-10">
+                                            <Button
+                                                variant="outline"
+                                                className="rounded-full border-gray-300"
+                                                onClick={() => setShowAllPhotos(true)}
+                                            >
+                                                All photos
+                                            </Button>
+                                            <Button
+                                                variant="outline"
+                                                size="icon"
+                                                className="rounded-full border-gray-300 w-10 h-10"
+                                                onClick={() => fileInputRef.current?.click()}
+                                            >
                                                 <Plus className="h-5 w-5" />
                                             </Button>
                                         </div>
@@ -261,7 +293,7 @@ const ListingEditor: React.FC = () => {
 
                                     <div className="grid grid-cols-3 gap-6">
                                         {/* Bedroom Card */}
-                                        <div className="group cursor-pointer" onClick={() => setPhotoView('bedroom')}>
+                                        <div className="group cursor-pointer" onClick={() => navigate(`/host/editor/${id}/bedroom`)}>
                                             <div className="aspect-square bg-gray-50 rounded-xl overflow-hidden mb-3 relative">
                                                 <div className="w-full h-full flex items-center justify-center bg-white">
                                                     <img src="/bedroom-placeholder.jpg" alt="Bedroom placeholder" className="w-full h-full object-contain p-4" />
@@ -272,7 +304,7 @@ const ListingEditor: React.FC = () => {
                                         </div>
 
                                         {/* Full Bathroom Card */}
-                                        <div className="group cursor-pointer" onClick={() => setPhotoView('bathroom')}>
+                                        <div className="group cursor-pointer" onClick={() => navigate(`/host/editor/${id}/bathroom`)}>
                                             <div className="aspect-square bg-gray-50 rounded-xl overflow-hidden mb-3 relative">
                                                 <div className="w-full h-full flex items-center justify-center bg-white">
                                                     <img src="/bathroom-placeholder.jpg" alt="Bathroom placeholder" className="w-full h-full object-contain p-4" />
@@ -303,13 +335,21 @@ const ListingEditor: React.FC = () => {
                         ) : (
                             <div>
                                 <div className="flex items-center justify-between mb-2">
-                                    <h2 className="text-2xl font-semibold">
-                                        {photoView === 'bedroom' ? 'Bedroom' :
-                                            photoView === 'bathroom' ? 'Full bathroom' : 'Additional photos'}
-                                    </h2>
+                                    <h2 className="text-2xl font-semibold">Additional photos</h2>
                                     <div className="flex gap-2">
-                                        <Button variant="outline" className="rounded-full border-gray-300">Manage photos</Button>
-                                        <Button variant="outline" size="icon" className="rounded-full border-gray-300 w-10 h-10">
+                                        <Button
+                                            variant="outline"
+                                            className="rounded-full border-gray-300"
+                                            onClick={() => setShowAllPhotos(true)}
+                                        >
+                                            Manage photos
+                                        </Button>
+                                        <Button
+                                            variant="outline"
+                                            size="icon"
+                                            className="rounded-full border-gray-300 w-10 h-10"
+                                            onClick={() => fileInputRef.current?.click()}
+                                        >
                                             <Plus className="h-5 w-5" />
                                         </Button>
                                     </div>
@@ -322,7 +362,11 @@ const ListingEditor: React.FC = () => {
 
                                 <div className="grid grid-cols-3 gap-4">
                                     {photoView === 'additional' && listing.photos.map((photo) => (
-                                        <div key={photo.id} className="aspect-[4/3] rounded-xl overflow-hidden bg-gray-100 relative group">
+                                        <div
+                                            key={photo.id}
+                                            className="aspect-[4/3] rounded-xl overflow-hidden bg-gray-100 relative group cursor-pointer"
+                                            onClick={() => setSelectedPhoto(photo.url)}
+                                        >
                                             <img src={getImageUrl(photo.url)} alt={photo.caption} className="w-full h-full object-cover" />
                                         </div>
                                     ))}
@@ -802,6 +846,134 @@ const ListingEditor: React.FC = () => {
                             </div>
                         )}
 
+                        {activeSection === 'location' && (
+                            <div className="max-w-2xl">
+                                <div className="mb-8">
+                                    <h2 className="text-2xl font-semibold mb-2">Location</h2>
+                                    <p className="text-gray-500">
+                                        Your exact address will only be shared with confirmed guests.
+                                    </p>
+                                </div>
+
+                                {listing.latitude && listing.longitude ? (
+                                    <div className="space-y-4">
+                                        {/* Map Preview */}
+                                        <div className="border rounded-xl overflow-hidden">
+                                            <div className="h-64 bg-gray-100 relative">
+                                                <iframe
+                                                    width="100%"
+                                                    height="100%"
+                                                    frameBorder="0"
+                                                    style={{ border: 0 }}
+                                                    src={`https://www.openstreetmap.org/export/embed.html?bbox=${listing.longitude - 0.01},${listing.latitude - 0.01},${listing.longitude + 0.01},${listing.latitude + 0.01}&layer=mapnik&marker=${listing.latitude},${listing.longitude}`}
+                                                    allowFullScreen
+                                                />
+                                            </div>
+
+                                            <div className="p-6">
+                                                <div className="flex items-start gap-3 mb-4">
+                                                    <MapPin className="h-5 w-5 text-gray-500 mt-0.5" />
+                                                    <div className="flex-1">
+                                                        <div className="font-medium text-gray-900 mb-1">
+                                                            {listing.address || `${listing.city}, ${listing.country}`}
+                                                        </div>
+                                                        <div className="text-sm text-gray-500">
+                                                            {listing.latitude.toFixed(6)}, {listing.longitude.toFixed(6)}
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <Button
+                                                    variant="outline"
+                                                    className="w-full rounded-lg border-gray-300"
+                                                    onClick={() => navigate(`/host/location?listing=${id}`)}
+                                                >
+                                                    Edit location
+                                                </Button>
+                                            </div>
+                                        </div>
+
+                                        {/* Additional Location Sections */}
+                                        <div className="border rounded-xl divide-y">
+                                            {/* Address */}
+                                            <button
+                                                onClick={() => setShowAddressModal(true)}
+                                                className="w-full p-4 flex items-center justify-between hover:bg-gray-50 transition-colors text-left"
+                                            >
+                                                <div className="flex-1">
+                                                    <div className="font-medium text-gray-900 mb-1">Address</div>
+                                                    <div className="text-sm text-gray-500">
+                                                        {listing.address || `${listing.city}, ${listing.country}`}
+                                                    </div>
+                                                </div>
+                                                <ChevronLeft className="h-5 w-5 rotate-180 text-gray-400" />
+                                            </button>
+
+                                            {/* Location sharing */}
+                                            <button
+                                                onClick={() => setShowLocationSharingModal(true)}
+                                                className="w-full p-4 flex items-center justify-between hover:bg-gray-50 transition-colors text-left"
+                                            >
+                                                <div className="flex-1">
+                                                    <div className="font-medium text-gray-900 mb-1">Location sharing</div>
+                                                    <div className="text-sm text-gray-500">Show listing's general location</div>
+                                                </div>
+                                                <ChevronLeft className="h-5 w-5 rotate-180 text-gray-400" />
+                                            </button>
+
+                                            {/* Neighborhood description */}
+                                            <button
+                                                onClick={() => setShowNeighborhoodModal(true)}
+                                                className="w-full p-4 flex items-center justify-between hover:bg-gray-50 transition-colors text-left"
+                                            >
+                                                <div className="flex-1">
+                                                    <div className="font-medium text-gray-900 mb-1">Neighborhood description</div>
+                                                    <div className="text-sm text-gray-500">Add details</div>
+                                                </div>
+                                                <ChevronLeft className="h-5 w-5 rotate-180 text-gray-400" />
+                                            </button>
+
+                                            {/* Getting around */}
+                                            <button
+                                                onClick={() => setShowGettingAroundModal(true)}
+                                                className="w-full p-4 flex items-center justify-between hover:bg-gray-50 transition-colors text-left"
+                                            >
+                                                <div className="flex-1">
+                                                    <div className="font-medium text-gray-900 mb-1">Getting around</div>
+                                                    <div className="text-sm text-gray-500">Add details</div>
+                                                </div>
+                                                <ChevronLeft className="h-5 w-5 rotate-180 text-gray-400" />
+                                            </button>
+
+                                            {/* Scenic views */}
+                                            <button
+                                                onClick={() => setShowScenicViewsModal(true)}
+                                                className="w-full p-4 flex items-center justify-between hover:bg-gray-50 transition-colors text-left"
+                                            >
+                                                <div className="flex-1">
+                                                    <div className="font-medium text-gray-900 mb-1">Scenic views</div>
+                                                    <div className="text-sm text-gray-500">Add details</div>
+                                                </div>
+                                                <ChevronLeft className="h-5 w-5 rotate-180 text-gray-400" />
+                                            </button>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="border-2 border-dashed border-gray-200 rounded-xl p-12 text-center">
+                                        <MapPin className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                                        <h3 className="font-semibold text-gray-900 mb-2">No location set</h3>
+                                        <p className="text-gray-500 mb-6">Add your property's location to help guests find you.</p>
+                                        <Button
+                                            className="bg-black text-white hover:bg-gray-800 rounded-lg"
+                                            onClick={() => navigate(`/host/location?listing=${id}`)}
+                                        >
+                                            Add location
+                                        </Button>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
                         {activeSection === 'house_rules' && listing && (
                             <HouseRulesSection
                                 rules={(() => {
@@ -1144,6 +1316,200 @@ const ListingEditor: React.FC = () => {
                         }
                     }}
                 />
+            )}
+
+            {/* Location Detail Modals */}
+            <LocationDetailModals
+                showAddressModal={showAddressModal}
+                onCloseAddressModal={() => setShowAddressModal(false)}
+                address={listing?.address || ''}
+                city={listing?.city || ''}
+                country={listing?.country || ''}
+                onSaveAddress={async (data) => {
+                    if (!listing) return;
+                    setListing({ ...listing, ...data });
+                    try {
+                        await apiClient.put(`/listings/${id}`, data);
+                    } catch (error) {
+                        console.error('Failed to update address:', error);
+                    }
+                }}
+                showNeighborhoodModal={showNeighborhoodModal}
+                onCloseNeighborhoodModal={() => setShowNeighborhoodModal(false)}
+                neighborhoodDescription={neighborhoodDescription}
+                onSaveNeighborhood={async (description) => {
+                    setNeighborhoodDescription(description);
+                    try {
+                        await apiClient.put(`/listings/${id}`, { neighborhood_description: description });
+                    } catch (error) {
+                        console.error('Failed to update neighborhood description:', error);
+                    }
+                }}
+                showGettingAroundModal={showGettingAroundModal}
+                onCloseGettingAroundModal={() => setShowGettingAroundModal(false)}
+                gettingAroundDescription={gettingAroundDescription}
+                onSaveGettingAround={async (description) => {
+                    setGettingAroundDescription(description);
+                    try {
+                        await apiClient.put(`/listings/${id}`, { getting_around: description });
+                    } catch (error) {
+                        console.error('Failed to update getting around:', error);
+                    }
+                }}
+                showScenicViewsModal={showScenicViewsModal}
+                onCloseScenicViewsModal={() => setShowScenicViewsModal(false)}
+                scenicViews={scenicViews}
+                onSaveScenicViews={async (views) => {
+                    setScenicViews(views);
+                    try {
+                        await apiClient.put(`/listings/${id}`, { scenic_views: views });
+                    } catch (error) {
+                        console.error('Failed to update scenic views:', error);
+                    }
+                }}
+                showLocationSharingModal={showLocationSharingModal}
+                onCloseLocationSharingModal={() => setShowLocationSharingModal(false)}
+                showGeneralLocation={showGeneralLocation}
+                onSaveLocationSharing={async (show) => {
+                    setShowGeneralLocation(show);
+                    try {
+                        await apiClient.put(`/listings/${id}`, { show_general_location: show });
+                    } catch (error) {
+                        console.error('Failed to update location sharing:', error);
+                    }
+                }}
+            />
+
+            {/* Hidden File Input */}
+            <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                accept="image/*"
+                onChange={async (e) => {
+                    const files = e.target.files;
+                    if (!files || files.length === 0) return;
+
+                    setUploading(true);
+                    try {
+                        // First, get all existing photos from the listing
+                        const listingResponse = await apiClient.get(`/listings/${id}`);
+                        const allExistingPhotos = listingResponse.data.photos || [];
+
+                        // Upload new photos
+                        const uploadedUrls: string[] = [];
+                        for (const file of Array.from(files)) {
+                            const formData = new FormData();
+                            formData.append('file', file);
+
+                            const response = await apiClient.post('/upload/images', formData, {
+                                headers: { 'Content-Type': 'multipart/form-data' }
+                            });
+
+                            uploadedUrls.push(response.data.urls[0]);
+                        }
+
+                        // Prepare the complete photos array (existing + new)
+                        const existingPhotosData = allExistingPhotos.map((p: any) => ({
+                            url: p.url,
+                            caption: p.caption,
+                            room_type: p.room_type,
+                            is_cover: p.is_cover === 1,
+                            display_order: p.display_order
+                        }));
+
+                        const newPhotosData = uploadedUrls.map(url => ({
+                            url,
+                            caption: 'Additional photo',
+                            room_type: null,
+                            is_cover: false,
+                            display_order: 0
+                        }));
+
+                        // Sync all photos (existing + new)
+                        await apiClient.post(`/listings/${id}/photos`, {
+                            photos: [...existingPhotosData, ...newPhotosData]
+                        });
+
+                        // Refresh listing to show new photos
+                        const updatedListing = await apiClient.get(`/listings/${id}`);
+                        setListing(updatedListing.data);
+                    } catch (error) {
+                        console.error('Upload failed:', error);
+                    } finally {
+                        setUploading(false);
+                        if (fileInputRef.current) {
+                            fileInputRef.current.value = '';
+                        }
+                    }
+                }}
+                className="hidden"
+            />
+
+            {/* All Photos Modal */}
+            {showAllPhotos && listing && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-2xl w-full max-w-6xl max-h-[90vh] flex flex-col">
+                        <div className="p-6 border-b border-gray-200 flex items-center justify-between">
+                            <h2 className="text-2xl font-semibold">All photos ({listing.photos.length})</h2>
+                            <button
+                                onClick={() => setShowAllPhotos(false)}
+                                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                            >
+                                <X className="h-5 w-5" />
+                            </button>
+                        </div>
+                        <div className="flex-1 overflow-y-auto p-6">
+                            {listing.photos.length > 0 ? (
+                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                                    {listing.photos.map((photo) => (
+                                        <div
+                                            key={photo.id}
+                                            className="aspect-square rounded-lg overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
+                                            onClick={() => setSelectedPhoto(photo.url)}
+                                        >
+                                            <img
+                                                src={getImageUrl(photo.url)}
+                                                alt={photo.caption || 'Listing photo'}
+                                                className="w-full h-full object-cover"
+                                            />
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="text-center py-12 text-gray-500">
+                                    No photos uploaded yet
+                                </div>
+                            )}
+                        </div>
+                        <div className="p-6 border-t border-gray-200 flex justify-end">
+                            <Button
+                                onClick={() => setShowAllPhotos(false)}
+                                className="bg-gray-900 text-white hover:bg-gray-800 rounded-lg px-6"
+                            >
+                                Close
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Photo Lightbox */}
+            {selectedPhoto && (
+                <div className="fixed inset-0 bg-black z-[60] flex items-center justify-center" onClick={() => setSelectedPhoto(null)}>
+                    <button
+                        onClick={() => setSelectedPhoto(null)}
+                        className="absolute top-4 left-4 p-2 bg-black bg-opacity-50 text-white rounded-full hover:bg-opacity-75 transition-all"
+                    >
+                        <X className="h-6 w-6" />
+                    </button>
+                    <img
+                        src={getImageUrl(selectedPhoto)}
+                        alt="Full size view"
+                        className="max-w-full max-h-full object-contain p-4"
+                        onClick={(e) => e.stopPropagation()}
+                    />
+                </div>
             )}
         </div>
     );

@@ -51,7 +51,7 @@ const Amenities: React.FC = () => {
     const handleContinue = () => {
         updateDraft({ amenities: selectedAmenities });
         nextStep();
-        navigate('/host/photos');
+        navigate('/host/location');
     };
 
     const handleBack = () => {
@@ -114,7 +114,7 @@ const Amenities: React.FC = () => {
                 </div>
 
                 <div className="mt-4 text-center text-sm text-muted-foreground">
-                    Step 2 of 9
+                    Step 2 of 10
                 </div>
             </div>
         </div>

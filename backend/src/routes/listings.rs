@@ -50,6 +50,8 @@ pub struct ListingPhoto {
     pub id: i32,
     pub listing_id: String,
     pub url: String,
+    pub caption: Option<String>,
+    pub room_type: Option<String>,
     pub is_cover: i32,
     pub display_order: i32,
     pub uploaded_at: Option<String>,
@@ -113,6 +115,8 @@ pub struct SyncPhotosRequest {
 #[derive(Debug, Deserialize)]
 pub struct AddPhotoRequest {
     pub url: String,
+    pub caption: Option<String>,
+    pub room_type: Option<String>,
     pub is_cover: Option<bool>,
     pub display_order: Option<i32>,
 }
@@ -841,9 +845,11 @@ pub async fn sync_photos(
                 };
                 let display_order = photo.display_order.unwrap_or(0);
 
-                if let Err(e) = sqlx::query("INSERT INTO listing_photos (listing_id, url, is_cover, display_order) VALUES (?, ?, ?, ?)")
+                if let Err(e) = sqlx::query("INSERT INTO listing_photos (listing_id, url, caption, room_type, is_cover, display_order) VALUES (?, ?, ?, ?, ?, ?)")
                     .bind(&listing_id)
                     .bind(&photo.url)
+                    .bind(&photo.caption)
+                    .bind(&photo.room_type)
                     .bind(is_cover)
                     .bind(display_order)
                     .execute(&mut *tx)

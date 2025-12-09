@@ -84,7 +84,7 @@ const PhotoUpload: React.FC = () => {
     const handleBack = () => {
         updateDraft({ photos, coverPhotoIndex: coverIndex });
         previousStep();
-        navigate('/host/amenities');
+        navigate('/host/location');
     };
 
     return (
@@ -183,7 +183,7 @@ const PhotoUpload: React.FC = () => {
                 </div>
 
                 <div className="mt-4 text-center text-sm text-muted-foreground">
-                    Step 3 of 9
+                    Step 4 of 10
                 </div>
             </div>
         </div>

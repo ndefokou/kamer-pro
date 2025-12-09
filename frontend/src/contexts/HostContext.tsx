@@ -35,6 +35,8 @@ interface UpdateListingPayload {
     address?: string;
     city?: string;
     country?: string;
+    latitude?: number;
+    longitude?: number;
 }
 
 export interface ListingDraft {
@@ -76,10 +78,12 @@ export interface ListingDraft {
     safetyDevices: string[];
     houseRules: string;
 
-    // Location (optional for now)
+    // Location
     address?: string;
     city?: string;
     country?: string;
+    latitude?: number;
+    longitude?: number;
 
     // Metadata
     lastSaved?: string;
@@ -206,6 +210,8 @@ export const HostProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 address: draft.address,
                 city: draft.city,
                 country: draft.country,
+                latitude: draft.latitude,
+                longitude: draft.longitude,
             };
 
             console.log('Saving draft with payload:', {
@@ -326,6 +332,8 @@ export const HostProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 address: listingData.address,
                 city: listingData.city,
                 country: listingData.country || 'Cameroon',
+                latitude: listingData.latitude,
+                longitude: listingData.longitude,
                 isDirty: false,
             };
 

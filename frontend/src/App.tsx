@@ -10,6 +10,7 @@ import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
 import Intro from "./pages/host/Intro";
 import Amenities from "./pages/host/Amenities";
+import Location from "./pages/host/Location";
 import Description from "./pages/host/Description";
 import TitlePage from "./pages/host/TitlePage";
 import PhotoUpload from "./pages/host/PhotoUpload";
@@ -21,6 +22,8 @@ import HostDashboard from "./pages/host/HostDashboard";
 import HostToday from "./pages/host/HostToday";
 import HostCalendar from "./pages/host/HostCalendar";
 import ListingEditor from "./pages/host/ListingEditor";
+import BedroomEditor from "./pages/host/BedroomEditor";
+import BathroomEditor from "./pages/host/BathroomEditor";
 
 const queryClient = new QueryClient();
 
@@ -29,6 +32,7 @@ const router = createBrowserRouter(
     { path: "/", Component: Dashboard },
     { path: "/host/intro", Component: Intro },
     { path: "/host/amenities", Component: Amenities },
+    { path: "/host/location", Component: Location },
     { path: "/host/description", Component: Description },
     { path: "/host/title", Component: TitlePage },
     { path: "/host/photos", Component: PhotoUpload },
@@ -39,6 +43,8 @@ const router = createBrowserRouter(
     { path: "/host/dashboard", Component: HostDashboard },
     { path: "/host/today", Component: HostToday },
     { path: "/host/calendar", Component: HostCalendar },
+    { path: "/host/editor/:id/bedroom", Component: BedroomEditor },
+    { path: "/host/editor/:id/bathroom", Component: BathroomEditor },
     { path: "/host/editor/:id", Component: ListingEditor },
     { path: "*", Component: NotFound },
   ],
