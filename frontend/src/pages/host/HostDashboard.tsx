@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import apiClient from '@/api/client';
 import { Button } from '@/components/ui/button';
-import { Plus, Grid3x3, Menu, Mail } from 'lucide-react';
+import { Plus, Grid3x3, Menu, Mail, Calendar, Home } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getImageUrl } from '@/lib/utils';
 
@@ -45,7 +45,12 @@ const HostDashboard: React.FC = () => {
     }, []);
 
     const handleCreateListing = () => {
-        navigate('/host/intro');
+        const token = localStorage.getItem('token');
+        if (token) {
+            navigate('/host/intro');
+        } else {
+            navigate('/webauth-login?redirect=/host/intro');
+        }
     };
 
     const handleCalendarClick = () => {
@@ -62,13 +67,13 @@ const HostDashboard: React.FC = () => {
     return (
         <div className="min-h-screen bg-gray-50">
             {/* Host Navbar */}
-            <header className="border-b bg-white sticky top-0 z-50">
-                <div className="max-w-7xl mx-auto px-6 lg:px-8 h-20 flex items-center justify-between">
+            <header className="border-b bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60 sticky top-0 z-50">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 md:h-20 flex items-center justify-between">
                     <div className="flex items-center gap-12">
-                        <div className="text-[#FF385C] font-bold text-xl cursor-pointer" onClick={() => navigate('/')}>
+                        <div className="text-green-600 font-bold text-xl cursor-pointer" onClick={() => navigate('/')}>
                             MboaMaison
                         </div>
-                        <nav className="hidden lg:flex gap-8 text-sm font-medium">
+                        <nav className="hidden md:flex gap-8 text-sm font-medium">
                             <a href="/host/today" className="text-gray-600 hover:text-gray-900 transition-colors">Today</a>
                             <button
                                 onClick={handleCalendarClick}
@@ -104,13 +109,13 @@ const HostDashboard: React.FC = () => {
             </header>
 
             {/* Main Content */}
-            <main className="max-w-7xl mx-auto px-6 lg:px-8 py-8">
+            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8 pb-24 md:pb-12">
                 {/* Alert Banner */}
                 {hasActionRequired && (
                     <div className="mb-8 bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
                         <div className="flex items-start gap-3">
-                            <div className="flex-shrink-0 w-12 h-12 bg-pink-100 rounded-full flex items-center justify-center">
-                                <Mail className="h-6 w-6 text-pink-600" />
+                            <div className="flex-shrink-0 w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                                <Mail className="h-6 w-6 text-green-600" />
                             </div>
                             <div className="flex-1">
                                 <h3 className="font-semibold text-gray-900 mb-1">Confirm a few key details</h3>
@@ -150,88 +155,183 @@ const HostDashboard: React.FC = () => {
                         </Button>
                     </div>
                 ) : (
-                    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-                        <table className="w-full">
-                            <thead className="bg-gray-50">
-                                <tr className="border-b border-gray-200">
-                                    <th className="text-left py-4 px-6 text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                        Listing
-                                    </th>
-                                    <th className="text-left py-4 px-6 text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                        Type
-                                    </th>
-                                    <th className="text-left py-4 px-6 text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                        Location
-                                    </th>
-                                    <th className="text-left py-4 px-6 text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                        Status
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-200">
-                                {listings.map((item) => (
-                                    <tr
-                                        key={item.listing.id}
-                                        className="hover:bg-gray-50 cursor-pointer transition-colors"
-                                        onClick={() => {
-                                            setSelectedListing(item.listing.id);
-                                            navigate(`/host/editor/${item.listing.id}`);
-                                        }}
-                                    >
-                                        <td className="py-5 px-6">
-                                            <div className="flex items-center gap-4">
-                                                <div className="h-16 w-20 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100">
-                                                    {item.photos?.[0]?.url ? (
-                                                        <img
-                                                            src={getImageUrl(item.photos[0].url)}
-                                                            alt={item.listing.title}
-                                                            className="h-full w-full object-cover"
-                                                        />
-                                                    ) : (
-                                                        <div className="h-full w-full flex items-center justify-center text-gray-300">
-                                                            <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                                            </svg>
-                                                        </div>
-                                                    )}
+                    <div className="space-y-4">
+                        {/* Mobile cards */}
+                        <div className="md:hidden grid grid-cols-1 gap-4">
+                            {listings.map((item) => (
+                                <div
+                                    key={item.listing.id}
+                                    className="bg-white rounded-xl border border-gray-200 p-4 hover:shadow-md transition-shadow cursor-pointer"
+                                    onClick={() => {
+                                        setSelectedListing(item.listing.id);
+                                        navigate(`/host/editor/${item.listing.id}`);
+                                    }}
+                                >
+                                    <div className="flex items-center gap-4">
+                                        <div className="h-20 w-24 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100">
+                                            {item.photos?.[0]?.url ? (
+                                                <img
+                                                    src={getImageUrl(item.photos[0].url)}
+                                                    alt={item.listing.title}
+                                                    className="h-full w-full object-cover"
+                                                />
+                                            ) : (
+                                                <div className="h-full w-full flex items-center justify-center text-gray-300">
+                                                    <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                    </svg>
                                                 </div>
-                                                <div className="flex flex-col min-w-0">
-                                                    <span className="font-medium text-gray-900 truncate">
+                                            )}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-start justify-between gap-3">
+                                                <div className="min-w-0">
+                                                    <div className="font-medium text-gray-900 truncate">
                                                         {item.listing.title || 'Untitled Listing'}
+                                                    </div>
+                                                    <div className="text-sm text-gray-600 truncate">
+                                                        {(item.listing.property_type || 'Home')}{item.listing.city || item.listing.country ? ' · ' : ''}
+                                                        {item.listing.city && item.listing.country ? `${item.listing.city}, ${item.listing.country}` : ''}
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <span className={`h-2 w-2 rounded-full ${item.listing.status === 'published'
+                                                        ? 'bg-green-500'
+                                                        : item.listing.status === 'draft'
+                                                            ? 'bg-red-500'
+                                                            : 'bg-yellow-500'
+                                                        }`} />
+                                                    <span className="text-xs text-gray-700">
+                                                        {item.listing.status === 'draft' ? 'Action required' :
+                                                            item.listing.status === 'published' ? 'Published' :
+                                                                'Pending'}
                                                     </span>
                                                 </div>
                                             </div>
-                                        </td>
-                                        <td className="py-5 px-6 text-sm text-gray-700">
-                                            {item.listing.property_type || 'Home'}
-                                        </td>
-                                        <td className="py-5 px-6 text-sm text-gray-700">
-                                            {item.listing.city && item.listing.country
-                                                ? `${item.listing.city}, ${item.listing.country}`
-                                                : <span className="text-gray-400">-</span>}
-                                        </td>
-                                        <td className="py-5 px-6">
-                                            <div className="flex items-center gap-2">
-                                                <span className={`h-2 w-2 rounded-full ${item.listing.status === 'published'
-                                                    ? 'bg-green-500'
-                                                    : item.listing.status === 'draft'
-                                                        ? 'bg-red-500'
-                                                        : 'bg-yellow-500'
-                                                    }`} />
-                                                <span className="text-sm text-gray-700">
-                                                    {item.listing.status === 'draft' ? 'Action required' :
-                                                        item.listing.status === 'published' ? 'Published' :
-                                                            'Pending'}
-                                                </span>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Desktop table */}
+                        <div className="hidden md:block bg-white rounded-xl border border-gray-200 overflow-hidden">
+                            <div className="overflow-x-auto">
+                                <table className="w-full min-w-[700px]">
+                                    <thead className="bg-gray-50">
+                                        <tr className="border-b border-gray-200">
+                                            <th className="text-left py-4 px-6 text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                                Listing
+                                            </th>
+                                            <th className="text-left py-4 px-6 text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                                Type
+                                            </th>
+                                            <th className="text-left py-4 px-6 text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                                Location
+                                            </th>
+                                            <th className="text-left py-4 px-6 text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                                Status
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-200">
+                                        {listings.map((item) => (
+                                            <tr
+                                                key={item.listing.id}
+                                                className="hover:bg-gray-50 cursor-pointer transition-colors"
+                                                onClick={() => {
+                                                    setSelectedListing(item.listing.id);
+                                                    navigate(`/host/editor/${item.listing.id}`);
+                                                }}
+                                            >
+                                                <td className="py-5 px-6">
+                                                    <div className="flex items-center gap-4">
+                                                        <div className="h-16 w-20 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100">
+                                                            {item.photos?.[0]?.url ? (
+                                                                <img
+                                                                    src={getImageUrl(item.photos[0].url)}
+                                                                    alt={item.listing.title}
+                                                                    className="h-full w-full object-cover"
+                                                                />
+                                                            ) : (
+                                                                <div className="h-full w-full flex items-center justify-center text-gray-300">
+                                                                    <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                                    </svg>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                        <div className="flex flex-col min-w-0">
+                                                            <span className="font-medium text-gray-900 truncate">
+                                                                {item.listing.title || 'Untitled Listing'}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td className="py-5 px-6 text-sm text-gray-700">
+                                                    {item.listing.property_type || 'Home'}
+                                                </td>
+                                                <td className="py-5 px-6 text-sm text-gray-700">
+                                                    {item.listing.city && item.listing.country
+                                                        ? `${item.listing.city}, ${item.listing.country}`
+                                                        : <span className="text-gray-400">-</span>}
+                                                </td>
+                                                <td className="py-5 px-6">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className={`h-2 w-2 rounded-full ${item.listing.status === 'published'
+                                                            ? 'bg-green-500'
+                                                            : item.listing.status === 'draft'
+                                                                ? 'bg-red-500'
+                                                                : 'bg-yellow-500'
+                                                            }`} />
+                                                        <span className="text-sm text-gray-700">
+                                                            {item.listing.status === 'draft' ? 'Action required' :
+                                                                item.listing.status === 'published' ? 'Published' :
+                                                                    'Pending'}
+                                                        </span>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
                     </div>
                 )}
             </main>
+
+            {/* Mobile Bottom Nav */}
+            <nav className="md:hidden fixed bottom-0 inset-x-0 z-50 border-t bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60">
+                <div className="max-w-7xl mx-auto px-6">
+                    <ul className="grid grid-cols-4 h-16 text-xs">
+                        <li className="flex items-center justify-center">
+                            <a href="/host/today" className="flex flex-col items-center gap-1 text-gray-600">
+                                <Home className="h-5 w-5" />
+                                <span>Today</span>
+                            </a>
+                        </li>
+                        <li className="flex items-center justify-center">
+                            <a href="#" onClick={(e) => { e.preventDefault(); handleCalendarClick(); }} className="flex flex-col items-center gap-1 text-gray-600">
+                                <Calendar className="h-5 w-5" />
+                                <span>Calendar</span>
+                            </a>
+                        </li>
+                        <li className="flex items-center justify-center">
+                            <a href="/host/dashboard" className="flex flex-col items-center gap-1 text-gray-900 font-medium">
+                                <Grid3x3 className="h-5 w-5" />
+                                <span>Listings</span>
+                            </a>
+                        </li>
+                        <li className="flex items-center justify-center">
+                            <a href="#" className="flex flex-col items-center gap-1 text-gray-600">
+                                <Mail className="h-5 w-5" />
+                                <span>Messages</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
         </div>
     );
 };

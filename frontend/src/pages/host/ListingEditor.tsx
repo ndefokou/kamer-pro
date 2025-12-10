@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import apiClient from '@/api/client';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, Plus, Minus, Settings, Home, MapPin, Users, Key, BookOpen, Shield, FileText, Link as LinkIcon, Camera, Eye, X } from 'lucide-react';
+import { ChevronLeft, Plus, Minus, Settings, Home, MapPin, Users, Key, BookOpen, Shield, FileText, Link as LinkIcon, Camera, Eye, X, Calendar as CalendarIcon, Grid3x3, Mail } from 'lucide-react';
 import { getImageUrl } from '@/lib/utils';
 import { AMENITY_DETAILS } from '@/data/amenities';
 import AddAmenitiesPanel from '@/components/host/AddAmenitiesPanel';
@@ -80,6 +80,7 @@ const ListingEditor: React.FC = () => {
     const [gettingAroundDescription, setGettingAroundDescription] = useState('');
     const [scenicViews, setScenicViews] = useState<string[]>([]);
     const [showGeneralLocation, setShowGeneralLocation] = useState(true);
+    const [isMobileSection, setIsMobileSection] = useState(false);
 
     useEffect(() => {
         const fetchListing = async () => {
@@ -159,29 +160,42 @@ const ListingEditor: React.FC = () => {
         { id: 'additional', label: 'Additional photos', image: listing.photos.length > 0 ? getImageUrl(listing.photos[0].url) : null },
     ];
 
+    const currentSectionLabel = sidebarItems.find(s => s.id === activeSection)?.label || 'Listing editor';
+
     return (
+        <>
         <div className="min-h-screen bg-white flex flex-col">
             {/* Header */}
-            <header className="h-16 border-b border-gray-200 flex items-center justify-between px-6 sticky top-0 bg-white z-50">
+            <header className="h-16 md:h-20 border-b border-gray-200 flex items-center justify-between px-4 sm:px-6 sticky top-0 bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60 z-50">
                 <div className="flex items-center gap-4">
                     <button
-                        onClick={() => photoView === 'overview' ? navigate('/host/dashboard') : setPhotoView('overview')}
+                        onClick={() => {
+                            if (photoView !== 'overview') { setPhotoView('overview'); return; }
+                            if (isMobileSection) { setIsMobileSection(false); return; }
+                            navigate('/host/dashboard');
+                        }}
                         className="p-2 hover:bg-gray-100 rounded-full"
                     >
                         <ChevronLeft className="h-5 w-5" />
                     </button>
                     <h1 className="text-lg font-semibold">
-                        {photoView === 'overview' ? 'Listing editor' : 'Photo tour'}
+                        {photoView !== 'overview' ? 'Photo tour' : (isMobileSection ? currentSectionLabel : 'Listing editor')}
                     </h1>
                 </div>
-                <div className="flex items-center gap-4">
-                    {/* Add any header actions here if needed */}
+                <div className="flex items-center gap-2 sm:gap-4">
+                    <button
+                        onClick={() => navigate('/host/preview')}
+                        className="hidden md:inline-flex items-center gap-2 px-3 py-2 rounded-full hover:bg-gray-100 transition-colors"
+                    >
+                        <Eye className="h-4 w-4" />
+                        <span className="text-sm font-medium">View</span>
+                    </button>
                 </div>
             </header>
 
             <div className="flex flex-1 overflow-hidden">
                 {/* Sidebar */}
-                <aside className="w-80 border-r border-gray-200 overflow-y-auto h-[calc(100vh-64px)] pb-10">
+                <aside className="hidden lg:block w-80 border-r border-gray-200 overflow-y-auto h-[calc(100vh-64px)] pb-10">
                     <div className="p-6">
                         {photoView === 'overview' ? (
                             <>
@@ -204,13 +218,7 @@ const ListingEditor: React.FC = () => {
                                     {sidebarItems.map((item) => (
                                         <button
                                             key={item.id}
-                                            onClick={() => {
-                                                if ((item as any).isLink && item.id === 'bedroom') {
-                                                    navigate(`/host/editor/${id}/bedroom`);
-                                                } else {
-                                                    setActiveSection(item.id);
-                                                }
-                                            }}
+                                            onClick={() => setActiveSection(item.id)}
                                             className={`w-full text-left p-4 rounded-xl border transition-all ${activeSection === item.id
                                                 ? 'border-black ring-1 ring-black bg-gray-50'
                                                 : 'border-gray-200 hover:border-gray-300 bg-white'
@@ -238,7 +246,7 @@ const ListingEditor: React.FC = () => {
                                 {photoSidebarItems.map((item) => (
                                     <button
                                         key={item.id}
-                                        onClick={() => setPhotoView(item.id as any)}
+                                        onClick={() => setPhotoView('additional')}
                                         className="w-full group flex flex-col items-center text-center"
                                     >
                                         <div className={`w-24 h-24 rounded-xl overflow-hidden mb-2 border-2 transition-all ${photoView === item.id ? 'border-black ring-1 ring-black' : 'border-transparent group-hover:scale-105'
@@ -262,8 +270,37 @@ const ListingEditor: React.FC = () => {
                 </aside>
 
                 {/* Main Content */}
-                <main className="flex-1 overflow-y-auto h-[calc(100vh-64px)] p-12">
+                <main className="flex-1 overflow-y-auto h-[calc(100vh-64px)] p-4 sm:p-6 md:p-8 lg:p-12 pb-24 md:pb-12">
                     <div className="max-w-4xl mx-auto">
+                        {photoView === 'overview' && !isMobileSection && (
+                            <div className="md:hidden mb-6">
+                                <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-full mb-4 w-fit">
+                                    <button className="px-4 py-1.5 bg-white rounded-full text-sm font-semibold shadow-sm">Your space</button>
+                                </div>
+                                <div className="space-y-3">
+                                    {sidebarItems.map((item) => (
+                                        <button
+                                            key={item.id}
+                                            onClick={() => {
+                                                setActiveSection(item.id);
+                                                setIsMobileSection(true);
+                                                setPhotoView('overview');
+                                                if (typeof window !== 'undefined' && 'scrollTo' in window) {
+                                                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                                                }
+                                            }}
+                                            className={`w-full text-left p-4 rounded-xl border transition-all ${activeSection === item.id
+                                                ? 'border-black ring-1 ring-black bg-gray-50'
+                                                : 'border-gray-200 hover:border-gray-300 bg-white'
+                                                }`}
+                                        >
+                                            <div className="font-semibold text-gray-900 mb-1">{item.label}</div>
+                                            <div className="text-sm text-gray-500">{item.description}</div>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
                         {photoView === 'overview' ? (
                             activeSection === 'photos' && (
                                 <div>
@@ -333,7 +370,8 @@ const ListingEditor: React.FC = () => {
                                 </div>
                             )
                         ) : (
-                            <div>
+                            !isMobileSection ? (
+                                <div>
                                 <div className="flex items-center justify-between mb-2">
                                     <h2 className="text-2xl font-semibold">Additional photos</h2>
                                     <div className="flex gap-2">
@@ -378,11 +416,12 @@ const ListingEditor: React.FC = () => {
                                     )}
                                 </div>
                             </div>
+                        ) : null
                         )}
 
                         {/* Placeholders for other sections */}
                         {activeSection === 'title' && (
-                            <div className="max-w-2xl">
+                            <div className={`${isMobileSection ? '' : 'hidden md:block'} max-w-2xl`}>
                                 <div className="flex items-center justify-between mb-6">
                                     <h2 className="text-2xl font-semibold">Title</h2>
                                 </div>
@@ -424,7 +463,7 @@ const ListingEditor: React.FC = () => {
                         )}
 
                         {activeSection === 'pricing' && settings && (
-                            <div className="max-w-2xl">
+                            <div className={`${isMobileSection ? '' : 'hidden md:block'} max-w-2xl`}>
                                 <div className="mb-8">
                                     <h2 className="text-2xl font-semibold mb-2">Pricing</h2>
                                     <p className="text-gray-500">
@@ -547,7 +586,7 @@ const ListingEditor: React.FC = () => {
                         )}
 
                         {activeSection === 'availability' && settings && (
-                            <div className="max-w-2xl">
+                            <div className={`${isMobileSection ? '' : 'hidden md:block'} max-w-2xl`}>
                                 <div className="mb-8">
                                     <h2 className="text-2xl font-semibold mb-2">Availability</h2>
                                     <p className="text-gray-500">
@@ -732,7 +771,7 @@ const ListingEditor: React.FC = () => {
                         )}
 
                         {activeSection === 'number_of_guests' && (
-                            <div className="max-w-2xl mx-auto text-center pt-12">
+                            <div className={`${isMobileSection ? '' : 'hidden md:block'} max-w-2xl mx-auto text-center pt-12`}>
                                 <div className="mb-8 flex justify-center">
                                     {/* Placeholder for the illustration - using a simple div or icon if no image available */}
                                     <div className="flex gap-2 items-end">
@@ -789,7 +828,7 @@ const ListingEditor: React.FC = () => {
                         )}
 
                         {activeSection === 'amenities' && (
-                            <div className="max-w-2xl">
+                            <div className={`${isMobileSection ? '' : 'hidden md:block'} max-w-2xl`}>
                                 <div className="flex items-center justify-between mb-8">
                                     <h2 className="text-2xl font-semibold">Amenities</h2>
                                     <div className="flex gap-2">
@@ -847,7 +886,7 @@ const ListingEditor: React.FC = () => {
                         )}
 
                         {activeSection === 'location' && (
-                            <div className="max-w-2xl">
+                            <div className={`${isMobileSection ? '' : 'hidden md:block'} max-w-2xl`}>
                                 <div className="mb-8">
                                     <h2 className="text-2xl font-semibold mb-2">Location</h2>
                                     <p className="text-gray-500">
@@ -975,6 +1014,7 @@ const ListingEditor: React.FC = () => {
                         )}
 
                         {activeSection === 'house_rules' && listing && (
+                            <div className={`${isMobileSection ? '' : 'hidden md:block'}`}>
                             <HouseRulesSection
                                 rules={(() => {
                                     try {
@@ -1002,6 +1042,7 @@ const ListingEditor: React.FC = () => {
                                     }
                                 }}
                             />
+                            </div>
                         )}
 
                         {activeSection === 'description' && (() => {
@@ -1074,7 +1115,7 @@ const ListingEditor: React.FC = () => {
                             };
 
                             return (
-                                <>
+                                <div className={`${isMobileSection ? '' : 'hidden md:block'}`}>
                                     <div className="max-w-2xl">
                                         <div className="mb-8">
                                             <h2 className="text-2xl font-semibold mb-2">Description</h2>
@@ -1165,12 +1206,12 @@ const ListingEditor: React.FC = () => {
                                             </div>
                                         </div>
                                     )}
-                                </>
+                                </div>
                             );
                         })()}
 
                         {activeSection === 'guest_safety' && listing && (
-                            <div className="max-w-2xl">
+                            <div className={`${isMobileSection ? '' : 'hidden md:block'} max-w-2xl`}>
                                 <div className="flex items-center justify-between mb-8">
                                     <h2 className="text-2xl font-semibold">Guest safety</h2>
                                 </div>
@@ -1255,13 +1296,26 @@ const ListingEditor: React.FC = () => {
                             </div>
                         )}
 
-                        {photoView === 'overview' && activeSection !== 'photos' && activeSection !== 'title' && activeSection !== 'description' && activeSection !== 'pricing' && activeSection !== 'availability' && activeSection !== 'number_of_guests' && activeSection !== 'amenities' && activeSection !== 'house_rules' && activeSection !== 'guest_safety' && (
+                        {photoView === 'overview' && !isMobileSection && activeSection !== 'photos' && activeSection !== 'title' && activeSection !== 'description' && activeSection !== 'pricing' && activeSection !== 'availability' && activeSection !== 'number_of_guests' && activeSection !== 'amenities' && activeSection !== 'house_rules' && activeSection !== 'guest_safety' && (
                             <div className="flex items-center justify-center h-full text-gray-500">
                                 Select a section to edit
                             </div>
                         )}
                     </div>
                 </main>
+
+                {/* Mobile bottom View button (Airbnb style) */}
+                {photoView === 'overview' && !isMobileSection && (
+                    <div className="md:hidden fixed bottom-24 left-1/2 -translate-x-1/2 z-[60]">
+                        <button
+                            onClick={() => setShowPreview(true)}
+                            className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-gray-900 text-white shadow-lg"
+                        >
+                            <Eye className="h-5 w-5" />
+                            <span className="font-medium">View</span>
+                        </button>
+                    </div>
+                )}
             </div>
 
             {/* Listing Preview Modal */}
@@ -1410,7 +1464,7 @@ const ListingEditor: React.FC = () => {
                         }
 
                         // Prepare the complete photos array (existing + new)
-                        const existingPhotosData = allExistingPhotos.map((p: any) => ({
+                        const existingPhotosData = (allExistingPhotos as Array<{ url: string; caption: string; room_type: string | null; is_cover: number | boolean; display_order: number }>).map((p) => ({
                             url: p.url,
                             caption: p.caption,
                             room_type: p.room_type,
@@ -1512,6 +1566,39 @@ const ListingEditor: React.FC = () => {
                 </div>
             )}
         </div>
+
+        {/* Mobile Bottom Nav */}
+        <nav className="md:hidden fixed bottom-0 inset-x-0 z-50 border-t bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60">
+            <div className="max-w-7xl mx-auto px-6">
+                <ul className="grid grid-cols-4 h-16 text-xs">
+                    <li className="flex items-center justify-center">
+                        <a href="/host/today" className="flex flex-col items-center gap-1 text-gray-600">
+                            <Home className="h-5 w-5" />
+                            <span>Today</span>
+                        </a>
+                    </li>
+                    <li className="flex items-center justify-center">
+                        <a href={`/host/calendar?listing=${id}`} className="flex flex-col items-center gap-1 text-gray-600">
+                            <CalendarIcon className="h-5 w-5" />
+                            <span>Calendar</span>
+                        </a>
+                    </li>
+                    <li className="flex items-center justify-center">
+                        <a href="/host/dashboard" className="flex flex-col items-center gap-1 text-gray-900 font-medium">
+                            <Grid3x3 className="h-5 w-5" />
+                            <span>Listings</span>
+                        </a>
+                    </li>
+                    <li className="flex items-center justify-center">
+                        <a href="#" className="flex flex-col items-center gap-1 text-gray-600">
+                            <Mail className="h-5 w-5" />
+                            <span>Messages</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+        </>
     );
 };
 

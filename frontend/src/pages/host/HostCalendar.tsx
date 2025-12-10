@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import apiClient from '@/api/client';
 import { Button } from '@/components/ui/button';
-import { Menu, ChevronDown, X, Check } from 'lucide-react';
+import { Menu, ChevronDown, X, Check, Calendar as CalendarIcon, Grid3x3, Mail, Home } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import CalendarGrid from '@/components/host/CalendarGrid';
 import PriceSettingsModal from '@/components/host/PriceSettingsModal';
@@ -50,31 +50,7 @@ const HostCalendar: React.FC = () => {
     const [showCustomSettings, setShowCustomSettings] = useState(false);
     const [customMinNights, setCustomMinNights] = useState<number>(1);
 
-    useEffect(() => {
-        const initCalendar = async () => {
-            if (!listingId) {
-                try {
-                    const response = await apiClient.get('/listings/my-listings');
-                    if (response.data && response.data.length > 0) {
-                        navigate(`/host/calendar?listing=${response.data[0].listing.id}`, { replace: true });
-                    } else {
-                        navigate('/host/dashboard');
-                    }
-                } catch (error) {
-                    console.error('Failed to fetch listings:', error);
-                    navigate('/host/dashboard');
-                }
-                return;
-            }
-            fetchListingPrice();
-            fetchCalendarData();
-            fetchSettings();
-        };
-
-        initCalendar();
-    }, [listingId]);
-
-    const fetchListingPrice = async () => {
+    const fetchListingPrice = useCallback(async () => {
         try {
             const response = await apiClient.get(`/listings/${listingId}`);
             const price = response.data.listing?.price_per_night || 0;
@@ -82,9 +58,9 @@ const HostCalendar: React.FC = () => {
         } catch (error) {
             console.error('Failed to fetch listing price:', error);
         }
-    };
+    }, [listingId]);
 
-    const fetchCalendarData = async () => {
+    const fetchCalendarData = useCallback(async () => {
         const startDate = new Date();
         const endDate = new Date();
         endDate.setMonth(endDate.getMonth() + 12);
@@ -107,16 +83,40 @@ const HostCalendar: React.FC = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [listingId]);
 
-    const fetchSettings = async () => {
+    const fetchSettings = useCallback(async () => {
         try {
             const response = await apiClient.get(`/calendar/${listingId}/settings`);
             setSettings(response.data);
         } catch (error) {
             console.error('Failed to fetch settings:', error);
         }
-    };
+    }, [listingId]);
+
+    useEffect(() => {
+        const initCalendar = async () => {
+            if (!listingId) {
+                try {
+                    const response = await apiClient.get('/listings/my-listings');
+                    if (response.data && response.data.length > 0) {
+                        navigate(`/host/calendar?listing=${response.data[0].listing.id}`, { replace: true });
+                    } else {
+                        navigate('/host/dashboard');
+                    }
+                } catch (error) {
+                    console.error('Failed to fetch listings:', error);
+                    navigate('/host/dashboard');
+                }
+                return;
+            }
+            fetchListingPrice();
+            fetchCalendarData();
+            fetchSettings();
+        };
+
+        initCalendar();
+    }, [listingId, navigate, fetchListingPrice, fetchCalendarData, fetchSettings]);
 
     const handleDateSelect = (date: string) => {
         setSelectedDates(prev => {
@@ -243,13 +243,13 @@ const HostCalendar: React.FC = () => {
     return (
         <div className="min-h-screen bg-gray-50">
             {/* Header */}
-            <header className="border-b bg-white sticky top-0 z-50">
-                <div className="max-w-7xl mx-auto px-6 lg:px-8 h-20 flex items-center justify-between">
+            <header className="border-b bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60 sticky top-0 z-50">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 md:h-20 flex items-center justify-between">
                     <div className="flex items-center gap-12">
-                        <div className="text-[#FF385C] font-bold text-xl cursor-pointer" onClick={() => navigate('/')}>
+                        <div className="text-green-600 font-bold text-xl cursor-pointer" onClick={() => navigate('/')}>
                             MboaMaison
                         </div>
-                        <nav className="hidden lg:flex gap-8 text-sm font-medium">
+                        <nav className="hidden md:flex gap-8 text-sm font-medium">
                             <a href="/host/today" className="text-gray-600 hover:text-gray-900 transition-colors">Today</a>
                             <a href="/host/calendar" className="text-gray-900 font-semibold relative pb-6">
                                 Calendar
@@ -280,8 +280,8 @@ const HostCalendar: React.FC = () => {
             </header>
 
             {/* Main Content */}
-            <main className="max-w-[1440px] mx-auto px-6">
-                <div className="flex gap-8">
+            <main className="max-w-[1440px] mx-auto px-4 sm:px-6 pb-24 md:pb-12">
+                <div className="flex flex-col lg:flex-row gap-8">
                     {/* Calendar Section */}
                     <div className="flex-1">
                         {/* Month & Year Selector */}
@@ -324,7 +324,8 @@ const HostCalendar: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* Calendar Grids */}
+                        {/* Calendar Grids */
+                        }
                         {loading ? (
                             <div className="text-center py-12 text-gray-500">Loading calendar...</div>
                         ) : (
@@ -347,8 +348,8 @@ const HostCalendar: React.FC = () => {
                         )}
                     </div>
                     {/* Sidebar Panel */}
-                    <div className="w-80">
-                        <div className="sticky top-24 space-y-4 h-[calc(100vh-8rem)] overflow-y-auto no-scrollbar">
+                    <div className="lg:w-80 w-full">
+                        <div className="lg:sticky lg:top-24 space-y-4 lg:h-[calc(100vh-8rem)] lg:overflow-y-auto no-scrollbar">
                             {selectedDates.length > 0 ? (
                                 <>
                                     {/* Selected Date Panel */}
@@ -525,6 +526,38 @@ const HostCalendar: React.FC = () => {
                     </div>
                 </div>
             </main>
+
+            {/* Mobile Bottom Nav */}
+            <nav className="md:hidden fixed bottom-0 inset-x-0 z-50 border-t bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60">
+                <div className="max-w-7xl mx-auto px-6">
+                    <ul className="grid grid-cols-4 h-16 text-xs">
+                        <li className="flex items-center justify-center">
+                            <a href="/host/today" className="flex flex-col items-center gap-1 text-gray-600">
+                                <Home className="h-5 w-5" />
+                                <span>Today</span>
+                            </a>
+                        </li>
+                        <li className="flex items-center justify-center">
+                            <a href="/host/calendar" className="flex flex-col items-center gap-1 text-gray-900 font-medium">
+                                <CalendarIcon className="h-5 w-5" />
+                                <span>Calendar</span>
+                            </a>
+                        </li>
+                        <li className="flex items-center justify-center">
+                            <a href="/host/dashboard" className="flex flex-col items-center gap-1 text-gray-600">
+                                <Grid3x3 className="h-5 w-5" />
+                                <span>Listings</span>
+                            </a>
+                        </li>
+                        <li className="flex items-center justify-center">
+                            <a href="#" className="flex flex-col items-center gap-1 text-gray-600">
+                                <Mail className="h-5 w-5" />
+                                <span>Messages</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
         </div>
     );
 };

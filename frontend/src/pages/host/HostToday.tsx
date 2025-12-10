@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import apiClient from '@/api/client';
 import { Button } from '@/components/ui/button';
-import { Menu, Mail, Calendar } from 'lucide-react';
+import { Menu, Mail, Calendar, Grid3x3, Home } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getImageUrl } from '@/lib/utils';
 
@@ -70,13 +70,13 @@ const HostToday: React.FC = () => {
     return (
         <div className="min-h-screen bg-gray-50">
             {/* Host Navbar */}
-            <header className="border-b bg-white sticky top-0 z-50">
-                <div className="max-w-7xl mx-auto px-6 lg:px-8 h-20 flex items-center justify-between">
+            <header className="border-b bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60 sticky top-0 z-50">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 md:h-20 flex items-center justify-between">
                     <div className="flex items-center gap-12">
                         <div className="text-[#FF385C] font-bold text-xl cursor-pointer" onClick={() => navigate('/')}>
                             MboaMaison
                         </div>
-                        <nav className="hidden lg:flex gap-8 text-sm font-medium">
+                        <nav className="hidden md:flex gap-8 text-sm font-medium">
                             <a href="/host/today" className="text-gray-900 font-semibold relative pb-6">
                                 Today
                                 <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-900"></span>
@@ -107,13 +107,13 @@ const HostToday: React.FC = () => {
             </header>
 
             {/* Main Content */}
-            <main className="max-w-7xl mx-auto px-6 lg:px-8 py-8">
+            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8 pb-24 md:pb-12">
                 {/* Alert Banner */}
                 {hasActionRequired && (
                     <div className="mb-8 bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
                         <div className="flex items-start gap-3">
-                            <div className="flex-shrink-0 w-12 h-12 bg-pink-100 rounded-full flex items-center justify-center">
-                                <Mail className="h-6 w-6 text-pink-600" />
+                            <div className="flex-shrink-0 w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                                <Mail className="h-6 w-6 text-green-600" />
                             </div>
                             <div className="flex-1">
                                 <h3 className="font-semibold text-gray-900 mb-1">Confirm a few key details</h3>
@@ -243,6 +243,38 @@ const HostToday: React.FC = () => {
                     </div>
                 )}
             </main>
+
+            {/* Mobile Bottom Nav */}
+            <nav className="md:hidden fixed bottom-0 inset-x-0 z-50 border-t bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60">
+                <div className="max-w-7xl mx-auto px-6">
+                    <ul className="grid grid-cols-4 h-16 text-xs">
+                        <li className="flex items-center justify-center">
+                            <a href="/host/today" className="flex flex-col items-center gap-1 text-gray-900 font-medium">
+                                <Home className="h-5 w-5" />
+                                <span>Today</span>
+                            </a>
+                        </li>
+                        <li className="flex items-center justify-center">
+                            <a href="/host/calendar" className="flex flex-col items-center gap-1 text-gray-600">
+                                <Calendar className="h-5 w-5" />
+                                <span>Calendar</span>
+                            </a>
+                        </li>
+                        <li className="flex items-center justify-center">
+                            <a href="/host/dashboard" className="flex flex-col items-center gap-1 text-gray-600">
+                                <Grid3x3 className="h-5 w-5" />
+                                <span>Listings</span>
+                            </a>
+                        </li>
+                        <li className="flex items-center justify-center">
+                            <a href="#" className="flex flex-col items-center gap-1 text-gray-600">
+                                <Mail className="h-5 w-5" />
+                                <span>Messages</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
         </div>
     );
 };
