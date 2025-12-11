@@ -27,8 +27,11 @@ fn get_user_id_from_headers(req: &HttpRequest) -> Result<i32, actix_web::Error> 
             }
         }
     }
+    if let Some(cookie) = req.cookie("session") {
+        return extract_user_id_from_token(cookie.value());
+    }
     Err(actix_web::error::ErrorUnauthorized(
-        "Missing or invalid authorization header",
+        "Missing or invalid authorization",
     ))
 }
 

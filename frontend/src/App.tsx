@@ -6,6 +6,7 @@ import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { WishlistProvider } from "@/contexts/WishlistContext";
 import { MessagingProvider } from "@/contexts/MessagingContext";
 import { HostProvider } from "@/contexts/HostContext";
+import { AuthProvider } from "@/contexts/AuthContext";
 import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
 import Intro from "./pages/host/Intro";
@@ -26,6 +27,7 @@ import BedroomEditor from "./pages/host/BedroomEditor";
 import BathroomEditor from "./pages/host/BathroomEditor";
 import WebAuthLogin from "./pages/WebAuthLogin";
 import { ProtectedRoute } from "./components/ProtectedRoute";
+import AccountSettings from "./pages/account/AccountSettings";
 
 const queryClient = new QueryClient();
 
@@ -33,6 +35,13 @@ const router = createBrowserRouter(
   [
     { path: "/", Component: Dashboard },
     { path: "/webauth-login", Component: WebAuthLogin },
+    {
+      path: "/account",
+      element: <ProtectedRoute />,
+      children: [
+        { index: true, Component: AccountSettings },
+      ],
+    },
     {
       path: "/host",
       element: <ProtectedRoute />,
@@ -67,17 +76,19 @@ const router = createBrowserRouter(
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <WishlistProvider>
-      <MessagingProvider>
-        <HostProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <RouterProvider router={router} />
-          </TooltipProvider>
-        </HostProvider>
-      </MessagingProvider>
-    </WishlistProvider>
+    <AuthProvider>
+      <WishlistProvider>
+        <MessagingProvider>
+          <HostProvider>
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <RouterProvider router={router} />
+            </TooltipProvider>
+          </HostProvider>
+        </MessagingProvider>
+      </WishlistProvider>
+    </AuthProvider>
   </QueryClientProvider>
 );
 

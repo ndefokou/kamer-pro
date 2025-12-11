@@ -120,7 +120,7 @@ const Dashboard = () => {
                         <div className="flex items-center gap-4">
                             <button
                                 className="hidden md:block text-sm font-semibold hover:bg-gray-100 px-4 py-3 rounded-full transition-colors"
-                                onClick={() => navigate('/webauth-login?redirect=/host/intro')}
+                                onClick={() => navigate('/webauth-login?tab=register')}
                             >
                                 {t("Devenir hôte")}
                             </button>

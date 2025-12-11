@@ -7,3 +7,5 @@ pub mod middleware;
 pub mod roles;
 pub mod upload;
 pub mod wishlist;
+
+pub mod account;

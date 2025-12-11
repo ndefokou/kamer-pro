@@ -1,4 +1,6 @@
-use actix_web::{post, web, HttpResponse, Responder};
+use actix_web::{post, web, HttpRequest, HttpResponse, Responder};
+use actix_web::cookie::{Cookie, SameSite};
+use actix_web::cookie::time::Duration as CookieDuration;
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
 use sqlx::SqlitePool;
@@ -137,10 +139,28 @@ pub async fn registration_complete(
     match result {
         Ok(res) => {
             let user_id = res.last_insert_rowid() as i32;
-            HttpResponse::Created().json(RegistrationCompleteResponse {
-                message: "Registration successful".to_string(),
-                user_id,
-            })
+            let token = format!("token_{}_{}", Uuid::new_v4().to_string(), user_id);
+            let _ = sqlx::query(
+                "INSERT INTO sessions (token, user_id, expires_at) VALUES (?, ?, datetime('now', '+30 days'))",
+            )
+            .bind(&token)
+            .bind(user_id)
+            .execute(pool.get_ref())
+            .await;
+
+            let cookie = Cookie::build("session", token)
+                .path("/")
+                .http_only(true)
+                .same_site(SameSite::Lax)
+                .max_age(CookieDuration::days(30))
+                .finish();
+
+            HttpResponse::Created()
+                .cookie(cookie)
+                .json(RegistrationCompleteResponse {
+                    message: "Registration successful".to_string(),
+                    user_id,
+                })
         }
         Err(e) => {
             eprintln!("Registration error: {}", e);
@@ -191,16 +211,31 @@ pub async fn authentication_complete(
 
     match user {
         Ok(user) => {
-            // Generate token with user_id embedded
             let token = format!("token_{}_{}", Uuid::new_v4().to_string(), user.id);
+            let _ = sqlx::query(
+                "INSERT INTO sessions (token, user_id, expires_at) VALUES (?, ?, datetime('now', '+30 days'))",
+            )
+            .bind(&token)
+            .bind(user.id)
+            .execute(pool.get_ref())
+            .await;
 
-            HttpResponse::Ok().json(AuthenticationCompleteResponse {
-                message: "Authentication successful".to_string(),
-                token,
-                user_id: user.id,
-                username: user.username,
-                email: user.email,
-            })
+            let cookie = Cookie::build("session", token.clone())
+                .path("/")
+                .http_only(true)
+                .same_site(SameSite::Lax)
+                .max_age(CookieDuration::days(30))
+                .finish();
+
+            HttpResponse::Ok()
+                .cookie(cookie)
+                .json(AuthenticationCompleteResponse {
+                    message: "Authentication successful".to_string(),
+                    token,
+                    user_id: user.id,
+                    username: user.username,
+                    email: user.email,
+                })
         }
         Err(_) => HttpResponse::Unauthorized().json(ErrorResponse {
             error: "Authentication failed".to_string(),
@@ -267,13 +302,30 @@ pub async fn simple_register(
             let user_id = res.last_insert_rowid() as i32;
             let token = format!("token_{}_{}", Uuid::new_v4().to_string(), user_id);
 
-            HttpResponse::Created().json(AuthenticationCompleteResponse {
-                message: "Registration successful".to_string(),
-                token,
-                user_id,
-                username: req.username.clone(),
-                email: Some(req.email.clone()),
-            })
+            let _ = sqlx::query(
+                "INSERT INTO sessions (token, user_id, expires_at) VALUES (?, ?, datetime('now', '+30 days'))",
+            )
+            .bind(&token)
+            .bind(user_id)
+            .execute(pool.get_ref())
+            .await;
+
+            let cookie = Cookie::build("session", token.clone())
+                .path("/")
+                .http_only(true)
+                .same_site(SameSite::Lax)
+                .max_age(CookieDuration::days(30))
+                .finish();
+
+            HttpResponse::Created()
+                .cookie(cookie)
+                .json(AuthenticationCompleteResponse {
+                    message: "Registration successful".to_string(),
+                    token,
+                    user_id,
+                    username: req.username.clone(),
+                    email: Some(req.email.clone()),
+                })
         }
         Err(e) => {
             eprintln!("Registration error: {}", e);
@@ -305,16 +357,52 @@ pub async fn simple_login(
         Ok(user) => {
             let token = format!("token_{}_{}", Uuid::new_v4().to_string(), user.id);
 
-            HttpResponse::Ok().json(AuthenticationCompleteResponse {
-                message: "Authentication successful".to_string(),
-                token,
-                user_id: user.id,
-                username: user.username,
-                email: user.email,
-            })
+            let _ = sqlx::query(
+                "INSERT INTO sessions (token, user_id, expires_at) VALUES (?, ?, datetime('now', '+30 days'))",
+            )
+            .bind(&token)
+            .bind(user.id)
+            .execute(pool.get_ref())
+            .await;
+
+            let cookie = Cookie::build("session", token.clone())
+                .path("/")
+                .http_only(true)
+                .same_site(SameSite::Lax)
+                .max_age(CookieDuration::days(30))
+                .finish();
+
+            HttpResponse::Ok()
+                .cookie(cookie)
+                .json(AuthenticationCompleteResponse {
+                    message: "Authentication successful".to_string(),
+                    token,
+                    user_id: user.id,
+                    username: user.username,
+                    email: user.email,
+                })
         }
         Err(_) => HttpResponse::Unauthorized().json(ErrorResponse {
             error: "Authentication failed".to_string(),
         }),
     }
+}
+
+#[post("/logout")]
+pub async fn logout(req: HttpRequest, pool: web::Data<SqlitePool>) -> impl Responder {
+    if let Some(c) = req.cookie("session") {
+        let _ = sqlx::query("DELETE FROM sessions WHERE token = ?")
+            .bind(c.value())
+            .execute(pool.get_ref())
+            .await;
+    }
+    let removal = Cookie::build("session", "")
+        .path("/")
+        .http_only(true)
+        .same_site(SameSite::Lax)
+        .max_age(CookieDuration::seconds(0))
+        .finish();
+    HttpResponse::Ok().cookie(removal).json(serde_json::json!({
+        "message": "Logged out"
+    }))
 }

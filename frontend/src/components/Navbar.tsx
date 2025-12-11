@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
+import apiClient from "@/api/client";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import {
@@ -41,12 +42,23 @@ const Navbar = () => {
   const { wishlistCount } = useWishlist();
   const { unreadCount } = useMessaging();
   const username = localStorage.getItem("username");
-  const token = localStorage.getItem("token");
+  const [isAuth, setIsAuth] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     setSearchQuery(searchParams.get("search") || "");
   }, [searchParams]);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        await apiClient.get("/account/me");
+        setIsAuth(true);
+      } catch {
+        setIsAuth(false);
+      }
+    })();
+  }, []);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,11 +69,17 @@ const Navbar = () => {
     navigate(`/marketplace?${params.toString()}`);
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await apiClient.post("/auth/logout");
+    } catch (e) {
+      console.warn("logout failed", e);
+    }
     localStorage.removeItem("token");
     localStorage.removeItem("username");
     localStorage.removeItem("userId");
     setIsMobileMenuOpen(false);
+    setIsAuth(false);
     navigate("/");
   };
 
@@ -141,7 +159,7 @@ const Navbar = () => {
               </Button>
             </Link>
 
-            {token && (
+            {isAuth && (
               <>
                 <Link to="/wishlist" className="relative">
                   <Button
@@ -165,7 +183,7 @@ const Navbar = () => {
             )}
 
 
-            {token ? (
+            {isAuth ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
@@ -207,7 +225,7 @@ const Navbar = () => {
 
           {/* Mobile Navigation */}
           <div className="md:hidden flex items-center space-x-2">
-            {token && (
+            {isAuth && (
               <>
                 <Link to="/wishlist" className="relative">
                   <Button
@@ -249,7 +267,7 @@ const Navbar = () => {
                   </SheetDescription>
                 </SheetHeader>
                 <div className="flex flex-col space-y-4 mt-8">
-                  {token && (
+                  {isAuth && (
                     <div className="flex items-center space-x-2 pb-4 border-b">
                       <User className="h-5 w-5" />
                       <span className="font-semibold">
@@ -294,7 +312,7 @@ const Navbar = () => {
                     {t("my company")}
                   </Button>
 
-                  {token && (
+                  {isAuth && (
                     <>
                       <Button
                         variant="ghost"
@@ -324,7 +342,7 @@ const Navbar = () => {
                     </>
                   )}
 
-                  {!token && (
+                  {!isAuth && (
                     <Button
                       variant="secondary"
                       className="w-full"

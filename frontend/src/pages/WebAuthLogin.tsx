@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { WebAuthService } from "@/services/webAuthService";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
 
 const webAuth = new WebAuthService();
 
@@ -26,9 +27,10 @@ const withRetry = async <T,>(fn: () => Promise<T>, attempts = 3, baseDelayMs = 6
 const WebAuthLogin = () => {
   const navigate = useNavigate();
   const [params] = useSearchParams();
-  const redirectTo = useMemo(() => params.get("redirect") || "/", [params]);
+  const redirectTo = useMemo(() => params.get("redirect") || "/host/dashboard", [params]);
+  const { login, user } = useAuth();
 
-  const [activeTab, setActiveTab] = useState<"login" | "register">("login");
+  const [activeTab, setActiveTab] = useState<"login" | "register">((params.get("tab") as "login" | "register") || "login");
 
   // Shared state
   const [username, setUsername] = useState("");
@@ -40,18 +42,17 @@ const WebAuthLogin = () => {
   const [email, setEmail] = useState("");
 
   useEffect(() => {
-    // If already logged in, bounce to redirect
-    const token = localStorage.getItem("token");
-    if (token) navigate(redirectTo, { replace: true });
-  }, [navigate, redirectTo]);
+    const tab = params.get("tab");
+    if (tab === "login" || tab === "register") {
+      setActiveTab(tab);
+    }
+  }, [params]);
 
-  const finishLogin = (token: string, user_id: number, uname: string, email?: string) => {
-    localStorage.setItem("token", token);
-    localStorage.setItem("userId", String(user_id));
-    localStorage.setItem("username", uname);
-    if (email) localStorage.setItem("email", email);
-    navigate(redirectTo || "/", { replace: true });
-  };
+  useEffect(() => {
+    if (user) {
+      navigate(redirectTo, { replace: true });
+    }
+  }, [user, navigate, redirectTo]);
 
   const handleLogin = async () => {
     setLoading(true);
@@ -62,8 +63,9 @@ const WebAuthLogin = () => {
         return;
       }
 
-      const complete = await withRetry(() => webAuth.login(username.trim(), password));
-      finishLogin(complete.token, complete.user_id, complete.username, complete.email);
+      await withRetry(() => webAuth.login(username.trim(), password));
+      await login(); // Refresh session in context
+      navigate(redirectTo, { replace: true });
     } catch (err: unknown) {
       const message =
         (err as { response?: { data?: { error?: string } } })?.response?.data?.error ||
@@ -84,8 +86,9 @@ const WebAuthLogin = () => {
         return;
       }
 
-      const complete = await withRetry(() => webAuth.register(username.trim(), email.trim(), password));
-      finishLogin(complete.token, complete.user_id, complete.username, complete.email);
+      await withRetry(() => webAuth.register(username.trim(), email.trim(), password));
+      await login(); // Refresh session in context
+      navigate(redirectTo, { replace: true });
     } catch (err: unknown) {
       const message =
         (err as { response?: { data?: { error?: string } } })?.response?.data?.error ||

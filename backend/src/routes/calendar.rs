@@ -83,6 +83,14 @@ fn extract_user_id(req: &HttpRequest) -> Result<i32, HttpResponse> {
             }
         }
     }
+    if let Some(cookie) = req.cookie("session") {
+        return extract_user_id_from_token(cookie.value()).map_err(|e| {
+            log::error!("Failed to extract user ID from cookie: {:?}", e);
+            HttpResponse::Unauthorized().json(serde_json::json!({
+                "error": "Invalid or expired token"
+            }))
+        });
+    }
     Err(HttpResponse::Unauthorized().json(serde_json::json!({
         "error": "Missing or invalid authorization header"
     })))

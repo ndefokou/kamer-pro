@@ -4,8 +4,34 @@ import apiClient from "@/api/client";
 import { Loader2 } from "lucide-react";
 
 export const ProtectedRoute = () => {
-  const token = localStorage.getItem("token");
+  const [checking, setChecking] = useState(true);
+  const [ok, setOk] = useState(false);
   const location = useLocation();
   const redirect = encodeURIComponent(`${location.pathname}${location.search}` || "/");
-  return token ? <Outlet /> : <Navigate to={`/webauth-login?redirect=${redirect}`} replace />;
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        await apiClient.get("/account/me");
+        if (mounted) setOk(true);
+      } catch {
+        if (mounted) setOk(false);
+      } finally {
+        if (mounted) setChecking(false);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, [location.key]);
+
+  if (checking) {
+    return (
+      <div className="w-full py-16 flex items-center justify-center">
+        <Loader2 className="h-6 w-6 animate-spin text-gray-500" />
+      </div>
+    );
+  }
+  return ok ? <Outlet /> : <Navigate to={`/webauth-login?redirect=${redirect}`} replace />;
 };

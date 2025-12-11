@@ -2,9 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import apiClient from '@/api/client';
 import { Button } from '@/components/ui/button';
-import { Menu, Mail, Calendar, Grid3x3, Home } from 'lucide-react';
+import { Menu, Mail, Calendar, Grid3x3, Home, Globe, HelpCircle, Settings, BookOpen, Users, UserPlus, LogOut, Plus } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getImageUrl } from '@/lib/utils';
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 
 interface Booking {
     id: string;
@@ -37,6 +38,16 @@ const HostToday: React.FC = () => {
     const [todayBookings, setTodayBookings] = useState<BookingWithDetails[]>([]);
     const [upcomingBookings, setUpcomingBookings] = useState<BookingWithDetails[]>([]);
     const [loading, setLoading] = useState(true);
+    const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+    const username = localStorage.getItem('username') || '';
+    const getInitials = (name: string) => {
+        const n = name?.trim();
+        if (!n) return 'AD';
+        const parts = n.split(/\s+/);
+        if (parts.length === 1) return n.slice(0, 2).toUpperCase();
+        return (parts[0][0] + parts[1][0]).toUpperCase();
+    };
+    const initials = getInitials(username || 'User');
 
     useEffect(() => {
         const fetchBookings = async () => {
@@ -95,13 +106,89 @@ const HostToday: React.FC = () => {
                         >
                             Switch to traveling
                         </Button>
-                        <div className="flex items-center gap-3 border border-gray-300 rounded-full py-1.5 px-3 hover:shadow-md transition-shadow cursor-pointer">
-                            <Menu className="h-4 w-4 text-gray-700" />
-                            <Avatar className="h-8 w-8">
-                                <AvatarImage src="/placeholder-user.jpg" />
-                                <AvatarFallback className="bg-gray-700 text-white text-xs">AD</AvatarFallback>
-                            </Avatar>
-                        </div>
+                        <Sheet open={isUserMenuOpen} onOpenChange={setIsUserMenuOpen}>
+                            <SheetTrigger asChild>
+                                <div className="flex items-center gap-3 border border-gray-300 rounded-full py-1.5 px-3 hover:shadow-md transition-shadow cursor-pointer">
+                                    <Menu className="h-4 w-4 text-gray-700" />
+                                    <Avatar className="h-8 w-8">
+                                        <AvatarImage src="/placeholder-user.jpg" />
+                                        <AvatarFallback className="bg-gray-700 text-white text-xs">{initials}</AvatarFallback>
+                                    </Avatar>
+                                </div>
+                            </SheetTrigger>
+                            <SheetContent side="right" className="w-[360px] sm:w-[420px]">
+                                <SheetHeader>
+                                    <SheetTitle>Menu</SheetTitle>
+                                    <SheetDescription></SheetDescription>
+                                </SheetHeader>
+                                <div className="mt-6 space-y-1">
+                                    <div className="flex items-center gap-3 pb-4 border-b">
+                                        <Avatar className="h-10 w-10">
+                                            <AvatarImage src="/placeholder-user.jpg" />
+                                            <AvatarFallback className="bg-gray-700 text-white text-sm">{initials}</AvatarFallback>
+                                        </Avatar>
+                                        <div className="font-semibold text-gray-900">{username || 'User'}</div>
+                                    </div>
+
+                                    <button
+                                        className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100"
+                                        onClick={() => { setIsUserMenuOpen(false); navigate('/account'); }}
+                                    >
+                                        <Settings className="h-5 w-5" />
+                                        <span>Account settings</span>
+                                    </button>
+                                    <button
+                                        className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100"
+                                        onClick={() => { setIsUserMenuOpen(false); navigate('/account?tab=languages'); }}
+                                    >
+                                        <Globe className="h-5 w-5" />
+                                        <span>Languages & currency</span>
+                                    </button>
+                                    <button className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100">
+                                        <BookOpen className="h-5 w-5" />
+                                        <span>Hosting resources</span>
+                                    </button>
+                                    <button className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100">
+                                        <HelpCircle className="h-5 w-5" />
+                                        <span>Get help</span>
+                                    </button>
+                                    <button className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100">
+                                        <Users className="h-5 w-5" />
+                                        <span>Find a co-host</span>
+                                    </button>
+                                    <button
+                                        className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100"
+                                        onClick={() => {
+                                            setIsUserMenuOpen(false);
+                                            navigate('/host/intro');
+                                        }}
+                                    >
+                                        <Plus className="h-5 w-5" />
+                                        <span>Create a new listing</span>
+                                    </button>
+                                    <button className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100">
+                                        <UserPlus className="h-5 w-5" />
+                                        <span>Refer a host</span>
+                                    </button>
+                                    <div className="pt-3 mt-2 border-t">
+                                        <button
+                                            className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 text-red-600"
+                                            onClick={() => {
+                                                localStorage.removeItem('token');
+                                                localStorage.removeItem('username');
+                                                localStorage.removeItem('userId');
+                                                localStorage.removeItem('email');
+                                                setIsUserMenuOpen(false);
+                                                navigate('/');
+                                            }}
+                                        >
+                                            <LogOut className="h-5 w-5" />
+                                            <span>Log out</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </SheetContent>
+                        </Sheet>
                     </div>
                 </div>
             </header>

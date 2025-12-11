@@ -68,7 +68,8 @@ async fn main() -> std::io::Result<()> {
                             .service(routes::auth::authentication_start)
                             .service(routes::auth::authentication_complete)
                             .service(routes::auth::simple_register)
-                            .service(routes::auth::simple_login),
+                            .service(routes::auth::simple_login)
+                            .service(routes::auth::logout),
                     )
                     .service(
                         web::scope("/roles")
@@ -99,6 +100,11 @@ async fn main() -> std::io::Result<()> {
                             .service(routes::messages::get_messages)
                             .service(routes::messages::get_unread_count)
                             .service(routes::messages::get_message_templates),
+                    )
+                    .service(
+                        web::scope("/account")
+                            .service(routes::account::get_me)
+                            .service(routes::account::update_account),
                     )
                     .service(web::scope("/wishlist").service(routes::wishlist::get_wishlist))
                     .service(

@@ -1,5 +1,5 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { jwtDecode } from 'jwt-decode';
+import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import apiClient from '@/api/client';
 
 interface User {
   id: string;
@@ -10,56 +10,52 @@ interface User {
 
 interface AuthContextType {
   user: User | null;
-  token: string | null;
-  login: (token: string) => void;
-  logout: () => void;
+  loading: boolean;
+  login: () => Promise<void>;
+  logout: () => Promise<void>;
+  checkSession: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
+  const [loading, setLoading] = useState(true);
+
+  const checkSession = useCallback(async () => {
+    try {
+      const response = await apiClient.get('/account/me');
+      setUser(response.data);
+    } catch (error) {
+      // If 401 or other error, user is not logged in
+      setUser(null);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    if (token) {
-      try {
-        const decoded: {
-          user_id: string;
-          username: string;
-          email: string;
-          profile_picture_url?: string;
-        } = jwtDecode(token);
-        setUser({
-          id: decoded.user_id,
-          username: decoded.username,
-          email: decoded.email,
-          profile_picture_url: decoded.profile_picture_url,
-        });
-        localStorage.setItem('token', token);
-        localStorage.setItem('userId', decoded.user_id);
-      } catch (error) {
-        console.error('Failed to decode token:', error);
-        setUser(null);
-        localStorage.removeItem('token');
-      }
-    } else {
-      setUser(null);
-      localStorage.removeItem('token');
-    }
-  }, [token]);
+    checkSession();
+  }, [checkSession]);
 
-  const login = (newToken: string) => {
-    setToken(newToken);
+  const login = async () => {
+    await checkSession();
   };
 
-  const logout = () => {
-    setToken(null);
-    localStorage.removeItem('userId');
+  const logout = async () => {
+    try {
+      await apiClient.post('/auth/logout');
+    } catch (error) {
+      console.error('Logout failed', error);
+    } finally {
+      setUser(null);
+      // Optional: Redirect to home or login page if needed, 
+      // but usually the component calling logout handles navigation
+    }
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, login, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, checkSession }}>
       {children}
     </AuthContext.Provider>
   );
