@@ -18,28 +18,13 @@ const Intro: React.FC = () => {
 
     // Ensure user has authentication tokens
     React.useEffect(() => {
-        const initAuth = async () => {
-            // Check if user already has authentication
-            const existingUserId = localStorage.getItem('userId');
-            const existingToken = localStorage.getItem('token');
-
-            if (!existingUserId || !existingToken) {
-                // Generate a mock user ID for development
-                // In production, this should be replaced with proper authentication
-                const mockUserId = Math.floor(Math.random() * 1000000);
-                const uuid = crypto.randomUUID();
-
-                // Backend expects format: token_{uuid}_{user_id}
-                const mockToken = `token_${uuid}_${mockUserId}`;
-
-                localStorage.setItem('userId', mockUserId.toString());
-                localStorage.setItem('token', mockToken);
-
-                console.log('Mock authentication set:', { userId: mockUserId, token: mockToken });
-            }
-        };
-
-        initAuth();
+        // We rely on ProtectedRoute to handle redirection if not logged in.
+        // Here we just check if we have a valid session to initialize the draft if needed.
+        const userId = localStorage.getItem('userId');
+        if (!userId) {
+            // Should not happen due to ProtectedRoute, but good for safety
+            // We could redirect here or just do nothing
+        }
     }, []);
 
     const handleContinue = () => {

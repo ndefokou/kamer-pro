@@ -69,6 +69,30 @@ export class WebAuthService {
     return response.data;
   }
 
+  async register(
+    username: string,
+    email: string,
+    password: string
+  ): Promise<AuthenticationCompleteResponse> {
+    const response = await apiClient.post("/auth/register", {
+      username,
+      email,
+      password,
+    });
+    return response.data;
+  }
+
+  async login(
+    username: string,
+    password: string
+  ): Promise<AuthenticationCompleteResponse> {
+    const response = await apiClient.post("/auth/login", {
+      username,
+      password,
+    });
+    return response.data;
+  }
+
   // Helper to encode data to base64
   static arrayBufferToBase64(buffer: ArrayBuffer): string {
     const bytes = new Uint8Array(buffer);

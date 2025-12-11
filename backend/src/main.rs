@@ -66,7 +66,9 @@ async fn main() -> std::io::Result<()> {
                             .service(routes::auth::registration_start)
                             .service(routes::auth::registration_complete)
                             .service(routes::auth::authentication_start)
-                            .service(routes::auth::authentication_complete),
+                            .service(routes::auth::authentication_complete)
+                            .service(routes::auth::simple_register)
+                            .service(routes::auth::simple_login),
                     )
                     .service(
                         web::scope("/roles")

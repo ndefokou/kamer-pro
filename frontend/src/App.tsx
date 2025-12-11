@@ -24,28 +24,37 @@ import HostCalendar from "./pages/host/HostCalendar";
 import ListingEditor from "./pages/host/ListingEditor";
 import BedroomEditor from "./pages/host/BedroomEditor";
 import BathroomEditor from "./pages/host/BathroomEditor";
+import WebAuthLogin from "./pages/WebAuthLogin";
+import { ProtectedRoute } from "./components/ProtectedRoute";
 
 const queryClient = new QueryClient();
 
 const router = createBrowserRouter(
   [
     { path: "/", Component: Dashboard },
-    { path: "/host/intro", Component: Intro },
-    { path: "/host/amenities", Component: Amenities },
-    { path: "/host/location", Component: Location },
-    { path: "/host/description", Component: Description },
-    { path: "/host/title", Component: TitlePage },
-    { path: "/host/photos", Component: PhotoUpload },
-    { path: "/host/pricing", Component: Pricing },
-    { path: "/host/safety", Component: SafetyDetails },
-    { path: "/host/booking-settings", Component: BookingSettings },
-    { path: "/host/preview", Component: Preview },
-    { path: "/host/dashboard", Component: HostDashboard },
-    { path: "/host/today", Component: HostToday },
-    { path: "/host/calendar", Component: HostCalendar },
-    { path: "/host/editor/:id/bedroom", Component: BedroomEditor },
-    { path: "/host/editor/:id/bathroom", Component: BathroomEditor },
-    { path: "/host/editor/:id", Component: ListingEditor },
+    { path: "/webauth-login", Component: WebAuthLogin },
+    {
+      path: "/host",
+      element: <ProtectedRoute />,
+      children: [
+        { path: "intro", Component: Intro },
+        { path: "amenities", Component: Amenities },
+        { path: "location", Component: Location },
+        { path: "description", Component: Description },
+        { path: "title", Component: TitlePage },
+        { path: "photos", Component: PhotoUpload },
+        { path: "pricing", Component: Pricing },
+        { path: "safety", Component: SafetyDetails },
+        { path: "booking-settings", Component: BookingSettings },
+        { path: "preview", Component: Preview },
+        { path: "dashboard", Component: HostDashboard },
+        { path: "today", Component: HostToday },
+        { path: "calendar", Component: HostCalendar },
+        { path: "editor/:id/bedroom", Component: BedroomEditor },
+        { path: "editor/:id/bathroom", Component: BathroomEditor },
+        { path: "editor/:id", Component: ListingEditor },
+      ],
+    },
     { path: "*", Component: NotFound },
   ],
   {

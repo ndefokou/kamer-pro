@@ -24,7 +24,9 @@ apiClient.interceptors.response.use(
 
       // Only redirect if we are not already on the login page to avoid loops
       if (!window.location.pathname.includes("/webauth-login")) {
-        window.location.href = "/";
+        const current = `${window.location.pathname}${window.location.search}`;
+        const redirect = encodeURIComponent(current || "/");
+        window.location.href = `/webauth-login?redirect=${redirect}`;
       }
     }
     return Promise.reject(error);

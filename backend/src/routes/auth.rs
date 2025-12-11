@@ -207,3 +207,114 @@ pub async fn authentication_complete(
         }),
     }
 }
+
+#[derive(Deserialize)]
+pub struct SimpleRegisterRequest {
+    pub username: String,
+    pub email: String,
+    pub password: String,
+}
+
+#[post("/register")]
+pub async fn simple_register(
+    pool: web::Data<SqlitePool>,
+    req: web::Json<SimpleRegisterRequest>,
+) -> impl Responder {
+    // Check if username already exists
+    let existing_username: Result<User, _> =
+        sqlx::query_as("SELECT * FROM users WHERE username = ?")
+            .bind(&req.username)
+            .fetch_one(pool.get_ref())
+            .await;
+
+    if existing_username.is_ok() {
+        return HttpResponse::BadRequest().json(ErrorResponse {
+            error: "User already exists".to_string(),
+        });
+    }
+
+    // Check if email already exists
+    let existing_email: Result<User, _> =
+        sqlx::query_as("SELECT * FROM users WHERE email = ?")
+            .bind(&req.email)
+            .fetch_one(pool.get_ref())
+            .await;
+
+    if existing_email.is_ok() {
+        return HttpResponse::BadRequest().json(ErrorResponse {
+            error: "Email already exists".to_string(),
+        });
+    }
+
+    let now = Utc::now().to_rfc3339();
+
+    let result = sqlx::query(
+        "INSERT INTO users (username, email, credential_id, public_key, counter, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?)",
+    )
+    .bind(&req.username)
+    .bind(&req.email)
+    .bind(None::<String>)
+    .bind(None::<String>)
+    .bind(0i64)
+    .bind(&now)
+    .bind(&now)
+    .execute(pool.get_ref())
+    .await;
+
+    match result {
+        Ok(res) => {
+            let user_id = res.last_insert_rowid() as i32;
+            let token = format!("token_{}_{}", Uuid::new_v4().to_string(), user_id);
+
+            HttpResponse::Created().json(AuthenticationCompleteResponse {
+                message: "Registration successful".to_string(),
+                token,
+                user_id,
+                username: req.username.clone(),
+                email: Some(req.email.clone()),
+            })
+        }
+        Err(e) => {
+            eprintln!("Registration error: {}", e);
+            HttpResponse::InternalServerError().json(ErrorResponse {
+                error: "Registration failed".to_string(),
+            })
+        }
+    }
+}
+
+#[derive(Deserialize)]
+pub struct SimpleLoginRequest {
+    pub username: String,
+    pub password: String,
+}
+
+#[post("/login")]
+pub async fn simple_login(
+    pool: web::Data<SqlitePool>,
+    req: web::Json<SimpleLoginRequest>,
+) -> impl Responder {
+    // Verify user exists
+    let user: Result<User, _> = sqlx::query_as("SELECT * FROM users WHERE username = ?")
+        .bind(&req.username)
+        .fetch_one(pool.get_ref())
+        .await;
+
+    match user {
+        Ok(user) => {
+            let token = format!("token_{}_{}", Uuid::new_v4().to_string(), user.id);
+
+            HttpResponse::Ok().json(AuthenticationCompleteResponse {
+                message: "Authentication successful".to_string(),
+                token,
+                user_id: user.id,
+                username: user.username,
+                email: user.email,
+            })
+        }
+        Err(_) => HttpResponse::Unauthorized().json(ErrorResponse {
+            error: "Authentication failed".to_string(),
+        }),
+    }
+}
