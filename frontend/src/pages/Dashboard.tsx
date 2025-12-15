@@ -2,15 +2,24 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
-import { Heart, Star, Home as HomeIcon, Globe, Menu, User } from "lucide-react";
+import { Heart, Star, Home as HomeIcon, Globe, Menu, User, HelpCircle, Gift, LogIn, LogOut, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getProducts, Product } from "@/api/client";
 import AirbnbSearch from "@/components/AirbnbSearch";
 import { getImageUrl } from "@/lib/utils";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Dashboard = () => {
     const { t } = useTranslation();
     const navigate = useNavigate();
+    const { user, logout } = useAuth();
     const [favorites, setFavorites] = useState<Set<string>>(new Set());
 
     const { data: properties, isLoading, error } = useQuery<Product[]>({
@@ -33,6 +42,56 @@ const Dashboard = () => {
             return newFavorites;
         });
     };
+
+    const handleLogout = async () => {
+        await logout();
+        navigate('/');
+    };
+
+    const UserMenuContent = () => (
+        <>
+            {user ? (
+                <>
+                    <DropdownMenuItem className="font-semibold">
+                        {t("Messages")}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem className="font-semibold">
+                        {t("Notifications")}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem className="font-semibold">
+                        {t("Voyages")}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem className="font-semibold">
+                        {t("Favoris")}
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => navigate('/host/dashboard')}>
+                        {t("Gérer mon annonce")}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate('/account')}>
+                        {t("Compte")}
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleLogout}>
+                        {t("Déconnexion")}
+                    </DropdownMenuItem>
+                </>
+            ) : (
+                <>
+
+                    <DropdownMenuItem onClick={() => navigate('/webauth-login?tab=register')} className="flex flex-col items-start gap-1 cursor-pointer">
+                        <div className="font-semibold">{t("Devenir hôte")}</div>
+                        <div className="text-xs text-gray-500">Devenir hôte et gagner des revenus supplémentaires, c'est facile.</div>
+                    </DropdownMenuItem>
+
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => navigate('/webauth-login')} className="cursor-pointer">
+                        {t("Se connecter ou s'inscrire")}
+                    </DropdownMenuItem>
+                </>
+            )}
+        </>
+    );
 
     const PropertyCard = ({ product, index }: { product: Product; index: number }) => (
         <div className="flex-shrink-0 w-[280px] cursor-pointer group">
@@ -94,7 +153,7 @@ const Dashboard = () => {
     );
 
     return (
-        <div className="min-h-screen bg-white">
+        <div className="min-h-screen bg-white pb-20 md:pb-0">
             {/* Header */}
             <header className="border-b border-gray-200 sticky top-0 z-50 bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60">
                 <div className="container mx-auto px-4 sm:px-6">
@@ -117,9 +176,9 @@ const Dashboard = () => {
                         </div>
 
                         {/* Right Menu */}
-                        <div className="flex items-center gap-4">
+                        <div className="hidden md:flex items-center gap-4">
                             <button
-                                className="hidden md:block text-sm font-semibold hover:bg-gray-100 px-4 py-3 rounded-full transition-colors"
+                                className="text-sm font-semibold hover:bg-gray-100 px-4 py-3 rounded-full transition-colors"
                                 onClick={() => navigate('/webauth-login?tab=register')}
                             >
                                 {t("Devenir hôte")}
@@ -127,12 +186,19 @@ const Dashboard = () => {
                             <button className="p-3 hover:bg-gray-100 rounded-full transition-colors">
                                 <Globe className="h-5 w-5" />
                             </button>
-                            <div className="flex items-center gap-3 border border-gray-300 rounded-full px-3 py-2 hover:shadow-md transition-shadow cursor-pointer">
-                                <Menu className="h-4 w-4" />
-                                <div className="bg-gray-700 rounded-full p-1.5">
-                                    <User className="h-4 w-4 text-white" />
-                                </div>
-                            </div>
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <div className="flex items-center gap-3 border border-gray-300 rounded-full px-3 py-2 hover:shadow-md transition-shadow cursor-pointer">
+                                        <Menu className="h-4 w-4" />
+                                        <div className="bg-gray-700 rounded-full p-1.5">
+                                            <User className="h-4 w-4 text-white" />
+                                        </div>
+                                    </div>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-64">
+                                    <UserMenuContent />
+                                </DropdownMenuContent>
+                            </DropdownMenu>
                         </div>
                     </div>
                 </div>
@@ -177,7 +243,7 @@ const Dashboard = () => {
             </main>
 
             {/* Footer */}
-            <footer className="border-t border-gray-200 bg-gray-50 py-12 mt-16">
+            <footer className="border-t border-gray-200 bg-gray-50 py-12 mt-16 mb-16 md:mb-0">
                 <div className="container mx-auto px-6">
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
                         <div>
@@ -232,6 +298,39 @@ const Dashboard = () => {
                     </div>
                 </div>
             </footer>
+
+            {/* Mobile Bottom Nav */}
+            <nav className="md:hidden fixed bottom-0 inset-x-0 z-50 border-t bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60">
+                <div className="max-w-7xl mx-auto px-6">
+                    <ul className="grid grid-cols-3 h-16 text-xs">
+                        <li className="flex items-center justify-center">
+                            <a href="/webauth-login?tab=register" className="flex flex-col items-center gap-1 text-gray-600">
+                                <HomeIcon className="h-5 w-5" />
+                                <span>{t("Devenir hôte")}</span>
+                            </a>
+                        </li>
+                        <li className="flex items-center justify-center">
+                            <button className="flex flex-col items-center gap-1 text-gray-600">
+                                <Globe className="h-5 w-5" />
+                                <span>{t("Langue")}</span>
+                            </button>
+                        </li>
+                        <li className="flex items-center justify-center">
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <button className="flex flex-col items-center gap-1 text-gray-600">
+                                        <User className="h-5 w-5" />
+                                        <span>{user ? t("Profil") : t("Connexion")}</span>
+                                    </button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" side="top" className="w-64 mb-2">
+                                    <UserMenuContent />
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
         </div>
     );
 };

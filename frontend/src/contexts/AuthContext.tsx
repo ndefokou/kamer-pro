@@ -2,7 +2,7 @@ import { createContext, useContext, useState, useEffect, ReactNode, useCallback 
 import apiClient from '@/api/client';
 
 interface User {
-  id: string;
+  id: string | number;
   username: string;
   email: string;
   profile_picture_url?: string;
@@ -25,10 +25,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const checkSession = useCallback(async () => {
     try {
       const response = await apiClient.get('/account/me');
-      setUser(response.data);
+      // The backend returns { user: {...}, profile: {...} }
+      const userData = response.data.user || response.data;
+      setUser(userData);
+      if (userData?.id) {
+        localStorage.setItem('userId', userData.id.toString());
+      }
     } catch (error) {
       // If 401 or other error, user is not logged in
       setUser(null);
+      localStorage.removeItem('userId');
     } finally {
       setLoading(false);
     }
@@ -49,6 +55,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       console.error('Logout failed', error);
     } finally {
       setUser(null);
+      localStorage.removeItem('userId');
       // Optional: Redirect to home or login page if needed, 
       // but usually the component calling logout handles navigation
     }

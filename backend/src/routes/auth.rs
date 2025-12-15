@@ -1,6 +1,7 @@
-use actix_web::{post, web, HttpRequest, HttpResponse, Responder};
-use actix_web::cookie::{Cookie, SameSite};
 use actix_web::cookie::time::Duration as CookieDuration;
+use actix_web::cookie::{Cookie, SameSite};
+use actix_web::{post, web, HttpRequest, HttpResponse, Responder};
+use bcrypt::{hash, verify, DEFAULT_COST};
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
 use sqlx::SqlitePool;
@@ -15,6 +16,7 @@ pub struct User {
     pub public_key: Option<String>,
     pub counter: Option<i64>,
     pub created_at: String,
+    pub password_hash: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -269,11 +271,10 @@ pub async fn simple_register(
     }
 
     // Check if email already exists
-    let existing_email: Result<User, _> =
-        sqlx::query_as("SELECT * FROM users WHERE email = ?")
-            .bind(&req.email)
-            .fetch_one(pool.get_ref())
-            .await;
+    let existing_email: Result<User, _> = sqlx::query_as("SELECT * FROM users WHERE email = ?")
+        .bind(&req.email)
+        .fetch_one(pool.get_ref())
+        .await;
 
     if existing_email.is_ok() {
         return HttpResponse::BadRequest().json(ErrorResponse {
@@ -283,9 +284,11 @@ pub async fn simple_register(
 
     let now = Utc::now().to_rfc3339();
 
+    let password_hash = hash(req.password.as_bytes(), DEFAULT_COST).unwrap();
+
     let result = sqlx::query(
-        "INSERT INTO users (username, email, credential_id, public_key, counter, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?)",
+        "INSERT INTO users (username, email, credential_id, public_key, counter, created_at, updated_at, password_hash)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
     )
     .bind(&req.username)
     .bind(&req.email)
@@ -294,6 +297,7 @@ pub async fn simple_register(
     .bind(0i64)
     .bind(&now)
     .bind(&now)
+    .bind(&password_hash)
     .execute(pool.get_ref())
     .await;
 
@@ -355,35 +359,47 @@ pub async fn simple_login(
 
     match user {
         Ok(user) => {
-            let token = format!("token_{}_{}", Uuid::new_v4().to_string(), user.id);
+            let valid = if let Some(hash) = &user.password_hash {
+                verify(req.password.as_bytes(), hash).unwrap_or(false)
+            } else {
+                false
+            };
 
-            let _ = sqlx::query(
-                "INSERT INTO sessions (token, user_id, expires_at) VALUES (?, ?, datetime('now', '+30 days'))",
-            )
-            .bind(&token)
-            .bind(user.id)
-            .execute(pool.get_ref())
-            .await;
+            if valid {
+                let token = format!("token_{}_{}", Uuid::new_v4().to_string(), user.id);
 
-            let cookie = Cookie::build("session", token.clone())
-                .path("/")
-                .http_only(true)
-                .same_site(SameSite::Lax)
-                .max_age(CookieDuration::days(30))
-                .finish();
+                let _ = sqlx::query(
+                    "INSERT INTO sessions (token, user_id, expires_at) VALUES (?, ?, datetime('now', '+30 days'))",
+                )
+                .bind(&token)
+                .bind(user.id)
+                .execute(pool.get_ref())
+                .await;
 
-            HttpResponse::Ok()
-                .cookie(cookie)
-                .json(AuthenticationCompleteResponse {
-                    message: "Authentication successful".to_string(),
-                    token,
-                    user_id: user.id,
-                    username: user.username,
-                    email: user.email,
+                let cookie = Cookie::build("session", token.clone())
+                    .path("/")
+                    .http_only(true)
+                    .same_site(SameSite::Lax)
+                    .max_age(CookieDuration::days(30))
+                    .finish();
+
+                HttpResponse::Ok()
+                    .cookie(cookie)
+                    .json(AuthenticationCompleteResponse {
+                        message: "Authentication successful".to_string(),
+                        token,
+                        user_id: user.id,
+                        username: user.username,
+                        email: user.email,
+                    })
+            } else {
+                HttpResponse::Unauthorized().json(ErrorResponse {
+                    error: "Invalid username or password".to_string(),
                 })
+            }
         }
         Err(_) => HttpResponse::Unauthorized().json(ErrorResponse {
-            error: "Authentication failed".to_string(),
+            error: "Invalid username or password".to_string(),
         }),
     }
 }

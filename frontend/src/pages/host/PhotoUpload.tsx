@@ -18,14 +18,7 @@ const PhotoUpload: React.FC = () => {
         const files = e.target.files;
         if (!files) return;
 
-        if (photos.length + files.length > 10) {
-            toast({
-                title: 'Too many photos',
-                description: 'You can upload a maximum of 10 photos',
-                variant: 'destructive',
-            });
-            return;
-        }
+
 
         setUploading(true);
 
@@ -106,8 +99,9 @@ const PhotoUpload: React.FC = () => {
                         <Upload className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
                         <p className="text-lg font-medium mb-2">Drag your photos here</p>
                         <p className="text-sm text-muted-foreground mb-4">
-                            Choose at least 3 photos (max 10)
+                            Choose at least 3 photos
                         </p>
+
                         <Button type="button" variant="outline" disabled={uploading}>
                             {uploading ? 'Uploading...' : 'Upload from your device'}
                         </Button>
@@ -186,7 +180,7 @@ const PhotoUpload: React.FC = () => {
                     Step 4 of 10
                 </div>
             </div>
-        </div>
+        </div >
     );
 };
 
