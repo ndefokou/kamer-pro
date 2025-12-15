@@ -3,6 +3,7 @@ import { X, Share, Heart, Star, Users, Home, MapPin, Wifi, Calendar, ChevronLeft
 import { Button } from '@/components/ui/button';
 import { getImageUrl } from '@/lib/utils';
 import { AMENITY_DETAILS } from '@/data/amenities';
+import { SAFETY_CONSIDERATIONS, SAFETY_DEVICES, PROPERTY_INFO } from '@/data/guestSafety';
 import { HouseRules } from './HouseRulesSection';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -39,6 +40,7 @@ interface Listing {
     photos: { id: string; url: string; caption: string }[];
     status: string;
     house_rules: string;
+    cancellation_policy: string;
 }
 
 interface ListingPreviewProps {
@@ -800,27 +802,37 @@ const ListingPreview: React.FC<ListingPreviewProps> = ({ listing, isOpen, onClos
                         <div>
                             <h4 className="font-semibold mb-4">Safety & property</h4>
                             <div className="space-y-2 text-sm text-gray-700">
-                                {/* Check for carbon monoxide alarm */}
-                                {(listing as any).safety_items?.includes('carbon_monoxide_alarm') ? (
-                                    <p>Carbon monoxide alarm</p>
-                                ) : (
-                                    <p>Carbon monoxide alarm not reported</p>
-                                )}
+                                {/* Safety Devices */}
+                                {SAFETY_DEVICES.map(device => {
+                                    const isSelected = (listing as any).safety_items?.includes(device.id);
+                                    if (isSelected) {
+                                        return <p key={device.id}>{device.label}</p>;
+                                    }
+                                    // Special case for carbon monoxide and smoke alarm to show "not reported" if missing
+                                    if (device.id === 'carbon_monoxide_alarm') {
+                                        return <p key={device.id}>Carbon monoxide alarm not reported</p>;
+                                    }
+                                    if (device.id === 'smoke_alarm') {
+                                        return <p key={device.id}>Smoke alarm not reported</p>;
+                                    }
+                                    return null;
+                                })}
 
-                                {/* Check for smoke alarm */}
-                                {(listing as any).safety_items?.includes('smoke_alarm') ? (
-                                    <p>Smoke alarm</p>
-                                ) : (
-                                    <p>Smoke alarm not reported</p>
-                                )}
+                                {/* Safety Considerations */}
+                                {SAFETY_CONSIDERATIONS.map(item => {
+                                    if ((listing as any).safety_items?.includes(item.id)) {
+                                        return <p key={item.id}>{item.label}</p>;
+                                    }
+                                    return null;
+                                })}
 
-                                {/* Show other safety devices if present */}
-                                {(listing as any).safety_items?.includes('noise_decibel_monitor') && (
-                                    <p>Noise decibel monitor present</p>
-                                )}
-                                {(listing as any).safety_items?.includes('exterior_security_camera') && (
-                                    <p>Exterior security camera present</p>
-                                )}
+                                {/* Property Info */}
+                                {PROPERTY_INFO.map(item => {
+                                    if ((listing as any).safety_items?.includes(item.id)) {
+                                        return <p key={item.id}>{item.label}</p>;
+                                    }
+                                    return null;
+                                })}
                             </div>
                         </div>
 
@@ -828,7 +840,18 @@ const ListingPreview: React.FC<ListingPreviewProps> = ({ listing, isOpen, onClos
                         <div>
                             <h4 className="font-semibold mb-4">Cancellation policy</h4>
                             <div className="space-y-2 text-sm text-gray-700">
-                                <p>Free cancellation for 48 hours.</p>
+                                {listing.cancellation_policy === 'flexible' && (
+                                    <p>Free cancellation for 48 hours. Full refund 1 day prior to arrival.</p>
+                                )}
+                                {listing.cancellation_policy === 'moderate' && (
+                                    <p>Free cancellation for 48 hours. Full refund 5 days prior to arrival.</p>
+                                )}
+                                {listing.cancellation_policy === 'strict' && (
+                                    <p>Full refund for 48 hours after booking, if the check-in date is at least 14 days away. 50% refund up to 7 days prior to arrival.</p>
+                                )}
+                                {!listing.cancellation_policy && (
+                                    <p>Add a cancellation policy.</p>
+                                )}
                                 <p className="underline cursor-pointer">Learn more</p>
                             </div>
                         </div>

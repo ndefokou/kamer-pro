@@ -38,24 +38,27 @@ const amenitiesList = [
 const Amenities: React.FC = () => {
     const navigate = useNavigate();
     const { draft, updateDraft, nextStep, previousStep } = useHost();
-    const [selectedAmenities, setSelectedAmenities] = React.useState<string[]>(draft.amenities || []);
+
+    // Use draft.amenities directly instead of local state
+    const selectedAmenities = draft.amenities || [];
 
     const toggleAmenity = (amenityId: string) => {
-        setSelectedAmenities(prev =>
-            prev.includes(amenityId)
-                ? prev.filter(id => id !== amenityId)
-                : [...prev, amenityId]
-        );
+        const currentAmenities = draft.amenities || [];
+        const newAmenities = currentAmenities.includes(amenityId)
+            ? currentAmenities.filter(id => id !== amenityId)
+            : [...currentAmenities, amenityId];
+
+        updateDraft({ amenities: newAmenities });
     };
 
     const handleContinue = () => {
-        updateDraft({ amenities: selectedAmenities });
+        // No need to update draft here as it's updated on toggle
         nextStep();
         navigate('/host/location');
     };
 
     const handleBack = () => {
-        updateDraft({ amenities: selectedAmenities });
+        // No need to update draft here as it's updated on toggle
         previousStep();
         navigate('/host/intro');
     };

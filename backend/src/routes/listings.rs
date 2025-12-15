@@ -35,6 +35,7 @@ pub struct Listing {
     pub created_at: Option<String>,
     pub updated_at: Option<String>,
     pub published_at: Option<String>,
+    pub cancellation_policy: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -43,6 +44,7 @@ pub struct ListingWithDetails {
     pub amenities: Vec<String>,
     pub photos: Vec<ListingPhoto>,
     pub videos: Vec<ListingVideo>,
+    pub safety_items: Vec<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, sqlx::FromRow)]
@@ -96,10 +98,11 @@ pub struct UpdateListingRequest {
     pub bathrooms: Option<f64>,
     pub instant_book: Option<bool>,
     pub min_nights: Option<i32>,
+
     pub max_nights: Option<i32>,
-    pub safety_devices: Option<Vec<String>>,
     pub house_rules: Option<String>,
     pub safety_items: Option<Vec<String>>,
+    pub cancellation_policy: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -203,11 +206,19 @@ async fn get_listing_with_details(
             .fetch_all(pool)
             .await?;
 
+    // Parse safety items
+    let safety_items: Vec<String> = listing
+        .safety_devices
+        .as_ref()
+        .and_then(|s| serde_json::from_str(s).ok())
+        .unwrap_or_default();
+
     Ok(ListingWithDetails {
         listing,
         amenities,
         photos,
         videos,
+        safety_items,
     })
 }
 
@@ -468,11 +479,7 @@ pub async fn update_listing(
                 query_builder.push(", max_nights = ");
                 query_builder.push_bind(max_nights);
             }
-            if let Some(ref safety_devices) = body.safety_devices {
-                let json = serde_json::to_string(safety_devices).unwrap_or_default();
-                query_builder.push(", safety_devices = ");
-                query_builder.push_bind(json);
-            }
+
             if let Some(ref house_rules) = body.house_rules {
                 query_builder.push(", house_rules = ");
                 query_builder.push_bind(house_rules);
@@ -481,6 +488,10 @@ pub async fn update_listing(
                 let json = serde_json::to_string(safety_items).unwrap_or_default();
                 query_builder.push(", safety_devices = ");
                 query_builder.push_bind(json);
+            }
+            if let Some(ref cancellation_policy) = body.cancellation_policy {
+                query_builder.push(", cancellation_policy = ");
+                query_builder.push_bind(cancellation_policy);
             }
 
             query_builder.push(" WHERE id = ");
