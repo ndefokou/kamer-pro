@@ -134,3 +134,8 @@ export const getMyProducts = async () => {
   const response = await apiClient.get("/listings/my-listings");
   return response.data;
 };
+
+export const getListing = async (id: string): Promise<Product> => {
+  const response = await apiClient.get(`/listings/${id}`);
+  return response.data;
+};

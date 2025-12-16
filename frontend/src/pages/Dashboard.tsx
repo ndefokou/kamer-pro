@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
@@ -15,6 +15,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/contexts/AuthContext";
+import Footer from "@/components/Footer";
 
 const Dashboard = () => {
     const { t } = useTranslation();
@@ -27,9 +28,9 @@ const Dashboard = () => {
         queryFn: () => getProducts({}),
     });
 
-    const featuredProperties = properties?.slice(0, 8) || [];
-    const upcomingProperties = properties?.slice(8, 16) || [];
-    const nearbyProperties = properties?.slice(16, 24) || [];
+    const doualaProperties = properties?.filter(p => p.listing.city?.toLowerCase() === 'douala') || [];
+    const yaoundeProperties = properties?.filter(p => p.listing.city?.toLowerCase() === 'yaoundé' || p.listing.city?.toLowerCase() === 'yaounde') || [];
+    const kribiProperties = properties?.filter(p => p.listing.city?.toLowerCase() === 'kribi') || [];
 
     const toggleFavorite = (id: string) => {
         setFavorites(prev => {
@@ -100,7 +101,7 @@ const Dashboard = () => {
                     src={getImageUrl(product.photos[0]?.url) || "https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=400&h=400&fit=crop"}
                     alt={product.listing.title || "Property image"}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    onClick={() => navigate(`/property/${product.listing.id}`)}
+                    onClick={() => navigate(`/product/${product.listing.id}`)}
                 />
                 <button
                     onClick={(e) => {
@@ -125,32 +126,84 @@ const Dashboard = () => {
             <div className="space-y-1">
                 <div className="flex items-start justify-between">
                     <h3 className="font-semibold text-gray-900 truncate flex-1">{product.listing.title}</h3>
-                    <div className="flex items-center gap-1 ml-2">
-                        <Star className="h-4 w-4 fill-current" />
-                        <span className="text-sm font-medium">{(4.3 + Math.random() * 0.7).toFixed(2)}</span>
-                    </div>
                 </div>
                 <p className="text-sm text-gray-600">{product.listing.city}</p>
                 <p className="text-sm text-gray-600">
-                    {Math.floor(Math.random() * 30) + 1}-{Math.floor(Math.random() * 7) + 1} {t("janv")} · {t("1 nuit particulier")}
+                    16-25 dec.
                 </p>
                 <div className="flex items-baseline gap-1 pt-1">
                     <span className="font-semibold text-gray-900">{product.listing.price_per_night?.toLocaleString()} FCFA</span>
-                    <span className="text-sm text-gray-600">{t("pour 2 nuits")}</span>
+                    <span className="text-sm text-gray-600">par nuit</span>
                 </div>
             </div>
         </div>
     );
 
-    const PropertySection = ({ title, properties }: { title: string; properties: Product[] }) => (
-        <div className="mb-12">
-            <div className="flex gap-4 overflow-x-auto scrollbar-hide pb-4">
-                {properties.filter(Boolean).map((product, index) => (
-                    <PropertyCard key={product.listing.id} product={product} index={index} />
-                ))}
+    const PropertySection = ({ title, properties }: { title: string; properties: Product[] }) => {
+        const scrollContainerRef = useRef<HTMLDivElement>(null);
+        const [showLeftArrow, setShowLeftArrow] = useState(false);
+        const [showRightArrow, setShowRightArrow] = useState(true);
+
+        const handleScroll = () => {
+            if (scrollContainerRef.current) {
+                const { scrollLeft, scrollWidth, clientWidth } = scrollContainerRef.current;
+                setShowLeftArrow(scrollLeft > 0);
+                setShowRightArrow(scrollLeft < scrollWidth - clientWidth - 10);
+            }
+        };
+
+        const scroll = (direction: 'left' | 'right') => {
+            if (scrollContainerRef.current) {
+                const scrollAmount = scrollContainerRef.current.clientWidth * 0.8;
+                scrollContainerRef.current.scrollBy({
+                    left: direction === 'left' ? -scrollAmount : scrollAmount,
+                    behavior: 'smooth'
+                });
+            }
+        };
+
+        if (!properties || properties.length === 0) return null;
+
+        return (
+            <div className="mb-12 group relative">
+                <h2 className="text-2xl font-bold mb-6 text-gray-900">{title}</h2>
+
+                <div className="relative">
+                    {/* Left Arrow */}
+                    {showLeftArrow && (
+                        <button
+                            onClick={() => scroll('left')}
+                            className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 z-10 w-8 h-8 bg-white rounded-full shadow-md border border-gray-200 flex items-center justify-center hover:scale-105 transition-transform"
+                            aria-label="Previous"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" aria-hidden="true" role="presentation" focusable="false" style={{ display: 'block', fill: 'none', height: '12px', width: '12px', stroke: 'currentcolor', strokeWidth: 5.33333, overflow: 'visible' }}><path fill="none" d="M20 28 8.7 16.7a1 1 0 0 1 0-1.4L20 4"></path></svg>
+                        </button>
+                    )}
+
+                    <div
+                        ref={scrollContainerRef}
+                        onScroll={handleScroll}
+                        className="flex gap-6 overflow-x-auto pb-4 snap-x snap-mandatory scroll-smooth [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']"
+                    >
+                        {properties.filter(Boolean).map((product, index) => (
+                            <PropertyCard key={product.listing.id} product={product} index={index} />
+                        ))}
+                    </div>
+
+                    {/* Right Arrow */}
+                    {showRightArrow && (
+                        <button
+                            onClick={() => scroll('right')}
+                            className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 z-10 w-8 h-8 bg-white rounded-full shadow-md border border-gray-200 flex items-center justify-center hover:scale-105 transition-transform"
+                            aria-label="Next"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" aria-hidden="true" role="presentation" focusable="false" style={{ display: 'block', fill: 'none', height: '12px', width: '12px', stroke: 'currentcolor', strokeWidth: 5.33333, overflow: 'visible' }}><path fill="none" d="m12 4 11.3 11.3a1 1 0 0 1 0 1.4L12 28"></path></svg>
+                        </button>
+                    )}
+                </div>
             </div>
-        </div>
-    );
+        );
+    };
 
     return (
         <div className="min-h-screen bg-white pb-20 md:pb-0">
@@ -227,77 +280,23 @@ const Dashboard = () => {
                 ) : (
                     <>
                         <PropertySection
-                            title={t("Logements populaires")}
-                            properties={featuredProperties}
+                            title={t("Logements à Douala")}
+                            properties={doualaProperties}
                         />
                         <PropertySection
-                            title={t("Logements disponibles le mois prochain")}
-                            properties={upcomingProperties}
+                            title={t("Logements à Yaoundé")}
+                            properties={yaoundeProperties}
                         />
                         <PropertySection
-                            title={t("Logements à proximité")}
-                            properties={nearbyProperties}
+                            title={t("Logements à Kribi")}
+                            properties={kribiProperties}
                         />
                     </>
                 )}
             </main>
 
             {/* Footer */}
-            <footer className="border-t border-gray-200 bg-gray-50 py-12 mt-16 mb-16 md:mb-0">
-                <div className="container mx-auto px-6">
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-                        <div>
-                            <h3 className="font-semibold text-gray-900 mb-4">{t("Assistance")}</h3>
-                            <ul className="space-y-3 text-sm text-gray-600">
-                                <li className="hover:underline cursor-pointer">{t("Centre d'aide")}</li>
-                                <li className="hover:underline cursor-pointer">{t("AirCover")}</li>
-                                <li className="hover:underline cursor-pointer">{t("Sécurité")}</li>
-                            </ul>
-                        </div>
-                        <div>
-                            <h3 className="font-semibold text-gray-900 mb-4">{t("Communauté")}</h3>
-                            <ul className="space-y-3 text-sm text-gray-600">
-                                <li className="hover:underline cursor-pointer">{t("Airbnb.org")}</li>
-                                <li className="hover:underline cursor-pointer">{t("Fonctionnalités")}</li>
-                            </ul>
-                        </div>
-                        <div>
-                            <h3 className="font-semibold text-gray-900 mb-4">{t("Accueil")}</h3>
-                            <ul className="space-y-3 text-sm text-gray-600">
-                                <li className="hover:underline cursor-pointer">{t("Essayer l'accueil")}</li>
-                                <li className="hover:underline cursor-pointer">{t("AirCover pour les hôtes")}</li>
-                                <li className="hover:underline cursor-pointer">{t("Ressources")}</li>
-                            </ul>
-                        </div>
-                        <div>
-                            <h3 className="font-semibold text-gray-900 mb-4">MboaMaison</h3>
-                            <ul className="space-y-3 text-sm text-gray-600">
-                                <li className="hover:underline cursor-pointer">{t("Newsroom")}</li>
-                                <li className="hover:underline cursor-pointer">{t("Carrières")}</li>
-                                <li className="hover:underline cursor-pointer">{t("Investisseurs")}</li>
-                            </ul>
-                        </div>
-                    </div>
-                    <div className="mt-8 pt-8 border-t border-gray-200 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-gray-600">
-                        <div className="flex items-center gap-4">
-                            <span>© 2025 MboaMaison, Inc.</span>
-                            <span>·</span>
-                            <span className="hover:underline cursor-pointer">{t("Confidentialité")}</span>
-                            <span>·</span>
-                            <span className="hover:underline cursor-pointer">{t("Conditions")}</span>
-                            <span>·</span>
-                            <span className="hover:underline cursor-pointer">{t("Plan du site")}</span>
-                        </div>
-                        <div className="flex items-center gap-4">
-                            <button className="flex items-center gap-2 hover:underline">
-                                <Globe className="h-4 w-4" />
-                                <span>{t("Français (FR)")}</span>
-                            </button>
-                            <span>FCFA</span>
-                        </div>
-                    </div>
-                </div>
-            </footer>
+            <Footer />
 
             {/* Mobile Bottom Nav */}
             <nav className="md:hidden fixed bottom-0 inset-x-0 z-50 border-t bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60">

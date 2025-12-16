@@ -9,16 +9,20 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover";
-import { format } from "date-fns";
+import { format, addMonths } from "date-fns";
 import { cn } from "@/lib/utils";
+import { DateRange } from "react-day-picker";
 
 const AirbnbSearch = () => {
     const { t } = useTranslation();
     const navigate = useNavigate();
     const [where, setWhere] = useState("");
-    const [date, setDate] = useState<Date | undefined>(undefined);
+    const [date, setDate] = useState<DateRange | undefined>(undefined);
     const [activeTab, setActiveTab] = useState<"dates" | "months" | "flexible">("dates");
     const [monthsCount, setMonthsCount] = useState(2);
+    const [monthsStart, setMonthsStart] = useState<Date>(new Date());
+    const [flexibleDuration, setFlexibleDuration] = useState<"weekend" | "week" | "month">("weekend");
+    const [flexibleMonths, setFlexibleMonths] = useState<string[]>([]);
     const [guests, setGuests] = useState({
         adults: 0,
         children: 0,
@@ -34,7 +38,23 @@ const AirbnbSearch = () => {
         e.preventDefault();
         const params = new URLSearchParams();
         if (where.trim()) params.set("search", where.trim());
-        if (date) params.set("date", date.toISOString());
+
+        if (activeTab === "dates" && date?.from) {
+            params.set("checkin", date.from.toISOString());
+            if (date.to) params.set("checkout", date.to.toISOString());
+        } else if (activeTab === "months") {
+            const startDate = monthsStart;
+            const endDate = addMonths(monthsStart, monthsCount);
+            params.set("checkin", startDate.toISOString());
+            params.set("checkout", endDate.toISOString());
+            params.set("duration_months", monthsCount.toString());
+        } else if (activeTab === "flexible") {
+            params.set("flexible_duration", flexibleDuration);
+            if (flexibleMonths.length > 0) {
+                params.set("flexible_months", flexibleMonths.join(","));
+            }
+        }
+
         const totalGuests = guests.adults + guests.children;
         if (totalGuests > 0) params.set("guests", totalGuests.toString());
         navigate(`/marketplace?${params.toString()}`);
@@ -48,13 +68,9 @@ const AirbnbSearch = () => {
     };
 
     const suggestions = [
-        { name: "À proximité", desc: "Découvrez les options à proximité", icon: "🧭" },
-        { name: "Centre-ville de Montréal, Canada", desc: "Célèbre pour des sites comme : Basilique Notre-Dame de Montréal", icon: "🏛️" },
-        { name: "Abidjan", desc: "Pour un voyage à l'étranger", icon: "🏖️" },
-        { name: "Paris, Île-de-France", desc: "Parce que vous avez enregistré des logements en favoris pour cette destination : Paris", icon: "🗼" },
-        { name: "Douala, Cameroun", desc: "Pour un voyage à l'étranger", icon: "🏙️" },
-        { name: "Dakar, Sénégal", desc: "Une perle rare", icon: "🌊" },
-        { name: "Marrakech, Maroc", desc: "Célèbre pour des sites comme :", icon: "🕌" },
+        { name: "Yaounde", desc: "Capitale politique du Cameroun", icon: "🏛️" },
+        { name: "Douala", desc: "Capitale économique du Cameroun", icon: "🏙️" },
+        { name: "Kribi", desc: "Cité balnéaire", icon: "🏖️" },
     ];
 
     return (
@@ -114,7 +130,18 @@ const AirbnbSearch = () => {
                                 {t("when")}
                             </label>
                             <div className="text-sm text-gray-900 font-medium truncate">
-                                {date ? format(date, "MMM dd, yyyy") : <span className="text-gray-500 font-normal">{t("add dates")}</span>}
+                                {activeTab === "dates" && date?.from ? (
+                                    <>
+                                        {format(date.from, "MMM dd")}
+                                        {date.to ? ` - ${format(date.to, "MMM dd")}` : ""}
+                                    </>
+                                ) : activeTab === "months" ? (
+                                    `${monthsCount} months from ${format(monthsStart, "MMM")}`
+                                ) : activeTab === "flexible" ? (
+                                    `${flexibleDuration} in ${flexibleMonths.length > 0 ? flexibleMonths.length + " months" : "anytime"}`
+                                ) : (
+                                    <span className="text-gray-500 font-normal">{t("add dates")}</span>
+                                )}
                             </div>
                         </div>
                     </PopoverTrigger>
@@ -144,15 +171,10 @@ const AirbnbSearch = () => {
                             {activeTab === "dates" && (
                                 <div className="flex justify-center">
                                     <Calendar
-                                        mode="single"
+                                        mode="range"
                                         selected={date}
-                                        onSelect={(newDate) => {
-                                            setDate(newDate);
-                                            if (newDate) {
-                                                setOpenWhen(false);
-                                                setOpenWho(true);
-                                            }
-                                        }}
+                                        onSelect={setDate}
+                                        numberOfMonths={2}
                                         className="rounded-md border-0"
                                     />
                                 </div>
@@ -203,9 +225,9 @@ const AirbnbSearch = () => {
                                     </div>
 
                                     <div className="text-center border-b-2 border-black pb-1">
-                                        <span className="font-semibold text-gray-900">Dec 1, 2025</span>
+                                        <span className="font-semibold text-gray-900">{format(monthsStart, "MMM dd, yyyy")}</span>
                                         <span className="mx-2">to</span>
-                                        <span className="font-semibold text-gray-900">Feb 1, 2026</span>
+                                        <span className="font-semibold text-gray-900">{format(addMonths(monthsStart, monthsCount), "MMM dd, yyyy")}</span>
                                     </div>
                                 </div>
                             )}
@@ -215,12 +237,13 @@ const AirbnbSearch = () => {
                                     <div className="text-center">
                                         <h3 className="text-lg font-semibold mb-4">How long would you like to stay?</h3>
                                         <div className="flex justify-center gap-3">
-                                            {["Weekend", "Week", "Month"].map((option) => (
+                                            {["weekend", "week", "month"].map((option) => (
                                                 <button
                                                     key={option}
-                                                    className="px-6 py-2 rounded-full border border-gray-300 hover:border-black text-sm font-medium transition-colors focus:border-black focus:bg-gray-50"
+                                                    onClick={() => setFlexibleDuration(option as any)}
+                                                    className={`px-6 py-2 rounded-full border text-sm font-medium transition-colors ${flexibleDuration === option ? "border-black bg-gray-50" : "border-gray-300 hover:border-black"}`}
                                                 >
-                                                    {option}
+                                                    {option.charAt(0).toUpperCase() + option.slice(1)}
                                                 </button>
                                             ))}
                                         </div>
@@ -233,7 +256,17 @@ const AirbnbSearch = () => {
                                                 "January", "February", "March", "April", "May", "June",
                                                 "July", "August", "September", "October", "November", "December"
                                             ].map((month) => (
-                                                <div key={month} className="flex flex-col items-center p-4 border border-gray-200 rounded-xl hover:border-black cursor-pointer transition-all bg-white hover:bg-gray-50">
+                                                <div
+                                                    key={month}
+                                                    onClick={() => {
+                                                        setFlexibleMonths(prev =>
+                                                            prev.includes(month)
+                                                                ? prev.filter(m => m !== month)
+                                                                : [...prev, month]
+                                                        );
+                                                    }}
+                                                    className={`flex flex-col items-center p-4 border rounded-xl cursor-pointer transition-all ${flexibleMonths.includes(month) ? "border-black bg-gray-50" : "border-gray-200 hover:border-black bg-white hover:bg-gray-50"}`}
+                                                >
                                                     <CalendarIcon className="h-8 w-8 mb-2 text-gray-400" />
                                                     <span className="text-sm font-medium">{month}</span>
                                                     <span className="text-xs text-gray-500">2026</span>

@@ -22,6 +22,8 @@ export interface AccountProfile {
   tax_id?: string | null;
   payout_method?: string | null;
   travel_for_work?: number | null;
+  location?: string | null;
+  languages_spoken?: string | null;
 }
 
 export interface AccountMeResponse {
@@ -50,6 +52,8 @@ export type UpdateAccountData = Partial<{
   tax_id: string;
   payout_method: string;
   travel_for_work: boolean;
+  location: string;
+  languages_spoken: string;
 }>;
 
 export const updateAccount = async (data: UpdateAccountData) => {

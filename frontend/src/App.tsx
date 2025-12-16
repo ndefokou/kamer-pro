@@ -28,12 +28,16 @@ import BathroomEditor from "./pages/host/BathroomEditor";
 import WebAuthLogin from "./pages/WebAuthLogin";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import AccountSettings from "./pages/account/AccountSettings";
+import ListingDetails from "./pages/ListingDetails";
+import SearchResults from "./pages/SearchResults";
 
 const queryClient = new QueryClient();
 
 const router = createBrowserRouter(
   [
     { path: "/", Component: Dashboard },
+    { path: "/marketplace", Component: SearchResults },
+    { path: "/product/:id", Component: ListingDetails },
     { path: "/webauth-login", Component: WebAuthLogin },
     {
       path: "/account",

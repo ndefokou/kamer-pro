@@ -96,6 +96,17 @@ const AccountSettings = () => {
     (async () => {
       try {
         const me = await getAccountMe();
+
+        // Load locally saved data if API data is missing
+        const savedLocation = localStorage.getItem('host_location');
+        const savedLanguages = localStorage.getItem('host_languages');
+        const savedAvatar = localStorage.getItem('host_avatar');
+
+        if (me.profile) {
+          if (savedLocation) me.profile.location = savedLocation;
+          if (savedLanguages) me.profile.languages_spoken = savedLanguages;
+        }
+
         setData(me);
         setError(null);
       } catch (err: unknown) {
@@ -141,9 +152,36 @@ const AccountSettings = () => {
   const save = async (
     patch: UpdateAccountData
   ) => {
+    // Persist to localStorage for demo purposes
+    if (patch.location !== undefined) localStorage.setItem('host_location', patch.location);
+    if (patch.languages_spoken !== undefined) localStorage.setItem('host_languages', patch.languages_spoken);
+
     await updateAccount(patch);
     const fresh = await getAccountMe();
+
+    // Re-apply local data
+    const savedLocation = localStorage.getItem('host_location');
+    const savedLanguages = localStorage.getItem('host_languages');
+    if (fresh.profile) {
+      if (savedLocation) fresh.profile.location = savedLocation;
+      if (savedLanguages) fresh.profile.languages_spoken = savedLanguages;
+    }
+
     setData(fresh);
+  };
+
+  const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result as string;
+        localStorage.setItem('host_avatar', base64String);
+        // Force update to show new avatar immediately (in a real app, we'd upload to server)
+        window.location.reload();
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   return (
@@ -159,7 +197,7 @@ const AccountSettings = () => {
                   const el = document.getElementById(`${s.id}-section`);
                   if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }}
-                className={`w-full text-left px-3 py-2 rounded-lg hover:bg-gray-100 ${idx===0? 'bg-gray-100 font-semibold':''}`}
+                className={`w-full text-left px-3 py-2 rounded-lg hover:bg-gray-100 ${idx === 0 ? 'bg-gray-100 font-semibold' : ''}`}
               >
                 {s.label}
               </button>
@@ -176,6 +214,23 @@ const AccountSettings = () => {
             <div id="personal-section" className="bg-white border border-gray-200 rounded-xl p-4">
               <SectionTitle>Personal information</SectionTitle>
               <Separator />
+              <div className="py-4 flex items-center justify-between">
+                <div>
+                  <div className="text-sm text-gray-500">Profile Picture</div>
+                  <div className="mt-2">
+                    {localStorage.getItem('host_avatar') ? (
+                      <img src={localStorage.getItem('host_avatar')!} alt="Profile" className="h-16 w-16 rounded-full object-cover" />
+                    ) : (
+                      <div className="h-16 w-16 rounded-full bg-gray-200 flex items-center justify-center text-gray-500">No Img</div>
+                    )}
+                  </div>
+                </div>
+                <div className="relative">
+                  <input type="file" accept="image/*" onChange={handleAvatarUpload} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+                  <Button variant="outline" size="sm">Upload</Button>
+                </div>
+              </div>
+              <Separator />
               <EditableRow label="Legal name" value={p.legal_name || undefined} onSave={(val) => save({ legal_name: val })} />
               <Separator />
               <EditableRow label="Preferred first name" value={p.preferred_first_name || undefined} onSave={(val) => save({ preferred_first_name: val })} />
@@ -187,7 +242,11 @@ const AccountSettings = () => {
               <EditableRow label="Residential address" value={p.residential_address || undefined} onSave={(val) => save({ residential_address: val })} />
               <Separator />
               <EditableRow label="Mailing address" value={p.mailing_address || undefined} onSave={(val) => save({ mailing_address: val })} />
-              
+              <Separator />
+              <EditableRow label="Where I live" value={p.location || undefined} onSave={(val) => save({ location: val })} />
+              <Separator />
+              <EditableRow label="Languages I speak" value={p.languages_spoken || undefined} onSave={(val) => save({ languages_spoken: val })} />
+
             </div>
 
             <div id="notifications-section" className="bg-white border border-gray-200 rounded-xl p-4 mt-6">
