@@ -157,7 +157,7 @@ const HouseRulesSection: React.FC<HouseRulesSectionProps> = ({
             <div className="mb-8">
                 <h2 className="text-2xl font-semibold mb-2">House rules</h2>
                 <p className="text-gray-500">
-                    Guests are expected to follow your rules and may be removed from Airbnb if they don't.
+                    Guests are expected to follow your rules and may be removed from mboaMaisson if they don't.
                 </p>
             </div>
 

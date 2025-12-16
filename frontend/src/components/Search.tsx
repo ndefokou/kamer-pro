@@ -13,7 +13,7 @@ import { format, addMonths } from "date-fns";
 import { cn } from "@/lib/utils";
 import { DateRange } from "react-day-picker";
 
-const AirbnbSearch = () => {
+const mboaMaissonSearch = () => {
     const { t } = useTranslation();
     const navigate = useNavigate();
     const [where, setWhere] = useState("");
@@ -352,4 +352,4 @@ const AirbnbSearch = () => {
     );
 };
 
-export default AirbnbSearch;
+export default mboaMaissonSearch;

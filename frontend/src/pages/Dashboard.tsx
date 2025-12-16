@@ -2,10 +2,10 @@ import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
-import { Heart, Star, Home as HomeIcon, Globe, Menu, User, HelpCircle, Gift, LogIn, LogOut, Settings } from "lucide-react";
+import { Heart, Star, Home as HomeIcon, Globe, Menu, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getProducts, Product } from "@/api/client";
-import AirbnbSearch from "@/components/Search";
+import MboaMaissonSearch from "@/components/Search";
 import { getImageUrl } from "@/lib/utils";
 import {
     DropdownMenu,
@@ -260,7 +260,7 @@ const Dashboard = () => {
             {/* Search Bar */}
             <div className="border-b border-gray-200 bg-white">
                 <div className="container mx-auto px-4 sm:px-6 py-6">
-                    <AirbnbSearch />
+                    <MboaMaissonSearch />
                 </div>
             </div>
 

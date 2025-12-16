@@ -19,7 +19,7 @@ const Footer = () => {
                     <div>
                         <h3 className="font-semibold text-gray-900 mb-4">{t("Communauté")}</h3>
                         <ul className="space-y-3 text-sm text-gray-600">
-                            <li className="hover:underline cursor-pointer">{t("Airbnb.org")}</li>
+                            <li className="hover:underline cursor-pointer">{t("mboaMaisson.org")}</li>
                             <li className="hover:underline cursor-pointer">{t("Fonctionnalités")}</li>
                         </ul>
                     </div>

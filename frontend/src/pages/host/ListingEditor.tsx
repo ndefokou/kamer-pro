@@ -1386,7 +1386,7 @@ const ListingEditor: React.FC = () => {
                         </div>
                     </main>
 
-                    {/* Mobile bottom View button (Airbnb style) */}
+                    {/* Mobile bottom View button (mboaMaisson style) */}
                     {photoView === 'overview' && !isMobileSection && (
                         <div className="md:hidden fixed bottom-24 left-1/2 -translate-x-1/2 z-[60]">
                             <button
