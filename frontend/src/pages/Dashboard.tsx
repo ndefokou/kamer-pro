@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Heart, Star, Home as HomeIcon, Globe, Menu, User, HelpCircle, Gift, LogIn, LogOut, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getProducts, Product } from "@/api/client";
-import AirbnbSearch from "@/components/AirbnbSearch";
+import AirbnbSearch from "@/components/Search";
 import { getImageUrl } from "@/lib/utils";
 import {
     DropdownMenu,

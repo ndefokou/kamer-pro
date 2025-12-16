@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { getProducts, Product } from "@/api/client";
-import AirbnbPropertyCard from "@/components/AirbnbPropertyCard";
-import AirbnbSearch from "@/components/AirbnbSearch";
+import PropertyCard from "@/components/PropertyCard";
+import AirbnbSearch from "@/components/Search";
 import HorizontalPropertySection from "@/components/HorizontalPropertySection";
 import { getImageUrl } from "@/lib/utils";
 
@@ -34,7 +34,7 @@ const Index = () => {
 
         <HorizontalPropertySection title="Logements populaires">
           {popularListings.map((product) => (
-            <AirbnbPropertyCard
+            <PropertyCard
               key={product.listing.id}
               id={product.listing.id}
               name={product.listing.title ?? "Untitled"}
@@ -46,7 +46,7 @@ const Index = () => {
         </HorizontalPropertySection>
         <HorizontalPropertySection title="Logements disponibles le mois prochain">
           {nextMonthListings.map((product) => (
-            <AirbnbPropertyCard
+            <PropertyCard
               key={product.listing.id}
               id={product.listing.id}
               name={product.listing.title ?? "Untitled"}
@@ -58,7 +58,7 @@ const Index = () => {
         </HorizontalPropertySection>
         <HorizontalPropertySection title="Logements à proximité">
           {nearbyListings.map((product) => (
-            <AirbnbPropertyCard
+            <PropertyCard
               key={product.listing.id}
               id={product.listing.id}
               name={product.listing.title ?? "Untitled"}
@@ -73,7 +73,7 @@ const Index = () => {
         <section className="py-12">
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
             {products?.map((product) => (
-              <AirbnbPropertyCard
+              <PropertyCard
                 key={product.listing.id}
                 id={product.listing.id}
                 name={product.listing.title ?? "Untitled"}

@@ -6,7 +6,7 @@ import { useWishlist } from "@/hooks/useWishlist";
 import { useToast } from "@/hooks/use-toast";
 import { getImageUrl } from "@/lib/utils";
 
-interface AirbnbPropertyCardProps {
+interface PropertyCardProps {
     id: string;
     name: string;
     location: string;
@@ -16,7 +16,7 @@ interface AirbnbPropertyCardProps {
     isGuestFavorite?: boolean;
 }
 
-const AirbnbPropertyCard = ({
+const PropertyCard = ({
     id,
     name,
     location,
@@ -24,7 +24,7 @@ const AirbnbPropertyCard = ({
     images,
     rating,
     isGuestFavorite = false,
-}: AirbnbPropertyCardProps) => {
+}: PropertyCardProps) => {
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const { isInWishlist, addToWishlist, removeFromWishlist } = useWishlist();
     const { toast } = useToast();
@@ -151,4 +151,4 @@ const AirbnbPropertyCard = ({
     );
 };
 
-export default AirbnbPropertyCard;
+export default PropertyCard;
