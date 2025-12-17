@@ -254,7 +254,7 @@ const HostCalendar: React.FC = () => {
     return (
         <div className="min-h-screen bg-gray-50">
             {/* Header */}
-            <header className="border-b bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60 sticky top-0 z-50">
+            <header className="border-b bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60 sticky top-0 z-50 pt-safe">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 md:h-20 flex items-center justify-between">
                     <div className="flex items-center gap-12">
                         <div className="text-green-600 font-bold text-xl cursor-pointer" onClick={() => navigate('/')}>
@@ -372,25 +372,25 @@ const HostCalendar: React.FC = () => {
                     {/* Calendar Section */}
                     <div className="flex-1">
                         {/* Month & Year Selector */}
-                        <div className="flex items-center justify-between mb-6">
-                            <div className="flex items-center gap-3">
-                                <div className="relative">
+                        <div className="flex items-center justify-between mb-8">
+                            <div className="flex items-center gap-4">
+                                <div className="relative group">
                                     <select
                                         value={currentMonth.getFullYear()}
                                         onChange={(e) => handleYearChange(Number(e.target.value))}
-                                        className="text-2xl font-semibold bg-transparent border-none cursor-pointer pr-8 focus:outline-none appearance-none"
+                                        className="text-3xl font-bold bg-transparent border-none cursor-pointer pr-8 focus:outline-none appearance-none hover:text-gray-600 transition-colors"
                                     >
                                         {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() + i).map(year => (
                                             <option key={year} value={year}>{year}</option>
                                         ))}
                                     </select>
-                                    <ChevronDown className="h-5 w-5 text-gray-600 absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none" />
+                                    <ChevronDown className="h-6 w-6 text-gray-400 absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none group-hover:text-gray-600 transition-colors" />
                                 </div>
-                                <div className="relative">
+                                <div className="relative group">
                                     <select
                                         value={currentMonth.getMonth()}
                                         onChange={(e) => handleMonthChange(Number(e.target.value))}
-                                        className="text-2xl font-semibold bg-transparent border-none cursor-pointer pr-8 focus:outline-none appearance-none"
+                                        className="text-3xl font-bold bg-transparent border-none cursor-pointer pr-8 focus:outline-none appearance-none hover:text-gray-600 transition-colors"
                                     >
                                         {Array.from({ length: 12 }, (_, i) => i).map(monthIndex => (
                                             <option key={monthIndex} value={monthIndex}>
@@ -398,16 +398,8 @@ const HostCalendar: React.FC = () => {
                                             </option>
                                         ))}
                                     </select>
-                                    <ChevronDown className="h-5 w-5 text-gray-600 absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none" />
+                                    <ChevronDown className="h-6 w-6 text-gray-400 absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none group-hover:text-gray-600 transition-colors" />
                                 </div>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <Button variant="outline" size="sm">Month</Button>
-                                <Button variant="ghost" size="icon" className="h-8 w-8">
-                                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                    </svg>
-                                </Button>
                             </div>
                         </div>
 
@@ -615,31 +607,39 @@ const HostCalendar: React.FC = () => {
             </main>
 
             {/* Mobile Bottom Nav */}
-            <nav className="md:hidden fixed bottom-0 inset-x-0 z-50 border-t bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60">
-                <div className="max-w-7xl mx-auto px-6">
-                    <ul className="grid grid-cols-4 h-16 text-xs">
+            <nav className="md:hidden fixed bottom-0 inset-x-0 z-50 bg-white/90 backdrop-blur-lg border-t border-gray-200 pb-safe transition-all duration-300">
+                <div className="max-w-md mx-auto px-6">
+                    <ul className="grid grid-cols-4 h-16">
                         <li className="flex items-center justify-center">
-                            <a href="/host/today" className="flex flex-col items-center gap-1 text-gray-600">
-                                <Home className="h-5 w-5" />
-                                <span>Today</span>
+                            <a href="/host/today" className="flex flex-col items-center gap-1 group w-full h-full justify-center">
+                                <div className="p-1.5 rounded-full group-active:scale-95 transition-transform group-hover:bg-gray-100">
+                                    <Home className="h-6 w-6 text-gray-500 group-hover:text-gray-900 transition-colors" />
+                                </div>
+                                <span className="text-[10px] font-medium text-gray-500 group-hover:text-gray-900 transition-colors">Today</span>
                             </a>
                         </li>
                         <li className="flex items-center justify-center">
-                            <a href="/host/calendar" className="flex flex-col items-center gap-1 text-gray-900 font-medium">
-                                <CalendarIcon className="h-5 w-5" />
-                                <span>Calendar</span>
+                            <a href="/host/calendar" className="flex flex-col items-center gap-1 group w-full h-full justify-center">
+                                <div className="p-1.5 rounded-full group-active:scale-95 transition-transform">
+                                    <CalendarIcon className="h-6 w-6 text-primary fill-current" />
+                                </div>
+                                <span className="text-[10px] font-medium text-primary">Calendar</span>
                             </a>
                         </li>
                         <li className="flex items-center justify-center">
-                            <a href="/host/dashboard" className="flex flex-col items-center gap-1 text-gray-600">
-                                <Grid3x3 className="h-5 w-5" />
-                                <span>Listings</span>
+                            <a href="/host/dashboard" className="flex flex-col items-center gap-1 group w-full h-full justify-center">
+                                <div className="p-1.5 rounded-full group-active:scale-95 transition-transform group-hover:bg-gray-100">
+                                    <Grid3x3 className="h-6 w-6 text-gray-500 group-hover:text-gray-900 transition-colors" />
+                                </div>
+                                <span className="text-[10px] font-medium text-gray-500 group-hover:text-gray-900 transition-colors">Listings</span>
                             </a>
                         </li>
                         <li className="flex items-center justify-center">
-                            <a href="#" className="flex flex-col items-center gap-1 text-gray-600">
-                                <Mail className="h-5 w-5" />
-                                <span>Messages</span>
+                            <a href="#" className="flex flex-col items-center gap-1 group w-full h-full justify-center">
+                                <div className="p-1.5 rounded-full group-active:scale-95 transition-transform group-hover:bg-gray-100">
+                                    <Mail className="h-6 w-6 text-gray-500 group-hover:text-gray-900 transition-colors" />
+                                </div>
+                                <span className="text-[10px] font-medium text-gray-500 group-hover:text-gray-900 transition-colors">Messages</span>
                             </a>
                         </li>
                     </ul>

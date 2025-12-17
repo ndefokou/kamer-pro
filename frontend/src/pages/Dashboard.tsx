@@ -178,11 +178,14 @@ const Dashboard = () => {
             {/* Main Content */}
             <main className="container mx-auto px-4 sm:px-6 py-8">
                 {isLoading ? (
-                    <div className="flex items-center justify-center py-20">
-                        <div className="text-center">
-                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#FF385C] mx-auto mb-4" />
-                            <p className="text-gray-600">{t("Chargement...")}</p>
+                    <div className="flex flex-col items-center justify-center py-20 gap-4">
+                        <div className="relative">
+                            <div className="h-12 w-12 rounded-full border-4 border-primary/30 border-t-primary animate-spin" />
+                            <div className="absolute inset-0 flex items-center justify-center">
+                                <HomeIcon className="h-4 w-4 text-primary/50" />
+                            </div>
                         </div>
+                        <p className="text-muted-foreground animate-pulse">{t("Chargement des meilleures offres...")}</p>
                     </div>
                 ) : error ? (
                     <div className="text-center py-20">
@@ -210,34 +213,43 @@ const Dashboard = () => {
             <Footer />
 
             {/* Mobile Bottom Nav */}
-            <nav className="md:hidden fixed bottom-0 inset-x-0 z-50 border-t bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60">
-                <div className="max-w-7xl mx-auto px-6">
-                    <ul className="grid grid-cols-3 h-16 text-xs">
+            {/* Mobile Bottom Nav */}
+            <nav className="md:hidden fixed bottom-0 inset-x-0 z-50 bg-white/90 backdrop-blur-lg border-t border-gray-200 pb-safe transition-all duration-300">
+                <div className="max-w-md mx-auto px-6">
+                    <ul className="grid grid-cols-3 h-16">
                         <li className="flex items-center justify-center">
-                            <a href="/webauth-login?tab=register" className="flex flex-col items-center gap-1 text-gray-600">
-                                <HomeIcon className="h-5 w-5" />
-                                <span>{t("Devenir hôte")}</span>
+                            <a href="/webauth-login?tab=register" className="flex flex-col items-center gap-1 group w-full h-full justify-center">
+                                <div className="p-1.5 rounded-full group-active:scale-95 transition-transform group-hover:bg-gray-100">
+                                    <HomeIcon className="h-6 w-6 text-gray-500 group-hover:text-primary transition-colors" />
+                                </div>
+                                <span className="text-[10px] font-medium text-gray-500 group-hover:text-primary transition-colors">{t("Devenir hôte")}</span>
                             </a>
                         </li>
                         <li className="flex items-center justify-center">
-                            <button className="flex flex-col items-center gap-1 text-gray-600">
-                                <Globe className="h-5 w-5" />
-                                <span>{t("Langue")}</span>
+                            <button className="flex flex-col items-center gap-1 group w-full h-full justify-center">
+                                <div className="p-1.5 rounded-full group-active:scale-95 transition-transform group-hover:bg-gray-100">
+                                    <Globe className="h-6 w-6 text-gray-500 group-hover:text-primary transition-colors" />
+                                </div>
+                                <span className="text-[10px] font-medium text-gray-500 group-hover:text-primary transition-colors">{t("Langue")}</span>
                             </button>
                         </li>
                         <li className="flex items-center justify-center">
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                    <button className="flex flex-col items-center gap-1 text-gray-600">
-                                        <User className="h-5 w-5" />
-                                        <span>{user ? t("Profil") : t("Connexion")}</span>
+                                    <button className="flex flex-col items-center gap-1 group w-full h-full justify-center outline-none">
+                                        <div className="p-1.5 rounded-full group-active:scale-95 transition-transform group-hover:bg-gray-100">
+                                            <User className="h-6 w-6 text-gray-500 group-hover:text-primary transition-colors" />
+                                        </div>
+                                        <span className="text-[10px] font-medium text-gray-500 group-hover:text-primary transition-colors">{user ? t("Profil") : t("Connexion")}</span>
                                     </button>
                                 </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" side="top" className="w-64 mb-2">
-                                    <DropdownMenuItem onClick={() => navigate('/account')}>
+                                <DropdownMenuContent align="end" side="top" className="w-56 mb-2 p-2 rounded-xl shadow-elevated border-border/50 bg-white/95 backdrop-blur-sm">
+                                    <DropdownMenuItem onClick={() => navigate('/account')} className="rounded-lg cursor-pointer py-2.5">
+                                        <User className="mr-2 h-4 w-4" />
                                         {t("Compte")}
                                     </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={handleLogout}>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem onClick={handleLogout} className="rounded-lg cursor-pointer py-2.5 text-red-600 focus:text-red-600 focus:bg-red-50">
                                         {t("Déconnexion")}
                                     </DropdownMenuItem>
                                 </DropdownMenuContent>

@@ -25,7 +25,7 @@ import ShareModal from '@/components/ShareModal';
 import MessageHostModal from '@/components/MessageHostModal';
 import PhotoGallery from '@/components/PhotoGallery';
 
-let DefaultIcon = L.icon({
+const DefaultIcon = L.icon({
     iconUrl: icon,
     shadowUrl: iconShadow,
     iconSize: [25, 41],
@@ -72,7 +72,8 @@ const ListingDetails: React.FC = () => {
     const [initialPhotoIndex, setInitialPhotoIndex] = React.useState(0);
     const [reviews, setReviews] = React.useState<Review[]>([]);
 
-    const handleReviewSubmit = (reviewData: any) => {
+    type ReviewFormData = Pick<Review, "ratings" | "comment" | "timestamp">;
+    const handleReviewSubmit = (reviewData: ReviewFormData) => {
         const newReview: Review = {
             id: Date.now(),
             user: {
@@ -283,38 +284,42 @@ const ListingDetails: React.FC = () => {
                 />
 
                 {/* Photo Gallery */}
-                <div className="mb-8 rounded-xl overflow-hidden">
+                <div className="mb-8 rounded-xl overflow-hidden shadow-sm">
                     {sortedPhotos.length > 0 ? (
-                        <div className="relative">
+                        <div className="relative group">
                             {sortedPhotos.length === 1 ? (
                                 <img
                                     src={getImageUrl(sortedPhotos[0].url)}
                                     alt={listing.title}
-                                    className="w-full h-[500px] object-cover cursor-pointer hover:opacity-95 transition-opacity"
+                                    className="w-full h-[300px] sm:h-[400px] md:h-[500px] object-cover cursor-pointer hover:scale-105 transition-transform duration-700"
                                     onClick={() => {
                                         setInitialPhotoIndex(0);
                                         setIsPhotoGalleryOpen(true);
                                     }}
                                 />
                             ) : sortedPhotos.length <= 4 ? (
-                                <div className="grid grid-cols-2 gap-2">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                     {sortedPhotos.slice(0, 4).map((photo, idx) => (
-                                        <img
+                                        <div
                                             key={photo.id}
-                                            src={getImageUrl(photo.url)}
-                                            alt={`Photo ${idx + 1}`}
-                                            className={`w-full object-cover cursor-pointer hover:opacity-95 transition-opacity ${idx === 0 ? 'col-span-2 h-[400px]' : 'h-[250px]'}`}
+                                            className={`relative overflow-hidden cursor-pointer ${idx === 0 ? 'sm:col-span-2 h-[300px] sm:h-[400px]' : 'h-[200px] sm:h-[250px]'}`}
                                             onClick={() => {
                                                 setInitialPhotoIndex(idx);
                                                 setIsPhotoGalleryOpen(true);
                                             }}
-                                        />
+                                        >
+                                            <img
+                                                src={getImageUrl(photo.url)}
+                                                alt={`Photo ${idx + 1}`}
+                                                className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
+                                            />
+                                        </div>
                                     ))}
                                 </div>
                             ) : (
-                                <div className="grid grid-cols-4 gap-2 h-[400px]">
+                                <div className="grid grid-cols-1 md:grid-cols-4 gap-2 h-[300px] md:h-[450px]">
                                     <div
-                                        className="col-span-2 row-span-2 relative cursor-pointer hover:opacity-95 transition-opacity"
+                                        className="md:col-span-2 md:row-span-2 relative cursor-pointer overflow-hidden h-full"
                                         onClick={() => {
                                             setInitialPhotoIndex(0);
                                             setIsPhotoGalleryOpen(true);
@@ -323,42 +328,43 @@ const ListingDetails: React.FC = () => {
                                         <img
                                             src={getImageUrl(sortedPhotos[0].url)}
                                             alt={listing.title}
-                                            className="w-full h-full object-cover"
+                                            className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
                                         />
                                     </div>
-                                    {sortedPhotos.slice(1, 5).map((photo, idx) => (
-                                        <div
-                                            key={photo.id}
-                                            className="relative cursor-pointer hover:opacity-95 transition-opacity hidden md:block"
-                                            onClick={() => {
-                                                setInitialPhotoIndex(idx + 1);
-                                                setIsPhotoGalleryOpen(true);
-                                            }}
-                                        >
-                                            <img
-                                                src={getImageUrl(photo.url)}
-                                                alt={`Photo ${idx + 2}`}
-                                                className="w-full h-full object-cover"
-                                            />
-                                        </div>
-                                    ))}
+                                    <div className="hidden md:grid md:col-span-2 md:grid-cols-2 md:grid-rows-2 gap-2 h-full">
+                                        {sortedPhotos.slice(1, 5).map((photo, idx) => (
+                                            <div
+                                                key={photo.id}
+                                                className="relative cursor-pointer overflow-hidden h-full"
+                                                onClick={() => {
+                                                    setInitialPhotoIndex(idx + 1);
+                                                    setIsPhotoGalleryOpen(true);
+                                                }}
+                                            >
+                                                <img
+                                                    src={getImageUrl(photo.url)}
+                                                    alt={`Photo ${idx + 2}`}
+                                                    className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
+                                                />
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
                             )}
-                            {sortedPhotos.length > 5 && (
-                                <button
-                                    className="absolute bottom-4 right-4 bg-white px-4 py-2 rounded-lg border border-gray-900 font-medium text-sm hover:bg-gray-50 transition-colors shadow-sm"
-                                    onClick={() => {
-                                        setInitialPhotoIndex(0);
-                                        setIsPhotoGalleryOpen(true);
-                                    }}
-                                >
-                                    Show all photos
-                                </button>
-                            )}
+                            <button
+                                className="absolute bottom-4 right-4 bg-white/90 backdrop-blur-sm px-4 py-2 rounded-lg border border-black/10 font-medium text-sm hover:bg-white hover:scale-105 transition-all shadow-sm flex items-center gap-2"
+                                onClick={() => {
+                                    setInitialPhotoIndex(0);
+                                    setIsPhotoGalleryOpen(true);
+                                }}
+                            >
+                                <span className="hidden sm:inline">Show all photos</span>
+                                <span className="sm:hidden">Photos</span>
+                            </button>
                         </div>
                     ) : (
-                        <div className="w-full h-[400px] bg-gray-100 flex items-center justify-center">
-                            <p className="text-gray-400">No photos available</p>
+                        <div className="w-full h-64 md:h-[400px] bg-muted flex items-center justify-center rounded-xl">
+                            <p className="text-muted-foreground">No photos available</p>
                         </div>
                     )}
                 </div>
@@ -540,7 +546,7 @@ const ListingDetails: React.FC = () => {
                     </div>
 
                     {/* Right Column: Booking Card */}
-                    <div className="relative">
+                    <div className="relative hidden md:block">
                         <div className="sticky top-24 border rounded-xl p-6 shadow-lg bg-white">
                             <div className="flex justify-between items-end mb-6">
                                 <div>
@@ -627,7 +633,7 @@ const ListingDetails: React.FC = () => {
                             </p>
                         )}
                     </div>
-                    <div className="h-[400px] rounded-xl overflow-hidden z-0 relative">
+                    <div className="h-64 md:h-[400px] rounded-xl overflow-hidden z-0 relative">
                         <MapContainer
                             center={[listing.latitude || 4.0511, listing.longitude || 9.7679]}
                             zoom={13}
@@ -797,12 +803,11 @@ const ListingDetails: React.FC = () => {
                                             devices = listing.safety_devices.split(',');
                                         }
                                     } catch (e) {
-                                        // If parsing fails, fallback to comma-separated
-                                        devices = listing.safety_devices.split(',');
+                                        // Fallback if not JSON
+                                        devices = [listing.safety_devices];
                                     }
-
-                                    return devices.map((device: string) => (
-                                        <p key={device}>{device.replace(/_/g, ' ')}</p>
+                                    return devices.map((device, index) => (
+                                        <p key={index}>{device}</p>
                                     ));
                                 })()}
                             </div>
@@ -811,16 +816,44 @@ const ListingDetails: React.FC = () => {
                         {/* Cancellation Policy */}
                         <div>
                             <h4 className="font-semibold mb-4">Cancellation policy</h4>
-                            <div className="space-y-2 text-sm text-gray-700">
-                                <p>Free cancellation for 48 hours. Full refund 5 days prior to arrival.</p>
-                                <p className="underline font-medium cursor-pointer">Learn more</p>
-                            </div>
+                            <p className="text-sm text-gray-700">
+                                {listing.cancellation_policy || "Flexible cancellation policy"}
+                            </p>
                         </div>
                     </div>
-
-
                 </div>
             </div>
+
+            {/* Mobile Booking Bar */}
+            <div className="fixed bottom-0 inset-x-0 z-50 bg-white border-t border-gray-200 p-4 md:hidden pb-safe">
+                <div className="flex items-center justify-between max-w-7xl mx-auto">
+                    <div className="flex flex-col">
+                        <div className="flex items-baseline gap-1">
+                            <span className="font-bold text-lg">
+                                {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XAF', maximumFractionDigits: 0 }).format(listing.price_per_night || 0)}
+                            </span>
+                            <span className="text-sm text-muted-foreground">/ night</span>
+                        </div>
+                        <span className="text-xs font-medium underline cursor-pointer">
+                            {checkInDate && checkOutDate ?
+                                `${format(checkInDate, 'MMM d')} - ${format(checkOutDate, 'MMM d')}` :
+                                'Add dates'
+                            }
+                        </span>
+                    </div>
+                    <Button
+                        className="bg-[#FF385C] hover:bg-[#D9324E] text-white font-semibold px-8"
+                        onClick={() => {
+                            // Scroll to calendar
+                            document.querySelector('.rdp')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }}
+                    >
+                        Reserve
+                    </Button>
+                </div>
+            </div>
+
+
             <Footer />
         </div >
     );

@@ -126,12 +126,15 @@ const HostDashboard: React.FC = () => {
                 {loading ? (
                     <div className="text-center py-16 text-gray-500">Loading listings...</div>
                 ) : listings.length === 0 ? (
-                    <div className="text-center py-16 bg-white rounded-xl border border-gray-200">
-                        <h3 className="text-lg font-semibold mb-2 text-gray-900">No listings yet</h3>
-                        <p className="text-gray-600 mb-6">Create your first listing to start hosting</p>
+                    <div className="text-center py-20 bg-white rounded-2xl border border-dashed border-gray-200">
+                        <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4 mx-auto">
+                            <Home className="h-8 w-8 text-gray-400" />
+                        </div>
+                        <h3 className="text-xl font-semibold mb-2 text-gray-900">No listings yet</h3>
+                        <p className="text-gray-500 mb-8 max-w-sm mx-auto">Create your first listing to start hosting and earning income.</p>
                         <Button
                             onClick={handleCreateListing}
-                            className="bg-[#FF385C] hover:bg-[#E31C5F] text-white rounded-lg px-6"
+                            className="bg-[#FF385C] hover:bg-[#E31C5F] text-white rounded-full px-8 py-6 text-lg font-semibold shadow-lg hover:shadow-xl transition-all"
                         >
                             Create Listing
                         </Button>
@@ -143,14 +146,14 @@ const HostDashboard: React.FC = () => {
                             {listings.map((item) => (
                                 <div
                                     key={item.listing.id}
-                                    className="bg-white rounded-xl border border-gray-200 p-4 hover:shadow-md transition-shadow cursor-pointer"
+                                    className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm hover:shadow-md transition-all cursor-pointer active:scale-[0.99]"
                                     onClick={() => {
                                         setSelectedListing(item.listing.id);
                                         navigate(`/host/editor/${item.listing.id}`);
                                     }}
                                 >
                                     <div className="flex items-center gap-4">
-                                        <div className="h-20 w-24 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100">
+                                        <div className="h-24 w-24 rounded-xl overflow-hidden flex-shrink-0 bg-gray-100 shadow-inner">
                                             {item.photos?.[0]?.url ? (
                                                 <img
                                                     src={getImageUrl(item.photos[0].url)}
@@ -159,37 +162,38 @@ const HostDashboard: React.FC = () => {
                                                 />
                                             ) : (
                                                 <div className="h-full w-full flex items-center justify-center text-gray-300">
-                                                    <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                                    </svg>
+                                                    <Home className="h-8 w-8" />
                                                 </div>
                                             )}
                                         </div>
-                                        <div className="flex-1 min-w-0">
-                                            <div className="flex items-start justify-between gap-3">
-                                                <div className="min-w-0">
-                                                    <div className="font-medium text-gray-900 truncate">
-                                                        {item.listing.title || 'Untitled Listing'}
-                                                    </div>
-                                                    <div className="text-sm text-gray-600 truncate">
-                                                        {(item.listing.property_type || 'Home')}{item.listing.city || item.listing.country ? ' · ' : ''}
-                                                        {item.listing.city && item.listing.country ? `${item.listing.city}, ${item.listing.country}` : ''}
-                                                    </div>
+                                        <div className="flex-1 min-w-0 py-1">
+                                            <div className="flex flex-col gap-1">
+                                                <div className="font-semibold text-gray-900 truncate text-lg">
+                                                    {item.listing.title || 'Untitled Listing'}
                                                 </div>
-                                                <div className="flex items-center gap-2">
+                                                <div className="text-sm text-gray-500 truncate">
+                                                    {(item.listing.property_type || 'Home')}
+                                                    {item.listing.city ? ` · ${item.listing.city}` : ''}
+                                                </div>
+                                                <div className="flex items-center gap-2 mt-1">
                                                     <span className={`h-2 w-2 rounded-full ${item.listing.status === 'published'
-                                                        ? 'bg-green-500'
+                                                        ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]'
                                                         : item.listing.status === 'draft'
-                                                            ? 'bg-red-500'
+                                                            ? 'bg-gray-300'
                                                             : 'bg-yellow-500'
                                                         }`} />
-                                                    <span className="text-xs text-gray-700">
-                                                        {item.listing.status === 'draft' ? 'Action required' :
+                                                    <span className="text-xs font-medium text-gray-600">
+                                                        {item.listing.status === 'draft' ? 'Draft' :
                                                             item.listing.status === 'published' ? 'Published' :
                                                                 'Pending'}
                                                     </span>
                                                 </div>
                                             </div>
+                                        </div>
+                                        <div className="text-gray-300">
+                                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                            </svg>
                                         </div>
                                     </div>
                                 </div>
@@ -284,31 +288,39 @@ const HostDashboard: React.FC = () => {
             </main>
 
             {/* Mobile Bottom Nav */}
-            <nav className="md:hidden fixed bottom-0 inset-x-0 z-50 border-t bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60">
-                <div className="max-w-7xl mx-auto px-6">
-                    <ul className="grid grid-cols-4 h-16 text-xs">
+            <nav className="md:hidden fixed bottom-0 inset-x-0 z-50 bg-white/90 backdrop-blur-lg border-t border-gray-200 pb-safe transition-all duration-300">
+                <div className="max-w-md mx-auto px-6">
+                    <ul className="grid grid-cols-4 h-16">
                         <li className="flex items-center justify-center">
-                            <a href="/host/today" className="flex flex-col items-center gap-1 text-gray-600">
-                                <Home className="h-5 w-5" />
-                                <span>Today</span>
+                            <a href="/host/today" className="flex flex-col items-center gap-1 group w-full h-full justify-center">
+                                <div className="p-1.5 rounded-full group-active:scale-95 transition-transform group-hover:bg-gray-100">
+                                    <Home className="h-6 w-6 text-gray-500 group-hover:text-gray-900 transition-colors" />
+                                </div>
+                                <span className="text-[10px] font-medium text-gray-500 group-hover:text-gray-900 transition-colors">Today</span>
                             </a>
                         </li>
                         <li className="flex items-center justify-center">
-                            <a href="#" onClick={(e) => { e.preventDefault(); handleCalendarClick(); }} className="flex flex-col items-center gap-1 text-gray-600">
-                                <Calendar className="h-5 w-5" />
-                                <span>Calendar</span>
+                            <a href="#" onClick={(e) => { e.preventDefault(); handleCalendarClick(); }} className="flex flex-col items-center gap-1 group w-full h-full justify-center">
+                                <div className="p-1.5 rounded-full group-active:scale-95 transition-transform group-hover:bg-gray-100">
+                                    <Calendar className="h-6 w-6 text-gray-500 group-hover:text-gray-900 transition-colors" />
+                                </div>
+                                <span className="text-[10px] font-medium text-gray-500 group-hover:text-gray-900 transition-colors">Calendar</span>
                             </a>
                         </li>
                         <li className="flex items-center justify-center">
-                            <a href="/host/dashboard" className="flex flex-col items-center gap-1 text-gray-900 font-medium">
-                                <Grid3x3 className="h-5 w-5" />
-                                <span>Listings</span>
+                            <a href="/host/dashboard" className="flex flex-col items-center gap-1 group w-full h-full justify-center">
+                                <div className="p-1.5 rounded-full group-active:scale-95 transition-transform">
+                                    <Grid3x3 className="h-6 w-6 text-primary fill-current" />
+                                </div>
+                                <span className="text-[10px] font-medium text-primary">Listings</span>
                             </a>
                         </li>
                         <li className="flex items-center justify-center">
-                            <a href="/messages?view=host" className="flex flex-col items-center gap-1 text-gray-600">
-                                <Mail className="h-5 w-5" />
-                                <span>Messages</span>
+                            <a href="/messages?view=host" className="flex flex-col items-center gap-1 group w-full h-full justify-center">
+                                <div className="p-1.5 rounded-full group-active:scale-95 transition-transform group-hover:bg-gray-100">
+                                    <Mail className="h-6 w-6 text-gray-500 group-hover:text-gray-900 transition-colors" />
+                                </div>
+                                <span className="text-[10px] font-medium text-gray-500 group-hover:text-gray-900 transition-colors">Messages</span>
                             </a>
                         </li>
                     </ul>

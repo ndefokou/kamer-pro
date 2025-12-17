@@ -78,24 +78,24 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
 
     return (
         <div>
-            <h3 className="text-2xl font-semibold mb-4">
+            <h3 className="text-xl font-semibold mb-4 text-gray-900">
                 {month.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
             </h3>
 
             {/* Week day headers */}
-            <div className="grid grid-cols-7 gap-4 mb-2">
+            <div className="grid grid-cols-7 gap-1 mb-1">
                 {weekDays.map(day => (
-                    <div key={day} className="text-center text-xs font-medium text-gray-500 py-2">
+                    <div key={day} className="text-center text-[10px] uppercase font-semibold text-gray-400 py-2">
                         {day}
                     </div>
                 ))}
             </div>
 
             {/* Calendar grid */}
-            <div className="grid grid-cols-7 gap-4">
+            <div className="grid grid-cols-7 gap-1">
                 {days.map((date, index) => {
                     if (!date) {
-                        return <div key={`empty-${index}`} className="h-28" />;
+                        return <div key={`empty-${index}`} className="aspect-square" />;
                     }
 
                     const dateStr = formatDate(date);
@@ -110,23 +110,26 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
                             onClick={() => !past && onDateSelect(dateStr)}
                             disabled={past}
                             className={`
-                                h-28 p-3 text-left transition-all relative rounded-2xl border flex flex-col justify-between
-                                ${!past && 'hover:border-gray-900 cursor-pointer'}
-                                ${past ? 'opacity-40 cursor-not-allowed border-gray-100' : ''}
+                                aspect-square p-1 sm:p-2 text-left transition-all relative rounded-xl border flex flex-col justify-between overflow-hidden
+                                ${!past && 'hover:border-black hover:shadow-sm cursor-pointer'}
+                                ${past ? 'opacity-40 cursor-not-allowed border-gray-100 bg-gray-50' : ''}
                                 ${selected
-                                    ? 'border-2 border-gray-900 bg-white z-10'
+                                    ? 'border-2 border-black bg-gray-900 text-white z-10'
                                     : 'border-gray-200 bg-white'
                                 }
-                                ${!available && !past && !selected ? 'bg-gray-100 border-gray-200' : ''}
+                                ${!available && !past && !selected ? 'bg-gray-50 border-gray-200' : ''}
                             `}
                         >
-                            <span className={`text-sm font-medium ${past ? 'text-gray-400' : 'text-gray-900'}`}>
+                            <span className={`text-xs font-medium ${selected ? 'text-white' : past ? 'text-gray-400' : 'text-gray-900'}`}>
                                 {date.getDate()}
                             </span>
                             {!past && (
-                                <span className={`text-sm ${available ? 'text-gray-700' : 'text-gray-400 line-through'}`}>
-                                    ${price}
-                                </span>
+                                <div className="flex flex-col items-center justify-center flex-1 w-full">
+                                    <span className={`text-[10px] sm:text-xs font-medium truncate w-full text-center ${selected ? 'text-white' : available ? 'text-gray-700' : 'text-gray-400 line-through'
+                                        }`}>
+                                        ${price}
+                                    </span>
+                                </div>
                             )}
                         </button>
                     );

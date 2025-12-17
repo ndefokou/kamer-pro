@@ -74,13 +74,31 @@ const MboaMaissonSearch = () => {
     ];
 
     return (
-        <form onSubmit={handleSearch} className="w-full max-w-4xl mx-auto relative z-50">
-            <div className="flex items-center bg-white rounded-full shadow-md border border-gray-200 hover:shadow-lg transition-shadow duration-200 relative">
+        <form onSubmit={handleSearch} className="w-full max-w-4xl mx-auto relative z-40">
+            {/* Mobile Search Trigger */}
+            <div className="md:hidden w-full px-4">
+                <div className="flex items-center gap-3 bg-white rounded-full shadow-md border border-gray-200 p-3" onClick={() => setOpenWhere(true)}>
+                    <Search className="h-5 w-5 text-gray-500 ml-2" />
+                    <div className="flex flex-col">
+                        <span className="text-sm font-semibold text-gray-900">Where to?</span>
+                        <div className="flex gap-1 text-xs text-gray-500">
+                            <span>Anywhere</span>
+                            <span>•</span>
+                            <span>Any week</span>
+                            <span>•</span>
+                            <span>Add guests</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Desktop Search Bar */}
+            <div className="hidden md:flex items-center bg-white rounded-full shadow-soft hover:shadow-elevated border border-gray-200 transition-all duration-300 relative">
                 {/* Where */}
                 <Popover open={openWhere} onOpenChange={setOpenWhere}>
                     <PopoverTrigger asChild>
-                        <div className={`flex-1 px-6 py-3 cursor-pointer hover:bg-gray-100 rounded-full transition-colors ${openWhere ? 'bg-gray-100' : ''}`}>
-                            <label className="block text-xs font-bold text-gray-900 mb-1">
+                        <div className={`flex-1 px-8 py-3.5 cursor-pointer hover:bg-gray-100 rounded-full transition-colors ${openWhere ? 'bg-gray-100 shadow-sm' : ''}`}>
+                            <label className="block text-xs font-bold text-gray-900 mb-0.5 uppercase tracking-wider">
                                 {t("where")}
                             </label>
                             <input
@@ -94,19 +112,19 @@ const MboaMaissonSearch = () => {
                     </PopoverTrigger>
                     <PopoverContent className="w-[350px] p-0 rounded-3xl overflow-hidden shadow-xl border-0 mt-4" align="start">
                         <div className="p-4">
-                            <h3 className="text-xs font-bold text-gray-500 mb-4 px-2">Suggestions de destinations</h3>
+                            <h3 className="text-xs font-bold text-gray-500 mb-4 px-2 uppercase tracking-wider">Suggestions</h3>
                             <div className="space-y-1">
                                 {suggestions.map((item) => (
                                     <div
                                         key={item.name}
-                                        className="flex items-center gap-4 p-2 hover:bg-gray-100 rounded-lg cursor-pointer transition-colors"
+                                        className="flex items-center gap-4 p-3 hover:bg-gray-50 rounded-xl cursor-pointer transition-colors"
                                         onClick={() => {
                                             setWhere(item.name);
                                             setOpenWhere(false);
                                             setOpenWhen(true);
                                         }}
                                     >
-                                        <div className="h-10 w-10 bg-gray-100 rounded-lg flex items-center justify-center text-xl">
+                                        <div className="h-12 w-12 bg-gray-100 rounded-xl flex items-center justify-center text-2xl">
                                             {item.icon}
                                         </div>
                                         <div>
@@ -120,13 +138,13 @@ const MboaMaissonSearch = () => {
                     </PopoverContent>
                 </Popover>
 
-                <div className="h-8 w-px bg-gray-300" />
+                <div className="h-8 w-px bg-gray-200" />
 
                 {/* When */}
                 <Popover open={openWhen} onOpenChange={setOpenWhen}>
                     <PopoverTrigger asChild>
-                        <div className={`flex-1 px-6 py-3 cursor-pointer hover:bg-gray-100 transition-colors ${openWhen ? 'bg-gray-100 rounded-full' : ''}`}>
-                            <label className="block text-xs font-bold text-gray-900 mb-1">
+                        <div className={`flex-1 px-8 py-3.5 cursor-pointer hover:bg-gray-100 transition-colors ${openWhen ? 'bg-gray-100 rounded-full shadow-sm' : ''}`}>
+                            <label className="block text-xs font-bold text-gray-900 mb-0.5 uppercase tracking-wider">
                                 {t("when")}
                             </label>
                             <div className="text-sm text-gray-900 font-medium truncate">
@@ -140,7 +158,7 @@ const MboaMaissonSearch = () => {
                                 ) : activeTab === "flexible" ? (
                                     `${flexibleDuration} in ${flexibleMonths.length > 0 ? flexibleMonths.length + " months" : "anytime"}`
                                 ) : (
-                                    <span className="text-gray-500 font-normal">{t("add dates")}</span>
+                                    <span className="text-gray-400 font-normal">{t("add dates")}</span>
                                 )}
                             </div>
                         </div>
@@ -280,19 +298,19 @@ const MboaMaissonSearch = () => {
                     </PopoverContent>
                 </Popover>
 
-                <div className="h-8 w-px bg-gray-300" />
+                <div className="h-8 w-px bg-gray-200" />
 
                 {/* Who */}
                 <Popover open={openWho} onOpenChange={setOpenWho}>
                     <PopoverTrigger asChild>
-                        <div className={`flex-1 px-6 py-3 cursor-pointer hover:bg-gray-100 transition-colors ${openWho ? 'bg-gray-100 rounded-full' : ''}`}>
-                            <label className="block text-xs font-bold text-gray-900 mb-1">
+                        <div className={`flex-1 px-8 py-3.5 cursor-pointer hover:bg-gray-100 transition-colors ${openWho ? 'bg-gray-100 rounded-full shadow-sm' : ''}`}>
+                            <label className="block text-xs font-bold text-gray-900 mb-0.5 uppercase tracking-wider">
                                 {t("who")}
                             </label>
                             <div className="text-sm text-gray-900 font-medium truncate">
                                 {guests.adults + guests.children > 0
                                     ? `${guests.adults + guests.children} guests`
-                                    : <span className="text-gray-500 font-normal">{t("add guests")}</span>}
+                                    : <span className="text-gray-400 font-normal">{t("add guests")}</span>}
                             </div>
                         </div>
                     </PopoverTrigger>
@@ -342,9 +360,9 @@ const MboaMaissonSearch = () => {
                     <Button
                         type="submit"
                         size="icon"
-                        className="h-12 w-12 rounded-full bg-primary hover:bg-primary-dark transition-colors shadow-none"
+                        className="h-12 w-12 rounded-full bg-primary hover:bg-primary-dark transition-all duration-300 shadow-md hover:scale-105"
                     >
-                        <Search className="h-5 w-5 text-white" />
+                        <Search className="h-5 w-5 text-white stroke-[3px]" />
                     </Button>
                 </div>
             </div>

@@ -1650,7 +1650,7 @@ const ListingEditor: React.FC = () => {
             </div>
 
             {/* Mobile Bottom Nav */}
-            <nav className="md:hidden fixed bottom-0 inset-x-0 z-50 border-t bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60">
+            <nav className="md:hidden fixed bottom-0 inset-x-0 z-50 border-t bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60 pb-safe">
                 <div className="max-w-7xl mx-auto px-6">
                     <ul className="grid grid-cols-4 h-16 text-xs">
                         <li className="flex items-center justify-center">

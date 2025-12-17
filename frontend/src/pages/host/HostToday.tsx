@@ -81,7 +81,7 @@ const HostToday: React.FC = () => {
     return (
         <div className="min-h-screen bg-gray-50">
             {/* Host Navbar */}
-            <header className="border-b bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60 sticky top-0 z-50">
+            <header className="border-b bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60 sticky top-0 z-50 pt-safe">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 md:h-20 flex items-center justify-between">
                     <div className="flex items-center gap-12">
                         <div className="text-[#FF385C] font-bold text-xl cursor-pointer" onClick={() => navigate('/')}>
@@ -195,18 +195,25 @@ const HostToday: React.FC = () => {
 
             {/* Main Content */}
             <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8 pb-24 md:pb-12">
+                {/* Welcome Header */}
+                <div className="mb-8">
+                    <h1 className="text-3xl font-bold text-gray-900">Welcome back, {username || 'Host'}</h1>
+                    <p className="text-gray-600 mt-1">Here's what's happening today.</p>
+                </div>
+
                 {/* Alert Banner */}
                 {hasActionRequired && (
-                    <div className="mb-8 bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
-                        <div className="flex items-start gap-3">
-                            <div className="flex-shrink-0 w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                                <Mail className="h-6 w-6 text-green-600" />
-                            </div>
-                            <div className="flex-1">
-                                <h3 className="font-semibold text-gray-900 mb-1">Confirm a few key details</h3>
-                                <p className="text-sm text-gray-600">Required to publish.</p>
-                            </div>
+                    <div className="mb-8 bg-white border border-gray-200 rounded-xl p-4 shadow-sm flex items-start gap-4">
+                        <div className="flex-shrink-0 w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center">
+                            <Mail className="h-5 w-5 text-amber-600" />
                         </div>
+                        <div className="flex-1">
+                            <h3 className="font-semibold text-gray-900">Action required</h3>
+                            <p className="text-sm text-gray-600 mt-1">You have pending items to review to publish your listing.</p>
+                        </div>
+                        <Button variant="outline" size="sm" onClick={() => navigate('/host/dashboard')}>
+                            Review
+                        </Button>
                     </div>
                 )}
 
@@ -239,21 +246,24 @@ const HostToday: React.FC = () => {
                     <div className="text-center py-16 text-gray-500">Loading reservations...</div>
                 ) : currentBookings.length === 0 ? (
                     /* Empty State */
-                    <div className="flex flex-col items-center justify-center py-16">
-                        <div className="mb-6">
-                            <Calendar className="h-32 w-32 text-gray-300" />
+                    /* Empty State */
+                    <div className="flex flex-col items-center justify-center py-20 bg-white rounded-2xl border border-dashed border-gray-200">
+                        <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
+                            <Calendar className="h-8 w-8 text-gray-400" />
                         </div>
-                        <h2 className="text-2xl font-semibold text-gray-900 mb-2">
-                            You don't have any {activeTab === 'upcoming' ? 'upcoming ' : ''}reservations
+                        <h2 className="text-xl font-semibold text-gray-900 mb-2">
+                            No {activeTab === 'upcoming' ? 'upcoming ' : ''}reservations
                         </h2>
-                        <p className="text-gray-600 mb-6 text-center max-w-md">
-                            To get booked, you'll need to complete and publish your listing.
+                        <p className="text-gray-500 mb-6 text-center max-w-sm">
+                            {activeTab === 'today'
+                                ? "You don't have any guests checking in or out today."
+                                : "You don't have any upcoming bookings at the moment."}
                         </p>
                         <Button
                             onClick={() => navigate('/host/dashboard')}
-                            className="bg-gray-900 hover:bg-gray-800 text-white rounded-lg px-6"
+                            className="bg-gray-900 hover:bg-gray-800 text-white rounded-full px-6"
                         >
-                            Complete your listing
+                            Manage Listings
                         </Button>
                     </div>
                 ) : (
@@ -332,31 +342,39 @@ const HostToday: React.FC = () => {
             </main>
 
             {/* Mobile Bottom Nav */}
-            <nav className="md:hidden fixed bottom-0 inset-x-0 z-50 border-t bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60">
-                <div className="max-w-7xl mx-auto px-6">
-                    <ul className="grid grid-cols-4 h-16 text-xs">
+            <nav className="md:hidden fixed bottom-0 inset-x-0 z-50 bg-white/90 backdrop-blur-lg border-t border-gray-200 pb-safe transition-all duration-300">
+                <div className="max-w-md mx-auto px-6">
+                    <ul className="grid grid-cols-4 h-16">
                         <li className="flex items-center justify-center">
-                            <a href="/host/today" className="flex flex-col items-center gap-1 text-gray-900 font-medium">
-                                <Home className="h-5 w-5" />
-                                <span>Today</span>
+                            <a href="/host/today" className="flex flex-col items-center gap-1 group w-full h-full justify-center">
+                                <div className="p-1.5 rounded-full group-active:scale-95 transition-transform">
+                                    <Home className="h-6 w-6 text-primary fill-current" />
+                                </div>
+                                <span className="text-[10px] font-medium text-primary">Today</span>
                             </a>
                         </li>
                         <li className="flex items-center justify-center">
-                            <a href="/host/calendar" className="flex flex-col items-center gap-1 text-gray-600">
-                                <Calendar className="h-5 w-5" />
-                                <span>Calendar</span>
+                            <a href="/host/calendar" className="flex flex-col items-center gap-1 group w-full h-full justify-center">
+                                <div className="p-1.5 rounded-full group-active:scale-95 transition-transform group-hover:bg-gray-100">
+                                    <Calendar className="h-6 w-6 text-gray-500 group-hover:text-gray-900 transition-colors" />
+                                </div>
+                                <span className="text-[10px] font-medium text-gray-500 group-hover:text-gray-900 transition-colors">Calendar</span>
                             </a>
                         </li>
                         <li className="flex items-center justify-center">
-                            <a href="/host/dashboard" className="flex flex-col items-center gap-1 text-gray-600">
-                                <Grid3x3 className="h-5 w-5" />
-                                <span>Listings</span>
+                            <a href="/host/dashboard" className="flex flex-col items-center gap-1 group w-full h-full justify-center">
+                                <div className="p-1.5 rounded-full group-active:scale-95 transition-transform group-hover:bg-gray-100">
+                                    <Grid3x3 className="h-6 w-6 text-gray-500 group-hover:text-gray-900 transition-colors" />
+                                </div>
+                                <span className="text-[10px] font-medium text-gray-500 group-hover:text-gray-900 transition-colors">Listings</span>
                             </a>
                         </li>
                         <li className="flex items-center justify-center">
-                            <a href="#" className="flex flex-col items-center gap-1 text-gray-600">
-                                <Mail className="h-5 w-5" />
-                                <span>Messages</span>
+                            <a href="/messages?view=host" className="flex flex-col items-center gap-1 group w-full h-full justify-center">
+                                <div className="p-1.5 rounded-full group-active:scale-95 transition-transform group-hover:bg-gray-100">
+                                    <Mail className="h-6 w-6 text-gray-500 group-hover:text-gray-900 transition-colors" />
+                                </div>
+                                <span className="text-[10px] font-medium text-gray-500 group-hover:text-gray-900 transition-colors">Messages</span>
                             </a>
                         </li>
                     </ul>

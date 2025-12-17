@@ -18,12 +18,13 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/contexts/AuthContext";
+import Header from "@/components/Header";
 
 // Fix Leaflet default icon issue
 import icon from "leaflet/dist/images/marker-icon.png";
 import iconShadow from "leaflet/dist/images/marker-shadow.png";
 
-let DefaultIcon = L.icon({
+const DefaultIcon = L.icon({
     iconUrl: icon,
     shadowUrl: iconShadow,
     iconSize: [25, 41],
@@ -120,51 +121,7 @@ const SearchResults = () => {
     return (
         <div className="min-h-screen bg-white flex flex-col">
             {/* Header */}
-            <header className="border-b border-gray-200 sticky top-0 z-50 bg-white">
-                <div className="container mx-auto px-4 sm:px-6">
-                    <div className="flex items-center justify-between h-20">
-                        {/* Logo */}
-                        <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate("/")}>
-                            <svg className="h-8 w-8 text-green-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-                                <polyline points="9 22 9 12 15 12 15 22" />
-                            </svg>
-                            <span className="text-xl font-bold text-green-600 hidden md:block">MboaMaison</span>
-                        </div>
-
-                        {/* Search Bar */}
-                        <div className="flex-1 max-w-2xl px-4">
-                            <MboaMaissonSearch />
-                        </div>
-
-                        {/* Right Menu */}
-                        <div className="flex items-center gap-4">
-                            <button
-                                className="text-sm font-semibold hover:bg-gray-100 px-4 py-3 rounded-full transition-colors hidden md:block"
-                                onClick={() => navigate('/webauth-login?tab=register')}
-                            >
-                                {t("Devenir hôte")}
-                            </button>
-                            <button className="p-3 hover:bg-gray-100 rounded-full transition-colors">
-                                <Globe className="h-5 w-5" />
-                            </button>
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <div className="flex items-center gap-3 border border-gray-300 rounded-full px-3 py-2 hover:shadow-md transition-shadow cursor-pointer">
-                                        <Menu className="h-4 w-4" />
-                                        <div className="bg-gray-700 rounded-full p-1.5">
-                                            <User className="h-4 w-4 text-white" />
-                                        </div>
-                                    </div>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" className="w-64">
-                                    <UserMenuContent />
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                        </div>
-                    </div>
-                </div>
-            </header>
+            <Header />
 
             {/* Main Content */}
             <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
@@ -180,9 +137,14 @@ const SearchResults = () => {
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                         {isLoading ? (
-                            <div className="col-span-full text-center py-20">
-                                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#FF385C] mx-auto mb-4" />
-                                <p className="text-gray-600">Loading stays...</p>
+                            <div className="col-span-full flex flex-col items-center justify-center py-20 gap-4">
+                                <div className="relative">
+                                    <div className="h-12 w-12 rounded-full border-4 border-primary/30 border-t-primary animate-spin" />
+                                    <div className="absolute inset-0 flex items-center justify-center">
+                                        <HomeIcon className="h-4 w-4 text-primary/50" />
+                                    </div>
+                                </div>
+                                <p className="text-muted-foreground animate-pulse">Loading stays...</p>
                             </div>
                         ) : filteredProperties.length === 0 ? (
                             <div className="col-span-full text-center py-20">

@@ -72,6 +72,7 @@ export interface Product {
     published_at?: string;
     getting_around?: string;
     scenic_views?: string;
+    cancellation_policy?: string;
   };
   amenities: string[];
   photos: {
