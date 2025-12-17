@@ -13,7 +13,7 @@ import { format, addMonths } from "date-fns";
 import { cn } from "@/lib/utils";
 import { DateRange } from "react-day-picker";
 
-const mboaMaissonSearch = () => {
+const MboaMaissonSearch = () => {
     const { t } = useTranslation();
     const navigate = useNavigate();
     const [where, setWhere] = useState("");
@@ -352,4 +352,4 @@ const mboaMaissonSearch = () => {
     );
 };
 
-export default mboaMaissonSearch;
+export default MboaMaissonSearch;

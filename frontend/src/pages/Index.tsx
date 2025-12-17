@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { getProducts, Product } from "@/api/client";
 import PropertyCard from "@/components/PropertyCard";
-import mboaMaissonSearch from "@/components/Search";
+import MboaMaissonSearch from "@/components/Search";
 import HorizontalPropertySection from "@/components/HorizontalPropertySection";
 import { getImageUrl } from "@/lib/utils";
 
@@ -30,7 +30,7 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
-        <mboaMaissonSearch />
+        <MboaMaissonSearch />
 
         <HorizontalPropertySection title="Logements populaires">
           {popularListings.map((product) => (

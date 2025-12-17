@@ -7,7 +7,7 @@ import "leaflet/dist/leaflet.css";
 import { Heart, Star, Menu, User, Globe, Home as HomeIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getProducts, Product } from "@/api/client";
-import mboaMaissonSearch from "@/components/Search";
+import MboaMaissonSearch from "@/components/Search";
 import { getImageUrl } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
 import {
@@ -134,7 +134,7 @@ const SearchResults = () => {
 
                         {/* Search Bar */}
                         <div className="flex-1 max-w-2xl px-4">
-                            <mboaMaissonSearch />
+                            <MboaMaissonSearch />
                         </div>
 
                         {/* Right Menu */}

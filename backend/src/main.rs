@@ -97,7 +97,10 @@ async fn main() -> std::io::Result<()> {
                     )
                     .service(
                         web::scope("/messages")
+                            .service(routes::messages::create_conversation)
+                            .service(routes::messages::get_conversations)
                             .service(routes::messages::get_messages)
+                            .service(routes::messages::send_message)
                             .service(routes::messages::get_unread_count)
                             .service(routes::messages::get_message_templates),
                     )

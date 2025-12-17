@@ -36,6 +36,8 @@ pub struct Listing {
     pub updated_at: Option<String>,
     pub published_at: Option<String>,
     pub cancellation_policy: Option<String>,
+    pub getting_around: Option<String>,
+    pub scenic_views: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -103,6 +105,8 @@ pub struct UpdateListingRequest {
     pub house_rules: Option<String>,
     pub safety_items: Option<Vec<String>>,
     pub cancellation_policy: Option<String>,
+    pub getting_around: Option<String>,
+    pub scenic_views: Option<Vec<String>>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -492,6 +496,15 @@ pub async fn update_listing(
             if let Some(ref cancellation_policy) = body.cancellation_policy {
                 query_builder.push(", cancellation_policy = ");
                 query_builder.push_bind(cancellation_policy);
+            }
+            if let Some(ref getting_around) = body.getting_around {
+                query_builder.push(", getting_around = ");
+                query_builder.push_bind(getting_around);
+            }
+            if let Some(ref scenic_views) = body.scenic_views {
+                let json = serde_json::to_string(scenic_views).unwrap_or_default();
+                query_builder.push(", scenic_views = ");
+                query_builder.push_bind(json);
             }
 
             query_builder.push(" WHERE id = ");

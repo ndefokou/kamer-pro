@@ -21,6 +21,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
 import { MessageSquare, ShieldCheck, Award, Calendar as CalendarIcon, Map as MapIcon } from 'lucide-react';
 import ReviewModal from '@/components/ReviewModal';
+import ShareModal from '@/components/ShareModal';
+import MessageHostModal from '@/components/MessageHostModal';
+import PhotoGallery from '@/components/PhotoGallery';
 
 let DefaultIcon = L.icon({
     iconUrl: icon,
@@ -63,6 +66,10 @@ const ListingDetails: React.FC = () => {
     const [currentMonth, setCurrentMonth] = React.useState(new Date());
     const [showDatePicker, setShowDatePicker] = React.useState(false);
     const [isReviewModalOpen, setIsReviewModalOpen] = React.useState(false);
+    const [isShareModalOpen, setIsShareModalOpen] = React.useState(false);
+    const [isMessageModalOpen, setIsMessageModalOpen] = React.useState(false);
+    const [isPhotoGalleryOpen, setIsPhotoGalleryOpen] = React.useState(false);
+    const [initialPhotoIndex, setInitialPhotoIndex] = React.useState(0);
     const [reviews, setReviews] = React.useState<Review[]>([]);
 
     const handleReviewSubmit = (reviewData: any) => {
@@ -238,7 +245,12 @@ const ListingDetails: React.FC = () => {
                         </div>
                     </div>
                     <div className="flex gap-2">
-                        <Button variant="outline" size="sm" className="gap-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className="gap-2"
+                            onClick={() => setIsShareModalOpen(true)}
+                        >
                             <Share className="h-4 w-4" />
                             Share
                         </Button>
@@ -249,6 +261,27 @@ const ListingDetails: React.FC = () => {
                     </div>
                 </div>
 
+                <ShareModal
+                    isOpen={isShareModalOpen}
+                    onClose={() => setIsShareModalOpen(false)}
+                    listing={{ ...listing, photos: sortedPhotos }}
+                />
+
+                <MessageHostModal
+                    isOpen={isMessageModalOpen}
+                    onClose={() => setIsMessageModalOpen(false)}
+                    listingId={listing.id}
+                    hostId={listing.host_id}
+                    hostName="Host" // TODO: Get actual host name
+                />
+
+                <PhotoGallery
+                    isOpen={isPhotoGalleryOpen}
+                    onClose={() => setIsPhotoGalleryOpen(false)}
+                    photos={sortedPhotos}
+                    initialPhotoIndex={initialPhotoIndex}
+                />
+
                 {/* Photo Gallery */}
                 <div className="mb-8 rounded-xl overflow-hidden">
                     {sortedPhotos.length > 0 ? (
@@ -257,7 +290,11 @@ const ListingDetails: React.FC = () => {
                                 <img
                                     src={getImageUrl(sortedPhotos[0].url)}
                                     alt={listing.title}
-                                    className="w-full h-[500px] object-cover"
+                                    className="w-full h-[500px] object-cover cursor-pointer hover:opacity-95 transition-opacity"
+                                    onClick={() => {
+                                        setInitialPhotoIndex(0);
+                                        setIsPhotoGalleryOpen(true);
+                                    }}
                                 />
                             ) : sortedPhotos.length <= 4 ? (
                                 <div className="grid grid-cols-2 gap-2">
@@ -266,13 +303,23 @@ const ListingDetails: React.FC = () => {
                                             key={photo.id}
                                             src={getImageUrl(photo.url)}
                                             alt={`Photo ${idx + 1}`}
-                                            className={`w-full object-cover ${idx === 0 ? 'col-span-2 h-[400px]' : 'h-[250px]'}`}
+                                            className={`w-full object-cover cursor-pointer hover:opacity-95 transition-opacity ${idx === 0 ? 'col-span-2 h-[400px]' : 'h-[250px]'}`}
+                                            onClick={() => {
+                                                setInitialPhotoIndex(idx);
+                                                setIsPhotoGalleryOpen(true);
+                                            }}
                                         />
                                     ))}
                                 </div>
                             ) : (
                                 <div className="grid grid-cols-4 gap-2 h-[400px]">
-                                    <div className="col-span-2 row-span-2 relative cursor-pointer hover:opacity-95 transition-opacity">
+                                    <div
+                                        className="col-span-2 row-span-2 relative cursor-pointer hover:opacity-95 transition-opacity"
+                                        onClick={() => {
+                                            setInitialPhotoIndex(0);
+                                            setIsPhotoGalleryOpen(true);
+                                        }}
+                                    >
                                         <img
                                             src={getImageUrl(sortedPhotos[0].url)}
                                             alt={listing.title}
@@ -280,7 +327,14 @@ const ListingDetails: React.FC = () => {
                                         />
                                     </div>
                                     {sortedPhotos.slice(1, 5).map((photo, idx) => (
-                                        <div key={photo.id} className="relative cursor-pointer hover:opacity-95 transition-opacity hidden md:block">
+                                        <div
+                                            key={photo.id}
+                                            className="relative cursor-pointer hover:opacity-95 transition-opacity hidden md:block"
+                                            onClick={() => {
+                                                setInitialPhotoIndex(idx + 1);
+                                                setIsPhotoGalleryOpen(true);
+                                            }}
+                                        >
                                             <img
                                                 src={getImageUrl(photo.url)}
                                                 alt={`Photo ${idx + 2}`}
@@ -293,6 +347,10 @@ const ListingDetails: React.FC = () => {
                             {sortedPhotos.length > 5 && (
                                 <button
                                     className="absolute bottom-4 right-4 bg-white px-4 py-2 rounded-lg border border-gray-900 font-medium text-sm hover:bg-gray-50 transition-colors shadow-sm"
+                                    onClick={() => {
+                                        setInitialPhotoIndex(0);
+                                        setIsPhotoGalleryOpen(true);
+                                    }}
                                 >
                                     Show all photos
                                 </button>
@@ -590,6 +648,48 @@ const ListingDetails: React.FC = () => {
                     </div>
                 </div>
 
+                {/* Location Details: Getting around & Scenic views */}
+                {(listing.getting_around || (listing.scenic_views && listing.scenic_views.length > 0)) && (
+                    <div className="py-8 border-t border-gray-200">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            {listing.getting_around && (
+                                <div>
+                                    <h3 className="text-xl font-semibold mb-4">Getting around</h3>
+                                    <p className="text-muted-foreground whitespace-pre-line">
+                                        {listing.getting_around}
+                                    </p>
+                                </div>
+                            )}
+
+                            {listing.scenic_views && (
+                                <div>
+                                    <h3 className="text-xl font-semibold mb-4">Scenic views</h3>
+                                    <div className="flex flex-wrap gap-2">
+                                        {(() => {
+                                            try {
+                                                const views = typeof listing.scenic_views === 'string'
+                                                    ? JSON.parse(listing.scenic_views)
+                                                    : listing.scenic_views;
+
+                                                if (Array.isArray(views)) {
+                                                    return views.map((view: string, index: number) => (
+                                                        <div key={index} className="bg-gray-100 px-3 py-1 rounded-full text-sm text-gray-700">
+                                                            {view}
+                                                        </div>
+                                                    ));
+                                                }
+                                                return null;
+                                            } catch (e) {
+                                                return null;
+                                            }
+                                        })()}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )}
+
                 {/* Host Section */}
                 <div className="mt-12 pt-8 border-t border-gray-200">
                     <h3 className="text-xl font-semibold mb-6">Meet your Host</h3>
@@ -649,7 +749,11 @@ const ListingDetails: React.FC = () => {
                                 <p className="text-muted-foreground mb-6">
                                     I am a passionate traveler and I love hosting people from all over the world. My goal is to make your stay as comfortable as possible.
                                 </p>
-                                <Button variant="outline" className="font-semibold border-black text-black hover:bg-gray-100">
+                                <Button
+                                    variant="outline"
+                                    className="font-semibold border-black text-black hover:bg-gray-100"
+                                    onClick={() => setIsMessageModalOpen(true)}
+                                >
                                     Message Host
                                 </Button>
                             </div>
@@ -718,7 +822,7 @@ const ListingDetails: React.FC = () => {
                 </div>
             </div>
             <Footer />
-        </div>
+        </div >
     );
 };
 

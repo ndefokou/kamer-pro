@@ -70,6 +70,8 @@ export interface Product {
     created_at?: string;
     updated_at?: string;
     published_at?: string;
+    getting_around?: string;
+    scenic_views?: string;
   };
   amenities: string[];
   photos: {
@@ -137,5 +139,66 @@ export const getMyProducts = async () => {
 
 export const getListing = async (id: string): Promise<Product> => {
   const response = await apiClient.get(`/listings/${id}`);
+  return response.data;
+};
+
+// Messaging API
+export interface Message {
+  id: string;
+  conversation_id: string;
+  sender_id: number;
+  content: string;
+  read_at?: string;
+  created_at: string;
+}
+
+export interface Conversation {
+  conversation: {
+    id: string;
+    listing_id: string;
+    guest_id: number;
+    host_id: number;
+    created_at: string;
+    updated_at: string;
+  };
+  last_message?: Message;
+  other_user: {
+    id: number;
+    name: string;
+    avatar?: string;
+  };
+  listing_title: string;
+  listing_image?: string;
+}
+
+export const createConversation = async (listingId: string, hostId: number, message: string) => {
+  const response = await apiClient.post("/messages/conversations", {
+    listing_id: listingId,
+    host_id: hostId,
+    message,
+  });
+  return response.data;
+};
+
+export const getConversations = async (): Promise<Conversation[]> => {
+  const response = await apiClient.get("/messages/conversations");
+  return response.data;
+};
+
+export const getMessages = async (conversationId: string): Promise<Message[]> => {
+  const response = await apiClient.get(`/messages/conversations/${conversationId}`);
+  return response.data;
+};
+
+export const sendMessage = async (conversationId: string, content: string) => {
+  const response = await apiClient.post("/messages", {
+    conversation_id: conversationId,
+    content,
+  });
+  return response.data;
+};
+
+export const getUnreadCount = async (): Promise<{ count: number }> => {
+  const response = await apiClient.get("/messages/unread-count");
   return response.data;
 };
