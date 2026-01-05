@@ -31,6 +31,7 @@ import AccountSettings from "./pages/account/AccountSettings";
 import ListingDetails from "./pages/ListingDetails";
 import SearchResults from "./pages/SearchResults";
 import Messages from "./pages/Messages";
+import AdminDashboard from "./pages/admin/AdminDashboard";
 
 const queryClient = new QueryClient();
 
@@ -46,6 +47,13 @@ const router = createBrowserRouter(
       element: <ProtectedRoute />,
       children: [
         { index: true, Component: AccountSettings },
+      ],
+    },
+    {
+      path: "/admin",
+      element: <ProtectedRoute />,
+      children: [
+        { index: true, Component: AdminDashboard },
       ],
     },
     {

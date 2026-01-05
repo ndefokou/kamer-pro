@@ -89,6 +89,10 @@ export interface Product {
     url: string;
     uploaded_at?: string;
   }[];
+  unavailable_dates?: {
+    check_in: string;
+    check_out: string;
+  }[];
 }
 
 export interface ProductFilters {
@@ -201,5 +205,63 @@ export const sendMessage = async (conversationId: string, content: string) => {
 
 export const getUnreadCount = async (): Promise<{ count: number }> => {
   const response = await apiClient.get("/messages/unread-count");
+  return response.data;
+};
+
+export interface CreateBookingData {
+  listing_id: string;
+  check_in: string;
+  check_out: string;
+  guests: number;
+}
+
+export const createBooking = async (bookingData: CreateBookingData) => {
+  const response = await apiClient.post("/bookings", bookingData);
+  return response.data;
+};
+
+// Report API
+export interface CreateReportData {
+  host_id: number;
+  listing_id?: string;
+  reason: string;
+}
+
+export const createReport = async (reportData: CreateReportData) => {
+  const response = await apiClient.post("/reports", reportData);
+  return response.data;
+};
+
+// Admin API
+export interface AdminHost {
+  id: number;
+  username: string;
+  email: string;
+  created_at: string;
+  listing_count: number;
+}
+
+export interface AdminReport {
+  id: number;
+  reporter_id: number;
+  host_id: number;
+  listing_id?: string;
+  reason: string;
+  status: string;
+  created_at: string;
+}
+
+export const getAdminHosts = async (): Promise<AdminHost[]> => {
+  const response = await apiClient.get("/admin/hosts");
+  return response.data;
+};
+
+export const deleteHost = async (hostId: number) => {
+  const response = await apiClient.delete(`/admin/hosts/${hostId}`);
+  return response.data;
+};
+
+export const getAdminReports = async (): Promise<AdminReport[]> => {
+  const response = await apiClient.get("/admin/reports");
   return response.data;
 };

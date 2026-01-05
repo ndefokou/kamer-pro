@@ -112,6 +112,7 @@ async fn main() -> std::io::Result<()> {
                     .service(web::scope("/wishlist").service(routes::wishlist::get_wishlist))
                     .service(
                         web::scope("/bookings")
+                            .service(routes::bookings::create_booking)
                             .service(routes::bookings::get_today_bookings)
                             .service(routes::bookings::get_upcoming_bookings),
                     )
@@ -121,6 +122,13 @@ async fn main() -> std::io::Result<()> {
                             .service(routes::calendar::update_calendar_dates)
                             .service(routes::calendar::get_settings)
                             .service(routes::calendar::update_settings),
+                    )
+                    .service(web::scope("/reports").service(routes::reports::create_report))
+                    .service(
+                        web::scope("/admin")
+                            .service(routes::admin::get_hosts)
+                            .service(routes::admin::delete_host)
+                            .service(routes::admin::get_reports),
                     ),
             )
             // Serve static files from /uploads route

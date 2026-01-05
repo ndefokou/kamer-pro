@@ -1,4 +1,5 @@
-use actix_web::{get, web, HttpRequest, HttpResponse, Responder};
+use actix_web::{get, post, web, HttpRequest, HttpResponse, Responder};
+use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
 use sqlx::SqlitePool;
 
@@ -29,6 +30,14 @@ pub struct BookingWithDetails {
     pub listing_photo: Option<String>,
     pub listing_city: Option<String>,
     pub listing_country: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct CreateBookingRequest {
+    pub listing_id: String,
+    pub check_in: String,
+    pub check_out: String,
+    pub guests: i32,
 }
 
 // ============================================================================
@@ -66,6 +75,106 @@ fn extract_user_id(req: &HttpRequest) -> Result<i32, HttpResponse> {
 // ============================================================================
 // API Endpoints
 // ============================================================================
+
+/// POST /api/bookings - Create a new booking
+#[post("")]
+pub async fn create_booking(
+    pool: web::Data<SqlitePool>,
+    req: HttpRequest,
+    booking_data: web::Json<CreateBookingRequest>,
+) -> impl Responder {
+    let user_id = match extract_user_id(&req) {
+        Ok(id) => id,
+        Err(response) => return response,
+    };
+
+    let id = uuid::Uuid::new_v4().to_string();
+
+    // Fetch listing price
+    let listing_price: Option<f64> =
+        sqlx::query_scalar("SELECT price_per_night FROM listings WHERE id = ?")
+            .bind(&booking_data.listing_id)
+            .fetch_optional(pool.get_ref())
+            .await
+            .unwrap_or(None);
+
+    let price_per_night = listing_price.unwrap_or(0.0);
+
+    // Calculate total price
+    let check_in_date = match NaiveDate::parse_from_str(&booking_data.check_in, "%Y-%m-%d") {
+        Ok(date) => date,
+        Err(_) => {
+            return HttpResponse::BadRequest()
+                .json(serde_json::json!({ "error": "Invalid check-in date format" }))
+        }
+    };
+
+    let check_out_date = match NaiveDate::parse_from_str(&booking_data.check_out, "%Y-%m-%d") {
+        Ok(date) => date,
+        Err(_) => {
+            return HttpResponse::BadRequest()
+                .json(serde_json::json!({ "error": "Invalid check-out date format" }))
+        }
+    };
+
+    let days = (check_out_date - check_in_date).num_days();
+    if days <= 0 {
+        return HttpResponse::BadRequest()
+            .json(serde_json::json!({ "error": "Check-out must be after check-in" }));
+    }
+
+    let total_price = price_per_night * days as f64;
+
+    // Check for overlapping bookings
+    let overlap_count: i32 = sqlx::query_scalar(
+        r#"
+        SELECT COUNT(*) FROM bookings 
+        WHERE listing_id = ? 
+        AND status != 'cancelled'
+        AND check_in < ? AND check_out > ?
+        "#,
+    )
+    .bind(&booking_data.listing_id)
+    .bind(&booking_data.check_out)
+    .bind(&booking_data.check_in)
+    .fetch_one(pool.get_ref())
+    .await
+    .unwrap_or(0);
+
+    if overlap_count > 0 {
+        return HttpResponse::BadRequest()
+            .json(serde_json::json!({ "error": "Selected dates are already booked" }));
+    }
+
+    let result = sqlx::query(
+        r#"
+        INSERT INTO bookings (id, listing_id, guest_id, check_in, check_out, guests, total_price, status)
+        VALUES (?, ?, ?, ?, ?, ?, ?, 'confirmed')
+        "#
+    )
+    .bind(&id)
+    .bind(&booking_data.listing_id)
+    .bind(user_id)
+    .bind(&booking_data.check_in)
+    .bind(&booking_data.check_out)
+    .bind(booking_data.guests)
+    .bind(total_price)
+    .execute(pool.get_ref())
+    .await;
+
+    match result {
+        Ok(_) => HttpResponse::Ok().json(serde_json::json!({
+            "id": id,
+            "status": "confirmed",
+            "total_price": total_price
+        })),
+        Err(e) => {
+            log::error!("Failed to create booking: {:?}", e);
+            HttpResponse::InternalServerError()
+                .json(serde_json::json!({ "error": "Failed to create booking" }))
+        }
+    }
+}
 
 /// GET /api/bookings/host/today - Get today's reservations for host
 #[get("/host/today")]

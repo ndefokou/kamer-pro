@@ -1,7 +1,7 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { getListing } from '@/api/client';
+import { getListing, createBooking } from '@/api/client';
 import { Button } from '@/components/ui/button';
 import { Loader2, Share, Heart, Star, Minus, Plus, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { getImageUrl } from '@/lib/utils';
@@ -23,7 +23,9 @@ import { MessageSquare, ShieldCheck, Award, Calendar as CalendarIcon, Map as Map
 import ReviewModal from '@/components/ReviewModal';
 import ShareModal from '@/components/ShareModal';
 import MessageHostModal from '@/components/MessageHostModal';
+import ReportHostModal from '@/components/ReportHostModal';
 import PhotoGallery from '@/components/PhotoGallery';
+
 
 const DefaultIcon = L.icon({
     iconUrl: icon,
@@ -68,7 +70,9 @@ const ListingDetails: React.FC = () => {
     const [isReviewModalOpen, setIsReviewModalOpen] = React.useState(false);
     const [isShareModalOpen, setIsShareModalOpen] = React.useState(false);
     const [isMessageModalOpen, setIsMessageModalOpen] = React.useState(false);
+    const [isReportModalOpen, setIsReportModalOpen] = React.useState(false);
     const [isPhotoGalleryOpen, setIsPhotoGalleryOpen] = React.useState(false);
+
     const [initialPhotoIndex, setInitialPhotoIndex] = React.useState(0);
     const [reviews, setReviews] = React.useState<Review[]>([]);
 
@@ -91,6 +95,14 @@ const ListingDetails: React.FC = () => {
         return [...product.photos].sort((a, b) => (b.is_cover || 0) - (a.is_cover || 0));
     }, [product?.photos]);
 
+    const disabledDays = React.useMemo(() => {
+        if (!product?.unavailable_dates) return [];
+        return product.unavailable_dates.map(range => ({
+            from: new Date(range.check_in),
+            to: new Date(range.check_out)
+        }));
+    }, [product?.unavailable_dates]);
+
     if (isLoading) {
         return (
             <div className="min-h-screen flex items-center justify-center">
@@ -110,6 +122,8 @@ const ListingDetails: React.FC = () => {
 
     const { listing, amenities } = product;
     const totalGuests = adults + children;
+
+
 
     // Calendar helper functions
     const getDaysInMonth = (date: Date) => {
@@ -132,12 +146,36 @@ const ListingDetails: React.FC = () => {
         return date > checkInDate && date < checkOutDate;
     };
 
+    const isDateDisabled = (date: Date) => {
+        const isPast = date < new Date(new Date().setHours(0, 0, 0, 0));
+        if (isPast) return true;
+
+        return disabledDays.some(range => {
+            // Check if date falls within a booked range [check_in, check_out)
+            // We use < range.to because check-out day is usually available for new check-in
+            return date >= range.from && date < range.to;
+        });
+    };
+
     const handleDateClick = (date: Date) => {
+        if (isDateDisabled(date)) return;
+
         if (!checkInDate || (checkInDate && checkOutDate)) {
             setCheckInDate(date);
             setCheckOutDate(null);
         } else {
+            // If selecting check-out date, ensure no disabled dates in between
             if (date > checkInDate) {
+                const hasDisabledInBetween = disabledDays.some(range =>
+                    (range.from > checkInDate && range.from < date) ||
+                    (range.to > checkInDate && range.to < date) ||
+                    (range.from <= checkInDate && range.to >= date) // Should be covered by initial check but good to be safe
+                );
+
+                if (hasDisabledInBetween) {
+                    alert("Selected range includes unavailable dates.");
+                    return;
+                }
                 setCheckOutDate(date);
             } else {
                 setCheckInDate(date);
@@ -172,18 +210,18 @@ const ListingDetails: React.FC = () => {
             const isCheckIn = isSameDay(checkInDate, date);
             const isCheckOut = isSameDay(checkOutDate, date);
             const inRange = isInRange(date);
-            const isPast = date < new Date(new Date().setHours(0, 0, 0, 0));
+            const disabled = isDateDisabled(date);
 
             days.push(
                 <button
                     key={day}
-                    onClick={() => !isPast && handleDateClick(date)}
-                    disabled={isPast}
+                    onClick={() => !disabled && handleDateClick(date)}
+                    disabled={disabled}
                     className={`h-12 flex items-center justify-center rounded-full text-sm font-medium transition-colors
-                        ${isPast ? 'text-gray-300 cursor-not-allowed line-through' : 'hover:border hover:border-gray-900'}
+                        ${disabled ? 'text-gray-300 cursor-not-allowed line-through' : 'hover:border hover:border-gray-900'}
                         ${isCheckIn || isCheckOut ? 'bg-gray-900 text-white' : ''}
                         ${inRange ? 'bg-gray-100' : ''}
-                        ${!isPast && !isCheckIn && !isCheckOut && !inRange ? 'text-gray-900' : ''}
+                        ${!disabled && !isCheckIn && !isCheckOut && !inRange ? 'text-gray-900' : ''}
                     `}
                 >
                     {day}
@@ -222,6 +260,27 @@ const ListingDetails: React.FC = () => {
                 </div>
             </div>
         );
+    };
+
+    const handleReserve = async () => {
+        if (!checkInDate || !checkOutDate) {
+            setShowDatePicker(true);
+            return;
+        }
+
+        try {
+            await createBooking({
+                listing_id: listing.id,
+                check_in: format(checkInDate, 'yyyy-MM-dd'),
+                check_out: format(checkOutDate, 'yyyy-MM-dd'),
+                guests: totalGuests,
+            });
+            alert("Reservation successful!");
+            navigate('/');
+        } catch (error) {
+            console.error("Failed to reserve:", error);
+            alert("Failed to reserve. Please try again.");
+        }
     };
 
     // Parse house rules
@@ -276,7 +335,15 @@ const ListingDetails: React.FC = () => {
                     hostName="Host" // TODO: Get actual host name
                 />
 
+                <ReportHostModal
+                    isOpen={isReportModalOpen}
+                    onClose={() => setIsReportModalOpen(false)}
+                    hostId={listing.host_id}
+                    listingId={listing.id}
+                />
+
                 <PhotoGallery
+
                     isOpen={isPhotoGalleryOpen}
                     onClose={() => setIsPhotoGalleryOpen(false)}
                     photos={sortedPhotos}
@@ -436,7 +503,10 @@ const ListingDetails: React.FC = () => {
                                     }}
                                     numberOfMonths={2}
                                     pagedNavigation
-                                    disabled={{ before: new Date() }}
+                                    disabled={[
+                                        { before: new Date() },
+                                        ...disabledDays
+                                    ]}
                                     modifiersStyles={{
                                         selected: { backgroundColor: '#222222', color: 'white' },
                                         range_middle: { backgroundColor: '#F7F7F7', color: '#222222' },
@@ -459,7 +529,10 @@ const ListingDetails: React.FC = () => {
                                         }
                                     }}
                                     numberOfMonths={1}
-                                    disabled={{ before: new Date() }}
+                                    disabled={[
+                                        { before: new Date() },
+                                        ...disabledDays
+                                    ]}
                                     modifiersStyles={{
                                         selected: { backgroundColor: '#222222', color: 'white' },
                                         range_middle: { backgroundColor: '#F7F7F7', color: '#222222' },
@@ -611,7 +684,10 @@ const ListingDetails: React.FC = () => {
                                 </div>
                             )}
 
-                            <Button className="w-full bg-[#FF385C] hover:bg-[#D9324E] text-white font-semibold py-6 text-lg">
+                            <Button
+                                className="w-full bg-[#FF385C] hover:bg-[#D9324E] text-white font-semibold py-6 text-lg"
+                                onClick={handleReserve}
+                            >
                                 Reserve
                             </Button>
 
@@ -762,6 +838,15 @@ const ListingDetails: React.FC = () => {
                                 >
                                     Message Host
                                 </Button>
+                                <div className="mt-4 flex justify-center md:justify-start">
+                                    <button
+                                        onClick={() => setIsReportModalOpen(true)}
+                                        className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground underline"
+                                    >
+                                        <ShieldCheck className="h-4 w-4" />
+                                        Report this host
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>

@@ -40,6 +40,12 @@ pub struct Listing {
     pub scenic_views: Option<String>,
 }
 
+#[derive(Debug, Serialize, Deserialize, sqlx::FromRow)]
+pub struct UnavailableDateRange {
+    pub check_in: String,
+    pub check_out: String,
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ListingWithDetails {
     pub listing: Listing,
@@ -47,6 +53,7 @@ pub struct ListingWithDetails {
     pub photos: Vec<ListingPhoto>,
     pub videos: Vec<ListingVideo>,
     pub safety_items: Vec<String>,
+    pub unavailable_dates: Vec<UnavailableDateRange>,
 }
 
 #[derive(Debug, Serialize, Deserialize, sqlx::FromRow)]
@@ -210,6 +217,14 @@ async fn get_listing_with_details(
             .fetch_all(pool)
             .await?;
 
+    // Get unavailable dates
+    let unavailable_dates = sqlx::query_as::<_, UnavailableDateRange>(
+        "SELECT check_in, check_out FROM bookings WHERE listing_id = ? AND status != 'cancelled' AND check_out >= DATE('now')"
+    )
+    .bind(listing_id)
+    .fetch_all(pool)
+    .await?;
+
     // Parse safety items
     let safety_items: Vec<String> = listing
         .safety_devices
@@ -223,6 +238,7 @@ async fn get_listing_with_details(
         photos,
         videos,
         safety_items,
+        unavailable_dates,
     })
 }
 

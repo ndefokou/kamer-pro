@@ -8,3 +8,5 @@ pub mod upload;
 pub mod wishlist;
 
 pub mod account;
+pub mod admin;
+pub mod reports;
