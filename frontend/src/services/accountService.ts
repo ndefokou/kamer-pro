@@ -36,6 +36,11 @@ export const getAccountMe = async (): Promise<AccountMeResponse> => {
   return res.data;
 };
 
+export const getUserById = async (userId: number): Promise<AccountMeResponse> => {
+  const res = await apiClient.get(`/account/user/${userId}`);
+  return res.data;
+};
+
 export type UpdateAccountData = Partial<{
   username: string;
   email: string;

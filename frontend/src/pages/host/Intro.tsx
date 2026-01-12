@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useHost } from '@/contexts/HostContext';
 import { Button } from '@/components/ui/button';
@@ -13,6 +14,7 @@ const propertyTypes = [
 
 const Intro: React.FC = () => {
     const navigate = useNavigate();
+    const { t } = useTranslation();
     const { draft, updateDraft, nextStep } = useHost();
     const [selectedType, setSelectedType] = React.useState(draft.propertyType || '');
 
@@ -40,10 +42,10 @@ const Intro: React.FC = () => {
             <div className="max-w-3xl w-full">
                 <div className="text-center mb-12">
                     <h1 className="text-4xl md:text-5xl font-bold mb-4">
-                        Welcome! Let's get started listing your space
+                        {t('host.intro.title', "Welcome! Let's get started listing your space")}
                     </h1>
                     <p className="text-xl text-muted-foreground">
-                        Tell us what kind of place you have
+                        {t('host.intro.subtitle', 'Tell us what kind of place you have')}
                     </p>
                 </div>
 
@@ -60,8 +62,8 @@ const Intro: React.FC = () => {
                                     }`}
                             >
                                 <Icon className="h-12 w-12 mb-4 text-primary" />
-                                <h3 className="text-xl font-bold mb-2">{type.label}</h3>
-                                <p className="text-muted-foreground">{type.description}</p>
+                                <h3 className="text-xl font-bold mb-2">{t(`propertyTypes.${type.id}.label`, type.label)}</h3>
+                                <p className="text-muted-foreground">{t(`propertyTypes.${type.id}.desc`, type.description)}</p>
                             </button>
                         );
                     })}
@@ -72,19 +74,19 @@ const Intro: React.FC = () => {
                         variant="outline"
                         onClick={() => navigate('/')}
                     >
-                        Cancel
+                        {t('common.cancel', 'Cancel')}
                     </Button>
                     <Button
                         onClick={handleContinue}
                         disabled={!selectedType}
                         size="lg"
                     >
-                        Continue
+                        {t('common.continue', 'Continue')}
                     </Button>
                 </div>
 
                 <div className="mt-8 text-center text-sm text-muted-foreground">
-                    Step 1 of 9
+                    {t('common.stepOf', 'Step {{current}} of {{total}}', { current: 1, total: 9 })}
                 </div>
             </div>
         </div>

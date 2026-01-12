@@ -1,7 +1,8 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Home as HomeIcon, Globe, Menu, User } from 'lucide-react';
+import { Home as HomeIcon, Menu, User } from 'lucide-react';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -93,9 +94,7 @@ const Header: React.FC = () => {
                         >
                             {t("Devenir hôte")}
                         </button>
-                        <button className="p-3 hover:bg-gray-100 rounded-full transition-colors">
-                            <Globe className="h-5 w-5" />
-                        </button>
+                        <LanguageSwitcher />
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <div className="flex items-center gap-3 border border-gray-300 rounded-full px-3 py-2 hover:shadow-md transition-shadow cursor-pointer">

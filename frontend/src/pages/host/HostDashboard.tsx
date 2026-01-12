@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import apiClient from '@/api/client';
 import { Button } from '@/components/ui/button';
@@ -7,6 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getImageUrl } from '@/lib/utils';
 
 import { useAuth } from '@/contexts/AuthContext';
+import { useHost } from '@/contexts/HostContext';
 import HostHeader from '@/components/HostHeader';
 
 interface Listing {
@@ -32,7 +34,9 @@ const getInitials = (name: string) => {
 
 const HostDashboard: React.FC = () => {
     const navigate = useNavigate();
+    const { t } = useTranslation();
     const { user, logout } = useAuth();
+    const { resetDraft } = useHost();
     const [listings, setListings] = useState<Listing[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedListing, setSelectedListing] = useState<string>('');
@@ -62,6 +66,7 @@ const HostDashboard: React.FC = () => {
 
     const handleCreateListing = () => {
         if (user) {
+            resetDraft();
             navigate('/host/intro');
         } else {
             navigate('/webauth-login?redirect=/host/intro');
@@ -100,8 +105,8 @@ const HostDashboard: React.FC = () => {
                                 <Mail className="h-6 w-6 text-green-600" />
                             </div>
                             <div className="flex-1">
-                                <h3 className="font-semibold text-gray-900 mb-1">Confirm a few key details</h3>
-                                <p className="text-sm text-gray-600">Required to publish.</p>
+                                <h3 className="font-semibold text-gray-900 mb-1">{t('host.dashboard.confirmDetailsTitle', 'Confirm a few key details')}</h3>
+                                <p className="text-sm text-gray-600">{t('host.dashboard.confirmDetailsDesc', 'Required to publish.')}</p>
                             </div>
                         </div>
                     </div>
@@ -109,7 +114,7 @@ const HostDashboard: React.FC = () => {
 
                 {/* Header */}
                 <div className="flex justify-between items-center mb-6">
-                    <h1 className="text-3xl font-semibold text-gray-900">Your listing</h1>
+                    <h1 className="text-3xl font-semibold text-gray-900">{t('host.dashboard.yourListing', 'Your listing')}</h1>
                     <div className="flex items-center gap-3">
                         <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
                             <Grid3x3 className="h-5 w-5 text-gray-700" />
@@ -124,19 +129,19 @@ const HostDashboard: React.FC = () => {
                 </div>
 
                 {loading ? (
-                    <div className="text-center py-16 text-gray-500">Loading listings...</div>
+                    <div className="text-center py-16 text-gray-500">{t('host.dashboard.loading', 'Loading listings...')}</div>
                 ) : listings.length === 0 ? (
                     <div className="text-center py-20 bg-white rounded-2xl border border-dashed border-gray-200">
                         <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4 mx-auto">
                             <Home className="h-8 w-8 text-gray-400" />
                         </div>
-                        <h3 className="text-xl font-semibold mb-2 text-gray-900">No listings yet</h3>
-                        <p className="text-gray-500 mb-8 max-w-sm mx-auto">Create your first listing to start hosting and earning income.</p>
+                        <h3 className="text-xl font-semibold mb-2 text-gray-900">{t('host.dashboard.noListings', 'No listings yet')}</h3>
+                        <p className="text-gray-500 mb-8 max-w-sm mx-auto">{t('host.dashboard.noListingsHelp', 'Create your first listing to start hosting and earning income.')}</p>
                         <Button
                             onClick={handleCreateListing}
                             className="bg-[#FF385C] hover:bg-[#E31C5F] text-white rounded-full px-8 py-6 text-lg font-semibold shadow-lg hover:shadow-xl transition-all"
                         >
-                            Create Listing
+                            {t('host.dashboard.createListing', 'Create Listing')}
                         </Button>
                     </div>
                 ) : (
@@ -169,10 +174,10 @@ const HostDashboard: React.FC = () => {
                                         <div className="flex-1 min-w-0 py-1">
                                             <div className="flex flex-col gap-1">
                                                 <div className="font-semibold text-gray-900 truncate text-lg">
-                                                    {item.listing.title || 'Untitled Listing'}
+                                                    {item.listing.title || t('host.dashboard.untitled', 'Untitled Listing')}
                                                 </div>
                                                 <div className="text-sm text-gray-500 truncate">
-                                                    {(item.listing.property_type || 'Home')}
+                                                    {(item.listing.property_type || t('home', 'Home'))}
                                                     {item.listing.city ? ` · ${item.listing.city}` : ''}
                                                 </div>
                                                 <div className="flex items-center gap-2 mt-1">
@@ -183,9 +188,9 @@ const HostDashboard: React.FC = () => {
                                                             : 'bg-yellow-500'
                                                         }`} />
                                                     <span className="text-xs font-medium text-gray-600">
-                                                        {item.listing.status === 'draft' ? 'Draft' :
-                                                            item.listing.status === 'published' ? 'Published' :
-                                                                'Pending'}
+                                                        {item.listing.status === 'draft' ? t('host.dashboard.status.draft', 'Draft') :
+                                                            item.listing.status === 'published' ? t('host.dashboard.status.published', 'Published') :
+                                                                t('host.dashboard.status.pending', 'Pending')}
                                                     </span>
                                                 </div>
                                             </div>
@@ -249,13 +254,13 @@ const HostDashboard: React.FC = () => {
                                                         </div>
                                                         <div className="flex flex-col min-w-0">
                                                             <span className="font-medium text-gray-900 truncate">
-                                                                {item.listing.title || 'Untitled Listing'}
+                                                                {item.listing.title || t('host.dashboard.untitled', 'Untitled Listing')}
                                                             </span>
                                                         </div>
                                                     </div>
                                                 </td>
                                                 <td className="py-5 px-6 text-sm text-gray-700">
-                                                    {item.listing.property_type || 'Home'}
+                                                    {item.listing.property_type || t('home', 'Home')}
                                                 </td>
                                                 <td className="py-5 px-6 text-sm text-gray-700">
                                                     {item.listing.city && item.listing.country
@@ -271,9 +276,9 @@ const HostDashboard: React.FC = () => {
                                                                 : 'bg-yellow-500'
                                                             }`} />
                                                         <span className="text-sm text-gray-700">
-                                                            {item.listing.status === 'draft' ? 'Action required' :
-                                                                item.listing.status === 'published' ? 'Published' :
-                                                                    'Pending'}
+                                                            {item.listing.status === 'draft' ? t('host.dashboard.status.actionRequired', 'Action required') :
+                                                                item.listing.status === 'published' ? t('host.dashboard.status.published', 'Published') :
+                                                                    t('host.dashboard.status.pending', 'Pending')}
                                                         </span>
                                                     </div>
                                                 </td>
@@ -292,11 +297,11 @@ const HostDashboard: React.FC = () => {
                 <div className="max-w-md mx-auto px-6">
                     <ul className="grid grid-cols-4 h-16">
                         <li className="flex items-center justify-center">
-                            <a href="/host/today" className="flex flex-col items-center gap-1 group w-full h-full justify-center">
+                            <a href="/host/listening" className="flex flex-col items-center gap-1 group w-full h-full justify-center">
                                 <div className="p-1.5 rounded-full group-active:scale-95 transition-transform group-hover:bg-gray-100">
                                     <Home className="h-6 w-6 text-gray-500 group-hover:text-gray-900 transition-colors" />
                                 </div>
-                                <span className="text-[10px] font-medium text-gray-500 group-hover:text-gray-900 transition-colors">Today</span>
+                                <span className="text-[10px] font-medium text-gray-500 group-hover:text-gray-900 transition-colors">{t('nav.listening', 'Listening')}</span>
                             </a>
                         </li>
                         <li className="flex items-center justify-center">
@@ -304,7 +309,7 @@ const HostDashboard: React.FC = () => {
                                 <div className="p-1.5 rounded-full group-active:scale-95 transition-transform group-hover:bg-gray-100">
                                     <Calendar className="h-6 w-6 text-gray-500 group-hover:text-gray-900 transition-colors" />
                                 </div>
-                                <span className="text-[10px] font-medium text-gray-500 group-hover:text-gray-900 transition-colors">Calendar</span>
+                                <span className="text-[10px] font-medium text-gray-500 group-hover:text-gray-900 transition-colors">{t('nav.calendar', 'Calendar')}</span>
                             </a>
                         </li>
                         <li className="flex items-center justify-center">
@@ -312,7 +317,7 @@ const HostDashboard: React.FC = () => {
                                 <div className="p-1.5 rounded-full group-active:scale-95 transition-transform">
                                     <Grid3x3 className="h-6 w-6 text-primary fill-current" />
                                 </div>
-                                <span className="text-[10px] font-medium text-primary">Listings</span>
+                                <span className="text-[10px] font-medium text-primary">{t('nav.listings', 'Listings')}</span>
                             </a>
                         </li>
                         <li className="flex items-center justify-center">
@@ -320,7 +325,7 @@ const HostDashboard: React.FC = () => {
                                 <div className="p-1.5 rounded-full group-active:scale-95 transition-transform group-hover:bg-gray-100">
                                     <Mail className="h-6 w-6 text-gray-500 group-hover:text-gray-900 transition-colors" />
                                 </div>
-                                <span className="text-[10px] font-medium text-gray-500 group-hover:text-gray-900 transition-colors">Messages</span>
+                                <span className="text-[10px] font-medium text-gray-500 group-hover:text-gray-900 transition-colors">{t('nav.messages', 'Messages')}</span>
                             </a>
                         </li>
                     </ul>

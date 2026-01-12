@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import apiClient from '@/api/client';
 import { Button } from '@/components/ui/button';
@@ -35,6 +36,7 @@ interface ListingSettings {
 
 const HostCalendar: React.FC = () => {
     const navigate = useNavigate();
+    const { t } = useTranslation();
     const [searchParams] = useSearchParams();
     const listingId = searchParams.get('listing') || '';
 
@@ -261,13 +263,13 @@ const HostCalendar: React.FC = () => {
                             MboaMaison
                         </div>
                         <nav className="hidden md:flex gap-8 text-sm font-medium">
-                            <a href="/host/today" className="text-gray-600 hover:text-gray-900 transition-colors">Today</a>
+                            <a href="/host/listening" className="text-gray-600 hover:text-gray-900 transition-colors">{t('nav.listening', 'Listening')}</a>
                             <a href="/host/calendar" className="text-gray-900 font-semibold relative pb-6">
-                                Calendar
+                                {t('nav.calendar', 'Calendar')}
                                 <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-900"></span>
                             </a>
-                            <a href="/host/dashboard" className="text-gray-600 hover:text-gray-900 transition-colors">Listings</a>
-                            <a href="#" className="text-gray-600 hover:text-gray-900 transition-colors">Messages</a>
+                            <a href="/host/dashboard" className="text-gray-600 hover:text-gray-900 transition-colors">{t('nav.listings', 'Listings')}</a>
+                            <a href="#" className="text-gray-600 hover:text-gray-900 transition-colors">{t('nav.messages', 'Messages')}</a>
                         </nav>
                     </div>
 
@@ -277,7 +279,7 @@ const HostCalendar: React.FC = () => {
                             className="text-sm font-medium hover:bg-gray-100 rounded-full px-4"
                             onClick={() => navigate('/')}
                         >
-                            Switch to traveling
+                            {t('host.header.switchToTraveling', 'Switch to traveling')}
                         </Button>
                         <Sheet open={isUserMenuOpen} onOpenChange={setIsUserMenuOpen}>
                             <SheetTrigger asChild>
@@ -291,7 +293,7 @@ const HostCalendar: React.FC = () => {
                             </SheetTrigger>
                             <SheetContent side="right" className="w-[360px] sm:w-[420px]">
                                 <SheetHeader>
-                                    <SheetTitle>Menu</SheetTitle>
+                                    <SheetTitle>{t('common.menu', 'Menu')}</SheetTitle>
                                     <SheetDescription></SheetDescription>
                                 </SheetHeader>
                                 <div className="mt-6 space-y-1">
@@ -308,26 +310,26 @@ const HostCalendar: React.FC = () => {
                                         onClick={() => { setIsUserMenuOpen(false); navigate('/account'); }}
                                     >
                                         <Settings className="h-5 w-5" />
-                                        <span>Account settings</span>
+                                        <span>{t('account.settings', 'Account settings')}</span>
                                     </button>
                                     <button
                                         className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100"
                                         onClick={() => { setIsUserMenuOpen(false); navigate('/account?tab=languages'); }}
                                     >
                                         <Globe className="h-5 w-5" />
-                                        <span>Languages & currency</span>
+                                        <span>{t('account.languagesCurrency', 'Languages & currency')}</span>
                                     </button>
                                     <button className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100">
                                         <BookOpen className="h-5 w-5" />
-                                        <span>Hosting resources</span>
+                                        <span>{t('host.header.hostingResources', 'Hosting resources')}</span>
                                     </button>
                                     <button className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100">
                                         <HelpCircle className="h-5 w-5" />
-                                        <span>Get help</span>
+                                        <span>{t('common.getHelp', 'Get help')}</span>
                                     </button>
                                     <button className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100">
                                         <Users className="h-5 w-5" />
-                                        <span>Find a co-host</span>
+                                        <span>{t('host.header.findCoHost', 'Find a co-host')}</span>
                                     </button>
                                     <button
                                         className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100"
@@ -337,11 +339,11 @@ const HostCalendar: React.FC = () => {
                                         }}
                                     >
                                         <Plus className="h-5 w-5" />
-                                        <span>Create a new listing</span>
+                                        <span>{t('host.header.createListing', 'Create a new listing')}</span>
                                     </button>
                                     <button className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100">
                                         <UserPlus className="h-5 w-5" />
-                                        <span>Refer a host</span>
+                                        <span>{t('host.header.referHost', 'Refer a host')}</span>
                                     </button>
                                     <div className="pt-3 mt-2 border-t">
                                         <button
@@ -356,7 +358,7 @@ const HostCalendar: React.FC = () => {
                                             }}
                                         >
                                             <LogOut className="h-5 w-5" />
-                                            <span>Log out</span>
+                                            <span>{t('auth.logout', 'Log out')}</span>
                                         </button>
                                     </div>
                                 </div>
@@ -406,7 +408,7 @@ const HostCalendar: React.FC = () => {
                         {/* Calendar Grids */
                         }
                         {loading ? (
-                            <div className="text-center py-12 text-gray-500">Loading calendar...</div>
+                            <div className="text-center py-12 text-gray-500">{t('host.calendar.loading', 'Loading calendar...')}</div>
                         ) : (
                             <div className="space-y-12">
                                 {getMonthsToDisplay().map((month, index) => {
@@ -452,7 +454,7 @@ const HostCalendar: React.FC = () => {
                                             </div>
 
                                             <div className="flex items-center justify-between py-2">
-                                                <span className="text-sm font-medium">Available</span>
+                                                <span className="text-sm font-medium">{t('host.calendar.available', 'Available')}</span>
                                                 <button
                                                     onClick={handleAvailabilityToggle}
                                                     className={`w-12 h-6 rounded-full transition-colors ${isAvailable ? 'bg-white' : 'bg-gray-600'
@@ -464,7 +466,7 @@ const HostCalendar: React.FC = () => {
                                             </div>
 
                                             <div>
-                                                <p className="text-xs text-gray-400 mb-2">Price</p>
+                                                <p className="text-xs text-gray-400 mb-2">{t('host.calendar.price', 'Price')}</p>
                                                 <div className="flex items-center gap-2">
                                                     <span className="text-2xl font-semibold">$</span>
                                                     <input
@@ -481,7 +483,7 @@ const HostCalendar: React.FC = () => {
                                                 onClick={() => setShowCustomSettings(true)}
                                                 className="w-full bg-gray-800 hover:bg-gray-700 rounded-lg px-4 py-3 transition-colors text-left"
                                             >
-                                                <span className="text-sm font-medium">Custom settings</span>
+                                                <span className="text-sm font-medium">{t('host.calendar.customSettings', 'Custom settings')}</span>
                                             </button>
                                         </div>
                                     ) : (
@@ -501,11 +503,11 @@ const HostCalendar: React.FC = () => {
                                                 </button>
                                             </div>
 
-                                            <div className="text-sm font-medium mb-4">Custom settings</div>
+                                            <div className="text-sm font-medium mb-4">{t('host.calendar.customSettings', 'Custom settings')}</div>
 
                                             <div className="bg-gray-800 rounded-lg px-4 py-3">
                                                 <div className="flex items-center justify-between">
-                                                    <span className="text-sm font-medium">Minimum nights</span>
+                                                    <span className="text-sm font-medium">{t('host.calendar.minNights', 'Minimum nights')}</span>
                                                     <div className="flex items-center gap-3">
                                                         <button
                                                             onClick={(e) => {
@@ -535,7 +537,7 @@ const HostCalendar: React.FC = () => {
                                                 onClick={handleSaveCustomSettings}
                                                 className="w-full bg-white text-gray-900 hover:bg-gray-100 rounded-lg px-4 py-3 transition-colors font-medium"
                                             >
-                                                Done
+                                                {t('common.done', 'Done')}
                                             </button>
                                         </div>
                                     )}
@@ -574,13 +576,13 @@ const HostCalendar: React.FC = () => {
                                                 className="w-full flex items-center justify-between hover:bg-gray-50 rounded-lg p-3 transition-colors"
                                             >
                                                 <div className="text-left">
-                                                    <p className="font-medium text-gray-900">Price settings</p>
-                                                    <p className="text-sm text-gray-600">${settings?.base_price || listingPrice} per night</p>
+                                                    <p className="font-medium text-gray-900">{t('host.calendar.priceSettings', 'Price settings')}</p>
+                                                    <p className="text-sm text-gray-600">${settings?.base_price || listingPrice} {t('host.editor.perNight', 'per night')}</p>
                                                     {settings?.weekend_price && (
-                                                        <p className="text-sm text-gray-600">${settings.weekend_price} weekend price</p>
+                                                        <p className="text-sm text-gray-600">${settings.weekend_price} {t('host.calendar.weekendPrice', 'weekend price')}</p>
                                                     )}
                                                     {settings?.weekly_discount && settings.weekly_discount > 0 && (
-                                                        <p className="text-sm text-gray-600">{settings.weekly_discount}% weekly discount</p>
+                                                        <p className="text-sm text-gray-600">{settings.weekly_discount}% {t('host.calendar.weeklyDiscount', 'weekly discount')}</p>
                                                     )}
                                                 </div>
                                                 <ChevronDown className="h-5 w-5 text-gray-400 -rotate-90" />
@@ -591,9 +593,9 @@ const HostCalendar: React.FC = () => {
                                                 className="w-full flex items-center justify-between hover:bg-gray-50 rounded-lg p-3 transition-colors"
                                             >
                                                 <div className="text-left">
-                                                    <p className="font-medium text-gray-900">Availability settings</p>
-                                                    <p className="text-sm text-gray-600">{settings?.min_nights || 1} - {settings?.max_nights || 365} night stays</p>
-                                                    <p className="text-sm text-gray-600">Same-day advance notice</p>
+                                                    <p className="font-medium text-gray-900">{t('host.calendar.availabilitySettings', 'Availability settings')}</p>
+                                                    <p className="text-sm text-gray-600">{settings?.min_nights || 1} - {settings?.max_nights || 365} {t('host.calendar.nightStays', 'night stays')}</p>
+                                                    <p className="text-sm text-gray-600">{t('host.calendar.sameDayNotice', 'Same-day advance notice')}</p>
                                                 </div>
                                                 <ChevronDown className="h-5 w-5 text-gray-400 -rotate-90" />
                                             </button>
@@ -611,11 +613,11 @@ const HostCalendar: React.FC = () => {
                 <div className="max-w-md mx-auto px-6">
                     <ul className="grid grid-cols-4 h-16">
                         <li className="flex items-center justify-center">
-                            <a href="/host/today" className="flex flex-col items-center gap-1 group w-full h-full justify-center">
+                            <a href="/host/listening" className="flex flex-col items-center gap-1 group w-full h-full justify-center">
                                 <div className="p-1.5 rounded-full group-active:scale-95 transition-transform group-hover:bg-gray-100">
                                     <Home className="h-6 w-6 text-gray-500 group-hover:text-gray-900 transition-colors" />
                                 </div>
-                                <span className="text-[10px] font-medium text-gray-500 group-hover:text-gray-900 transition-colors">Today</span>
+                                <span className="text-[10px] font-medium text-gray-500 group-hover:text-gray-900 transition-colors">Listening</span>
                             </a>
                         </li>
                         <li className="flex items-center justify-center">

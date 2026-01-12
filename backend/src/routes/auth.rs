@@ -248,8 +248,9 @@ pub async fn authentication_complete(
 #[derive(Deserialize)]
 pub struct SimpleRegisterRequest {
     pub username: String,
-    pub email: String,
     pub password: String,
+    pub phone: Option<String>,
+    pub email: Option<String>,
 }
 
 #[post("/register")]
@@ -270,16 +271,21 @@ pub async fn simple_register(
         });
     }
 
-    // Check if email already exists
-    let existing_email: Result<User, _> = sqlx::query_as("SELECT * FROM users WHERE email = ?")
-        .bind(&req.email)
-        .fetch_one(pool.get_ref())
-        .await;
+    // Check if email already exists (only when provided)
+    if let Some(email) = &req.email {
+        if !email.trim().is_empty() {
+            let existing_email: Result<User, _> =
+                sqlx::query_as("SELECT * FROM users WHERE email = ?")
+                    .bind(email)
+                    .fetch_one(pool.get_ref())
+                    .await;
 
-    if existing_email.is_ok() {
-        return HttpResponse::BadRequest().json(ErrorResponse {
-            error: "Email already exists".to_string(),
-        });
+            if existing_email.is_ok() {
+                return HttpResponse::BadRequest().json(ErrorResponse {
+                    error: "Email already exists".to_string(),
+                });
+            }
+        }
     }
 
     let now = Utc::now().to_rfc3339();
@@ -321,6 +327,18 @@ pub async fn simple_register(
                 .max_age(CookieDuration::days(30))
                 .finish();
 
+            // Upsert phone into user_profiles if provided
+            if let Some(phone) = &req.phone {
+                let _ = sqlx::query(
+                    "INSERT INTO user_profiles (user_id, phone, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP)
+                     ON CONFLICT(user_id) DO UPDATE SET phone = excluded.phone, updated_at = CURRENT_TIMESTAMP",
+                )
+                .bind(user_id)
+                .bind(phone)
+                .execute(pool.get_ref())
+                .await;
+            }
+
             HttpResponse::Created()
                 .cookie(cookie)
                 .json(AuthenticationCompleteResponse {
@@ -328,7 +346,7 @@ pub async fn simple_register(
                     token,
                     user_id,
                     username: req.username.clone(),
-                    email: Some(req.email.clone()),
+                    email: req.email.clone(),
                 })
         }
         Err(e) => {

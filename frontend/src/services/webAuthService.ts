@@ -71,13 +71,15 @@ export class WebAuthService {
 
   async register(
     username: string,
-    email: string,
-    password: string
+    password: string,
+    phone?: string,
+    email?: string,
   ): Promise<AuthenticationCompleteResponse> {
     const response = await apiClient.post("/auth/register", {
       username,
-      email,
       password,
+      phone,
+      email,
     });
     return response.data;
   }

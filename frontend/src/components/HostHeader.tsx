@@ -5,6 +5,8 @@ import { Menu, Settings, Plus, LogOut } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTranslation } from 'react-i18next';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
 
 const getInitials = (name: string) => {
     const n = name?.trim();
@@ -19,6 +21,7 @@ const HostHeader: React.FC = () => {
     const location = useLocation();
     const { user, logout } = useAuth();
     const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+    const { t } = useTranslation();
 
     const username = user?.username || '';
     const initials = getInitials(username || 'User');
@@ -42,31 +45,31 @@ const HostHeader: React.FC = () => {
                     </div>
                     <nav className="hidden md:flex gap-8 text-sm font-medium">
                         <a
-                            href="/host/today"
-                            className={`${isActive('/host/today') ? 'text-gray-900 font-semibold relative pb-6' : 'text-gray-600 hover:text-gray-900 transition-colors'}`}
+                            href="/host/listening"
+                            className={`${isActive('/host/listening') ? 'text-gray-900 font-semibold relative pb-6' : 'text-gray-600 hover:text-gray-900 transition-colors'}`}
                         >
-                            Today
-                            {isActive('/host/today') && <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-900"></span>}
+                            {t('nav.listening', 'Listening')}
+                            {isActive('/host/listening') && <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-900"></span>}
                         </a>
                         <a
                             href="/host/calendar"
                             className={`${isActive('/host/calendar') ? 'text-gray-900 font-semibold relative pb-6' : 'text-gray-600 hover:text-gray-900 transition-colors'}`}
                         >
-                            Calendar
+                            {t('nav.calendar', 'Calendar')}
                             {isActive('/host/calendar') && <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-900"></span>}
                         </a>
                         <a
                             href="/host/dashboard"
                             className={`${isActive('/host/dashboard') ? 'text-gray-900 font-semibold relative pb-6' : 'text-gray-600 hover:text-gray-900 transition-colors'}`}
                         >
-                            Listings
+                            {t('nav.listings', 'Listings')}
                             {isActive('/host/dashboard') && <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-900"></span>}
                         </a>
                         <a
                             href="/messages?view=host"
                             className={`${location.pathname === '/messages' ? 'text-gray-900 font-semibold relative pb-6' : 'text-gray-600 hover:text-gray-900 transition-colors'}`}
                         >
-                            Messages
+                            {t('nav.messages', 'Messages')}
                             {location.pathname === '/messages' && <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-900"></span>}
                         </a>
                     </nav>
@@ -78,8 +81,9 @@ const HostHeader: React.FC = () => {
                         className="text-sm font-medium hover:bg-gray-100 rounded-full px-4"
                         onClick={() => navigate('/')}
                     >
-                        Switch to traveling
+                        {t('host.header.switchToTraveling', 'Switch to traveling')}
                     </Button>
+                    <LanguageSwitcher />
                     <Sheet open={isUserMenuOpen} onOpenChange={setIsUserMenuOpen}>
                         <SheetTrigger asChild>
                             <div className="flex items-center gap-3 border border-gray-300 rounded-full py-1.5 px-3 hover:shadow-md transition-shadow cursor-pointer">
@@ -92,7 +96,7 @@ const HostHeader: React.FC = () => {
                         </SheetTrigger>
                         <SheetContent side="right" className="w-[360px] sm:w-[420px]">
                             <SheetHeader>
-                                <SheetTitle>Menu</SheetTitle>
+                                <SheetTitle>{t('common.menu', 'Menu')}</SheetTitle>
                             </SheetHeader>
                             <div className="mt-6 space-y-1">
                                 <div className="flex items-center gap-3 pb-4 border-b">
@@ -100,7 +104,7 @@ const HostHeader: React.FC = () => {
                                         <AvatarImage src={user?.profile_picture_url || "/placeholder-user.jpg"} />
                                         <AvatarFallback className="bg-gray-700 text-white text-sm">{initials}</AvatarFallback>
                                     </Avatar>
-                                    <div className="font-semibold text-gray-900">{username || 'User'}</div>
+                                    <div className="font-semibold text-gray-900">{username || t('common.user', 'User')}</div>
                                 </div>
 
                                 <button
@@ -111,7 +115,7 @@ const HostHeader: React.FC = () => {
                                     }}
                                 >
                                     <Settings className="h-5 w-5" />
-                                    <span>Account settings</span>
+                                    <span>{t('account.settings', 'Account settings')}</span>
                                 </button>
                                 <button
                                     className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100"
@@ -121,7 +125,7 @@ const HostHeader: React.FC = () => {
                                     }}
                                 >
                                     <Plus className="h-5 w-5" />
-                                    <span>Create a new listing</span>
+                                    <span>{t('host.header.createListing', 'Create a new listing')}</span>
                                 </button>
                                 <div className="pt-3 mt-2 border-t">
                                     <button
@@ -129,7 +133,7 @@ const HostHeader: React.FC = () => {
                                         onClick={handleLogout}
                                     >
                                         <LogOut className="h-5 w-5" />
-                                        <span>Log out</span>
+                                        <span>{t('auth.logout', 'Log out')}</span>
                                     </button>
                                 </div>
                             </div>

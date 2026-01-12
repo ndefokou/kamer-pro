@@ -40,6 +40,11 @@ pub struct CreateBookingRequest {
     pub guests: i32,
 }
 
+#[derive(Debug, Deserialize)]
+pub struct DeclineBookingRequest {
+    pub reason: String,
+}
+
 // ============================================================================
 // Helper Functions
 // ============================================================================
@@ -90,15 +95,15 @@ pub async fn create_booking(
 
     let id = uuid::Uuid::new_v4().to_string();
 
-    // Fetch listing price
-    let listing_price: Option<f64> =
-        sqlx::query_scalar("SELECT price_per_night FROM listings WHERE id = ?")
+    // Fetch listing price and instant_book setting
+    let listing_info: Option<(f64, i32)> =
+        sqlx::query_as("SELECT price_per_night, instant_book FROM listings WHERE id = ?")
             .bind(&booking_data.listing_id)
             .fetch_optional(pool.get_ref())
             .await
             .unwrap_or(None);
 
-    let price_per_night = listing_price.unwrap_or(0.0);
+    let (price_per_night, instant_book) = listing_info.unwrap_or((0.0, 0));
 
     // Calculate total price
     let check_in_date = match NaiveDate::parse_from_str(&booking_data.check_in, "%Y-%m-%d") {
@@ -130,7 +135,7 @@ pub async fn create_booking(
         r#"
         SELECT COUNT(*) FROM bookings 
         WHERE listing_id = ? 
-        AND status != 'cancelled'
+        AND status = 'confirmed'
         AND check_in < ? AND check_out > ?
         "#,
     )
@@ -146,10 +151,16 @@ pub async fn create_booking(
             .json(serde_json::json!({ "error": "Selected dates are already booked" }));
     }
 
+    let status = if instant_book == 1 {
+        "confirmed"
+    } else {
+        "pending"
+    };
+
     let result = sqlx::query(
         r#"
         INSERT INTO bookings (id, listing_id, guest_id, check_in, check_out, guests, total_price, status)
-        VALUES (?, ?, ?, ?, ?, ?, ?, 'confirmed')
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         "#
     )
     .bind(&id)
@@ -159,19 +170,172 @@ pub async fn create_booking(
     .bind(&booking_data.check_out)
     .bind(booking_data.guests)
     .bind(total_price)
+    .bind(status)
     .execute(pool.get_ref())
     .await;
 
     match result {
         Ok(_) => HttpResponse::Ok().json(serde_json::json!({
             "id": id,
-            "status": "confirmed",
+            "status": status,
             "total_price": total_price
         })),
         Err(e) => {
             log::error!("Failed to create booking: {:?}", e);
             HttpResponse::InternalServerError()
                 .json(serde_json::json!({ "error": "Failed to create booking" }))
+        }
+    }
+}
+
+/// POST /api/bookings/{id}/approve - Approve a booking
+#[post("/{id}/approve")]
+pub async fn approve_booking(
+    pool: web::Data<SqlitePool>,
+    req: HttpRequest,
+    path: web::Path<String>,
+) -> impl Responder {
+    let user_id = match extract_user_id(&req) {
+        Ok(id) => id,
+        Err(response) => return response,
+    };
+    let booking_id = path.into_inner();
+
+    // Verify host owns the listing
+    let is_owner: bool = sqlx::query_scalar(
+        r#"
+        SELECT EXISTS(
+            SELECT 1 FROM bookings b
+            JOIN listings l ON b.listing_id = l.id
+            WHERE b.id = ? AND l.host_id = ?
+        )
+        "#,
+    )
+    .bind(&booking_id)
+    .bind(user_id)
+    .fetch_one(pool.get_ref())
+    .await
+    .unwrap_or(false);
+
+    if !is_owner {
+        return HttpResponse::Forbidden().json(serde_json::json!({
+            "error": "You do not have permission to approve this booking"
+        }));
+    }
+
+    let result = sqlx::query("UPDATE bookings SET status = 'confirmed' WHERE id = ?")
+        .bind(&booking_id)
+        .execute(pool.get_ref())
+        .await;
+
+    match result {
+        Ok(_) => HttpResponse::Ok().json(serde_json::json!({ "status": "confirmed" })),
+        Err(e) => {
+            log::error!("Failed to approve booking: {:?}", e);
+            HttpResponse::InternalServerError()
+                .json(serde_json::json!({ "error": "Failed to approve booking" }))
+        }
+    }
+}
+
+/// POST /api/bookings/{id}/decline - Decline a booking
+#[post("/{id}/decline")]
+pub async fn decline_booking(
+    pool: web::Data<SqlitePool>,
+    req: HttpRequest,
+    path: web::Path<String>,
+    body: web::Json<DeclineBookingRequest>,
+) -> impl Responder {
+    let user_id = match extract_user_id(&req) {
+        Ok(id) => id,
+        Err(response) => return response,
+    };
+    let booking_id = path.into_inner();
+
+    // Verify host owns the listing and get guest_id/listing_id
+    let booking_info: Option<(i32, String)> = sqlx::query_as(
+        r#"
+        SELECT b.guest_id, b.listing_id
+        FROM bookings b
+        JOIN listings l ON b.listing_id = l.id
+        WHERE b.id = ? AND l.host_id = ?
+        "#,
+    )
+    .bind(&booking_id)
+    .bind(user_id)
+    .fetch_optional(pool.get_ref())
+    .await
+    .unwrap_or(None);
+
+    let (guest_id, listing_id) = match booking_info {
+        Some(info) => info,
+        None => {
+            return HttpResponse::Forbidden().json(serde_json::json!({
+                "error": "You do not have permission to decline this booking"
+            }));
+        }
+    };
+
+    let result = sqlx::query("UPDATE bookings SET status = 'declined' WHERE id = ?")
+        .bind(&booking_id)
+        .execute(pool.get_ref())
+        .await;
+
+    match result {
+        Ok(_) => {
+            // Find or create conversation
+            let conversation_id = match sqlx::query_scalar::<_, String>(
+                "SELECT id FROM conversations WHERE listing_id = ? AND guest_id = ? AND host_id = ?"
+            )
+            .bind(&listing_id)
+            .bind(guest_id)
+            .bind(user_id)
+            .fetch_optional(pool.get_ref())
+            .await
+            .unwrap_or(None) 
+            {
+                Some(id) => id,
+                None => {
+                    let new_id = uuid::Uuid::new_v4().to_string();
+                    let _ = sqlx::query(
+                        "INSERT INTO conversations (id, listing_id, guest_id, host_id) VALUES (?, ?, ?, ?)"
+                    )
+                    .bind(&new_id)
+                    .bind(&listing_id)
+                    .bind(guest_id)
+                    .bind(user_id)
+                    .execute(pool.get_ref())
+                    .await;
+                    new_id
+                }
+            };
+
+            // Send decline message
+            let message_content = format!("Booking declined: {}", body.reason);
+            let message_id = uuid::Uuid::new_v4().to_string();
+            
+            let _ = sqlx::query(
+                "INSERT INTO messages (id, conversation_id, sender_id, content) VALUES (?, ?, ?, ?)"
+            )
+            .bind(&message_id)
+            .bind(&conversation_id)
+            .bind(user_id)
+            .bind(&message_content)
+            .execute(pool.get_ref())
+            .await;
+
+            // Update conversation timestamp
+            let _ = sqlx::query("UPDATE conversations SET updated_at = CURRENT_TIMESTAMP WHERE id = ?")
+                .bind(&conversation_id)
+                .execute(pool.get_ref())
+                .await;
+
+            HttpResponse::Ok().json(serde_json::json!({ "status": "declined" }))
+        },
+        Err(e) => {
+            log::error!("Failed to decline booking: {:?}", e);
+            HttpResponse::InternalServerError()
+                .json(serde_json::json!({ "error": "Failed to decline booking" }))
         }
     }
 }
@@ -197,8 +361,8 @@ pub async fn get_today_bookings(pool: web::Data<SqlitePool>, req: HttpRequest) -
         INNER JOIN listings l ON b.listing_id = l.id
         INNER JOIN users u ON b.guest_id = u.id
         WHERE l.host_id = ?
-        AND DATE(b.check_in) = DATE('now')
-        ORDER BY b.check_in ASC
+        AND (DATE(b.check_in) = DATE('now') OR b.status = 'pending')
+        ORDER BY CASE WHEN b.status = 'pending' THEN 0 ELSE 1 END, b.check_in ASC
     "#;
 
     match sqlx::query_as::<
@@ -287,6 +451,7 @@ pub async fn get_upcoming_bookings(
         INNER JOIN users u ON b.guest_id = u.id
         WHERE l.host_id = ?
         AND DATE(b.check_in) > DATE('now')
+        AND b.status != 'pending'
         ORDER BY b.check_in ASC
     "#;
 

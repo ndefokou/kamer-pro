@@ -32,6 +32,10 @@ const Dashboard = () => {
     const doualaProperties = properties?.filter(p => p.listing.city?.toLowerCase() === 'douala') || [];
     const yaoundeProperties = properties?.filter(p => p.listing.city?.toLowerCase() === 'yaoundé' || p.listing.city?.toLowerCase() === 'yaounde') || [];
     const kribiProperties = properties?.filter(p => p.listing.city?.toLowerCase() === 'kribi') || [];
+    const otherProperties = properties?.filter(p => {
+        const city = p.listing.city?.toLowerCase();
+        return !city || (city !== 'douala' && city !== 'yaoundé' && city !== 'yaounde' && city !== 'kribi');
+    }) || [];
 
     const toggleFavorite = (id: string) => {
         setFavorites(prev => {
@@ -204,6 +208,10 @@ const Dashboard = () => {
                         <PropertySection
                             title={t("Logements à Kribi")}
                             properties={kribiProperties}
+                        />
+                        <PropertySection
+                            title={t("Autres destinations")}
+                            properties={otherProperties}
                         />
                     </>
                 )}

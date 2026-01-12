@@ -25,6 +25,7 @@ import ShareModal from '@/components/ShareModal';
 import MessageHostModal from '@/components/MessageHostModal';
 import ReportHostModal from '@/components/ReportHostModal';
 import PhotoGallery from '@/components/PhotoGallery';
+import { useToast } from '@/hooks/use-toast';
 
 
 const DefaultIcon = L.icon({
@@ -75,6 +76,7 @@ const ListingDetails: React.FC = () => {
 
     const [initialPhotoIndex, setInitialPhotoIndex] = React.useState(0);
     const [reviews, setReviews] = React.useState<Review[]>([]);
+    const { toast } = useToast();
 
     type ReviewFormData = Pick<Review, "ratings" | "comment" | "timestamp">;
     const handleReviewSubmit = (reviewData: ReviewFormData) => {
@@ -173,7 +175,11 @@ const ListingDetails: React.FC = () => {
                 );
 
                 if (hasDisabledInBetween) {
-                    alert("Selected range includes unavailable dates.");
+                    toast({
+                        title: 'Dates unavailable',
+                        description: 'Selected range includes unavailable dates.',
+                        variant: 'destructive'
+                    });
                     return;
                 }
                 setCheckOutDate(date);
@@ -201,7 +207,7 @@ const ListingDetails: React.FC = () => {
 
         // Empty cells for days before month starts
         for (let i = 0; i < firstDay; i++) {
-            days.push(<div key={`empty-${i}`} className="h-12" />);
+            days.push(<div key={`empty-${i}`} className="h-10" />);
         }
 
         // Days of the month
@@ -217,11 +223,10 @@ const ListingDetails: React.FC = () => {
                     key={day}
                     onClick={() => !disabled && handleDateClick(date)}
                     disabled={disabled}
-                    className={`h-12 flex items-center justify-center rounded-full text-sm font-medium transition-colors
-                        ${disabled ? 'text-gray-300 cursor-not-allowed line-through' : 'hover:border hover:border-gray-900'}
-                        ${isCheckIn || isCheckOut ? 'bg-gray-900 text-white' : ''}
-                        ${inRange ? 'bg-gray-100' : ''}
-                        ${!disabled && !isCheckIn && !isCheckOut && !inRange ? 'text-gray-900' : ''}
+                    className={`h-10 w-10 flex items-center justify-center rounded-full text-sm font-medium transition-all
+                        ${disabled ? 'text-gray-300 cursor-not-allowed' : 'hover:bg-gray-100 text-gray-900'}
+                        ${isCheckIn || isCheckOut ? 'bg-gray-900 text-white hover:bg-gray-800' : ''}
+                        ${inRange && !isCheckIn && !isCheckOut ? 'bg-gray-100' : ''}
                     `}
                 >
                     {day}
@@ -230,32 +235,34 @@ const ListingDetails: React.FC = () => {
         }
 
         return (
-            <div className="border border-gray-200 rounded-xl p-6">
+            <div className="bg-white rounded-xl p-6 border border-gray-200">
                 <div className="flex items-center justify-between mb-6">
                     <button
                         onClick={prevMonth}
                         className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                        aria-label="Previous month"
                     >
-                        <ChevronLeft className="h-5 w-5" />
+                        <ChevronLeft className="h-4 w-4" />
                     </button>
-                    <h4 className="text-lg font-semibold">
+                    <h4 className="text-base font-semibold">
                         {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
                     </h4>
                     <button
                         onClick={nextMonth}
                         className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                        aria-label="Next month"
                     >
-                        <ChevronRight className="h-5 w-5" />
+                        <ChevronRight className="h-4 w-4" />
                     </button>
                 </div>
-                <div className="grid grid-cols-7 gap-2 mb-2">
+                <div className="grid grid-cols-7 gap-1 mb-3">
                     {dayNames.map(day => (
-                        <div key={day} className="h-12 flex items-center justify-center text-xs font-semibold text-gray-600">
+                        <div key={day} className="h-10 flex items-center justify-center text-xs font-medium text-gray-500">
                             {day}
                         </div>
                     ))}
                 </div>
-                <div className="grid grid-cols-7 gap-2">
+                <div className="grid grid-cols-7 gap-1">
                     {days}
                 </div>
             </div>
@@ -268,6 +275,18 @@ const ListingDetails: React.FC = () => {
             return;
         }
 
+        const current = `${window.location.pathname}${window.location.search}`;
+        const isLoggedIn = !!localStorage.getItem('userId');
+        if (!isLoggedIn) {
+            toast({
+                title: 'Login required',
+                description: 'Please log in to reserve a listing.',
+                variant: 'destructive'
+            });
+            window.location.href = `/webauth-login?redirect=${encodeURIComponent(current || '/')}`;
+            return;
+        }
+
         try {
             await createBooking({
                 listing_id: listing.id,
@@ -275,11 +294,18 @@ const ListingDetails: React.FC = () => {
                 check_out: format(checkOutDate, 'yyyy-MM-dd'),
                 guests: totalGuests,
             });
-            alert("Reservation successful!");
+            toast({
+                title: 'Reservation successful',
+                description: 'Your reservation request has been sent.'
+            });
             navigate('/');
         } catch (error) {
             console.error("Failed to reserve:", error);
-            alert("Failed to reserve. Please try again.");
+            toast({
+                title: 'Reservation failed',
+                description: 'Please try again.',
+                variant: 'destructive'
+            });
         }
     };
 
@@ -492,10 +518,10 @@ const ListingDetails: React.FC = () => {
                             <div className="hidden md:block">
                                 <DayPicker
                                     mode="range"
-                                    selected={checkInDate && checkOutDate ? { from: checkInDate, to: checkOutDate } : undefined}
+                                    selected={checkInDate ? { from: checkInDate, to: checkOutDate || undefined } : undefined}
                                     onSelect={(range: DateRange | undefined) => {
                                         if (range?.from) setCheckInDate(range.from);
-                                        if (range?.to) setCheckOutDate(range.to);
+                                        setCheckOutDate(range?.to || null);
                                         if (!range) {
                                             setCheckInDate(null);
                                             setCheckOutDate(null);
@@ -519,10 +545,10 @@ const ListingDetails: React.FC = () => {
                             <div className="md:hidden flex justify-center">
                                 <DayPicker
                                     mode="range"
-                                    selected={checkInDate && checkOutDate ? { from: checkInDate, to: checkOutDate } : undefined}
+                                    selected={checkInDate ? { from: checkInDate, to: checkOutDate || undefined } : undefined}
                                     onSelect={(range: DateRange | undefined) => {
                                         if (range?.from) setCheckInDate(range.from);
-                                        if (range?.to) setCheckOutDate(range.to);
+                                        setCheckOutDate(range?.to || null);
                                         if (!range) {
                                             setCheckInDate(null);
                                             setCheckOutDate(null);

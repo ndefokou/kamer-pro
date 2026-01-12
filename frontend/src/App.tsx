@@ -20,7 +20,7 @@ import SafetyDetails from "./pages/host/SafetyDetails";
 import BookingSettings from "./pages/host/BookingSettings";
 import Preview from "./pages/host/Preview";
 import HostDashboard from "./pages/host/HostDashboard";
-import HostToday from "./pages/host/HostToday";
+import Listening from "./pages/host/Listening";
 import HostCalendar from "./pages/host/HostCalendar";
 import ListingEditor from "./pages/host/ListingEditor";
 import BedroomEditor from "./pages/host/BedroomEditor";
@@ -71,7 +71,7 @@ const router = createBrowserRouter(
         { path: "booking-settings", Component: BookingSettings },
         { path: "preview", Component: Preview },
         { path: "dashboard", Component: HostDashboard },
-        { path: "today", Component: HostToday },
+        { path: "listening", Component: Listening },
         { path: "calendar", Component: HostCalendar },
         { path: "editor/:id/bedroom", Component: BedroomEditor },
         { path: "editor/:id/bathroom", Component: BathroomEditor },

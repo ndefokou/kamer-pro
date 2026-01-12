@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useHost } from '@/contexts/HostContext';
 import { Button } from '@/components/ui/button';
@@ -8,6 +9,7 @@ import { getImageUrl } from '@/lib/utils';
 
 const Preview: React.FC = () => {
     const navigate = useNavigate();
+    const { t } = useTranslation();
     const { draft, publishListing, saveDraft, previousStep } = useHost();
     const { toast } = useToast();
     const [isPublishing, setIsPublishing] = useState(false);
@@ -19,14 +21,14 @@ const Preview: React.FC = () => {
 
         if (result.success) {
             toast({
-                title: 'Listing published!',
-                description: 'Your listing is now live on MboaMaison',
+                title: t('host.preview.publishedTitle', 'Listing published!'),
+                description: t('host.preview.publishedDesc', 'Your listing is now live on MboaMaison'),
             });
             navigate('/host/dashboard');
         } else {
             toast({
-                title: 'Failed to publish',
-                description: result.error || 'Please check all required fields',
+                title: t('host.preview.publishFailedTitle', 'Failed to publish'),
+                description: result.error || (t('host.preview.publishFailedDesc', 'Please check all required fields') as string),
                 variant: 'destructive',
             });
         }
@@ -38,14 +40,14 @@ const Preview: React.FC = () => {
         const result = await saveDraft();
         if (result.success) {
             toast({
-                title: 'Draft saved',
-                description: 'You can continue editing later',
+                title: t('host.preview.draftSavedTitle', 'Draft saved'),
+                description: t('host.preview.draftSavedDesc', 'You can continue editing later'),
             });
             navigate('/host/dashboard');
         } else {
             toast({
-                title: 'Failed to save draft',
-                description: result.error || 'Please try again',
+                title: t('host.preview.draftSaveFailedTitle', 'Failed to save draft'),
+                description: result.error || (t('host.preview.draftSaveFailedDesc', 'Please try again') as string),
                 variant: 'destructive',
             });
         }
@@ -62,9 +64,9 @@ const Preview: React.FC = () => {
         <div className="min-h-screen bg-background p-4 py-8">
             <div className="max-w-4xl mx-auto">
                 <div className="mb-8">
-                    <h1 className="text-4xl font-bold mb-4">Preview your listing</h1>
+                    <h1 className="text-4xl font-bold mb-4">{t('host.preview.title', 'Preview your listing')}</h1>
                     <p className="text-muted-foreground text-lg">
-                        Here's how your listing will appear to guests
+                        {t('host.preview.subtitle', "Here's how your listing will appear to guests")}
                     </p>
                 </div>
 
@@ -92,20 +94,20 @@ const Preview: React.FC = () => {
                             </div>
                             <div className="text-right">
                                 <div className="text-2xl font-bold">{draft.pricePerNight?.toLocaleString()} XAF</div>
-                                <div className="text-sm text-muted-foreground">per night</div>
+                                <div className="text-sm text-muted-foreground">{t('host.common.perNight', 'per night')}</div>
                             </div>
                         </div>
 
                         {/* Description */}
                         <div className="mb-6">
-                            <h3 className="font-semibold mb-2">About this place</h3>
+                            <h3 className="font-semibold mb-2">{t('host.preview.about', 'About this place')}</h3>
                             <p className="text-muted-foreground">{draft.description}</p>
                         </div>
 
                         {/* Amenities */}
                         {draft.amenities.length > 0 && (
                             <div className="mb-6">
-                                <h3 className="font-semibold mb-2">What this place offers</h3>
+                                <h3 className="font-semibold mb-2">{t('host.preview.offers', 'What this place offers')}</h3>
                                 <div className="grid grid-cols-2 gap-2">
                                     {draft.amenities.slice(0, 6).map(amenity => (
                                         <div key={amenity} className="flex items-center gap-2">
@@ -115,7 +117,7 @@ const Preview: React.FC = () => {
                                     ))}
                                     {draft.amenities.length > 6 && (
                                         <div className="text-sm text-muted-foreground">
-                                            +{draft.amenities.length - 6} more
+                                            +{draft.amenities.length - 6} {t('host.editor.more', 'more')}
                                         </div>
                                     )}
                                 </div>
@@ -124,19 +126,19 @@ const Preview: React.FC = () => {
 
                         {/* Booking Settings */}
                         <div className="mb-6">
-                            <h3 className="font-semibold mb-2">Booking details</h3>
+                            <h3 className="font-semibold mb-2">{t('host.preview.bookingDetails', 'Booking details')}</h3>
                             <div className="space-y-1 text-sm text-muted-foreground">
-                                <p>• {draft.instantBook ? 'Instant booking available' : 'Host approval required'}</p>
-                                <p>• Minimum stay: {draft.minNights} night{draft.minNights !== 1 ? 's' : ''}</p>
-                                {draft.maxNights && <p>• Maximum stay: {draft.maxNights} nights</p>}
-                                {draft.cleaningFee && <p>• Cleaning fee: {draft.cleaningFee.toLocaleString()} XAF</p>}
+                                <p>• {draft.instantBook ? t('host.preview.instantAvailable', 'Instant booking available') : t('host.preview.hostApproval', 'Host approval required')}</p>
+                                <p>• {t('host.preview.minimumStay', 'Minimum stay')}: {draft.minNights} {draft.minNights !== 1 ? t('common.nights', 'nights') : t('host.preview.night', 'night')}</p>
+                                {draft.maxNights && <p>• {t('host.preview.maximumStay', 'Maximum stay')}: {draft.maxNights} {t('common.nights', 'nights')}</p>}
+                                {draft.cleaningFee && <p>• {t('host.pricing.cleaningFeeShort', 'Cleaning fee')}: {draft.cleaningFee.toLocaleString()} XAF</p>}
                             </div>
                         </div>
 
                         {/* House Rules */}
                         {draft.houseRules && (
                             <div className="mb-6">
-                                <h3 className="font-semibold mb-2">House rules</h3>
+                                <h3 className="font-semibold mb-2">{t('host.safety.houseRulesTitle', 'House rules')}</h3>
                                 <p className="text-sm text-muted-foreground whitespace-pre-line">{draft.houseRules}</p>
                             </div>
                         )}
@@ -144,7 +146,7 @@ const Preview: React.FC = () => {
                         {/* Safety */}
                         {draft.safetyDevices.length > 0 && (
                             <div>
-                                <h3 className="font-semibold mb-2">Safety features</h3>
+                                <h3 className="font-semibold mb-2">{t('host.preview.safetyFeatures', 'Safety features')}</h3>
                                 <div className="flex flex-wrap gap-2">
                                     {draft.safetyDevices.map(device => (
                                         <span key={device} className="px-3 py-1 bg-muted rounded-full text-sm">
@@ -160,27 +162,27 @@ const Preview: React.FC = () => {
                 {/* Actions */}
                 <div className="flex justify-between items-center">
                     <Button variant="outline" onClick={handleBack}>
-                        Back
+                        {t('common.back', 'Back')}
                     </Button>
                     <div className="flex gap-3">
                         <Button variant="outline" onClick={handleSaveDraft}>
-                            Save as draft
+                            {t('host.preview.saveDraft', 'Save as draft')}
                         </Button>
                         <Button onClick={handlePublish} disabled={isPublishing} size="lg">
                             {isPublishing ? (
                                 <>
                                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    Publishing...
+                                    {t('host.preview.publishing', 'Publishing...')}
                                 </>
                             ) : (
-                                'Publish listing'
+                                t('host.preview.publishListing', 'Publish listing')
                             )}
                         </Button>
                     </div>
                 </div>
 
                 <div className="mt-4 text-center text-sm text-muted-foreground">
-                    Step 9 of 9
+                    {t('common.stepOf', 'Step {{current}} of {{total}}', { current: 9, total: 9 })}
                 </div>
             </div>
         </div>

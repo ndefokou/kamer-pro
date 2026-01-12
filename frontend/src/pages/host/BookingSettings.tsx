@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useHost } from '@/contexts/HostContext';
 import { Button } from '@/components/ui/button';
@@ -9,6 +10,7 @@ import { Zap, Clock } from 'lucide-react';
 
 const BookingSettings: React.FC = () => {
     const navigate = useNavigate();
+    const { t } = useTranslation();
     const { draft, updateDraft, nextStep, previousStep } = useHost();
 
     const [instantBook, setInstantBook] = useState(draft.instantBook || false);
@@ -51,15 +53,15 @@ const BookingSettings: React.FC = () => {
         <div className="min-h-screen bg-background p-4 py-8">
             <div className="max-w-2xl mx-auto">
                 <div className="mb-8">
-                    <h1 className="text-4xl font-bold mb-4">Booking settings</h1>
+                    <h1 className="text-4xl font-bold mb-4">{t('host.booking.title', 'Booking settings')}</h1>
                     <p className="text-muted-foreground text-lg">
-                        Choose how you want to confirm bookings
+                        {t('host.booking.subtitle', 'Choose how you want to confirm bookings')}
                     </p>
                 </div>
 
                 {/* Booking Method */}
                 <div className="mb-8 p-6 border rounded-lg">
-                    <h2 className="text-xl font-semibold mb-4">How do you want to confirm bookings?</h2>
+                    <h2 className="text-xl font-semibold mb-4">{t('host.booking.methodTitle', 'How do you want to confirm bookings?')}</h2>
                     <RadioGroup
                         value={instantBook ? 'instant' : 'approve'}
                         onValueChange={(value) => setInstantBook(value === 'instant')}
@@ -70,10 +72,10 @@ const BookingSettings: React.FC = () => {
                                 <Label htmlFor="instant" className="cursor-pointer">
                                     <div className="flex items-center gap-2 font-semibold mb-1">
                                         <Zap className="h-5 w-5 text-primary" />
-                                        Instant Book
+                                        {t('host.booking.instantBook', 'Instant Book')}
                                     </div>
                                     <p className="text-sm text-muted-foreground">
-                                        Guests can book instantly without waiting for your approval
+                                        {t('host.booking.instantDesc', 'Guests can book instantly without waiting for your approval')}
                                     </p>
                                 </Label>
                             </div>
@@ -84,10 +86,10 @@ const BookingSettings: React.FC = () => {
                                 <Label htmlFor="approve" className="cursor-pointer">
                                     <div className="flex items-center gap-2 font-semibold mb-1">
                                         <Clock className="h-5 w-5 text-primary" />
-                                        Approve requests
+                                        {t('host.booking.approveRequests', 'Approve requests')}
                                     </div>
                                     <p className="text-sm text-muted-foreground">
-                                        You approve each booking request before it's confirmed
+                                        {t('host.booking.approveDesc', "You approve each booking request before it's confirmed")}
                                     </p>
                                 </Label>
                             </div>
@@ -97,10 +99,10 @@ const BookingSettings: React.FC = () => {
 
                 {/* Stay Length */}
                 <div className="mb-8 p-6 border rounded-lg">
-                    <h2 className="text-xl font-semibold mb-4">Stay length</h2>
+                    <h2 className="text-xl font-semibold mb-4">{t('host.booking.stayLength', 'Stay length')}</h2>
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <Label htmlFor="minNights">Minimum nights</Label>
+                            <Label htmlFor="minNights">{t('host.booking.minNights', 'Minimum nights')}</Label>
                             <Input
                                 id="minNights"
                                 type="number"
@@ -111,7 +113,7 @@ const BookingSettings: React.FC = () => {
                             />
                         </div>
                         <div>
-                            <Label htmlFor="maxNights">Maximum nights (optional)</Label>
+                            <Label htmlFor="maxNights">{t('host.booking.maxNights', 'Maximum nights (optional)')}</Label>
                             <Input
                                 id="maxNights"
                                 type="number"
@@ -126,10 +128,10 @@ const BookingSettings: React.FC = () => {
 
                 {/* Property Details */}
                 <div className="mb-8 p-6 border rounded-lg">
-                    <h2 className="text-xl font-semibold mb-4">Property details</h2>
+                    <h2 className="text-xl font-semibold mb-4">{t('host.booking.propertyDetails', 'Property details')}</h2>
                     <div className="space-y-4">
                         <div>
-                            <Label htmlFor="maxGuests">Maximum guests</Label>
+                            <Label htmlFor="maxGuests">{t('host.booking.maxGuests', 'Maximum guests')}</Label>
                             <Input
                                 id="maxGuests"
                                 type="number"
@@ -142,7 +144,7 @@ const BookingSettings: React.FC = () => {
                         </div>
                         <div className="grid grid-cols-3 gap-4">
                             <div>
-                                <Label htmlFor="bedrooms">Bedrooms</Label>
+                                <Label htmlFor="bedrooms">{t('host.booking.bedrooms', 'Bedrooms')}</Label>
                                 <Input
                                     id="bedrooms"
                                     type="number"
@@ -153,7 +155,7 @@ const BookingSettings: React.FC = () => {
                                 />
                             </div>
                             <div>
-                                <Label htmlFor="beds">Beds</Label>
+                                <Label htmlFor="beds">{t('host.booking.beds', 'Beds')}</Label>
                                 <Input
                                     id="beds"
                                     type="number"
@@ -164,7 +166,7 @@ const BookingSettings: React.FC = () => {
                                 />
                             </div>
                             <div>
-                                <Label htmlFor="bathrooms">Bathrooms</Label>
+                                <Label htmlFor="bathrooms">{t('host.booking.bathrooms', 'Bathrooms')}</Label>
                                 <Input
                                     id="bathrooms"
                                     type="number"
@@ -181,15 +183,15 @@ const BookingSettings: React.FC = () => {
 
                 <div className="flex justify-between items-center mt-12 pt-6 border-t">
                     <Button variant="outline" onClick={handleBack}>
-                        Back
+                        {t('common.back', 'Back')}
                     </Button>
                     <Button onClick={handleContinue} size="lg">
-                        Continue
+                        {t('common.continue', 'Continue')}
                     </Button>
                 </div>
 
                 <div className="mt-4 text-center text-sm text-muted-foreground">
-                    Step 6 of 9
+                    {t('common.stepOf', 'Step {{current}} of {{total}}', { current: 6, total: 9 })}
                 </div>
             </div>
         </div>

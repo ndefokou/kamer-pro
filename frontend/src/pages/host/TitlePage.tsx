@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useHost } from '@/contexts/HostContext';
 import { Button } from '@/components/ui/button';
@@ -6,6 +7,7 @@ import { Input } from '@/components/ui/input';
 
 const TitlePage: React.FC = () => {
     const navigate = useNavigate();
+    const { t } = useTranslation();
     const { draft, updateDraft, nextStep, previousStep } = useHost();
     const [title, setTitle] = useState(draft.title || '');
 
@@ -30,9 +32,9 @@ const TitlePage: React.FC = () => {
         <div className="min-h-screen bg-background flex items-center justify-center p-4">
             <div className="max-w-2xl w-full">
                 <div className="mb-8">
-                    <h1 className="text-4xl font-bold mb-4">Now, let's give your place a title</h1>
+                    <h1 className="text-4xl font-bold mb-4">{t('host.title.title', "Now, let's give your place a title")}</h1>
                     <p className="text-muted-foreground text-lg">
-                        Short titles work best. Have fun with it—you can always change it later.
+                        {t('host.title.subtitle', 'Short titles work best. Have fun with it—you can always change it later.')}
                     </p>
                 </div>
 
@@ -40,13 +42,13 @@ const TitlePage: React.FC = () => {
                     <Input
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
-                        placeholder="e.g., Cozy apartment in the heart of Yaoundé"
+                        placeholder={t('host.title.placeholder', 'e.g., Cozy apartment in the heart of Yaoundé') as string}
                         className="text-2xl p-6 h-auto"
                         maxLength={50}
                     />
                     <div className="flex justify-between mt-2 text-sm">
                         <span className={charCount < 10 ? 'text-destructive' : 'text-muted-foreground'}>
-                            {charCount < 10 ? `${10 - charCount} more characters needed` : 'Looks good!'}
+                            {charCount < 10 ? t('host.title.moreCharsNeeded', '{{count}} more characters needed', { count: 10 - charCount }) : t('host.title.looksGood', 'Looks good!')}
                         </span>
                         <span className="text-muted-foreground">{charCount}/50</span>
                     </div>
@@ -64,15 +66,15 @@ const TitlePage: React.FC = () => {
 
                 <div className="flex justify-between items-center">
                     <Button variant="outline" onClick={handleBack}>
-                        Back
+                        {t('common.back', 'Back')}
                     </Button>
                     <Button onClick={handleContinue} disabled={!isValid} size="lg">
-                        Continue
+                        {t('common.continue', 'Continue')}
                     </Button>
                 </div>
 
                 <div className="mt-4 text-center text-sm text-muted-foreground">
-                    Step 4 of 9
+                    {t('common.stepOf', 'Step {{current}} of {{total}}', { current: 4, total: 9 })}
                 </div>
             </div>
         </div>

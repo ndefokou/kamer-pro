@@ -39,7 +39,7 @@ const WebAuthLogin = () => {
   const [error, setError] = useState<string | null>(null);
 
   // Register state
-  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
 
   useEffect(() => {
     const tab = params.get("tab");
@@ -81,12 +81,12 @@ const WebAuthLogin = () => {
     setLoading(true);
     setError(null);
     try {
-      if (!username.trim() || !email.trim() || !password) {
-        setError("Please enter username, email and password");
+      if (!username.trim() || !phone.trim() || !password) {
+        setError("Please enter username, phone and password");
         return;
       }
 
-      await withRetry(() => webAuth.register(username.trim(), email.trim(), password));
+      await withRetry(() => webAuth.register(username.trim(), password, phone.trim()));
       await login(); // Refresh session in context
       navigate(redirectTo, { replace: true });
     } catch (err: unknown) {
@@ -138,13 +138,13 @@ const WebAuthLogin = () => {
 
           {activeTab === "register" && (
             <div>
-              <label className="block text-sm font-medium mb-1">Email</label>
+              <label className="block text-sm font-medium mb-1">Phone (WhatsApp)</label>
               <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300"
-                placeholder="john@example.com"
+                placeholder="+237 6xx xx xx xx"
               />
             </div>
           )}

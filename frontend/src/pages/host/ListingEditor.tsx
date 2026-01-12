@@ -11,6 +11,7 @@ import ListingPreview from '@/components/host/ListingPreview';
 import GuestSafetyModal from '@/components/host/GuestSafetyModal';
 import { LocationDetailModals } from '@/components/host/LocationDetailModals';
 import { SAFETY_CONSIDERATIONS, SAFETY_DEVICES, PROPERTY_INFO } from '@/data/guestSafety';
+import { useTranslation } from 'react-i18next';
 
 interface Listing {
     id: string;
@@ -55,6 +56,7 @@ interface ListingSettings {
 const ListingEditor: React.FC = () => {
     const navigate = useNavigate();
     const { id } = useParams<{ id: string }>();
+    const { t } = useTranslation();
     const [listing, setListing] = useState<Listing | null>(null);
     const [loading, setLoading] = useState(true);
     const [activeSection, setActiveSection] = useState('photos');
@@ -116,55 +118,55 @@ const ListingEditor: React.FC = () => {
     }, [id]);
 
     if (loading) {
-        return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+        return <div className="min-h-screen flex items-center justify-center">{t('common.loading', 'Loading...')}</div>;
     }
 
     if (!listing) {
-        return <div className="min-h-screen flex items-center justify-center">Listing not found</div>;
+        return <div className="min-h-screen flex items-center justify-center">{t('host.editor.notFound', 'Listing not found')}</div>;
     }
 
     const sidebarItems = [
-        { id: 'photos', label: 'Photos', icon: Camera, description: 'Add at least 5 photos' },
-        { id: 'title', label: 'Title', icon: FileText, description: listing?.title || 'Add a title' },
+        { id: 'photos', label: t('host.editor.sidebar.photos', 'Photos'), icon: Camera, description: t('host.editor.sidebar.addAtLeastNPhotos', 'Add at least 5 photos') },
+        { id: 'title', label: t('host.editor.sidebar.title', 'Title'), icon: FileText, description: listing?.title || t('host.editor.sidebar.addTitle', 'Add a title') },
         {
             id: 'description',
-            label: 'Description',
+            label: t('host.editor.sidebar.description', 'Description'),
             icon: null,
             description: (() => {
                 try {
                     const parsed = listing?.description ? JSON.parse(listing.description) : null;
-                    return parsed?.listingDescription || 'Add a description';
+                    return parsed?.listingDescription || t('host.editor.sidebar.addDescription', 'Add a description');
                 } catch {
-                    return listing?.description || 'Add a description';
+                    return listing?.description || t('host.editor.sidebar.addDescription', 'Add a description');
                 }
             })()
         },
-        { id: 'pricing', label: 'Pricing', icon: null, description: `$${listing.price_per_night} per night` },
-        { id: 'availability', label: 'Availability', icon: null, description: '1 – 365 night stays' },
-        { id: 'number_of_guests', label: 'Number of guests', icon: Users, description: `${listing.max_guests} guests` },
+        { id: 'pricing', label: t('host.editor.sidebar.pricing', 'Pricing'), icon: null, description: `$${listing.price_per_night} ${t('host.editor.perNight', 'per night')}` },
+        { id: 'availability', label: t('host.editor.sidebar.availability', 'Availability'), icon: null, description: t('host.editor.sidebar.nightStaysRange', '1 – 365 night stays') },
+        { id: 'number_of_guests', label: t('host.editor.sidebar.numberOfGuests', 'Number of guests'), icon: Users, description: `${listing.max_guests} ${t('common.guests', 'guests')}` },
         {
-            id: 'amenities', label: 'Amenities', icon: Plus, description: listing.amenities && listing.amenities.length > 0
-                ? listing.amenities.slice(0, 2).map(id => AMENITY_DETAILS[id]?.label).join(' · ') + (listing.amenities.length > 2 ? ` +${listing.amenities.length - 2} more` : '')
-                : 'Add details'
+            id: 'amenities', label: t('host.editor.sidebar.amenities', 'Amenities'), icon: Plus, description: listing.amenities && listing.amenities.length > 0
+                ? listing.amenities.slice(0, 2).map(id => AMENITY_DETAILS[id]?.label).join(' · ') + (listing.amenities.length > 2 ? ` +${listing.amenities.length - 2} ${t('host.editor.more', 'more')}` : '')
+                : t('host.editor.sidebar.addDetails', 'Add details')
         },
-        { id: 'location', label: 'Location', icon: MapPin, description: listing.address || listing.city || 'Add location' },
-        { id: 'house_rules', label: 'House rules', icon: BookOpen, description: 'Guests must agree to your rules' },
+        { id: 'location', label: t('host.editor.sidebar.location', 'Location'), icon: MapPin, description: listing.address || listing.city || t('host.editor.sidebar.addLocation', 'Add location') },
+        { id: 'house_rules', label: t('host.editor.sidebar.houseRules', 'House rules'), icon: BookOpen, description: t('host.editor.sidebar.guestsMustAgree', 'Guests must agree to your rules') },
         {
             id: 'guest_safety',
-            label: 'Guest safety',
+            label: t('host.editor.sidebar.guestSafety', 'Guest safety'),
             icon: Shield,
             description: (() => {
                 const safetyItems = listing?.safety_items || [];
                 const deviceCount = safetyItems.filter(id => SAFETY_DEVICES.some(d => d.id === id)).length;
-                if (deviceCount > 0) return `${deviceCount} safety device${deviceCount > 1 ? 's' : ''}`;
-                return 'Add safety information';
+                if (deviceCount > 0) return `${deviceCount} ${t('host.editor.safetyDevice', 'safety device')}${deviceCount > 1 ? 's' : ''}`;
+                return t('host.editor.sidebar.addSafetyInformation', 'Add safety information');
             })()
         },
         {
             id: 'cancellation_policy',
-            label: 'Cancellation policy',
+            label: t('host.editor.sidebar.cancellationPolicy', 'Cancellation policy'),
             icon: FileText,
-            description: listing.cancellation_policy || 'Add policy'
+            description: listing.cancellation_policy || t('host.editor.sidebar.addPolicy', 'Add policy')
         },
     ];
 
@@ -172,7 +174,7 @@ const ListingEditor: React.FC = () => {
         { id: 'additional', label: 'Additional photos', image: listing.photos.length > 0 ? getImageUrl(listing.photos[0].url) : null },
     ];
 
-    const currentSectionLabel = sidebarItems.find(s => s.id === activeSection)?.label || 'Listing editor';
+    const currentSectionLabel = sidebarItems.find(s => s.id === activeSection)?.label || t('host.editor.title', 'Listing editor');
 
     return (
         <>
@@ -212,16 +214,16 @@ const ListingEditor: React.FC = () => {
                             {photoView === 'overview' ? (
                                 <>
                                     <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-full mb-8 w-fit">
-                                        <button className="px-4 py-1.5 bg-white rounded-full text-sm font-semibold shadow-sm">Your space</button>
+                                        <button className="px-4 py-1.5 bg-white rounded-full text-sm font-semibold shadow-sm">{t('host.editor.yourSpace', 'Your space')}</button>
                                     </div>
 
                                     <div className="mb-8 border border-gray-200 rounded-xl p-4 flex items-center justify-between cursor-pointer hover:border-gray-300 transition-colors">
                                         <div>
                                             <div className="flex items-center gap-2 mb-1">
                                                 <div className="w-2 h-2 bg-red-500 rounded-full" />
-                                                <span className="font-semibold text-sm">Complete required steps</span>
+                                                <span className="font-semibold text-sm">{t('host.editor.completeRequiredSteps', 'Complete required steps')}</span>
                                             </div>
-                                            <p className="text-xs text-gray-500">Finish these final tasks to publish your listing and start getting booked.</p>
+                                            <p className="text-xs text-gray-500">{t('host.editor.finalTasksToPublish', 'Finish these final tasks to publish your listing and start getting booked.')}</p>
                                         </div>
                                         <ChevronLeft className="h-4 w-4 rotate-180 text-gray-400" />
                                     </div>
@@ -249,7 +251,7 @@ const ListingEditor: React.FC = () => {
                                             className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors font-medium"
                                         >
                                             <Eye className="h-5 w-5" />
-                                            View
+                                            {t('host.editor.view', 'View')}
                                         </button>
                                     </div>
                                 </>
@@ -317,14 +319,14 @@ const ListingEditor: React.FC = () => {
                                 activeSection === 'photos' && (
                                     <div>
                                         <div className="flex items-center justify-between mb-2">
-                                            <h2 className="text-2xl font-semibold">Photo tour</h2>
+                                            <h2 className="text-2xl font-semibold">{t('host.editor.photoTourTitle', 'Photo tour')}</h2>
                                             <div className="flex gap-2">
                                                 <Button
                                                     variant="outline"
                                                     className="rounded-full border-gray-300"
                                                     onClick={() => setShowAllPhotos(true)}
                                                 >
-                                                    All photos
+                                                    {t('host.editor.allPhotos', 'All photos')}
                                                 </Button>
                                                 <Button
                                                     variant="outline"
@@ -337,7 +339,7 @@ const ListingEditor: React.FC = () => {
                                             </div>
                                         </div>
                                         <p className="text-gray-500 mb-8 max-w-2xl">
-                                            Manage photos and add details. Guests will only see your tour if every room has a photo.
+                                            {t('host.editor.photoTourHelp', 'Manage photos and add details. Guests will only see your tour if every room has a photo.')}
                                         </p>
 
                                         <div className="grid grid-cols-3 gap-6">
@@ -348,8 +350,8 @@ const ListingEditor: React.FC = () => {
                                                         <img src="/bedroom-placeholder.jpg" alt="Bedroom placeholder" className="w-full h-full object-contain p-4" />
                                                     </div>
                                                 </div>
-                                                <h3 className="font-semibold text-gray-900">Bedroom</h3>
-                                                <p className="text-sm text-gray-500">Add photos</p>
+                                                <h3 className="font-semibold text-gray-900">{t('host.editor.bedroom', 'Bedroom')}</h3>
+                                                <p className="text-sm text-gray-500">{t('host.editor.addPhotos', 'Add photos')}</p>
                                             </div>
 
                                             {/* Full Bathroom Card */}
@@ -359,8 +361,8 @@ const ListingEditor: React.FC = () => {
                                                         <img src="/bathroom-placeholder.jpg" alt="Bathroom placeholder" className="w-full h-full object-contain p-4" />
                                                     </div>
                                                 </div>
-                                                <h3 className="font-semibold text-gray-900">Full bathroom</h3>
-                                                <p className="text-sm text-gray-500">Add photos</p>
+                                                <h3 className="font-semibold text-gray-900">{t('host.editor.fullBathroom', 'Full bathroom')}</h3>
+                                                <p className="text-sm text-gray-500">{t('host.editor.addPhotos', 'Add photos')}</p>
                                             </div>
 
                                             {/* Additional Photos Card */}
@@ -371,12 +373,12 @@ const ListingEditor: React.FC = () => {
                                                     ) : (
                                                         <div className="text-center">
                                                             <Plus className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                                                            <span className="text-sm font-medium text-gray-600">Add photos</span>
+                                                            <span className="text-sm font-medium text-gray-600">{t('host.editor.addPhotos', 'Add photos')}</span>
                                                         </div>
                                                     )}
                                                 </div>
-                                                <h3 className="font-semibold text-gray-900">Additional photos</h3>
-                                                <p className="text-sm text-gray-500">{listing.photos.length} photos</p>
+                                                <h3 className="font-semibold text-gray-900">{t('host.editor.additionalPhotos', 'Additional photos')}</h3>
+                                                <p className="text-sm text-gray-500">{listing.photos.length} {t('host.editor.photos', 'photos')}</p>
                                             </div>
                                         </div>
                                     </div>
@@ -385,14 +387,14 @@ const ListingEditor: React.FC = () => {
                                 !isMobileSection ? (
                                     <div>
                                         <div className="flex items-center justify-between mb-2">
-                                            <h2 className="text-2xl font-semibold">Additional photos</h2>
+                                            <h2 className="text-2xl font-semibold">{t('host.editor.additionalPhotos', 'Additional photos')}</h2>
                                             <div className="flex gap-2">
                                                 <Button
                                                     variant="outline"
                                                     className="rounded-full border-gray-300"
                                                     onClick={() => setShowAllPhotos(true)}
                                                 >
-                                                    Manage photos
+                                                    {t('host.editor.managePhotos', 'Manage photos')}
                                                 </Button>
                                                 <Button
                                                     variant="outline"
@@ -406,8 +408,8 @@ const ListingEditor: React.FC = () => {
                                         </div>
                                         <p className="text-gray-500 mb-8 max-w-2xl">
                                             {photoView === 'additional'
-                                                ? "These photos aren't included in a room or space, but they'll still appear in your listing."
-                                                : "Add photos to this room to complete your photo tour."}
+                                                ? t('host.editor.additionalPhotosHelp', "These photos aren't included in a room or space, but they'll still appear in your listing.")
+                                                : t('host.editor.addRoomPhotosHelp', 'Add photos to this room to complete your photo tour.')}
                                         </p>
 
                                         <div className="grid grid-cols-3 gap-4">
@@ -423,7 +425,7 @@ const ListingEditor: React.FC = () => {
                                             {/* Placeholders for empty states if no photos */}
                                             {photoView === 'additional' && listing.photos.length === 0 && (
                                                 <div className="col-span-3 text-center py-12 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200">
-                                                    <p className="text-gray-500">No photos uploaded yet</p>
+                                                    <p className="text-gray-500">{t('host.editor.noPhotosYet', 'No photos uploaded yet')}</p>
                                                 </div>
                                             )}
                                         </div>
@@ -1654,9 +1656,9 @@ const ListingEditor: React.FC = () => {
                 <div className="max-w-7xl mx-auto px-6">
                     <ul className="grid grid-cols-4 h-16 text-xs">
                         <li className="flex items-center justify-center">
-                            <a href="/host/today" className="flex flex-col items-center gap-1 text-gray-600">
+                            <a href="/host/listening" className="flex flex-col items-center gap-1 text-gray-600">
                                 <Home className="h-5 w-5" />
-                                <span>Today</span>
+                                <span>Listening</span>
                             </a>
                         </li>
                         <li className="flex items-center justify-center">

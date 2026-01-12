@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
 import { Icon, LatLng } from 'leaflet';
@@ -8,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { MapPin, Search, X } from 'lucide-react';
 import apiClient from '@/api/client';
 import 'leaflet/dist/leaflet.css';
+import { useToast } from '@/hooks/use-toast';
 
 // Fix for default marker icon in Leaflet with Webpack/Vite
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
@@ -93,6 +95,8 @@ function getLocationName(result: GeocodingResult): string {
 const Location: React.FC = () => {
     const navigate = useNavigate();
     const { draft, updateDraft, nextStep, previousStep } = useHost();
+    const { toast } = useToast();
+    const { t } = useTranslation();
 
     // Check if we're editing an existing listing
     const searchParams = new URLSearchParams(window.location.search);
@@ -223,7 +227,11 @@ const Location: React.FC = () => {
                 navigate(`/host/editor/${listingId}`);
             } catch (error) {
                 console.error('Failed to save location:', error);
-                alert('Failed to save location. Please try again.');
+                toast({
+                    title: t('host.location.saveFailedTitle', 'Save failed'),
+                    description: t('host.location.saveFailedDesc', 'Failed to save location. Please try again.'),
+                    variant: 'destructive'
+                });
             } finally {
                 setSaving(false);
             }
@@ -256,9 +264,9 @@ const Location: React.FC = () => {
             {/* Header */}
             <div className="p-4 md:p-8 pb-4">
                 <div className="max-w-4xl mx-auto">
-                    <h1 className="text-3xl md:text-4xl font-bold mb-2">Where's your place located?</h1>
+                    <h1 className="text-3xl md:text-4xl font-bold mb-2">{t('host.location.title', "Where's your place located?")}</h1>
                     <p className="text-muted-foreground">
-                        Your address is only shared with guests after they've made a reservation.
+                        {t('host.location.subtitle', "Your address is only shared with guests after they've made a reservation.")}
                     </p>
                 </div>
             </div>
@@ -270,7 +278,7 @@ const Location: React.FC = () => {
                         <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                         <Input
                             type="text"
-                            placeholder="Enter a location..."
+                            placeholder={t('host.location.searchPlaceholder', 'Enter a location...') as string}
                             value={searchQuery}
                             onChange={(e) => {
                                 setSearchQuery(e.target.value);
@@ -324,13 +332,13 @@ const Location: React.FC = () => {
 
                     {isSearching && showResults && (
                         <div className="absolute z-[1000] w-full mt-2 bg-background border rounded-lg shadow-lg p-4 text-center text-muted-foreground">
-                            Searching...
+                            {t('common.searching', 'Searching...')}
                         </div>
                     )}
 
                     {showResults && !isSearching && searchResults.length === 0 && searchQuery.length >= 3 && (
                         <div className="absolute z-[1000] w-full mt-2 bg-background border rounded-lg shadow-lg p-4 text-center text-muted-foreground">
-                            No results found
+                            {t('common.noResults', 'No results found')}
                         </div>
                     )}
                 </div>
@@ -359,16 +367,16 @@ const Location: React.FC = () => {
                 <div className="max-w-4xl mx-auto">
                     <div className="flex justify-between items-center pt-6 border-t">
                         <Button variant="outline" onClick={handleBack} size="lg">
-                            {isEditMode ? 'Cancel' : 'Back'}
+                            {isEditMode ? t('common.cancel', 'Cancel') : t('common.back', 'Back')}
                         </Button>
                         <Button onClick={handleSave} size="lg" disabled={saving}>
-                            {saving ? 'Saving...' : (isEditMode ? 'Save' : 'Continue')}
+                            {saving ? t('common.saving', 'Saving...') : (isEditMode ? t('common.save', 'Save') : t('common.continue', 'Continue'))}
                         </Button>
                     </div>
 
                     {!isEditMode && (
                         <div className="mt-4 text-center text-sm text-muted-foreground">
-                            Step 3 of 10
+                            {t('common.stepOf', 'Step {{current}} of {{total}}', { current: 3, total: 10 })}
                         </div>
                     )}
                 </div>

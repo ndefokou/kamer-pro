@@ -93,6 +93,7 @@ export interface Product {
     check_in: string;
     check_out: string;
   }[];
+  contact_phone?: string | null;
 }
 
 export interface ProductFilters {
@@ -217,6 +218,16 @@ export interface CreateBookingData {
 
 export const createBooking = async (bookingData: CreateBookingData) => {
   const response = await apiClient.post("/bookings", bookingData);
+  return response.data;
+};
+
+export const approveBooking = async (bookingId: string) => {
+  const response = await apiClient.post(`/bookings/${bookingId}/approve`);
+  return response.data;
+};
+
+export const declineBooking = async (bookingId: string, reason: string) => {
+  const response = await apiClient.post(`/bookings/${bookingId}/decline`, { reason });
   return response.data;
 };
 

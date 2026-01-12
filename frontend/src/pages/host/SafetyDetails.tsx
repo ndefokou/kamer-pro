@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useHost } from '@/contexts/HostContext';
 import { Button } from '@/components/ui/button';
@@ -16,6 +17,7 @@ const safetyDevicesList = [
 
 const SafetyDetails: React.FC = () => {
     const navigate = useNavigate();
+    const { t } = useTranslation();
     const { draft, updateDraft, nextStep, previousStep } = useHost();
 
     const [safetyDevices, setSafetyDevices] = useState<string[]>(draft.safetyDevices || []);
@@ -45,17 +47,17 @@ const SafetyDetails: React.FC = () => {
         <div className="min-h-screen bg-background p-4 py-8">
             <div className="max-w-2xl mx-auto">
                 <div className="mb-8">
-                    <h1 className="text-4xl font-bold mb-4">Safety and house rules</h1>
+                    <h1 className="text-4xl font-bold mb-4">{t('host.safety.title', 'Safety and house rules')}</h1>
                     <p className="text-muted-foreground text-lg">
-                        Help guests feel safe and know what to expect
+                        {t('host.safety.subtitle', 'Help guests feel safe and know what to expect')}
                     </p>
                 </div>
 
                 {/* Safety Devices */}
                 <div className="mb-8 p-6 border rounded-lg">
-                    <h2 className="text-xl font-semibold mb-4">Safety devices</h2>
+                    <h2 className="text-xl font-semibold mb-4">{t('host.safety.devicesTitle', 'Safety devices')}</h2>
                     <p className="text-sm text-muted-foreground mb-4">
-                        Select all safety devices available at your property
+                        {t('host.safety.devicesHelp', 'Select all safety devices available at your property')}
                     </p>
                     <div className="space-y-3">
                         {safetyDevicesList.map(device => {
@@ -73,7 +75,7 @@ const SafetyDetails: React.FC = () => {
                                         className="flex items-center gap-2 cursor-pointer flex-1"
                                     >
                                         <Icon className="h-5 w-5 text-muted-foreground" />
-                                        <span>{device.label}</span>
+                                        <span>{t(`amenities.${device.id}`, device.label)}</span>
                                     </Label>
                                 </div>
                             );
@@ -83,39 +85,39 @@ const SafetyDetails: React.FC = () => {
 
                 {/* House Rules */}
                 <div className="mb-8 p-6 border rounded-lg">
-                    <h2 className="text-xl font-semibold mb-4">House rules</h2>
+                    <h2 className="text-xl font-semibold mb-4">{t('host.safety.houseRulesTitle', 'House rules')}</h2>
                     <p className="text-sm text-muted-foreground mb-4">
-                        Set clear expectations for your guests
+                        {t('host.safety.houseRulesHelp', 'Set clear expectations for your guests')}
                     </p>
                     <Textarea
                         value={houseRules}
                         onChange={(e) => setHouseRules(e.target.value)}
-                        placeholder="e.g., No smoking, No pets, No parties or events, Quiet hours: 10 PM - 8 AM"
+                        placeholder={t('host.safety.houseRulesPlaceholder', 'e.g., No smoking, No pets, No parties or events, Quiet hours: 10 PM - 8 AM') as string}
                         className="min-h-[150px]"
                     />
                     <div className="mt-4 bg-muted p-4 rounded-lg">
-                        <h4 className="font-medium text-sm mb-2">Common house rules:</h4>
+                        <h4 className="font-medium text-sm mb-2">{t('host.safety.commonRulesTitle', 'Common house rules:')}</h4>
                         <ul className="text-sm text-muted-foreground space-y-1">
-                            <li>• No smoking</li>
-                            <li>• No pets</li>
-                            <li>• No parties or events</li>
-                            <li>• Quiet hours (e.g., 10 PM - 8 AM)</li>
-                            <li>• Check-in/check-out times</li>
+                            <li>• {t('host.safety.rules.noSmoking', 'No smoking')}</li>
+                            <li>• {t('host.safety.rules.noPets', 'No pets')}</li>
+                            <li>• {t('host.safety.rules.noParties', 'No parties or events')}</li>
+                            <li>• {t('host.safety.rules.quietHours', 'Quiet hours (e.g., 10 PM - 8 AM)')}</li>
+                            <li>• {t('host.safety.rules.checkInOut', 'Check-in/check-out times')}</li>
                         </ul>
                     </div>
                 </div>
 
                 <div className="flex justify-between items-center mt-12 pt-6 border-t">
                     <Button variant="outline" onClick={handleBack}>
-                        Back
+                        {t('common.back', 'Back')}
                     </Button>
                     <Button onClick={handleContinue} size="lg">
-                        Continue
+                        {t('common.continue', 'Continue')}
                     </Button>
                 </div>
 
                 <div className="mt-4 text-center text-sm text-muted-foreground">
-                    Step 8 of 9
+                    {t('common.stepOf', 'Step {{current}} of {{total}}', { current: 8, total: 9 })}
                 </div>
             </div>
         </div>

@@ -54,6 +54,7 @@ pub struct ListingWithDetails {
     pub videos: Vec<ListingVideo>,
     pub safety_items: Vec<String>,
     pub unavailable_dates: Vec<UnavailableDateRange>,
+    pub contact_phone: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, sqlx::FromRow)]
@@ -219,11 +220,20 @@ async fn get_listing_with_details(
 
     // Get unavailable dates
     let unavailable_dates = sqlx::query_as::<_, UnavailableDateRange>(
-        "SELECT check_in, check_out FROM bookings WHERE listing_id = ? AND status != 'cancelled' AND check_out >= DATE('now')"
+        "SELECT check_in, check_out FROM bookings WHERE listing_id = ? AND status = 'confirmed' AND check_out >= DATE('now')"
     )
     .bind(listing_id)
     .fetch_all(pool)
     .await?;
+
+    // Get host contact phone (from user_profiles)
+    let contact_phone: Option<String> = sqlx::query_scalar(
+        "SELECT phone FROM user_profiles WHERE user_id = ?",
+    )
+    .bind(listing.host_id)
+    .fetch_optional(pool)
+    .await?
+    .flatten();
 
     // Parse safety items
     let safety_items: Vec<String> = listing
@@ -239,6 +249,7 @@ async fn get_listing_with_details(
         videos,
         safety_items,
         unavailable_dates,
+        contact_phone,
     })
 }
 

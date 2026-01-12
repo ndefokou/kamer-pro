@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useHost } from '@/contexts/HostContext';
 import { Button } from '@/components/ui/button';
@@ -37,6 +38,7 @@ const amenitiesList = [
 
 const Amenities: React.FC = () => {
     const navigate = useNavigate();
+    const { t } = useTranslation();
     const { draft, updateDraft, nextStep, previousStep } = useHost();
 
     // Use draft.amenities directly instead of local state
@@ -65,13 +67,24 @@ const Amenities: React.FC = () => {
 
     const categories = ['Essentials', 'Features', 'Safety'];
 
+    const getCategoryLabel = (category: string) => {
+        if (category === 'Essentials') return t('host.amenities.categories.essentials', 'Essentials');
+        if (category === 'Features') return t('host.amenities.categories.features', 'Features');
+        if (category === 'Safety') return t('host.amenities.categories.safety', 'Safety');
+        return category;
+    };
+
+    const getAmenityLabel = (id: string, fallback: string) => {
+        return t(`amenities.${id}`, fallback);
+    };
+
     return (
         <div className="min-h-screen bg-background p-4 py-8">
             <div className="max-w-4xl mx-auto">
                 <div className="mb-8">
-                    <h1 className="text-4xl font-bold mb-2">What your place offers</h1>
+                    <h1 className="text-4xl font-bold mb-2">{t('host.amenities.title', 'What your place offers')}</h1>
                     <p className="text-muted-foreground">
-                        You can add more amenities after you publish your listing
+                        {t('host.amenities.subtitle', 'You can add more amenities after you publish your listing')}
                     </p>
                 </div>
 
@@ -79,7 +92,7 @@ const Amenities: React.FC = () => {
                     const categoryAmenities = amenitiesList.filter(a => a.category === category);
                     return (
                         <div key={category} className="mb-8">
-                            <h2 className="text-xl font-semibold mb-4">{category}</h2>
+                            <h2 className="text-xl font-semibold mb-4">{getCategoryLabel(category)}</h2>
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                 {categoryAmenities.map(amenity => {
                                     const Icon = amenity.icon;
@@ -94,7 +107,7 @@ const Amenities: React.FC = () => {
                                                 }`}
                                         >
                                             <Icon className={`h-6 w-6 ${isSelected ? 'text-primary' : 'text-muted-foreground'}`} />
-                                            <span className="font-medium">{amenity.label}</span>
+                                            <span className="font-medium">{getAmenityLabel(amenity.id, amenity.label)}</span>
                                         </button>
                                     );
                                 })}
@@ -105,19 +118,19 @@ const Amenities: React.FC = () => {
 
                 <div className="flex justify-between items-center mt-12 pt-6 border-t">
                     <Button variant="outline" onClick={handleBack}>
-                        Back
+                        {t('common.back', 'Back')}
                     </Button>
                     <Button
                         onClick={handleContinue}
                         disabled={selectedAmenities.length === 0}
                         size="lg"
                     >
-                        Continue
+                        {t('common.continue', 'Continue')}
                     </Button>
                 </div>
 
                 <div className="mt-4 text-center text-sm text-muted-foreground">
-                    Step 2 of 10
+                    {t('common.stepOf', 'Step {{current}} of {{total}}', { current: 2, total: 10 })}
                 </div>
             </div>
         </div>

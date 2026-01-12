@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ChevronLeft, X } from 'lucide-react';
 import apiClient from '@/api/client';
@@ -17,6 +18,7 @@ interface PendingPhoto {
 
 const BathroomEditor: React.FC = () => {
     const navigate = useNavigate();
+    const { t } = useTranslation();
     const { id } = useParams<{ id: string }>();
     const [bathroomPhotos, setBathroomPhotos] = useState<BathroomPhoto[]>([]);
     const [pendingPhotos, setPendingPhotos] = useState<PendingPhoto[]>([]);
@@ -140,16 +142,16 @@ const BathroomEditor: React.FC = () => {
                     >
                         <ChevronLeft className="h-5 w-5" />
                     </button>
-                    <h2 className="text-lg font-semibold">Bathroom</h2>
+                    <h2 className="text-lg font-semibold">{t('host.editor.fullBathroom', 'Full bathroom')}</h2>
                     <div className="w-10" />
                 </div>
             </header>
 
             {/* Main Content */}
             <div className="max-w-4xl mx-auto px-6 py-8">
-                <h1 className="text-3xl font-semibold mb-2">Bathroom photos</h1>
+                <h1 className="text-3xl font-semibold mb-2">{t('host.editor.bathroomPhotos', 'Bathroom photos')}</h1>
                 <p className="text-gray-500 mb-8">
-                    Add photos of your bathroom. You can select multiple photos at once.
+                    {t('host.editor.addBathroomPhotosHelp', 'Add photos of your bathroom. You can select multiple photos at once.')}
                 </p>
 
                 {/* Photo Grid */}
@@ -171,7 +173,7 @@ const BathroomEditor: React.FC = () => {
                             <div key={`pending-${index}`} className="relative aspect-square rounded-lg overflow-hidden border-2 border-green-500">
                                 <img
                                     src={photo.preview}
-                                    alt="Pending upload"
+                                    alt={t('common.pendingUpload', 'Pending upload') as string}
                                     className="w-full h-full object-cover"
                                 />
                                 <button
@@ -181,7 +183,7 @@ const BathroomEditor: React.FC = () => {
                                     <X className="h-4 w-4" />
                                 </button>
                                 <div className="absolute bottom-2 left-2 px-2 py-1 bg-green-500 text-white text-xs font-medium rounded">
-                                    New
+                                    {t('common.new', 'New')}
                                 </div>
                             </div>
                         ))}
@@ -254,12 +256,12 @@ const BathroomEditor: React.FC = () => {
                         disabled={uploading}
                         className="px-6 py-2 border border-gray-900 rounded-lg font-medium hover:bg-gray-100 transition-colors disabled:opacity-50"
                     >
-                        {totalPhotos === 0 ? 'Add photos' : 'Add more photos'}
+                        {totalPhotos === 0 ? t('host.editor.addPhotos', 'Add photos') : t('host.photos.addMorePhotos', 'Add more photos')}
                     </button>
 
                     {pendingPhotos.length > 0 && (
                         <p className="text-sm text-gray-500 mt-3">
-                            {pendingPhotos.length} photo{pendingPhotos.length !== 1 ? 's' : ''} ready to upload
+                            {pendingPhotos.length} {pendingPhotos.length !== 1 ? t('host.photos.photosPlural', 'photos') : t('host.photos.photoSingular', 'photo')} {t('host.photos.readyToUpload', 'ready to upload')}
                         </p>
                     )}
                 </div>
@@ -275,14 +277,14 @@ const BathroomEditor: React.FC = () => {
                             disabled={uploading}
                             className="px-6 py-3 border border-gray-300 rounded-lg font-medium hover:bg-gray-50 transition-colors disabled:opacity-50"
                         >
-                            Cancel
+                            {t('common.cancel', 'Cancel')}
                         </button>
                         <button
                             onClick={handleSave}
                             disabled={uploading}
                             className="px-6 py-3 bg-black text-white rounded-lg font-medium hover:bg-gray-800 transition-colors disabled:opacity-50"
                         >
-                            {uploading ? 'Saving...' : `Save ${pendingPhotos.length} photo${pendingPhotos.length !== 1 ? 's' : ''}`}
+                            {uploading ? t('common.saving', 'Saving...') : t('common.savePhotosCount', 'Save {{count}} {{unit}}', { count: pendingPhotos.length, unit: pendingPhotos.length !== 1 ? t('host.photos.photosPlural','photos') : t('host.photos.photoSingular','photo') })}
                         </button>
                     </div>
                 )}

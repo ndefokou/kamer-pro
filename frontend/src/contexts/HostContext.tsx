@@ -383,12 +383,15 @@ export const HostProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 lastSaved: new Date().toISOString(),
             }));
 
-            localStorage.setItem(DRAFT_KEY, JSON.stringify({
-                ...draft,
-                id: listingId,
-                isDirty: false,
-                lastSaved: new Date().toISOString(),
-            }));
+            if (userId) {
+                const userDraftKey = `${DRAFT_KEY}_${userId}`;
+                localStorage.setItem(userDraftKey, JSON.stringify({
+                    ...draft,
+                    id: listingId,
+                    isDirty: false,
+                    lastSaved: new Date().toISOString(),
+                }));
+            }
 
             return { success: true, id: listingId };
 
@@ -410,13 +413,17 @@ export const HostProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const loadDraft = useCallback(async (id?: string) => {
         if (!id) {
-            const savedDraft = localStorage.getItem(DRAFT_KEY);
-            if (savedDraft) {
-                try {
-                    const parsed = JSON.parse(savedDraft);
-                    setDraft({ ...defaultDraft, ...parsed });
-                } catch (error) {
-                    console.error('Failed to parse saved draft:', error);
+            const userId = localStorage.getItem('userId');
+            if (userId) {
+                const userDraftKey = `${DRAFT_KEY}_${userId}`;
+                const savedDraft = localStorage.getItem(userDraftKey);
+                if (savedDraft) {
+                    try {
+                        const parsed = JSON.parse(savedDraft);
+                        setDraft({ ...defaultDraft, ...parsed });
+                    } catch (error) {
+                        console.error('Failed to parse saved draft:', error);
+                    }
                 }
             }
             return;
@@ -461,7 +468,11 @@ export const HostProvider: React.FC<{ children: React.ReactNode }> = ({ children
             };
 
             setDraft(loadedDraft);
-            localStorage.setItem(DRAFT_KEY, JSON.stringify(loadedDraft));
+            const userId = localStorage.getItem('userId');
+            if (userId) {
+                const userDraftKey = `${DRAFT_KEY}_${userId}`;
+                localStorage.setItem(userDraftKey, JSON.stringify(loadedDraft));
+            }
 
         } catch (error) {
             console.error('Failed to load draft:', error);
@@ -491,7 +502,10 @@ export const HostProvider: React.FC<{ children: React.ReactNode }> = ({ children
             await apiClient.post(`/listings/${listingId}/publish`);
 
             // Clear draft after successful publish
-            localStorage.removeItem(DRAFT_KEY);
+            if (userId) {
+                const userDraftKey = `${DRAFT_KEY}_${userId}`;
+                localStorage.removeItem(userDraftKey);
+            }
             setDraft(defaultDraft);
 
             // Invalidate the products query to refetch the list
@@ -513,7 +527,11 @@ export const HostProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const resetDraft = useCallback(() => {
         setDraft(defaultDraft);
-        localStorage.removeItem(DRAFT_KEY);
+        const userId = localStorage.getItem('userId');
+        if (userId) {
+            const userDraftKey = `${DRAFT_KEY}_${userId}`;
+            localStorage.removeItem(userDraftKey);
+        }
     }, []);
 
     const goToStep = useCallback((step: number) => {

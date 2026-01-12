@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useHost } from '@/contexts/HostContext';
 import { Button } from '@/components/ui/button';
@@ -8,6 +9,7 @@ import { getImageUrl } from '@/lib/utils';
 
 const PhotoUpload: React.FC = () => {
     const navigate = useNavigate();
+    const { t } = useTranslation();
     const { draft, updateDraft, nextStep, previousStep } = useHost();
     const { toast } = useToast();
     const [photos, setPhotos] = useState<string[]>(draft.photos || []);
@@ -40,13 +42,13 @@ const PhotoUpload: React.FC = () => {
             setPhotos(newPhotos);
 
             toast({
-                title: 'Photos uploaded',
-                description: `${files.length} photo(s) uploaded successfully`,
+                title: t('host.photos.uploadSuccessTitle', 'Photos uploaded'),
+                description: t('host.photos.uploadSuccessDesc', '{{count}} photo(s) uploaded successfully', { count: files.length }),
             });
         } catch (error) {
             toast({
-                title: 'Upload failed',
-                description: 'Failed to upload photos. Please try again.',
+                title: t('host.photos.uploadFailedTitle', 'Upload failed'),
+                description: t('host.photos.uploadFailedDesc', 'Failed to upload photos. Please try again.'),
                 variant: 'destructive',
             });
         } finally {
@@ -84,9 +86,9 @@ const PhotoUpload: React.FC = () => {
         <div className="min-h-screen bg-background p-4 py-8">
             <div className="max-w-4xl mx-auto">
                 <div className="mb-8">
-                    <h1 className="text-4xl font-bold mb-2">Add photos of your place</h1>
+                    <h1 className="text-4xl font-bold mb-2">{t('host.photos.title', 'Add photos of your place')}</h1>
                     <p className="text-muted-foreground">
-                        You'll need at least 3 photos to get started. You can add more or make changes later.
+                        {t('host.photos.subtitle', "You'll need at least 3 photos to get started. You can add more or make changes later.")}
                     </p>
                 </div>
 
@@ -97,13 +99,13 @@ const PhotoUpload: React.FC = () => {
                         className="block border-2 border-dashed border-border rounded-lg p-12 text-center cursor-pointer hover:border-primary transition-colors"
                     >
                         <Upload className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                        <p className="text-lg font-medium mb-2">Drag your photos here</p>
+                        <p className="text-lg font-medium mb-2">{t('host.photos.dropTitle', 'Drag your photos here')}</p>
                         <p className="text-sm text-muted-foreground mb-4">
-                            Choose at least 3 photos
+                            {t('host.photos.dropHelp', 'Choose at least 3 photos')}
                         </p>
 
                         <Button type="button" variant="outline" disabled={uploading}>
-                            {uploading ? 'Uploading...' : 'Upload from your device'}
+                            {uploading ? t('host.photos.uploading', 'Uploading...') : t('host.photos.uploadFromDevice', 'Upload from your device')}
                         </Button>
                         <input
                             id="photo-upload"
@@ -121,7 +123,7 @@ const PhotoUpload: React.FC = () => {
                 {photos.length > 0 && (
                     <div className="mb-8">
                         <h2 className="text-xl font-semibold mb-4">
-                            {photos.length} photo{photos.length !== 1 ? 's' : ''}
+                            {photos.length} {photos.length !== 1 ? t('host.photos.photosPlural', 'photos') : t('host.photos.photoSingular', 'photo')}
                         </h2>
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                             {photos.map((photo, index) => (
@@ -142,7 +144,7 @@ const PhotoUpload: React.FC = () => {
                                             onClick={() => setCover(index)}
                                         >
                                             <Star className="h-4 w-4 mr-1" />
-                                            {index === coverIndex ? 'Cover' : 'Set as cover'}
+                                            {index === coverIndex ? t('host.photos.cover', 'Cover') : t('host.photos.setAsCover', 'Set as cover')}
                                         </Button>
                                         <Button
                                             size="sm"
@@ -154,7 +156,7 @@ const PhotoUpload: React.FC = () => {
                                     </div>
                                     {index === coverIndex && (
                                         <div className="absolute top-2 left-2 bg-primary text-primary-foreground px-2 py-1 rounded text-xs font-medium">
-                                            Cover photo
+                                            {t('host.photos.coverPhoto', 'Cover photo')}
                                         </div>
                                     )}
                                 </div>
@@ -165,19 +167,19 @@ const PhotoUpload: React.FC = () => {
 
                 <div className="flex justify-between items-center mt-12 pt-6 border-t">
                     <Button variant="outline" onClick={handleBack}>
-                        Back
+                        {t('common.back', 'Back')}
                     </Button>
                     <Button
                         onClick={handleContinue}
                         disabled={photos.length < 3}
                         size="lg"
                     >
-                        Continue
+                        {t('common.continue', 'Continue')}
                     </Button>
                 </div>
 
                 <div className="mt-4 text-center text-sm text-muted-foreground">
-                    Step 4 of 10
+                    {t('common.stepOf', 'Step {{current}} of {{total}}', { current: 4, total: 10 })}
                 </div>
             </div>
         </div >

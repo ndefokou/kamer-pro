@@ -107,6 +107,7 @@ async fn main() -> std::io::Result<()> {
                     .service(
                         web::scope("/account")
                             .service(routes::account::get_me)
+                            .service(routes::account::get_user_by_id)
                             .service(routes::account::update_account),
                     )
                     .service(web::scope("/wishlist").service(routes::wishlist::get_wishlist))
@@ -114,7 +115,9 @@ async fn main() -> std::io::Result<()> {
                         web::scope("/bookings")
                             .service(routes::bookings::create_booking)
                             .service(routes::bookings::get_today_bookings)
-                            .service(routes::bookings::get_upcoming_bookings),
+                            .service(routes::bookings::get_upcoming_bookings)
+                            .service(routes::bookings::approve_booking)
+                            .service(routes::bookings::decline_booking),
                     )
                     .service(
                         web::scope("/calendar")

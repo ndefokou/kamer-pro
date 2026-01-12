@@ -105,6 +105,38 @@ pub async fn get_me(req: HttpRequest, pool: web::Data<SqlitePool>) -> impl Respo
     HttpResponse::Ok().json(AccountResponse { user, profile })
 }
 
+#[get("/user/{id}")]
+pub async fn get_user_by_id(path: web::Path<i32>, pool: web::Data<SqlitePool>) -> impl Responder {
+    let user_id = path.into_inner();
+
+    let user: Result<UserRow, _> = sqlx::query_as(
+        "SELECT id, username, email, credential_id, public_key, counter, created_at, updated_at FROM users WHERE id = ?",
+    )
+    .bind(user_id)
+    .fetch_one(pool.get_ref())
+    .await;
+
+    let user = match user {
+        Ok(u) => u,
+        Err(_) => {
+            return HttpResponse::NotFound().json(serde_json::json!({
+                "error": "User not found"
+            }))
+        }
+    };
+
+    let profile: Result<ProfileRow, _> = sqlx::query_as(
+        "SELECT user_id, legal_name, preferred_first_name, phone, residential_address, mailing_address, identity_verified, language, currency, created_at, updated_at, notify_email, notify_sms, privacy_profile_visibility, tax_id, payout_method, travel_for_work FROM user_profiles WHERE user_id = ?",
+    )
+    .bind(user_id)
+    .fetch_one(pool.get_ref())
+    .await;
+
+    let profile = profile.unwrap_or_else(|_| ProfileRow { user_id, ..Default::default() });
+
+    HttpResponse::Ok().json(AccountResponse { user, profile })
+}
+
 #[derive(Deserialize, Debug)]
 pub struct UpdateAccountRequest {
     // users table
