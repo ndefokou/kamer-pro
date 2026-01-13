@@ -33,32 +33,32 @@ const Header: React.FC = () => {
                         {t("Notifications")}
                     </DropdownMenuItem>
                     <DropdownMenuItem className="font-semibold">
-                        {t("Voyages")}
+                        {t("Trips")}
                     </DropdownMenuItem>
-                    <DropdownMenuItem className="font-semibold">
-                        {t("Favoris")}
+                    <DropdownMenuItem className="font-semibold" onClick={() => navigate('/wishlist')}>
+                        {t("Favorites")}
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={() => navigate('/host/dashboard')}>
-                        {t("Gérer mon annonce")}
+                        {t("Manage my listing")}
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => navigate('/account')}>
-                        {t("Compte")}
+                        {t("Account")}
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={handleLogout}>
-                        {t("Déconnexion")}
+                        {t("Log out")}
                     </DropdownMenuItem>
                 </>
             ) : (
                 <>
                     <DropdownMenuItem onClick={() => navigate('/webauth-login?tab=register')} className="flex flex-col items-start gap-1 cursor-pointer">
-                        <div className="font-semibold">{t("Devenir hôte")}</div>
-                        <div className="text-xs text-gray-500">Devenir hôte et gagner des revenus supplémentaires, c'est facile.</div>
+                        <div className="font-semibold">{t("Become a host")}</div>
+                        <div className="text-xs text-gray-500">Become a host and earn extra income easily.</div>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={() => navigate('/webauth-login')} className="cursor-pointer">
-                        {t("Se connecter ou s'inscrire")}
+                        {t("Log in or sign up")}
                     </DropdownMenuItem>
                 </>
             )}
@@ -82,7 +82,7 @@ const Header: React.FC = () => {
                     <div className="hidden md:flex items-center gap-8">
                         <button className="flex items-center gap-2 px-4 py-3 rounded-full hover:bg-gray-100 transition-colors" onClick={() => navigate('/')}>
                             <HomeIcon className="h-5 w-5" />
-                            <span className="font-medium">{t("Logements")}</span>
+                            <span className="font-medium">{t("Stays")}</span>
                         </button>
                     </div>
 
@@ -92,7 +92,7 @@ const Header: React.FC = () => {
                             className="text-sm font-semibold hover:bg-gray-100 px-4 py-3 rounded-full transition-colors"
                             onClick={() => navigate('/webauth-login?tab=register')}
                         >
-                            {t("Devenir hôte")}
+                            {t("Become a host")}
                         </button>
                         <LanguageSwitcher />
                         <DropdownMenu>

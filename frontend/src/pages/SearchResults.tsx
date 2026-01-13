@@ -18,6 +18,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/contexts/AuthContext";
+import { useWishlist } from "@/hooks/useWishlist";
 import Header from "@/components/Header";
 
 // Fix Leaflet default icon issue
@@ -38,7 +39,7 @@ const SearchResults = () => {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const { user, logout } = useAuth();
-    const [favorites, setFavorites] = useState<Set<string>>(new Set());
+    const { addToWishlist, removeFromWishlistByProduct, isInWishlist } = useWishlist();
 
     // Get search params
     const location = searchParams.get("search") || "";
@@ -73,15 +74,11 @@ const SearchResults = () => {
     }, [properties, location, guests]);
 
     const toggleFavorite = (id: string) => {
-        setFavorites(prev => {
-            const newFavorites = new Set(prev);
-            if (newFavorites.has(id)) {
-                newFavorites.delete(id);
-            } else {
-                newFavorites.add(id);
-            }
-            return newFavorites;
-        });
+        if (isInWishlist(id)) {
+            removeFromWishlistByProduct(id);
+        } else {
+            addToWishlist(id);
+        }
     };
 
     const handleLogout = async () => {
@@ -94,24 +91,24 @@ const SearchResults = () => {
             {user ? (
                 <>
                     <DropdownMenuItem className="font-semibold" onClick={() => navigate('/host/dashboard')}>
-                        {t("Gérer mon annonce")}
+                        {t("Manage my listing")}
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => navigate('/account')}>
-                        {t("Compte")}
+                        {t("Account")}
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={handleLogout}>
-                        {t("Déconnexion")}
+                        {t("Log out")}
                     </DropdownMenuItem>
                 </>
             ) : (
                 <>
                     <DropdownMenuItem onClick={() => navigate('/webauth-login?tab=register')} className="font-semibold">
-                        {t("Devenir hôte")}
+                        {t("Become a host")}
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={() => navigate('/webauth-login')}>
-                        {t("Se connecter ou s'inscrire")}
+                        {t("Log in or sign up")}
                     </DropdownMenuItem>
                 </>
             )}
@@ -170,7 +167,7 @@ const SearchResults = () => {
                                             className="absolute top-3 right-3 p-2 rounded-full hover:scale-110 transition-transform"
                                         >
                                             <Heart
-                                                className={`h-6 w-6 ${favorites.has(product.listing.id)
+                                                className={`h-6 w-6 ${isInWishlist(product.listing.id)
                                                     ? 'fill-[#FF385C] text-[#FF385C]'
                                                     : 'fill-black/50 text-white stroke-white stroke-2'
                                                     }`}
@@ -188,7 +185,7 @@ const SearchResults = () => {
                                         <p className="text-sm text-gray-500">16-25 dec.</p>
                                         <div className="flex items-baseline gap-1 pt-1">
                                             <span className="font-semibold text-gray-900">{product.listing.price_per_night?.toLocaleString()} FCFA</span>
-                                            <span className="text-sm text-gray-600">par nuit</span>
+                                            <span className="text-sm text-gray-600">per night</span>
                                         </div>
                                     </div>
                                 </div>

@@ -32,7 +32,7 @@ const Index = () => {
       <div className="container mx-auto px-4 py-8">
         <MboaMaissonSearch />
 
-        <HorizontalPropertySection title="Logements populaires">
+        <HorizontalPropertySection title="Popular stays">
           {popularListings.map((product) => (
             <PropertyCard
               key={product.listing.id}
@@ -44,7 +44,7 @@ const Index = () => {
             />
           ))}
         </HorizontalPropertySection>
-        <HorizontalPropertySection title="Logements disponibles le mois prochain">
+        <HorizontalPropertySection title="Available next month">
           {nextMonthListings.map((product) => (
             <PropertyCard
               key={product.listing.id}
@@ -56,7 +56,7 @@ const Index = () => {
             />
           ))}
         </HorizontalPropertySection>
-        <HorizontalPropertySection title="Logements à proximité">
+        <HorizontalPropertySection title="Nearby stays">
           {nearbyListings.map((product) => (
             <PropertyCard
               key={product.listing.id}

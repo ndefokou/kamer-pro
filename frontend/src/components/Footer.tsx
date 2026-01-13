@@ -53,7 +53,7 @@ const Footer = () => {
                     <div className="flex items-center gap-4">
                         <button className="flex items-center gap-2 hover:underline">
                             <Globe className="h-4 w-4" />
-                            <span>{t("Français (FR)")}</span>
+                            <span>{t("English (US)")}</span>
                         </button>
                         <span>FCFA</span>
                     </div>

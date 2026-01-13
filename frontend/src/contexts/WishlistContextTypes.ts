@@ -18,7 +18,7 @@ export interface WishlistItem extends Product {
 }
 export interface ApiWishlistItem {
   id: number;
-  product_id: number;
+  product_id: string;
   product_name: string;
   product_price: number;
   product_location: string;
@@ -31,11 +31,11 @@ export interface WishlistContextType {
   wishlistItems: WishlistItem[];
   wishlistCount: number;
   isLoading: boolean;
-  addToWishlist: (productId: number) => Promise<void>;
+  addToWishlist: (productId: string | number) => Promise<void>;
   removeFromWishlist: (id: number) => Promise<void>;
-  removeFromWishlistByProduct: (productId: number) => Promise<void>;
-  isInWishlist: (productId: number) => boolean;
-  checkWishlist: (productId: number) => Promise<boolean>;
+  removeFromWishlistByProduct: (productId: string | number) => Promise<void>;
+  isInWishlist: (productId: string | number) => boolean;
+  checkWishlist: (productId: string | number) => Promise<boolean>;
   refreshWishlist: () => Promise<void>;
   clearWishlist: () => Promise<void>;
 }

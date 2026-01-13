@@ -17,12 +17,13 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import Footer from "@/components/Footer";
 import Header from "@/components/Header";
+import { useWishlist } from "@/hooks/useWishlist";
 
 const Dashboard = () => {
     const { t } = useTranslation();
     const navigate = useNavigate();
     const { user, logout } = useAuth();
-    const [favorites, setFavorites] = useState<Set<string>>(new Set());
+    const { addToWishlist, removeFromWishlistByProduct, isInWishlist } = useWishlist();
 
     const { data: properties, isLoading, error } = useQuery<Product[]>({
         queryKey: ["products"],
@@ -38,15 +39,11 @@ const Dashboard = () => {
     }) || [];
 
     const toggleFavorite = (id: string) => {
-        setFavorites(prev => {
-            const newFavorites = new Set(prev);
-            if (newFavorites.has(id)) {
-                newFavorites.delete(id);
-            } else {
-                newFavorites.add(id);
-            }
-            return newFavorites;
-        });
+        if (isInWishlist(id)) {
+            removeFromWishlistByProduct(id);
+        } else {
+            addToWishlist(id);
+        }
     };
 
     const handleLogout = async () => {
@@ -73,17 +70,15 @@ const Dashboard = () => {
                     className="absolute top-3 right-3 p-2 rounded-full hover:scale-110 transition-transform"
                 >
                     <Heart
-                        className={`h-6 w-6 ${favorites.has(product.listing.id)
+                        className={`h-6 w-6 ${isInWishlist(product.listing.id)
                             ? 'fill-[#FF385C] text-[#FF385C]'
                             : 'fill-black/50 text-white stroke-white stroke-2'
                             }`}
                     />
                 </button>
-                {index % 3 === 0 && (
-                    <div className="absolute top-3 left-3 bg-white px-3 py-1 rounded-full text-xs font-semibold">
-                        Coup de cœur voyageurs
-                    </div>
-                )}
+                <div className="absolute top-3 left-3 bg-white px-3 py-1 rounded-full text-xs font-semibold">
+                    Guest favorite
+                </div>
             </div>
             <div className="space-y-1">
                 <div className="flex items-start justify-between">
@@ -95,7 +90,7 @@ const Dashboard = () => {
                 </p>
                 <div className="flex items-baseline gap-1 pt-1">
                     <span className="font-semibold text-gray-900">{product.listing.price_per_night?.toLocaleString()} FCFA</span>
-                    <span className="text-sm text-gray-600">par nuit</span>
+                    <span className="text-sm text-gray-600">per night</span>
                 </div>
             </div>
         </div>
@@ -189,7 +184,7 @@ const Dashboard = () => {
                                 <HomeIcon className="h-4 w-4 text-primary/50" />
                             </div>
                         </div>
-                        <p className="text-muted-foreground animate-pulse">{t("Chargement des meilleures offres...")}</p>
+                        <p className="text-muted-foreground animate-pulse">{t("Loading best offers...")}</p>
                     </div>
                 ) : error ? (
                     <div className="text-center py-20">
@@ -198,19 +193,19 @@ const Dashboard = () => {
                 ) : (
                     <>
                         <PropertySection
-                            title={t("Logements à Douala")}
+                            title={t("Stays in Douala")}
                             properties={doualaProperties}
                         />
                         <PropertySection
-                            title={t("Logements à Yaoundé")}
+                            title={t("Stays in Yaoundé")}
                             properties={yaoundeProperties}
                         />
                         <PropertySection
-                            title={t("Logements à Kribi")}
+                            title={t("Stays in Kribi")}
                             properties={kribiProperties}
                         />
                         <PropertySection
-                            title={t("Autres destinations")}
+                            title={t("Other destinations")}
                             properties={otherProperties}
                         />
                     </>
@@ -230,7 +225,7 @@ const Dashboard = () => {
                                 <div className="p-1.5 rounded-full group-active:scale-95 transition-transform group-hover:bg-gray-100">
                                     <HomeIcon className="h-6 w-6 text-gray-500 group-hover:text-primary transition-colors" />
                                 </div>
-                                <span className="text-[10px] font-medium text-gray-500 group-hover:text-primary transition-colors">{t("Devenir hôte")}</span>
+                                <span className="text-[10px] font-medium text-gray-500 group-hover:text-primary transition-colors">{t("Become a host")}</span>
                             </a>
                         </li>
                         <li className="flex items-center justify-center">
@@ -238,7 +233,7 @@ const Dashboard = () => {
                                 <div className="p-1.5 rounded-full group-active:scale-95 transition-transform group-hover:bg-gray-100">
                                     <Globe className="h-6 w-6 text-gray-500 group-hover:text-primary transition-colors" />
                                 </div>
-                                <span className="text-[10px] font-medium text-gray-500 group-hover:text-primary transition-colors">{t("Langue")}</span>
+                                <span className="text-[10px] font-medium text-gray-500 group-hover:text-primary transition-colors">{t("Language")}</span>
                             </button>
                         </li>
                         <li className="flex items-center justify-center">
@@ -248,17 +243,17 @@ const Dashboard = () => {
                                         <div className="p-1.5 rounded-full group-active:scale-95 transition-transform group-hover:bg-gray-100">
                                             <User className="h-6 w-6 text-gray-500 group-hover:text-primary transition-colors" />
                                         </div>
-                                        <span className="text-[10px] font-medium text-gray-500 group-hover:text-primary transition-colors">{user ? t("Profil") : t("Connexion")}</span>
+                                        <span className="text-[10px] font-medium text-gray-500 group-hover:text-primary transition-colors">{user ? t("Profile") : t("Log in")}</span>
                                     </button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end" side="top" className="w-56 mb-2 p-2 rounded-xl shadow-elevated border-border/50 bg-white/95 backdrop-blur-sm">
                                     <DropdownMenuItem onClick={() => navigate('/account')} className="rounded-lg cursor-pointer py-2.5">
                                         <User className="mr-2 h-4 w-4" />
-                                        {t("Compte")}
+                                        {t("Account")}
                                     </DropdownMenuItem>
                                     <DropdownMenuSeparator />
                                     <DropdownMenuItem onClick={handleLogout} className="rounded-lg cursor-pointer py-2.5 text-red-600 focus:text-red-600 focus:bg-red-50">
-                                        {t("Déconnexion")}
+                                        {t("Log out")}
                                     </DropdownMenuItem>
                                 </DropdownMenuContent>
                             </DropdownMenu>

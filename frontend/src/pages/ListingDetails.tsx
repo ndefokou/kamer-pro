@@ -26,6 +26,7 @@ import MessageHostModal from '@/components/MessageHostModal';
 import ReportHostModal from '@/components/ReportHostModal';
 import PhotoGallery from '@/components/PhotoGallery';
 import { useToast } from '@/hooks/use-toast';
+import { useWishlist } from '@/hooks/useWishlist';
 
 
 const DefaultIcon = L.icon({
@@ -52,6 +53,7 @@ interface Review {
 const ListingDetails: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
+    const { addToWishlist, removeFromWishlistByProduct, isInWishlist } = useWishlist();
 
     const { data: product, isLoading, error } = useQuery({
         queryKey: ['listing', id],
@@ -125,7 +127,17 @@ const ListingDetails: React.FC = () => {
     const { listing, amenities } = product;
     const totalGuests = adults + children;
 
+    const isWishlisted = isInWishlist(listing.id);
 
+    const handleToggleWishlist = () => {
+        if (!id) return;
+        const productId = id;
+        if (isWishlisted) {
+            removeFromWishlistByProduct(productId);
+        } else {
+            addToWishlist(productId);
+        }
+    };
 
     // Calendar helper functions
     const getDaysInMonth = (date: Date) => {
@@ -309,6 +321,16 @@ const ListingDetails: React.FC = () => {
         }
     };
 
+    const handleMessageHost = () => {
+        if (product?.contact_phone) {
+            const cleanedPhone = product.contact_phone.replace(/\D/g, '');
+            const whatsappUrl = `https://wa.me/${cleanedPhone}`;
+            window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
+        } else {
+            setIsMessageModalOpen(true);
+        }
+    };
+
     // Parse house rules
     let houseRules = null;
     try {
@@ -340,8 +362,8 @@ const ListingDetails: React.FC = () => {
                             <Share className="h-4 w-4" />
                             Share
                         </Button>
-                        <Button variant="outline" size="sm" className="gap-2">
-                            <Heart className="h-4 w-4" />
+                        <Button variant="outline" size="sm" className="gap-2" onClick={handleToggleWishlist}>
+                            <Heart className={`h-4 w-4 ${isWishlisted ? 'fill-red-500 text-red-500' : ''}`} />
                             Save
                         </Button>
                     </div>
@@ -860,7 +882,7 @@ const ListingDetails: React.FC = () => {
                                 <Button
                                     variant="outline"
                                     className="font-semibold border-black text-black hover:bg-gray-100"
-                                    onClick={() => setIsMessageModalOpen(true)}
+                                    onClick={handleMessageHost}
                                 >
                                     Message Host
                                 </Button>

@@ -131,7 +131,7 @@ const BookingSettings: React.FC = () => {
                     <h2 className="text-xl font-semibold mb-4">{t('host.booking.propertyDetails', 'Property details')}</h2>
                     <div className="space-y-4">
                         <div>
-                            <Label htmlFor="maxGuests">{t('host.booking.maxGuests', 'Maximum guests')}</Label>
+                            <Label htmlFor="maxGuests">{t('host.booking.maxGuests', 'Maximum people')}</Label>
                             <Input
                                 id="maxGuests"
                                 type="number"

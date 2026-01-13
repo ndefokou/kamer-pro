@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { isAxiosError } from "axios";
 import apiClient from "@/api/client";
 import { useToast } from "@/hooks/use-toast";
@@ -16,12 +16,13 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({
   const [wishlistCount, setWishlistCount] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const refreshingRef = useRef(false);
 
-  const refreshWishlist = async () => {
-    const token = localStorage.getItem("token");
-    if (!token) return;
-
+  const refreshWishlist = useCallback(async () => {
+    if (refreshingRef.current) return;
+    refreshingRef.current = true;
     try {
+      setIsLoading(true);
       const response = await apiClient.get("/wishlist");
       console.log("Raw wishlist response:", response.data);
       setWishlistItems(
@@ -39,15 +40,25 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({
         })),
       );
       setWishlistCount(response.data.length);
-    } catch (error) {
-      console.error("Failed to fetch wishlist:", error);
+    } catch (error: unknown) {
+      // If unauthenticated, keep empty wishlist silently
+      if (isAxiosError(error) && error.response?.status === 401) {
+        setWishlistItems([]);
+        setWishlistCount(0);
+      } else {
+        console.error("Failed to fetch wishlist:", error);
+      }
+    } finally {
+      setIsLoading(false);
+      refreshingRef.current = false;
     }
-  };
+  }, []);
 
-  const addToWishlist = async (productId: number) => {
+  const addToWishlist = async (productId: string | number) => {
     setIsLoading(true);
     try {
-      await apiClient.post("/wishlist", { product_id: productId });
+      const pid = String(productId);
+      await apiClient.post("/wishlist", { product_id: pid });
       await refreshWishlist();
       toast({
         title: "Success",
@@ -55,8 +66,14 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({
       });
     } catch (error: unknown) {
       let message = "Failed to add item to wishlist";
-      if (isAxiosError(error) && error.response?.data?.message) {
-        message = error.response.data.message;
+      if (isAxiosError(error)) {
+        if (error.response?.data?.message) {
+          message = error.response.data.message;
+        }
+        // If already exists, refresh to show it
+        if (error.response?.status === 409 || message.includes("already in wishlist")) {
+          await refreshWishlist();
+        }
       }
 
       if (message.includes("already in wishlist")) {
@@ -100,10 +117,10 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
-  const removeFromWishlistByProduct = async (productId: number) => {
+  const removeFromWishlistByProduct = async (productId: string | number) => {
     setIsLoading(true);
     try {
-      await apiClient.delete(`/wishlist/product/${productId}`);
+      await apiClient.delete(`/wishlist/product/${String(productId)}`);
       await refreshWishlist();
       toast({
         title: "Success",
@@ -124,13 +141,13 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
-  const isInWishlist = (productId: number): boolean => {
-    return wishlistItems.some((item) => parseInt(item.id) === productId);
+  const isInWishlist = (productId: string | number): boolean => {
+    return wishlistItems.some((item) => item.id === String(productId));
   };
 
-  const checkWishlist = async (productId: number): Promise<boolean> => {
+  const checkWishlist = async (productId: string | number): Promise<boolean> => {
     try {
-      const response = await apiClient.get(`/wishlist/check/${productId}`);
+      const response = await apiClient.get(`/wishlist/check/${String(productId)}`);
       return response.data.in_wishlist;
     } catch (error) {
       return false;
@@ -139,7 +156,7 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({
 
   useEffect(() => {
     refreshWishlist();
-  }, []);
+  }, [refreshWishlist]);
 
   const clearWishlist = async () => {
     setIsLoading(true);

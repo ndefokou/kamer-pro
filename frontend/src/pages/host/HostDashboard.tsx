@@ -212,16 +212,16 @@ const HostDashboard: React.FC = () => {
                                     <thead className="bg-gray-50">
                                         <tr className="border-b border-gray-200">
                                             <th className="text-left py-4 px-6 text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                                Listing
+                                                {t('host.dashboard.table.listing', 'Listing')}
                                             </th>
                                             <th className="text-left py-4 px-6 text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                                Type
+                                                {t('host.dashboard.table.type', 'Type')}
                                             </th>
                                             <th className="text-left py-4 px-6 text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                                Location
+                                                {t('host.dashboard.table.location', 'Location')}
                                             </th>
                                             <th className="text-left py-4 px-6 text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                                Status
+                                                {t('host.dashboard.table.status', 'Status')}
                                             </th>
                                         </tr>
                                     </thead>

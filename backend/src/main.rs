@@ -110,7 +110,14 @@ async fn main() -> std::io::Result<()> {
                             .service(routes::account::get_user_by_id)
                             .service(routes::account::update_account),
                     )
-                    .service(web::scope("/wishlist").service(routes::wishlist::get_wishlist))
+                    .service(
+                        web::scope("/wishlist")
+                            .service(routes::wishlist::get_wishlist)
+                            .service(routes::wishlist::add_to_wishlist)
+                            .service(routes::wishlist::remove_from_wishlist)
+                            .service(routes::wishlist::remove_from_wishlist_by_product)
+                            .service(routes::wishlist::check_wishlist),
+                    )
                     .service(
                         web::scope("/bookings")
                             .service(routes::bookings::create_booking)

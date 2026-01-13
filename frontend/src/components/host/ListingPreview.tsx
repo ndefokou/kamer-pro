@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, Share, Heart, Star, Users, Home, MapPin, Wifi, Calendar, ChevronLeft, ChevronRight, Minus, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { getImageUrl } from '@/lib/utils';
@@ -13,7 +14,7 @@ import L from 'leaflet';
 import icon from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
 
-let DefaultIcon = L.icon({
+const DefaultIcon = L.icon({
     iconUrl: icon,
     shadowUrl: iconShadow,
     iconSize: [25, 41],
@@ -41,6 +42,7 @@ interface Listing {
     status: string;
     house_rules: string;
     cancellation_policy: string;
+    safety_items?: string[];
 }
 
 interface ListingPreviewProps {
@@ -50,6 +52,7 @@ interface ListingPreviewProps {
 }
 
 const ListingPreview: React.FC<ListingPreviewProps> = ({ listing, isOpen, onClose }) => {
+    const { t, i18n } = useTranslation();
     const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
     const [showAllAmenities, setShowAllAmenities] = useState(false);
     const [checkInDate, setCheckInDate] = useState<Date | null>(null);
@@ -80,26 +83,31 @@ const ListingPreview: React.FC<ListingPreviewProps> = ({ listing, isOpen, onClos
 
             let name = '';
             switch (category) {
-                case 'restaurants':
-                    const restaurants = ['Local Delights', 'Spicy Corner', 'Mama\'s Kitchen', 'City Grill', 'Tasty Bites'];
+                case 'restaurants': {
+                    const restaurants = ['Local Delights', 'Spicy Corner', 'Mama\\\'s Kitchen', 'City Grill', 'Tasty Bites'];
                     name = restaurants[i % restaurants.length];
                     break;
-                case 'shopping':
+                }
+                case 'shopping': {
                     const shops = ['City Mall', 'Fashion Hub', 'Local Market', 'Souvenir Shop', 'Boutique'];
                     name = shops[i % shops.length];
                     break;
-                case 'transport':
+                }
+                case 'transport': {
                     const transport = ['Bus Station', 'Taxi Stand', 'Train Station', 'Metro Stop', 'Airport Shuttle'];
                     name = transport[i % transport.length];
                     break;
-                case 'attractions':
+                }
+                case 'attractions': {
                     const attractions = ['City Park', 'Museum', 'Historic Monument', 'Art Gallery', 'Botanical Garden'];
                     name = attractions[i % attractions.length];
                     break;
-                case 'groceries':
+                }
+                case 'groceries': {
                     const groceries = ['Supermarket', 'Fresh Market', 'Convenience Store', 'Bakery', 'Organic Shop'];
                     name = groceries[i % groceries.length];
                     break;
+                }
             }
 
             places.push({
@@ -215,7 +223,6 @@ const ListingPreview: React.FC<ListingPreviewProps> = ({ listing, isOpen, onClos
         const daysInMonth = getDaysInMonth(currentMonth);
         const firstDay = getFirstDayOfMonth(currentMonth);
         const days = [];
-        const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
         const dayNames = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
 
         // Empty cells for days before month starts
@@ -258,7 +265,7 @@ const ListingPreview: React.FC<ListingPreviewProps> = ({ listing, isOpen, onClos
                         <ChevronLeft className="h-5 w-5" />
                     </button>
                     <h4 className="text-lg font-semibold">
-                        {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
+                        {currentMonth.toLocaleDateString(i18n.language, { month: 'long', year: 'numeric' })}
                     </h4>
                     <button
                         onClick={nextMonth}
@@ -308,11 +315,11 @@ const ListingPreview: React.FC<ListingPreviewProps> = ({ listing, isOpen, onClos
             {/* Main Content */}
             <div className="max-w-7xl mx-auto px-6 py-8">
                 {/* Title */}
-                <h1 className="text-3xl font-semibold mb-2">{listing.title || 'Untitled Listing'}</h1>
+                <h1 className="text-3xl font-semibold mb-2">{listing.title || t('host.preview.untitled', 'Untitled Listing')}</h1>
                 <div className="flex items-center gap-4 text-sm mb-6">
                     <div className="flex items-center gap-1">
                         <Star className="h-4 w-4 fill-current" />
-                        <span className="font-medium">New</span>
+                        <span className="font-medium">{t('host.preview.new', 'New')}</span>
                     </div>
                     <span className="text-gray-600">·</span>
                     <span className="underline font-medium">{listing.city}, {listing.country}</span>
@@ -366,13 +373,13 @@ const ListingPreview: React.FC<ListingPreviewProps> = ({ listing, isOpen, onClos
                                     }}
                                     className="absolute bottom-4 right-4 bg-white px-4 py-2 rounded-lg border border-gray-900 font-medium text-sm hover:bg-gray-50 transition-colors"
                                 >
-                                    Show all photos
+                                    {t('host.preview.showAllPhotos', 'Show all photos')}
                                 </button>
                             )}
                         </div>
                     ) : (
                         <div className="w-full h-[400px] bg-gray-100 flex items-center justify-center">
-                            <p className="text-gray-400">No photos available</p>
+                            <p className="text-gray-400">{t('host.preview.noPhotos', 'No photos available')}</p>
                         </div>
                     )}
                 </div>
@@ -383,16 +390,16 @@ const ListingPreview: React.FC<ListingPreviewProps> = ({ listing, isOpen, onClos
                         {/* Host Info */}
                         <div className="pb-8 border-b border-gray-200">
                             <h2 className="text-2xl font-semibold mb-4">
-                                {listing.property_type} hosted by Arthur
+                                {t('host.preview.hostedBy', { type: listing.property_type, name: 'Arthur' })}
                             </h2>
                             <div className="flex items-center gap-2 text-gray-600">
-                                <span>{listing.max_guests} guests</span>
+                                <span>{listing.max_guests} {t('host.preview.guests', 'guests')}</span>
                                 <span>·</span>
-                                <span>1 bedroom</span>
+                                <span>1 {t('host.preview.bedroom', 'bedroom')}</span>
                                 <span>·</span>
-                                <span>1 bed</span>
+                                <span>1 {t('host.preview.bed', 'bed')}</span>
                                 <span>·</span>
-                                <span>1 bath</span>
+                                <span>1 {t('host.preview.bath', 'bath')}</span>
                             </div>
                         </div>
 
@@ -408,7 +415,7 @@ const ListingPreview: React.FC<ListingPreviewProps> = ({ listing, isOpen, onClos
                         {/* Amenities */}
                         {listing.amenities && listing.amenities.length > 0 && (
                             <div className="pb-8 border-b border-gray-200">
-                                <h3 className="text-xl font-semibold mb-6">What this place offers</h3>
+                                <h3 className="text-xl font-semibold mb-6">{t('host.preview.offers', 'What this place offers')}</h3>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     {(showAllAmenities ? listing.amenities : listing.amenities.slice(0, 10)).map((amenityKey) => {
                                         const amenity = AMENITY_DETAILS[amenityKey];
@@ -453,7 +460,7 @@ const ListingPreview: React.FC<ListingPreviewProps> = ({ listing, isOpen, onClos
                                         className="mt-6 rounded-lg border-gray-900 font-semibold"
                                         onClick={() => setShowAllAmenities(!showAllAmenities)}
                                     >
-                                        {showAllAmenities ? 'Show less' : `Show all ${listing.amenities.length} amenities`}
+                                        {showAllAmenities ? t('host.preview.showLess', 'Show less') : t('host.preview.showAllAmenities', { count: listing.amenities.length })}
                                     </Button>
                                 )}
                             </div>
@@ -461,8 +468,8 @@ const ListingPreview: React.FC<ListingPreviewProps> = ({ listing, isOpen, onClos
 
                         {/* Calendar */}
                         <div className="pb-8 border-b border-gray-200">
-                            <h3 className="text-xl font-semibold mb-6">Select check-in date</h3>
-                            <p className="text-gray-500 text-sm mb-4">Add your travel dates for exact pricing</p>
+                            <h3 className="text-xl font-semibold mb-6">{t('host.preview.selectCheckIn', 'Select check-in date')}</h3>
+                            <p className="text-gray-500 text-sm mb-4">{t('host.preview.addDates', 'Add your travel dates for exact pricing')}</p>
                             {renderCalendar()}
                         </div>
                     </div>
@@ -473,11 +480,11 @@ const ListingPreview: React.FC<ListingPreviewProps> = ({ listing, isOpen, onClos
                             <div className="mb-6">
                                 <div className="flex items-baseline gap-1 mb-1">
                                     <span className="text-2xl font-semibold">${listing.price_per_night}</span>
-                                    <span className="text-gray-600">night</span>
+                                    <span className="text-gray-600">{t('host.preview.night', 'night')}</span>
                                 </div>
                                 <div className="flex items-center gap-1 text-sm">
                                     <Star className="h-4 w-4 fill-current" />
-                                    <span className="font-medium">New</span>
+                                    <span className="font-medium">{t('host.preview.new', 'New')}</span>
                                 </div>
                             </div>
 
@@ -487,18 +494,18 @@ const ListingPreview: React.FC<ListingPreviewProps> = ({ listing, isOpen, onClos
                                         onClick={() => setShowDatePicker(true)}
                                         className="p-3 border-r border-gray-300 text-left hover:bg-gray-50"
                                     >
-                                        <div className="text-xs font-semibold uppercase mb-1">Check-in</div>
+                                        <div className="text-xs font-semibold uppercase mb-1">{t('host.preview.checkIn', 'Check-in')}</div>
                                         <div className="text-sm text-gray-900">
-                                            {checkInDate ? checkInDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Add date'}
+                                            {checkInDate ? checkInDate.toLocaleDateString(i18n.language, { month: 'short', day: 'numeric', year: 'numeric' }) : t('host.preview.addDate', 'Add date')}
                                         </div>
                                     </button>
                                     <button
                                         onClick={() => setShowDatePicker(true)}
                                         className="p-3 text-left hover:bg-gray-50"
                                     >
-                                        <div className="text-xs font-semibold uppercase mb-1">Checkout</div>
+                                        <div className="text-xs font-semibold uppercase mb-1">{t('host.preview.checkout', 'Checkout')}</div>
                                         <div className="text-sm text-gray-900">
-                                            {checkOutDate ? checkOutDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Add date'}
+                                            {checkOutDate ? checkOutDate.toLocaleDateString(i18n.language, { month: 'short', day: 'numeric', year: 'numeric' }) : t('host.preview.addDate', 'Add date')}
                                         </div>
                                     </button>
                                 </div>
@@ -507,11 +514,11 @@ const ListingPreview: React.FC<ListingPreviewProps> = ({ listing, isOpen, onClos
                                         onClick={() => setShowGuestPicker(!showGuestPicker)}
                                         className="w-full text-left"
                                     >
-                                        <div className="text-xs font-semibold uppercase mb-1">Guests</div>
+                                        <div className="text-xs font-semibold uppercase mb-1">{t('host.preview.guestPicker.label', 'Guests')}</div>
                                         <div className="text-sm text-gray-900">
-                                            {totalGuests} guest{totalGuests > 1 ? 's' : ''}
-                                            {infants > 0 && `, ${infants} infant${infants > 1 ? 's' : ''}`}
-                                            {pets > 0 && `, ${pets} pet${pets > 1 ? 's' : ''}`}
+                                            {t('host.preview.guestCount', { count: totalGuests, defaultValue: `${totalGuests} guest${totalGuests > 1 ? 's' : ''}` })}
+                                            {infants > 0 && `, ${t('host.preview.infantCount', { count: infants, defaultValue: `${infants} infant${infants > 1 ? 's' : ''}` })}`}
+                                            {pets > 0 && `, ${t('host.preview.petCount', { count: pets, defaultValue: `${pets} pet${pets > 1 ? 's' : ''}` })}`}
                                         </div>
                                     </button>
 
@@ -520,8 +527,8 @@ const ListingPreview: React.FC<ListingPreviewProps> = ({ listing, isOpen, onClos
                                             {/* Adults */}
                                             <div className="flex items-center justify-between py-4 border-b border-gray-200">
                                                 <div>
-                                                    <div className="font-semibold">Adults</div>
-                                                    <div className="text-sm text-gray-500">Age 13+</div>
+                                                    <div className="font-semibold">{t('host.preview.guestPicker.adults', 'Adults')}</div>
+                                                    <div className="text-sm text-gray-500">{t('host.preview.guestPicker.adultsAge', 'Age 13+')}</div>
                                                 </div>
                                                 <div className="flex items-center gap-3">
                                                     <button
@@ -551,8 +558,8 @@ const ListingPreview: React.FC<ListingPreviewProps> = ({ listing, isOpen, onClos
                                             {/* Children */}
                                             <div className="flex items-center justify-between py-4 border-b border-gray-200">
                                                 <div>
-                                                    <div className="font-semibold">Children</div>
-                                                    <div className="text-sm text-gray-500">Ages 2–12</div>
+                                                    <div className="font-semibold">{t('host.preview.guestPicker.children', 'Children')}</div>
+                                                    <div className="text-sm text-gray-500">{t('host.preview.guestPicker.childrenAge', 'Ages 2–12')}</div>
                                                 </div>
                                                 <div className="flex items-center gap-3">
                                                     <button
@@ -582,8 +589,8 @@ const ListingPreview: React.FC<ListingPreviewProps> = ({ listing, isOpen, onClos
                                             {/* Infants */}
                                             <div className="flex items-center justify-between py-4 border-b border-gray-200">
                                                 <div>
-                                                    <div className="font-semibold">Infants</div>
-                                                    <div className="text-sm text-gray-500">Under 2</div>
+                                                    <div className="font-semibold">{t('host.preview.guestPicker.infants', 'Infants')}</div>
+                                                    <div className="text-sm text-gray-500">{t('host.preview.guestPicker.infantsAge', 'Under 2')}</div>
                                                 </div>
                                                 <div className="flex items-center gap-3">
                                                     <button
@@ -609,8 +616,8 @@ const ListingPreview: React.FC<ListingPreviewProps> = ({ listing, isOpen, onClos
                                             {/* Pets */}
                                             <div className="flex items-center justify-between py-4">
                                                 <div>
-                                                    <div className="font-semibold">Pets</div>
-                                                    <div className="text-sm text-blue-600 underline cursor-pointer">Bringing a service animal?</div>
+                                                    <div className="font-semibold">{t('host.preview.guestPicker.pets', 'Pets')}</div>
+                                                    <div className="text-sm text-blue-600 underline cursor-pointer">{t('host.preview.guestPicker.serviceAnimal', 'Bringing a service animal?')}</div>
                                                 </div>
                                                 <div className="flex items-center gap-3">
                                                     <button
@@ -636,7 +643,7 @@ const ListingPreview: React.FC<ListingPreviewProps> = ({ listing, isOpen, onClos
                                             {/* Info Text */}
                                             <div className="pt-4 border-t border-gray-200">
                                                 <p className="text-xs text-gray-600">
-                                                    This place has a maximum of {listing.max_guests} guests, not including infants. Pets aren't allowed.
+                                                    {t('host.preview.guestPicker.maxGuests', { count: listing.max_guests })}
                                                 </p>
                                             </div>
 
@@ -645,7 +652,7 @@ const ListingPreview: React.FC<ListingPreviewProps> = ({ listing, isOpen, onClos
                                                 onClick={() => setShowGuestPicker(false)}
                                                 className="mt-4 w-full text-right text-sm font-semibold underline hover:text-gray-600"
                                             >
-                                                Close
+                                                {t('host.preview.guestPicker.close', 'Close')}
                                             </button>
                                         </div>
                                     )}
@@ -653,10 +660,10 @@ const ListingPreview: React.FC<ListingPreviewProps> = ({ listing, isOpen, onClos
                             </div>
 
                             <Button className="w-full bg-gradient-to-r from-[#10B981] to-[#059669] hover:from-[#059669] hover:to-[#047857] text-white font-semibold py-3 rounded-lg mb-4">
-                                Check availability
+                                {t('host.preview.checkAvailability', 'Check availability')}
                             </Button>
 
-                            <p className="text-center text-sm text-gray-500 mb-6">You won't be charged yet</p>
+                            <p className="text-center text-sm text-gray-500 mb-6">{t('host.preview.noCharge', "You won't be charged yet")}</p>
 
                             {checkInDate && checkOutDate && (
                                 <div className="space-y-3 text-sm">
@@ -669,17 +676,17 @@ const ListingPreview: React.FC<ListingPreviewProps> = ({ listing, isOpen, onClos
                                         </span>
                                     </div>
                                     <div className="flex justify-between">
-                                        <span className="underline">Cleaning fee</span>
+                                        <span className="underline">{t('host.preview.cleaningFee', 'Cleaning fee')}</span>
                                         <span>$50</span>
                                     </div>
                                     <div className="flex justify-between">
-                                        <span className="underline">Service fee</span>
+                                        <span className="underline">{t('host.preview.serviceFee', 'Service fee')}</span>
                                         <span>
                                             ${Math.round(listing.price_per_night * Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24)) * 0.14)}
                                         </span>
                                     </div>
                                     <div className="pt-3 border-t border-gray-200 flex justify-between font-semibold">
-                                        <span>Total</span>
+                                        <span>{t('host.preview.total', 'Total')}</span>
                                         <span>
                                             ${listing.price_per_night * Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24)) + 50 + Math.round(listing.price_per_night * Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24)) * 0.14)}
                                         </span>
@@ -692,7 +699,7 @@ const ListingPreview: React.FC<ListingPreviewProps> = ({ listing, isOpen, onClos
 
                 {/* Where you'll be */}
                 <div className="py-8 border-t border-gray-200">
-                    <h3 className="text-xl font-semibold mb-4">Where you'll be</h3>
+                    <h3 className="text-xl font-semibold mb-4">{t('host.preview.location.title', "Where you'll be")}</h3>
                     <div className="mb-6">
                         <p className="font-medium text-gray-900 text-lg">{listing.address || `${listing.city}, ${listing.country}`}</p>
                         {(listing.latitude && listing.longitude) && (
@@ -716,7 +723,7 @@ const ListingPreview: React.FC<ListingPreviewProps> = ({ listing, isOpen, onClos
                             <Marker position={[listing.latitude || 4.0511, listing.longitude || 9.7679]}>
                                 <Popup>
                                     <div className="font-semibold">{listing.title}</div>
-                                    <div className="text-sm text-gray-600">Exact location provided after booking</div>
+                                    <div className="text-sm text-gray-600">{t('host.preview.location.exact', 'Exact location provided after booking')}</div>
                                 </Popup>
                             </Marker>
 
@@ -770,7 +777,7 @@ const ListingPreview: React.FC<ListingPreviewProps> = ({ listing, isOpen, onClos
                                     {category.id === 'transport' && <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 6v6" /><path d="M15 6v6" /><path d="M2 12h19.6" /><path d="M18 18h3s.5-1.7.8-2.8c.1-.4.2-.8.2-1.2 0-.4-.1-.8-.2-1.2l-1.4-5C20.1 6.8 19.1 6 18 6H4a2 2 0 0 0-2 2v10h3" /><circle cx="7" cy="18" r="2" /><path d="M9 18h5" /><circle cx="16" cy="18" r="2" /></svg>}
                                     {category.id === 'attractions' && <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" /><circle cx="12" cy="13" r="3" /></svg>}
                                     {category.id === 'groceries' && <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="8" cy="21" r="1" /><circle cx="19" cy="21" r="1" /><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12" /></svg>}
-                                    {category.label}
+                                    {t(`host.preview.location.categories.${category.id}`, category.label)}
                                 </button>
                             ))}
                         </div>
@@ -779,20 +786,20 @@ const ListingPreview: React.FC<ListingPreviewProps> = ({ listing, isOpen, onClos
 
                 {/* Things to Know */}
                 <div className="mt-12 pt-8 border-t border-gray-200">
-                    <h3 className="text-xl font-semibold mb-6">Things to know</h3>
+                    <h3 className="text-xl font-semibold mb-6">{t('host.preview.thingsToKnow', 'Things to know')}</h3>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                         {/* House Rules */}
                         <div>
-                            <h4 className="font-semibold mb-4">House rules</h4>
+                            <h4 className="font-semibold mb-4">{t('host.preview.houseRules', 'House rules')}</h4>
                             <div className="space-y-2 text-sm text-gray-700">
                                 {houseRules && (
                                     <>
                                         <p>Check-in: {houseRules.check_in_start} - {houseRules.check_in_end}</p>
                                         <p>Checkout: {houseRules.checkout_time}</p>
-                                        <p>{listing.max_guests} guests maximum</p>
-                                        {!houseRules.pets_allowed && <p>No pets</p>}
-                                        {!houseRules.smoking_allowed && <p>No smoking</p>}
-                                        {!houseRules.events_allowed && <p>No parties or events</p>}
+                                        <p>{listing.max_guests} {t('host.preview.guests', 'guests')} maximum</p>
+                                        {!houseRules.pets_allowed && <p>{t('host.preview.noPets', 'No pets')}</p>}
+                                        {!houseRules.smoking_allowed && <p>{t('host.preview.noSmoking', 'No smoking')}</p>}
+                                        {!houseRules.events_allowed && <p>{t('host.preview.noParties', 'No parties or events')}</p>}
                                     </>
                                 )}
                             </div>
@@ -804,7 +811,7 @@ const ListingPreview: React.FC<ListingPreviewProps> = ({ listing, isOpen, onClos
                             <div className="space-y-2 text-sm text-gray-700">
                                 {/* Safety Devices */}
                                 {SAFETY_DEVICES.map(device => {
-                                    const isSelected = (listing as any).safety_items?.includes(device.id);
+                                    const isSelected = listing.safety_items?.includes(device.id);
                                     if (isSelected) {
                                         return <p key={device.id}>{device.label}</p>;
                                     }
@@ -820,7 +827,7 @@ const ListingPreview: React.FC<ListingPreviewProps> = ({ listing, isOpen, onClos
 
                                 {/* Safety Considerations */}
                                 {SAFETY_CONSIDERATIONS.map(item => {
-                                    if ((listing as any).safety_items?.includes(item.id)) {
+                                    if (listing.safety_items?.includes(item.id)) {
                                         return <p key={item.id}>{item.label}</p>;
                                     }
                                     return null;
@@ -828,7 +835,7 @@ const ListingPreview: React.FC<ListingPreviewProps> = ({ listing, isOpen, onClos
 
                                 {/* Property Info */}
                                 {PROPERTY_INFO.map(item => {
-                                    if ((listing as any).safety_items?.includes(item.id)) {
+                                    if (listing.safety_items?.includes(item.id)) {
                                         return <p key={item.id}>{item.label}</p>;
                                     }
                                     return null;

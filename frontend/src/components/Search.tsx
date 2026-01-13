@@ -68,9 +68,9 @@ const MboaMaissonSearch = () => {
     };
 
     const suggestions = [
-        { name: "Yaounde", desc: "Capitale politique du Cameroun", icon: "🏛️" },
-        { name: "Douala", desc: "Capitale économique du Cameroun", icon: "🏙️" },
-        { name: "Kribi", desc: "Cité balnéaire", icon: "🏖️" },
+        { name: "Yaounde", desc: "Political capital of Cameroon", icon: "🏛️" },
+        { name: "Douala", desc: "Economic capital of Cameroon", icon: "🏙️" },
+        { name: "Kribi", desc: "Seaside resort", icon: "🏖️" },
     ];
 
     return (
@@ -317,10 +317,10 @@ const MboaMaissonSearch = () => {
                     <PopoverContent className="w-[350px] p-6 rounded-3xl shadow-xl border-0 mt-4" align="end">
                         <div className="space-y-6">
                             {[
-                                { type: "adults", label: "Adultes", sub: "13 ans et plus" },
-                                { type: "children", label: "Enfants", sub: "De 2 à 12 ans" },
-                                { type: "infants", label: "Bébés", sub: "- de 2 ans" },
-                                { type: "pets", label: "Animaux domestiques", sub: "Vous voyagez avec un animal d'assistance ?" },
+                                { type: "adults", label: "Adults", sub: "Age 13+" },
+                                { type: "children", label: "Children", sub: "Ages 2-12" },
+                                { type: "infants", label: "Infants", sub: "Under 2" },
+                                { type: "pets", label: "Pets", sub: "Traveling with a service animal?" },
                             ].map((item) => (
                                 <div key={item.type} className="flex items-center justify-between">
                                     <div>

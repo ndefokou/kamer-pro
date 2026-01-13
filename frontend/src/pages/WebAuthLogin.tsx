@@ -40,9 +40,10 @@ const WebAuthLogin = () => {
 
   // Register state
   const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
 
   useEffect(() => {
-    const tab = params.get("tab");
+      const tab = params.get("tab");
     if (tab === "login" || tab === "register") {
       setActiveTab(tab);
     }
@@ -81,14 +82,14 @@ const WebAuthLogin = () => {
     setLoading(true);
     setError(null);
     try {
-      if (!username.trim() || !phone.trim() || !password) {
-        setError("Please enter username, phone and password");
-        return;
-      }
+        if (!username.trim() || !phone.trim() || !password || !email.trim()) {
+            setError("Please enter username, phone, email, and password");
+            return;
+        }
 
-      await withRetry(() => webAuth.register(username.trim(), password, phone.trim()));
-      await login(); // Refresh session in context
-      navigate(redirectTo, { replace: true });
+        await withRetry(() => webAuth.register(username.trim(), password, phone.trim(), email.trim()));
+        await login(); // Refresh session in context
+        navigate(redirectTo, { replace: true });
     } catch (err: unknown) {
       const message =
         (err as { response?: { data?: { error?: string } } })?.response?.data?.error ||
@@ -149,10 +150,23 @@ const WebAuthLogin = () => {
             </div>
           )}
 
+          {activeTab === "register" && (
+              <div>
+                  <label className="block text-sm font-medium mb-1">Email</label>
+                  <input
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300"
+                      placeholder="you@example.com"
+                  />
+              </div>
+          )}
+
           <div>
-            <label className="block text-sm font-medium mb-1">Password</label>
-            <input
-              type="password"
+              <label className="block text-sm font-medium mb-1">Password</label>
+              <input
+                  type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300"

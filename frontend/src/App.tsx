@@ -32,6 +32,7 @@ import ListingDetails from "./pages/ListingDetails";
 import SearchResults from "./pages/SearchResults";
 import Messages from "./pages/Messages";
 import AdminDashboard from "./pages/admin/AdminDashboard";
+import Wishlist from "./pages/Wishlist";
 
 const queryClient = new QueryClient();
 
@@ -42,6 +43,7 @@ const router = createBrowserRouter(
     { path: "/product/:id", Component: ListingDetails },
     { path: "/messages", Component: Messages },
     { path: "/webauth-login", Component: WebAuthLogin },
+    { path: "/wishlist", Component: Wishlist },
     {
       path: "/account",
       element: <ProtectedRoute />,

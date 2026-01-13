@@ -66,6 +66,30 @@ const ListingEditor: React.FC = () => {
     const [showPreview, setShowPreview] = useState(false);
     const [editingDescriptionSection, setEditingDescriptionSection] = useState<string | null>(null);
     const [tempDescription, setTempDescription] = useState('');
+    const [tempData, setTempData] = useState<{ title?: string; description?: string }>({});
+
+    useEffect(() => {
+        if (listing) {
+            setTempData({
+                title: listing.title,
+                description: listing.description
+            });
+        }
+    }, [listing]);
+
+    const handleSave = async (field: 'title' | 'description') => {
+        if (!listing) return;
+        try {
+            const updateData: any = {};
+            if (field === 'title') updateData.title = tempData.title;
+            if (field === 'description') updateData.description = tempData.description;
+
+            await apiClient.put(`/listings/${id}`, updateData);
+            setListing({ ...listing, ...updateData });
+        } catch (error) {
+            console.error(`Failed to update ${field}:`, error);
+        }
+    };
     const [showGuestSafety, setShowGuestSafety] = useState(false);
     const [guestSafetySection, setGuestSafetySection] = useState<'considerations' | 'devices' | 'property_info'>('considerations');
     const [showAllPhotos, setShowAllPhotos] = useState(false);
@@ -170,11 +194,29 @@ const ListingEditor: React.FC = () => {
         },
     ];
 
+    const cancellationPolicies = [
+        {
+            id: 'flexible',
+            label: t('host.editor.cancellation.flexible', 'Flexible'),
+            description: t('host.editor.cancellation.flexibleDesc', 'Full refund 1 day prior to arrival')
+        },
+        {
+            id: 'moderate',
+            label: t('host.editor.cancellation.moderate', 'Moderate'),
+            description: t('host.editor.cancellation.moderateDesc', 'Full refund 5 days prior to arrival')
+        },
+        {
+            id: 'strict',
+            label: t('host.editor.cancellation.strict', 'Strict'),
+            description: t('host.editor.cancellation.strictDesc', 'Full refund for 48 hours after booking, if the check-in date is at least 14 days away. 50% refund up to 7 days prior to arrival.')
+        }
+    ];
+
     const photoSidebarItems = [
         { id: 'additional', label: 'Additional photos', image: listing.photos.length > 0 ? getImageUrl(listing.photos[0].url) : null },
     ];
 
-    const currentSectionLabel = sidebarItems.find(s => s.id === activeSection)?.label || t('host.editor.title', 'Listing editor');
+    const currentSectionLabel = sidebarItems.find(s => s.id === activeSection)?.label || t('host.editor.listingEditor', 'Listing editor');
 
     return (
         <>
@@ -193,7 +235,7 @@ const ListingEditor: React.FC = () => {
                             <ChevronLeft className="h-5 w-5" />
                         </button>
                         <h1 className="text-lg font-semibold">
-                            {photoView !== 'overview' ? 'Photo tour' : (isMobileSection ? currentSectionLabel : 'Listing editor')}
+                            {photoView !== 'overview' ? t('host.editor.photoTour', 'Photo tour') : (isMobileSection ? currentSectionLabel : t('host.editor.listingEditor', 'Listing editor'))}
                         </h1>
                     </div>
                     <div className="flex items-center gap-2 sm:gap-4">
@@ -202,7 +244,7 @@ const ListingEditor: React.FC = () => {
                             className="hidden md:inline-flex items-center gap-2 px-3 py-2 rounded-full hover:bg-gray-100 transition-colors"
                         >
                             <Eye className="h-4 w-4" />
-                            <span className="text-sm font-medium">View</span>
+                            <span className="text-sm font-medium">{t('host.editor.view', 'View')}</span>
                         </button>
                     </div>
                 </header>
@@ -289,7 +331,7 @@ const ListingEditor: React.FC = () => {
                             {photoView === 'overview' && !isMobileSection && (
                                 <div className="md:hidden mb-6">
                                     <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-full mb-4 w-fit">
-                                        <button className="px-4 py-1.5 bg-white rounded-full text-sm font-semibold shadow-sm">Your space</button>
+                                        <button className="px-4 py-1.5 bg-white rounded-full text-sm font-semibold shadow-sm">{t('host.editor.yourSpace', 'Your space')}</button>
                                     </div>
                                     <div className="space-y-3">
                                         {sidebarItems.map((item) => (
@@ -319,7 +361,7 @@ const ListingEditor: React.FC = () => {
                                 activeSection === 'photos' && (
                                     <div>
                                         <div className="flex items-center justify-between mb-2">
-                                            <h2 className="text-2xl font-semibold">{t('host.editor.photoTourTitle', 'Photo tour')}</h2>
+                                            <h2 className="text-2xl font-semibold">{t('host.editor.photoTour', 'Photo tour')}</h2>
                                             <div className="flex gap-2">
                                                 <Button
                                                     variant="outline"
@@ -436,165 +478,83 @@ const ListingEditor: React.FC = () => {
                             {/* Placeholders for other sections */}
                             {activeSection === 'title' && (
                                 <div className={`${isMobileSection ? '' : 'hidden md:block'} max-w-2xl`}>
-                                    <div className="flex items-center justify-between mb-6">
-                                        <h2 className="text-2xl font-semibold">Title</h2>
-                                    </div>
-                                    <p className="text-gray-500 mb-8">
-                                        Your title should highlight what makes your place special.
-                                    </p>
-                                    <div className="mb-8">
-                                        <textarea
-                                            value={listing.title}
-                                            onChange={(e) => {
-                                                if (e.target.value.length <= 50) {
-                                                    setListing({ ...listing, title: e.target.value });
-                                                }
-                                            }}
-                                            className="w-full text-3xl font-semibold border-none focus:ring-0 p-0 resize-none placeholder-gray-300"
-                                            rows={2}
-                                            placeholder="Add a title"
-                                        />
-                                        <div className="text-sm text-gray-500 mt-2">
-                                            {listing.title.length}/50
+                                    <div className="flex justify-between items-start mb-4">
+                                        <div>
+                                            <h2 className="text-xl font-semibold mb-1">{t('host.editor.sidebar.title', 'Title')}</h2>
+                                            <p className="text-gray-500 text-sm">{t('host.editor.title.help', 'Your title should highlight what makes your place special.')}</p>
                                         </div>
-                                    </div>
-                                    <div className="flex justify-end border-t pt-6">
-                                        <Button
-                                            onClick={async () => {
-                                                try {
-                                                    await apiClient.put(`/listings/${id}`, { title: listing.title });
-                                                    // Show success message or toast
-                                                } catch (error) {
-                                                    console.error('Failed to update title:', error);
-                                                }
-                                            }}
-                                            className="bg-black text-white hover:bg-gray-800 rounded-lg px-6"
+                                        <button
+                                            onClick={() => handleSave('title')}
+                                            className="font-medium underline hover:text-gray-800"
                                         >
-                                            Save
-                                        </Button>
+                                            {t('host.editor.save', 'Save')}
+                                        </button>
                                     </div>
+                                    <textarea
+                                        value={tempData.title || ''}
+                                        onChange={(e) => setTempData({ ...tempData, title: e.target.value })}
+                                        className="w-full p-4 border rounded-xl text-lg min-h-[100px] focus:outline-none focus:ring-2 focus:ring-black"
+                                        placeholder={t('host.editor.title.placeholder', 'Add a title')}
+                                        maxLength={50}
+                                    />
                                 </div>
                             )}
 
                             {activeSection === 'pricing' && settings && (
                                 <div className={`${isMobileSection ? '' : 'hidden md:block'} max-w-2xl`}>
-                                    <div className="mb-8">
-                                        <h2 className="text-2xl font-semibold mb-2">Pricing</h2>
+                                    <div className="mb-6">
+                                        <h2 className="text-2xl font-semibold mb-2">{t('host.editor.sidebar.pricing', 'Pricing')}</h2>
                                         <p className="text-gray-500">
-                                            These settings apply to all nights, unless you customize them by date. <a href="#" className="underline font-medium text-black">Learn more</a>
+                                            {t('host.editor.pricing.help', 'These settings apply to all nights, unless you customize them by date.')} <span className="underline font-medium cursor-pointer">{t('host.editor.pricing.learnMore', 'Learn more')}</span>
                                         </p>
                                     </div>
 
-                                    <div className="mb-8">
-                                        <div className="flex items-center justify-between mb-4">
-                                            <h3 className="font-semibold text-lg">Nightly price</h3>
-                                            <div className="flex items-center gap-2">
-                                                <span className="text-sm text-gray-500">Smart Pricing</span>
-                                                <div
-                                                    className={`w-11 h-6 rounded-full p-1 cursor-pointer transition-colors ${settings.smart_pricing_enabled ? 'bg-black' : 'bg-gray-300'}`}
-                                                    onClick={() => setSettings({ ...settings, smart_pricing_enabled: settings.smart_pricing_enabled ? 0 : 1 })}
-                                                >
-                                                    <div className={`w-4 h-4 bg-white rounded-full shadow-sm transition-transform ${settings.smart_pricing_enabled ? 'translate-x-5' : 'translate-x-0'}`} />
-                                                </div>
+                                    <div className="space-y-6">
+                                        <div className="flex items-center justify-between py-4 border-b">
+                                            <span className="text-gray-600">{t('host.editor.pricing.nightlyPrice', 'Nightly price')}</span>
+                                            <span className="text-xl font-semibold text-green-600">${listing.price_per_night}</span>
+                                        </div>
+                                        <div className="flex items-center justify-between py-4 border-b">
+                                            <span className="text-gray-600">{t('host.editor.pricing.smartPricing', 'Smart Pricing')}</span>
+                                            <div className="w-12 h-6 bg-gray-200 rounded-full relative cursor-pointer">
+                                                <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full shadow-sm" />
                                             </div>
                                         </div>
-                                        <div className="relative">
-                                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-xl font-semibold">$</span>
-                                            <input
-                                                type="number"
-                                                value={listing.price_per_night}
-                                                onChange={(e) => setListing({ ...listing, price_per_night: parseInt(e.target.value) || 0 })}
-                                                className="w-full text-3xl font-semibold pl-8 py-4 border rounded-xl focus:ring-2 focus:ring-black focus:border-transparent"
-                                            />
+                                        <div className="flex items-center justify-between py-4 border-b">
+                                            <span className="text-gray-600">{t('host.editor.pricing.customWeekendPrice', 'Custom weekend price')}</span>
+                                            <span className="text-gray-400">--</span>
                                         </div>
-                                    </div>
 
-                                    <div className="mb-8 p-4 border rounded-xl flex items-center justify-between">
-                                        <div>
-                                            <div className="text-sm text-gray-500 mb-1">Custom weekend price</div>
-                                            <div className="text-xl font-semibold">${settings.weekend_price || listing.price_per_night}</div>
-                                        </div>
-                                        <button
-                                            onClick={() => setSettings({ ...settings, weekend_price: undefined })}
-                                            className="p-2 hover:bg-gray-100 rounded-full text-gray-400 hover:text-gray-600"
-                                        >
-                                            <div className="h-5 w-5 flex items-center justify-center border border-current rounded">
-                                                <div className="w-3 h-px bg-current" />
-                                            </div>
-                                        </button>
-                                    </div>
-
-                                    <div className="mb-8">
-                                        <h3 className="font-semibold text-lg mb-4">Discounts</h3>
-
-                                        <div className="border rounded-xl divide-y">
-                                            <div className="p-4 flex items-center justify-between">
-                                                <div>
-                                                    <div className="font-medium">Weekly <span className="text-gray-500 font-normal">· For 7 nights or more</span></div>
-                                                    <div className="flex items-center mt-1">
-                                                        <input
-                                                            type="number"
-                                                            value={settings.weekly_discount}
-                                                            onChange={(e) => setSettings({ ...settings, weekly_discount: parseInt(e.target.value) || 0 })}
-                                                            className="text-2xl font-semibold w-16 border-b border-gray-300 focus:border-black focus:ring-0 p-0 text-center"
-                                                            min="0"
-                                                            max="99"
-                                                        />
-                                                        <span className="text-2xl font-semibold ml-1">%</span>
+                                        <div className="pt-4">
+                                            <h3 className="font-semibold mb-4">{t('host.editor.pricing.discounts', 'Discounts')}</h3>
+                                            <div className="space-y-4">
+                                                <div className="flex items-center justify-between">
+                                                    <div>
+                                                        <div className="text-gray-600">{t('host.editor.pricing.weekly', 'Weekly')}</div>
+                                                        <div className="text-sm text-gray-400">{t('host.editor.pricing.weeklyHelp', 'For 7 nights or more')}</div>
+                                                    </div>
+                                                    <div className="text-gray-400">
+                                                        {listing.price_per_night ? (
+                                                            <span className="text-sm">{t('host.editor.pricing.weeklyAverage', 'Weekly average is')} ${listing.price_per_night * 7}</span>
+                                                        ) : '--'}
                                                     </div>
                                                 </div>
-                                                <div className="text-sm text-gray-500">Weekly average is ${Math.round(listing.price_per_night * 7 * (1 - settings.weekly_discount / 100))}</div>
-                                            </div>
-
-                                            <div className="p-4 flex items-center justify-between">
-                                                <div>
-                                                    <div className="font-medium">Monthly <span className="text-gray-500 font-normal">· For 28 nights or more</span></div>
-                                                    <div className="flex items-center mt-1">
-                                                        <input
-                                                            type="number"
-                                                            value={settings.monthly_discount}
-                                                            onChange={(e) => setSettings({ ...settings, monthly_discount: parseInt(e.target.value) || 0 })}
-                                                            className="text-2xl font-semibold w-16 border-b border-gray-300 focus:border-black focus:ring-0 p-0 text-center"
-                                                            min="0"
-                                                            max="99"
-                                                        />
-                                                        <span className="text-2xl font-semibold ml-1">%</span>
+                                                <div className="flex items-center justify-between">
+                                                    <div>
+                                                        <div className="text-gray-600">{t('host.editor.pricing.monthly', 'Monthly')}</div>
+                                                        <div className="text-sm text-gray-400">{t('host.editor.pricing.monthlyHelp', 'For 28 nights or more')}</div>
+                                                    </div>
+                                                    <div className="text-gray-400">
+                                                        {listing.price_per_night ? (
+                                                            <span className="text-sm">{t('host.editor.pricing.monthlyAverage', 'Monthly average is')} ${listing.price_per_night * 28}</span>
+                                                        ) : '--'}
                                                     </div>
                                                 </div>
-                                                <div className="text-sm text-gray-500">Monthly average is ${Math.round(listing.price_per_night * 28 * (1 - settings.monthly_discount / 100))}</div>
+                                            </div>
+                                            <div className="mt-6 text-sm font-medium underline cursor-pointer">
+                                                {t('host.editor.pricing.moreDiscounts', 'Find more discounts and fees in the calendar')}
                                             </div>
                                         </div>
-                                    </div>
-
-                                    <div className="bg-gray-50 rounded-xl p-4 flex items-center gap-2 text-sm font-medium cursor-pointer hover:bg-gray-100 transition-colors mb-8">
-                                        <FileText className="h-4 w-4" />
-                                        Find more discounts and fees in the calendar
-                                    </div>
-
-                                    <div className="flex justify-end border-t pt-6">
-                                        <Button
-                                            onClick={async () => {
-                                                try {
-                                                    // Update listing price
-                                                    await apiClient.put(`/listings/${id}`, { price_per_night: listing.price_per_night });
-
-                                                    // Update settings
-                                                    await apiClient.put(`/calendar/${id}/settings`, {
-                                                        ...settings,
-                                                        weekend_price: settings.weekend_price,
-                                                        smart_pricing_enabled: settings.smart_pricing_enabled,
-                                                        weekly_discount: settings.weekly_discount,
-                                                        monthly_discount: settings.monthly_discount
-                                                    });
-                                                    // Show success message or toast
-                                                } catch (error) {
-                                                    console.error('Failed to update pricing:', error);
-                                                }
-                                            }}
-                                            className="bg-black text-white hover:bg-gray-800 rounded-lg px-6"
-                                        >
-                                            Save
-                                        </Button>
                                     </div>
                                 </div>
                             )}
@@ -602,19 +562,19 @@ const ListingEditor: React.FC = () => {
                             {activeSection === 'availability' && settings && (
                                 <div className={`${isMobileSection ? '' : 'hidden md:block'} max-w-2xl`}>
                                     <div className="mb-8">
-                                        <h2 className="text-2xl font-semibold mb-2">Availability</h2>
+                                        <h2 className="text-2xl font-semibold mb-2">{t('host.editor.sidebar.availability', 'Availability')}</h2>
                                         <p className="text-gray-500">
-                                            These settings apply to all nights, unless you customize them by date.
+                                            {t('host.editor.availability.help', 'These settings apply to all nights, unless you customize them by date.')}
                                         </p>
                                     </div>
 
                                     {/* Trip Length */}
                                     <div className="mb-8">
-                                        <h3 className="text-base font-semibold text-gray-900 mb-4">Trip length</h3>
+                                        <h3 className="text-base font-semibold text-gray-900 mb-4">{t('host.editor.availability.tripLength', 'Trip length')}</h3>
 
                                         <div className="space-y-4">
                                             <div className="border border-gray-300 rounded-xl p-4 hover:border-gray-900 transition-colors">
-                                                <label className="block text-sm text-gray-600 mb-2">Minimum nights</label>
+                                                <label className="block text-sm text-gray-600 mb-2">{t('host.editor.availability.minNights', 'Minimum nights')}</label>
                                                 <input
                                                     type="number"
                                                     value={settings.min_nights}
@@ -625,7 +585,7 @@ const ListingEditor: React.FC = () => {
                                             </div>
 
                                             <div className="border border-gray-300 rounded-xl p-4 hover:border-gray-900 transition-colors">
-                                                <label className="block text-sm text-gray-600 mb-2">Maximum nights</label>
+                                                <label className="block text-sm text-gray-600 mb-2">{t('host.editor.availability.maxNights', 'Maximum nights')}</label>
                                                 <input
                                                     type="number"
                                                     value={settings.max_nights}
@@ -639,75 +599,62 @@ const ListingEditor: React.FC = () => {
 
                                     {/* Advance Notice */}
                                     <div className="mb-8">
-                                        <h3 className="text-base font-semibold text-gray-900 mb-1">Advance notice</h3>
+                                        <h3 className="text-base font-semibold text-gray-900 mb-1">{t('host.editor.availability.advanceNotice', 'Advance notice')}</h3>
                                         <p className="text-sm text-gray-600 mb-4">
-                                            How much notice do you need between a guest's booking and their arrival?
+                                            {t('host.editor.availability.advanceNoticeHelp', "How much notice do you need between a guest's booking and their arrival?")}
                                         </p>
 
                                         <div className="space-y-4">
                                             <div className="border border-gray-300 rounded-xl p-4 hover:border-gray-900 transition-colors">
-                                                <label className="block text-sm text-gray-600 mb-3">Days</label>
+                                                <label className="block text-sm text-gray-600 mb-3">{t('host.editor.availability.days', 'Days')}</label>
                                                 <div className="relative">
                                                     <select
                                                         value={settings.advance_notice}
                                                         onChange={(e) => setSettings({ ...settings, advance_notice: e.target.value })}
                                                         className="w-full text-base font-medium bg-transparent border-none focus:outline-none focus:ring-0 appearance-none pr-8 cursor-pointer"
                                                     >
-                                                        <option value="same_day">Same day</option>
-                                                        <option value="1_day">1 day</option>
-                                                        <option value="2_days">2 days</option>
-                                                        <option value="3_days">3 days</option>
-                                                        <option value="4_days">4 days</option>
-                                                        <option value="5_days">5 days</option>
-                                                        <option value="6_days">6 days</option>
-                                                        <option value="7_days">7 days</option>
+                                                        <option value="same_day">{t('host.editor.availability.sameDay', 'Same day')}</option>
+                                                        <option value="1_day">{t('host.editor.availability.1day', '1 day')}</option>
+                                                        <option value="2_days">{t('host.editor.availability.2days', '2 days')}</option>
+                                                        <option value="3_days">{t('host.editor.availability.3days', '3 days')}</option>
+                                                        <option value="7_days">{t('host.editor.availability.7days', '7 days')}</option>
                                                     </select>
                                                     <div className="absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none">
-                                                        <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                                        </svg>
+                                                        <ChevronLeft className="h-5 w-5 text-gray-400 -rotate-90" />
                                                     </div>
                                                 </div>
                                                 <p className="text-xs text-gray-500 mt-3">
-                                                    Guests can book on the same day as check-in until this time.
+                                                    {t('host.editor.availability.sameDayHelp', 'Guests can book on the same day as check-in until this time.')}
                                                 </p>
                                             </div>
 
                                             <div className="border border-gray-300 rounded-xl p-4 hover:border-gray-900 transition-colors">
-                                                <label className="block text-sm text-gray-600 mb-3">Time</label>
+                                                <label className="block text-sm text-gray-600 mb-3">{t('host.editor.availability.time', 'Time')}</label>
                                                 <div className="relative">
                                                     <select
                                                         value={settings.same_day_cutoff_time}
                                                         onChange={(e) => setSettings({ ...settings, same_day_cutoff_time: e.target.value })}
                                                         className="w-full text-base font-medium bg-transparent border-none focus:outline-none focus:ring-0 appearance-none pr-8 cursor-pointer"
                                                     >
-                                                        {Array.from({ length: 24 }, (_, i) => {
-                                                            const hour = i.toString().padStart(2, '0');
-                                                            return `${hour}:00`;
-                                                        }).map((time) => (
-                                                            <option key={time} value={time}>
-                                                                {time}
-                                                            </option>
-                                                        ))}
+                                                        {Array.from({ length: 24 }).map((_, i) => {
+                                                            const hour = i;
+                                                            const time = `${hour === 0 ? 12 : (hour > 12 ? hour - 12 : hour)}:00 ${hour < 12 ? 'AM' : 'PM'}`;
+                                                            return <option key={i} value={`${hour}:00`}>{time}</option>;
+                                                        })}
                                                     </select>
                                                     <div className="absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none">
-                                                        <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                                        </svg>
+                                                        <ChevronLeft className="h-5 w-5 text-gray-400 -rotate-90" />
                                                     </div>
                                                 </div>
-                                                <p className="text-xs text-gray-500 mt-3">
-                                                    Guests can book on the same day as check-in until this time.
-                                                </p>
                                             </div>
                                         </div>
                                     </div>
 
                                     {/* Preparation Time */}
                                     <div className="mb-8">
-                                        <h3 className="text-base font-semibold text-gray-900 mb-1">Preparation time</h3>
+                                        <h3 className="text-base font-semibold text-gray-900 mb-1">{t('host.editor.availability.preparationTime', 'Preparation time')}</h3>
                                         <p className="text-sm text-gray-600 mb-4">
-                                            Block time before and after each reservation to prepare your space.
+                                            {t('host.editor.availability.preparationTimeHelp', 'Block time before and after each reservation to prepare your space.')}
                                         </p>
 
                                         <div className="border border-gray-300 rounded-xl p-4 hover:border-gray-900 transition-colors">
@@ -717,14 +664,12 @@ const ListingEditor: React.FC = () => {
                                                     onChange={(e) => setSettings({ ...settings, preparation_time: e.target.value })}
                                                     className="w-full text-base font-medium bg-transparent border-none focus:outline-none focus:ring-0 appearance-none pr-8 cursor-pointer"
                                                 >
-                                                    <option value="none">None</option>
-                                                    <option value="1_night">1 night before and after each reservation</option>
-                                                    <option value="2_nights">2 nights before and after each reservation</option>
+                                                    <option value="none">{t('host.editor.availability.none', 'None')}</option>
+                                                    <option value="1_night">{t('host.editor.availability.1night', '1 night before and after each reservation')}</option>
+                                                    <option value="2_nights">{t('host.editor.availability.2nights', '2 nights before and after each reservation')}</option>
                                                 </select>
                                                 <div className="absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none">
-                                                    <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                                    </svg>
+                                                    <ChevronLeft className="h-5 w-5 text-gray-400 -rotate-90" />
                                                 </div>
                                             </div>
                                         </div>
@@ -732,9 +677,9 @@ const ListingEditor: React.FC = () => {
 
                                     {/* Availability Window */}
                                     <div className="mb-8">
-                                        <h3 className="text-base font-semibold text-gray-900 mb-1">Availability window</h3>
+                                        <h3 className="text-base font-semibold text-gray-900 mb-1">{t('host.editor.availability.availabilityWindow', 'Availability window')}</h3>
                                         <p className="text-sm text-gray-600 mb-4">
-                                            How far in advance can guests book?
+                                            {t('host.editor.availability.availabilityWindowHelp', 'How far in advance can guests book?')}
                                         </p>
 
                                         <div className="border border-gray-300 rounded-xl p-4 hover:border-gray-900 transition-colors">
@@ -744,16 +689,14 @@ const ListingEditor: React.FC = () => {
                                                     onChange={(e) => setSettings({ ...settings, availability_window: Number(e.target.value) })}
                                                     className="w-full text-base font-medium bg-transparent border-none focus:outline-none focus:ring-0 appearance-none pr-8 cursor-pointer"
                                                 >
-                                                    <option value={3}>3 months in advance</option>
-                                                    <option value={6}>6 months in advance</option>
-                                                    <option value={9}>9 months in advance</option>
-                                                    <option value={12}>12 months in advance</option>
-                                                    <option value={24}>24 months in advance</option>
+                                                    <option value={3}>{t('host.editor.availability.monthsInAdvance', { count: 3, defaultValue: '3 months in advance' })}</option>
+                                                    <option value={6}>{t('host.editor.availability.monthsInAdvance', { count: 6, defaultValue: '6 months in advance' })}</option>
+                                                    <option value={9}>{t('host.editor.availability.monthsInAdvance', { count: 9, defaultValue: '9 months in advance' })}</option>
+                                                    <option value={12}>{t('host.editor.availability.monthsInAdvance', { count: 12, defaultValue: '12 months in advance' })}</option>
+                                                    <option value={24}>{t('host.editor.availability.monthsInAdvance', { count: 24, defaultValue: '24 months in advance' })}</option>
                                                 </select>
                                                 <div className="absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none">
-                                                    <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                                    </svg>
+                                                    <ChevronLeft className="h-5 w-5 text-gray-400 -rotate-90" />
                                                 </div>
                                             </div>
                                         </div>
@@ -781,680 +724,682 @@ const ListingEditor: React.FC = () => {
                                             Save
                                         </Button>
                                     </div>
-                                </div>
+                                </div >
                             )}
 
-                            {activeSection === 'number_of_guests' && (
-                                <div className={`${isMobileSection ? '' : 'hidden md:block'} max-w-2xl mx-auto text-center pt-12`}>
-                                    <div className="mb-8 flex justify-center">
-                                        {/* Placeholder for the illustration - using a simple div or icon if no image available */}
-                                        <div className="flex gap-2 items-end">
-                                            <Users className="h-16 w-16 text-gray-800" />
+                            {
+                                activeSection === 'number_of_guests' && (
+                                    <div className={`${isMobileSection ? '' : 'hidden md:block'} max-w-2xl mx-auto text-center pt-12`}>
+                                        <div className="mb-8 flex justify-center">
+                                            {/* Placeholder for the illustration - using a simple div or icon if no image available */}
+                                            <div className="flex gap-2 items-end">
+                                                <Users className="h-16 w-16 text-gray-800" />
+                                            </div>
                                         </div>
-                                    </div>
-                                    <h2 className="text-xl text-gray-600 mb-12">
-                                        How many guests can fit comfortably in your space?
-                                    </h2>
+                                        <h2 className="text-xl text-gray-600 mb-12">
+                                            {t('host.editor.guests.howMany', 'How many guests can fit comfortably in your space?')}
+                                        </h2>
 
-                                    <div className="flex items-center justify-center gap-8 mb-12">
-                                        <button
-                                            onClick={() => {
-                                                const newCount = Math.max(1, listing.max_guests - 1);
-                                                setListing({ ...listing, max_guests: newCount });
-                                            }}
-                                            disabled={listing.max_guests <= 1}
-                                            className="w-12 h-12 rounded-full border border-gray-300 flex items-center justify-center hover:border-black disabled:opacity-50 disabled:hover:border-gray-300 transition-colors"
-                                        >
-                                            <Minus className="h-6 w-6 text-gray-600" />
-                                        </button>
-
-                                        <span className="text-8xl font-semibold text-gray-900">
-                                            {listing.max_guests}
-                                        </span>
-
-                                        <button
-                                            onClick={() => {
-                                                const newCount = listing.max_guests + 1;
-                                                setListing({ ...listing, max_guests: newCount });
-                                            }}
-                                            className="w-12 h-12 rounded-full border border-gray-300 flex items-center justify-center hover:border-black transition-colors"
-                                        >
-                                            <Plus className="h-6 w-6 text-gray-600" />
-                                        </button>
-                                    </div>
-
-                                    <div className="flex justify-center">
-                                        <Button
-                                            onClick={async () => {
-                                                try {
-                                                    await apiClient.put(`/listings/${id}`, { max_guests: listing.max_guests });
-                                                    // Ideally show a success toast here
-                                                } catch (error) {
-                                                    console.error('Failed to update max guests:', error);
-                                                }
-                                            }}
-                                            className="bg-black text-white hover:bg-gray-800 rounded-lg px-8 py-6 text-lg font-semibold"
-                                        >
-                                            Save
-                                        </Button>
-                                    </div>
-                                </div>
-                            )}
-
-                            {activeSection === 'amenities' && (
-                                <div className={`${isMobileSection ? '' : 'hidden md:block'} max-w-2xl`}>
-                                    <div className="flex items-center justify-between mb-8">
-                                        <h2 className="text-2xl font-semibold">Amenities</h2>
-                                        <div className="flex gap-2">
-                                            <Button
-                                                variant="outline"
-                                                className="rounded-full border-gray-300"
-                                                onClick={() => setShowAddAmenities(true)}
+                                        <div className="flex items-center justify-center gap-8 mb-12">
+                                            <button
+                                                onClick={() => {
+                                                    const newCount = Math.max(1, listing.max_guests - 1);
+                                                    setListing({ ...listing, max_guests: newCount });
+                                                }}
+                                                disabled={listing.max_guests <= 1}
+                                                className="w-12 h-12 rounded-full border border-gray-300 flex items-center justify-center hover:border-black disabled:opacity-50 disabled:hover:border-gray-300 transition-colors"
                                             >
-                                                Edit
-                                            </Button>
-                                            <Button
-                                                variant="outline"
-                                                size="icon"
-                                                className="rounded-full border-gray-300 w-10 h-10"
-                                                onClick={() => setShowAddAmenities(true)}
+                                                <Minus className="h-6 w-6 text-gray-600" />
+                                            </button>
+
+                                            <span className="text-8xl font-semibold text-gray-900">
+                                                {listing.max_guests}
+                                            </span>
+
+                                            <button
+                                                onClick={() => {
+                                                    const newCount = listing.max_guests + 1;
+                                                    setListing({ ...listing, max_guests: newCount });
+                                                }}
+                                                className="w-12 h-12 rounded-full border border-gray-300 flex items-center justify-center hover:border-black transition-colors"
                                             >
-                                                <Plus className="h-5 w-5" />
+                                                <Plus className="h-6 w-6 text-gray-600" />
+                                            </button>
+                                        </div>
+
+                                        <div className="flex justify-center">
+                                            <Button
+                                                onClick={async () => {
+                                                    try {
+                                                        await apiClient.put(`/listings/${id}`, { max_guests: listing.max_guests });
+                                                        // Ideally show a success toast here
+                                                    } catch (error) {
+                                                        console.error('Failed to update max guests:', error);
+                                                    }
+                                                }}
+                                                className="bg-black text-white hover:bg-gray-800 rounded-lg px-8 py-6 text-lg font-semibold"
+                                            >
+                                                {t('host.editor.save', 'Save')}
                                             </Button>
                                         </div>
                                     </div>
-                                    <p className="text-gray-500 mb-8">
-                                        You've added these to your listing so far.
-                                    </p>
+                                )
+                            }
 
-                                    <div className="space-y-6">
-                                        {listing.amenities && listing.amenities.length > 0 ? (
-                                            listing.amenities.map((amenityKey) => {
-                                                const details = AMENITY_DETAILS[amenityKey];
-                                                if (!details) return null;
-                                                const Icon = details.icon;
-                                                return (
-                                                    <div key={amenityKey} className="flex gap-4 pb-6 border-b border-gray-100 last:border-0">
-                                                        <Icon className="h-6 w-6 text-gray-500 mt-1" />
-                                                        <div>
-                                                            <div className="font-medium text-gray-900">{details.label}</div>
-                                                            <div className="text-sm text-gray-500">{details.description}</div>
-                                                        </div>
-                                                    </div>
-                                                );
-                                            })
-                                        ) : (
-                                            <div className="text-center py-12 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200">
-                                                <p className="text-gray-500 mb-4">No amenities added yet</p>
+                            {
+                                activeSection === 'amenities' && (
+                                    <div className={`${isMobileSection ? '' : 'hidden md:block'} max-w-2xl`}>
+                                        <div className="flex items-center justify-between mb-8">
+                                            <h2 className="text-2xl font-semibold">{t('host.editor.sidebar.amenities', 'Amenities')}</h2>
+                                            <div className="flex gap-2">
                                                 <Button
                                                     variant="outline"
-                                                    className="rounded-full"
+                                                    className="rounded-full border-gray-300"
                                                     onClick={() => setShowAddAmenities(true)}
                                                 >
-                                                    Add amenities
+                                                    {t('edit', 'Edit')}
+                                                </Button>
+                                                <Button
+                                                    variant="outline"
+                                                    size="icon"
+                                                    className="rounded-full border-gray-300 w-10 h-10"
+                                                    onClick={() => setShowAddAmenities(true)}
+                                                >
+                                                    <Plus className="h-5 w-5" />
+                                                </Button>
+                                            </div>
+                                        </div>
+                                        <p className="text-gray-500 mb-8">
+                                            {t('host.editor.amenities.help', "You've added these to your listing so far.")}
+                                        </p>
+
+                                        <div className="space-y-6">
+                                            {listing.amenities && listing.amenities.length > 0 ? (
+                                                listing.amenities.map((amenityKey) => {
+                                                    const details = AMENITY_DETAILS[amenityKey];
+                                                    if (!details) return null;
+                                                    const Icon = details.icon;
+                                                    return (
+                                                        <div key={amenityKey} className="flex gap-4 pb-6 border-b border-gray-100 last:border-0">
+                                                            <Icon className="h-6 w-6 text-gray-500 mt-1" />
+                                                            <div>
+                                                                <div className="font-medium text-gray-900">{details.label}</div>
+                                                                <div className="text-sm text-gray-500">{details.description}</div>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })
+                                            ) : (
+                                                <div className="text-center py-12 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200">
+                                                    <p className="text-gray-500 mb-4">{t('host.editor.amenities.none', 'No amenities added yet')}</p>
+                                                    <Button
+                                                        variant="outline"
+                                                        className="rounded-full"
+                                                        onClick={() => setShowAddAmenities(true)}
+                                                    >
+                                                        {t('host.editor.amenities.add', 'Add amenities')}
+                                                    </Button>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                )
+                            }
+
+                            {
+                                activeSection === 'location' && (
+                                    <div className={`${isMobileSection ? '' : 'hidden md:block'} max-w-2xl`}>
+                                        <div className="mb-8">
+                                            <h2 className="text-2xl font-semibold mb-2">{t('host.editor.sidebar.location', 'Location')}</h2>
+                                            <p className="text-gray-500">
+                                                {t('host.editor.location.help', 'Your exact address will only be shared with confirmed guests.')}
+                                            </p>
+                                        </div>
+
+                                        {listing.latitude && listing.longitude ? (
+                                            <div className="space-y-4">
+                                                {/* Map Preview */}
+                                                <div className="border rounded-xl overflow-hidden">
+                                                    <div className="h-64 bg-gray-100 relative">
+                                                        <iframe
+                                                            width="100%"
+                                                            height="100%"
+                                                            frameBorder="0"
+                                                            style={{ border: 0 }}
+                                                            src={`https://www.openstreetmap.org/export/embed.html?bbox=${listing.longitude - 0.01},${listing.latitude - 0.01},${listing.longitude + 0.01},${listing.latitude + 0.01}&layer=mapnik&marker=${listing.latitude},${listing.longitude}`}
+                                                            allowFullScreen
+                                                        />
+                                                    </div>
+
+                                                    <div className="p-6">
+                                                        <div className="flex items-start gap-3 mb-4">
+                                                            <MapPin className="h-5 w-5 text-gray-500 mt-0.5" />
+                                                            <div className="flex-1">
+                                                                <div className="font-medium text-gray-900 mb-1">
+                                                                    {listing.address || `${listing.city}, ${listing.country}`}
+                                                                </div>
+                                                                <div className="text-sm text-gray-500">
+                                                                    {listing.latitude.toFixed(6)}, {listing.longitude.toFixed(6)}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        <Button
+                                                            variant="outline"
+                                                            className="w-full rounded-lg border-gray-300"
+                                                            onClick={() => navigate(`/host/location?listing=${id}`)}
+                                                        >
+                                                            {t('host.editor.location.edit', 'Edit location')}
+                                                        </Button>
+                                                    </div>
+                                                </div>
+
+                                                {/* Additional Location Sections */}
+                                                <div className="border rounded-xl divide-y">
+                                                    {/* Address */}
+                                                    <button
+                                                        onClick={() => setShowAddressModal(true)}
+                                                        className="w-full p-4 flex items-center justify-between hover:bg-gray-50 transition-colors text-left"
+                                                    >
+                                                        <div className="flex-1">
+                                                            <div className="font-medium text-gray-900 mb-1">{t('host.editor.location.address', 'Address')}</div>
+                                                            <div className="text-sm text-gray-500">
+                                                                {listing.address || `${listing.city}, ${listing.country}`}
+                                                            </div>
+                                                        </div>
+                                                        <ChevronLeft className="h-5 w-5 rotate-180 text-gray-400" />
+                                                    </button>
+
+                                                    {/* Location sharing */}
+                                                    <button
+                                                        onClick={() => setShowLocationSharingModal(true)}
+                                                        className="w-full p-4 flex items-center justify-between hover:bg-gray-50 transition-colors text-left"
+                                                    >
+                                                        <div className="flex-1">
+                                                            <div className="font-medium text-gray-900 mb-1">{t('host.editor.location.sharing', 'Location sharing')}</div>
+                                                            <div className="text-sm text-gray-500">{t('host.editor.location.sharingHelp', "Show listing's general location")}</div>
+                                                        </div>
+                                                        <ChevronLeft className="h-5 w-5 rotate-180 text-gray-400" />
+                                                    </button>
+
+                                                    {/* Neighborhood description */}
+                                                    <button
+                                                        onClick={() => setShowNeighborhoodModal(true)}
+                                                        className="w-full p-4 flex items-center justify-between hover:bg-gray-50 transition-colors text-left"
+                                                    >
+                                                        <div className="flex-1">
+                                                            <div className="font-medium text-gray-900 mb-1">{t('host.editor.location.neighborhood', 'Neighborhood description')}</div>
+                                                            <div className="text-sm text-gray-500">{t('host.editor.addDetails', 'Add details')}</div>
+                                                        </div>
+                                                        <ChevronLeft className="h-5 w-5 rotate-180 text-gray-400" />
+                                                    </button>
+
+                                                    {/* Getting around */}
+                                                    <button
+                                                        onClick={() => setShowGettingAroundModal(true)}
+                                                        className="w-full p-4 flex items-center justify-between hover:bg-gray-50 transition-colors text-left"
+                                                    >
+                                                        <div className="flex-1">
+                                                            <div className="font-medium text-gray-900 mb-1">{t('host.editor.location.gettingAround', 'Getting around')}</div>
+                                                            <div className="text-sm text-gray-500">{t('host.editor.addDetails', 'Add details')}</div>
+                                                        </div>
+                                                        <ChevronLeft className="h-5 w-5 rotate-180 text-gray-400" />
+                                                    </button>
+
+                                                    {/* Scenic views */}
+                                                    <button
+                                                        onClick={() => setShowScenicViewsModal(true)}
+                                                        className="w-full p-4 flex items-center justify-between hover:bg-gray-50 transition-colors text-left"
+                                                    >
+                                                        <div className="flex-1">
+                                                            <div className="font-medium text-gray-900 mb-1">{t('host.editor.location.scenicViews', 'Scenic views')}</div>
+                                                            <div className="text-sm text-gray-500">{t('host.editor.addDetails', 'Add details')}</div>
+                                                        </div>
+                                                        <ChevronLeft className="h-5 w-5 rotate-180 text-gray-400" />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <div className="border-2 border-dashed border-gray-200 rounded-xl p-12 text-center">
+                                                <MapPin className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                                                <h3 className="font-semibold text-gray-900 mb-2">{t('host.editor.location.none', 'No location set')}</h3>
+                                                <p className="text-gray-500 mb-6">{t('host.editor.location.noneHelp', "Add your property's location to help guests find you.")}</p>
+                                                <Button
+                                                    className="bg-black text-white hover:bg-gray-800 rounded-lg"
+                                                    onClick={() => navigate(`/host/location?listing=${id}`)}
+                                                >
+                                                    {t('host.editor.location.add', 'Add location')}
                                                 </Button>
                                             </div>
                                         )}
                                     </div>
-                                </div>
-                            )}
+                                )
+                            }
 
-                            {activeSection === 'location' && (
-                                <div className={`${isMobileSection ? '' : 'hidden md:block'} max-w-2xl`}>
-                                    <div className="mb-8">
-                                        <h2 className="text-2xl font-semibold mb-2">Location</h2>
-                                        <p className="text-gray-500">
-                                            Your exact address will only be shared with confirmed guests.
-                                        </p>
-                                    </div>
-
-                                    {listing.latitude && listing.longitude ? (
-                                        <div className="space-y-4">
-                                            {/* Map Preview */}
-                                            <div className="border rounded-xl overflow-hidden">
-                                                <div className="h-64 bg-gray-100 relative">
-                                                    <iframe
-                                                        width="100%"
-                                                        height="100%"
-                                                        frameBorder="0"
-                                                        style={{ border: 0 }}
-                                                        src={`https://www.openstreetmap.org/export/embed.html?bbox=${listing.longitude - 0.01},${listing.latitude - 0.01},${listing.longitude + 0.01},${listing.latitude + 0.01}&layer=mapnik&marker=${listing.latitude},${listing.longitude}`}
-                                                        allowFullScreen
-                                                    />
-                                                </div>
-
-                                                <div className="p-6">
-                                                    <div className="flex items-start gap-3 mb-4">
-                                                        <MapPin className="h-5 w-5 text-gray-500 mt-0.5" />
-                                                        <div className="flex-1">
-                                                            <div className="font-medium text-gray-900 mb-1">
-                                                                {listing.address || `${listing.city}, ${listing.country}`}
-                                                            </div>
-                                                            <div className="text-sm text-gray-500">
-                                                                {listing.latitude.toFixed(6)}, {listing.longitude.toFixed(6)}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-
-                                                    <Button
-                                                        variant="outline"
-                                                        className="w-full rounded-lg border-gray-300"
-                                                        onClick={() => navigate(`/host/location?listing=${id}`)}
-                                                    >
-                                                        Edit location
-                                                    </Button>
-                                                </div>
-                                            </div>
-
-                                            {/* Additional Location Sections */}
-                                            <div className="border rounded-xl divide-y">
-                                                {/* Address */}
-                                                <button
-                                                    onClick={() => setShowAddressModal(true)}
-                                                    className="w-full p-4 flex items-center justify-between hover:bg-gray-50 transition-colors text-left"
-                                                >
-                                                    <div className="flex-1">
-                                                        <div className="font-medium text-gray-900 mb-1">Address</div>
-                                                        <div className="text-sm text-gray-500">
-                                                            {listing.address || `${listing.city}, ${listing.country}`}
-                                                        </div>
-                                                    </div>
-                                                    <ChevronLeft className="h-5 w-5 rotate-180 text-gray-400" />
-                                                </button>
-
-                                                {/* Location sharing */}
-                                                <button
-                                                    onClick={() => setShowLocationSharingModal(true)}
-                                                    className="w-full p-4 flex items-center justify-between hover:bg-gray-50 transition-colors text-left"
-                                                >
-                                                    <div className="flex-1">
-                                                        <div className="font-medium text-gray-900 mb-1">Location sharing</div>
-                                                        <div className="text-sm text-gray-500">Show listing's general location</div>
-                                                    </div>
-                                                    <ChevronLeft className="h-5 w-5 rotate-180 text-gray-400" />
-                                                </button>
-
-                                                {/* Neighborhood description */}
-                                                <button
-                                                    onClick={() => setShowNeighborhoodModal(true)}
-                                                    className="w-full p-4 flex items-center justify-between hover:bg-gray-50 transition-colors text-left"
-                                                >
-                                                    <div className="flex-1">
-                                                        <div className="font-medium text-gray-900 mb-1">Neighborhood description</div>
-                                                        <div className="text-sm text-gray-500">Add details</div>
-                                                    </div>
-                                                    <ChevronLeft className="h-5 w-5 rotate-180 text-gray-400" />
-                                                </button>
-
-                                                {/* Getting around */}
-                                                <button
-                                                    onClick={() => setShowGettingAroundModal(true)}
-                                                    className="w-full p-4 flex items-center justify-between hover:bg-gray-50 transition-colors text-left"
-                                                >
-                                                    <div className="flex-1">
-                                                        <div className="font-medium text-gray-900 mb-1">Getting around</div>
-                                                        <div className="text-sm text-gray-500">Add details</div>
-                                                    </div>
-                                                    <ChevronLeft className="h-5 w-5 rotate-180 text-gray-400" />
-                                                </button>
-
-                                                {/* Scenic views */}
-                                                <button
-                                                    onClick={() => setShowScenicViewsModal(true)}
-                                                    className="w-full p-4 flex items-center justify-between hover:bg-gray-50 transition-colors text-left"
-                                                >
-                                                    <div className="flex-1">
-                                                        <div className="font-medium text-gray-900 mb-1">Scenic views</div>
-                                                        <div className="text-sm text-gray-500">Add details</div>
-                                                    </div>
-                                                    <ChevronLeft className="h-5 w-5 rotate-180 text-gray-400" />
-                                                </button>
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        <div className="border-2 border-dashed border-gray-200 rounded-xl p-12 text-center">
-                                            <MapPin className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                                            <h3 className="font-semibold text-gray-900 mb-2">No location set</h3>
-                                            <p className="text-gray-500 mb-6">Add your property's location to help guests find you.</p>
-                                            <Button
-                                                className="bg-black text-white hover:bg-gray-800 rounded-lg"
-                                                onClick={() => navigate(`/host/location?listing=${id}`)}
-                                            >
-                                                Add location
-                                            </Button>
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-
-                            {activeSection === 'house_rules' && listing && (
-                                <div className={`${isMobileSection ? '' : 'hidden md:block'}`}>
-                                    <HouseRulesSection
-                                        rules={(() => {
-                                            try {
-                                                return listing.house_rules ? JSON.parse(listing.house_rules) : DEFAULT_HOUSE_RULES;
-                                            } catch {
-                                                return DEFAULT_HOUSE_RULES;
-                                            }
-                                        })()}
-                                        maxGuests={listing.max_guests || 1}
-                                        onRulesChange={async (newRules) => {
-                                            const rulesJson = JSON.stringify(newRules);
-                                            setListing({ ...listing, house_rules: rulesJson });
-                                            try {
-                                                await apiClient.put(`/listings/${id}`, { house_rules: rulesJson });
-                                            } catch (error) {
-                                                console.error('Failed to update house rules:', error);
-                                            }
-                                        }}
-                                        onMaxGuestsChange={async (newMaxGuests) => {
-                                            setListing({ ...listing, max_guests: newMaxGuests });
-                                            try {
-                                                await apiClient.put(`/listings/${id}`, { max_guests: newMaxGuests });
-                                            } catch (error) {
-                                                console.error('Failed to update max guests:', error);
-                                            }
-                                        }}
-                                    />
-                                </div>
-                            )}
-
-                            {activeSection === 'description' && (() => {
-                                // Parse description sections from JSON or use defaults
-                                const descriptionData = (() => {
-                                    try {
-                                        return listing.description ? JSON.parse(listing.description) : {
-                                            listingDescription: '',
-                                            propertyDetails: '',
-                                            guestAccess: '',
-                                            guestInteraction: '',
-                                            otherDetails: ''
-                                        };
-                                    } catch {
-                                        return {
-                                            listingDescription: listing.description || '',
-                                            propertyDetails: '',
-                                            guestAccess: '',
-                                            guestInteraction: '',
-                                            otherDetails: ''
-                                        };
-                                    }
-                                })();
-
-                                const sections = [
-                                    {
-                                        id: 'listingDescription',
-                                        title: 'Listing description',
-                                        subtitle: descriptionData.listingDescription || 'Add details',
-                                        placeholder: 'Describe your place...',
-                                    },
-                                    {
-                                        id: 'propertyDetails',
-                                        title: 'Your property',
-                                        subtitle: descriptionData.propertyDetails || 'Add details',
-                                        placeholder: 'Share a general description of your property\'s rooms and spaces so guests know what to expect.',
-                                    },
-                                    {
-                                        id: 'guestAccess',
-                                        title: 'Guest access',
-                                        subtitle: descriptionData.guestAccess || 'Add details',
-                                        placeholder: 'Describe what areas guests can access...',
-                                    },
-                                    {
-                                        id: 'guestInteraction',
-                                        title: 'Interaction with guests',
-                                        subtitle: descriptionData.guestInteraction || 'Add details',
-                                        placeholder: 'Describe how you\'ll interact with guests...',
-                                    },
-                                    {
-                                        id: 'otherDetails',
-                                        title: 'Other details to note',
-                                        subtitle: descriptionData.otherDetails || 'Add details',
-                                        placeholder: 'Add any other important details...',
-                                    },
-                                ];
-
-                                const handleSaveSection = async () => {
-                                    const updatedData = { ...descriptionData, [editingDescriptionSection!]: tempDescription };
-                                    const jsonString = JSON.stringify(updatedData);
-
-                                    setListing({ ...listing, description: jsonString });
-
-                                    try {
-                                        await apiClient.put(`/listings/${id}`, { description: jsonString });
-                                        setEditingDescriptionSection(null);
-                                    } catch (error) {
-                                        console.error('Failed to update description:', error);
-                                    }
-                                };
-
-                                return (
+                            {
+                                activeSection === 'house_rules' && listing && (
                                     <div className={`${isMobileSection ? '' : 'hidden md:block'}`}>
-                                        <div className="max-w-2xl">
-                                            <div className="mb-8">
-                                                <h2 className="text-2xl font-semibold mb-2">Description</h2>
+                                        <HouseRulesSection
+                                            rules={(() => {
+                                                try {
+                                                    return listing.house_rules ? JSON.parse(listing.house_rules) : DEFAULT_HOUSE_RULES;
+                                                } catch {
+                                                    return DEFAULT_HOUSE_RULES;
+                                                }
+                                            })()}
+                                            maxGuests={listing.max_guests || 1}
+                                            onRulesChange={async (newRules) => {
+                                                const rulesJson = JSON.stringify(newRules);
+                                                setListing({ ...listing, house_rules: rulesJson });
+                                                try {
+                                                    await apiClient.put(`/listings/${id}`, { house_rules: rulesJson });
+                                                } catch (error) {
+                                                    console.error('Failed to update house rules:', error);
+                                                }
+                                            }}
+                                            onMaxGuestsChange={async (newMaxGuests) => {
+                                                setListing({ ...listing, max_guests: newMaxGuests });
+                                                try {
+                                                    await apiClient.put(`/listings/${id}`, { max_guests: newMaxGuests });
+                                                } catch (error) {
+                                                    console.error('Failed to update max guests:', error);
+                                                }
+                                            }}
+                                        />
+                                    </div>
+                                )
+                            }
+
+                            {
+                                activeSection === 'description' && (() => {
+                                    // Parse description sections from JSON or use defaults
+                                    const descriptionData = (() => {
+                                        try {
+                                            return listing.description ? JSON.parse(listing.description) : {
+                                                listingDescription: '',
+                                                propertyDetails: '',
+                                                guestAccess: '',
+                                                guestInteraction: '',
+                                                otherDetails: ''
+                                            };
+                                        } catch {
+                                            return {
+                                                listingDescription: listing.description || '',
+                                                propertyDetails: '',
+                                                guestAccess: '',
+                                                guestInteraction: '',
+                                                otherDetails: ''
+                                            };
+                                        }
+                                    })();
+
+                                    const sections = [
+                                        {
+                                            id: 'listingDescription',
+                                            title: 'Listing description',
+                                            subtitle: descriptionData.listingDescription || 'Add details',
+                                            placeholder: 'Describe your place...',
+                                        },
+                                        {
+                                            id: 'propertyDetails',
+                                            title: 'Your property',
+                                            subtitle: descriptionData.propertyDetails || 'Add details',
+                                            placeholder: 'Share a general description of your property\'s rooms and spaces so guests know what to expect.',
+                                        },
+                                        {
+                                            id: 'guestAccess',
+                                            title: 'Guest access',
+                                            subtitle: descriptionData.guestAccess || 'Add details',
+                                            placeholder: 'Describe what areas guests can access...',
+                                        },
+                                        {
+                                            id: 'guestInteraction',
+                                            title: 'Interaction with guests',
+                                            subtitle: descriptionData.guestInteraction || 'Add details',
+                                            placeholder: 'Describe how you\'ll interact with guests...',
+                                        },
+                                        {
+                                            id: 'otherDetails',
+                                            title: 'Other details to note',
+                                            subtitle: descriptionData.otherDetails || 'Add details',
+                                            placeholder: 'Add any other important details...',
+                                        },
+                                    ];
+
+                                    const handleSaveSection = async () => {
+                                        const updatedData = { ...descriptionData, [editingDescriptionSection!]: tempDescription };
+                                        const jsonString = JSON.stringify(updatedData);
+
+                                        setListing({ ...listing, description: jsonString });
+
+                                        try {
+                                            await apiClient.put(`/listings/${id}`, { description: jsonString });
+                                            setEditingDescriptionSection(null);
+                                        } catch (error) {
+                                            console.error('Failed to update description:', error);
+                                        }
+                                    };
+
+                                    return (
+                                        <div className={`${isMobileSection ? '' : 'hidden md:block'}`}>
+                                            <div className="max-w-2xl">
+                                                <div className="mb-8">
+                                                    <h2 className="text-2xl font-semibold mb-2">Description</h2>
+                                                </div>
+
+                                                <div className="space-y-0 border border-gray-200 rounded-xl overflow-hidden">
+                                                    {sections.map((section, index) => (
+                                                        <button
+                                                            key={section.id}
+                                                            onClick={() => {
+                                                                setEditingDescriptionSection(section.id);
+                                                                setTempDescription(descriptionData[section.id as keyof typeof descriptionData] || '');
+                                                            }}
+                                                            className={`w-full text-left p-4 hover:bg-gray-50 transition-colors flex items-center justify-between ${index !== sections.length - 1 ? 'border-b border-gray-200' : ''
+                                                                }`}
+                                                        >
+                                                            <div className="flex-1">
+                                                                <div className="font-medium text-gray-900 mb-1">{section.title}</div>
+                                                                <div className="text-sm text-gray-500 line-clamp-1">{section.subtitle}</div>
+                                                            </div>
+                                                            <ChevronLeft className="h-5 w-5 rotate-180 text-gray-400 flex-shrink-0 ml-4" />
+                                                        </button>
+                                                    ))}
+                                                </div>
                                             </div>
 
-                                            <div className="space-y-0 border border-gray-200 rounded-xl overflow-hidden">
-                                                {sections.map((section, index) => (
-                                                    <button
-                                                        key={section.id}
-                                                        onClick={() => {
-                                                            setEditingDescriptionSection(section.id);
-                                                            setTempDescription(descriptionData[section.id as keyof typeof descriptionData] || '');
-                                                        }}
-                                                        className={`w-full text-left p-4 hover:bg-gray-50 transition-colors flex items-center justify-between ${index !== sections.length - 1 ? 'border-b border-gray-200' : ''
-                                                            }`}
-                                                    >
-                                                        <div className="flex-1">
-                                                            <div className="font-medium text-gray-900 mb-1">{section.title}</div>
-                                                            <div className="text-sm text-gray-500 line-clamp-1">{section.subtitle}</div>
+                                            {/* Modal for editing */}
+                                            {editingDescriptionSection && (
+                                                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                                                    <div className="bg-white rounded-2xl w-full max-w-lg max-h-[90vh] flex flex-col">
+                                                        {/* Modal Header */}
+                                                        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+                                                            <button
+                                                                onClick={() => setEditingDescriptionSection(null)}
+                                                                className="p-2 hover:bg-gray-100 rounded-full -ml-2"
+                                                            >
+                                                                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                                                </svg>
+                                                            </button>
+                                                            <h3 className="text-base font-semibold absolute left-1/2 -translate-x-1/2">
+                                                                {sections.find(s => s.id === editingDescriptionSection)?.title}
+                                                            </h3>
+                                                            <div className="w-8" />
                                                         </div>
-                                                        <ChevronLeft className="h-5 w-5 rotate-180 text-gray-400 flex-shrink-0 ml-4" />
-                                                    </button>
-                                                ))}
-                                            </div>
+
+                                                        {/* Modal Body */}
+                                                        <div className="flex-1 overflow-y-auto p-6">
+                                                            {editingDescriptionSection === 'propertyDetails' && (
+                                                                <p className="text-sm text-gray-600 mb-4">
+                                                                    Share a general description of your property's rooms and spaces so guests know what to expect.
+                                                                </p>
+                                                            )}
+                                                            <div className="mb-2">
+                                                                <div className="text-xs text-gray-500 mb-2">
+                                                                    {tempDescription.length}/500 available
+                                                                </div>
+                                                                <textarea
+                                                                    value={tempDescription}
+                                                                    onChange={(e) => {
+                                                                        if (e.target.value.length <= 500) {
+                                                                            setTempDescription(e.target.value);
+                                                                        }
+                                                                    }}
+                                                                    className="w-full min-h-[400px] text-base border-none p-0 resize-none focus:ring-0 focus:outline-none placeholder-gray-400"
+                                                                    placeholder={sections.find(s => s.id === editingDescriptionSection)?.placeholder}
+                                                                    autoFocus
+                                                                />
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Modal Footer */}
+                                                        <div className="p-6 border-t border-gray-200 flex items-center justify-between">
+                                                            <button
+                                                                onClick={() => setEditingDescriptionSection(null)}
+                                                                className="text-base font-medium text-gray-900 hover:underline"
+                                                            >
+                                                                Cancel
+                                                            </button>
+                                                            <Button
+                                                                onClick={handleSaveSection}
+                                                                disabled={tempDescription.length === 0}
+                                                                className="bg-gray-900 text-white hover:bg-gray-800 rounded-lg px-6 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                            >
+                                                                Save
+                                                            </Button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })()
+                            }
+
+                            {
+                                activeSection === 'guest_safety' && listing && (
+                                    <div className={`${isMobileSection ? '' : 'hidden md:block'} max-w-2xl`}>
+                                        <div className="flex items-center justify-between mb-8">
+                                            <h2 className="text-2xl font-semibold">{t('host.editor.sidebar.guestSafety', 'Guest safety')}</h2>
                                         </div>
 
-                                        {/* Modal for editing */}
-                                        {editingDescriptionSection && (
-                                            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                                                <div className="bg-white rounded-2xl w-full max-w-lg max-h-[90vh] flex flex-col">
-                                                    {/* Modal Header */}
-                                                    <div className="flex items-center justify-between p-6 border-b border-gray-200">
-                                                        <button
-                                                            onClick={() => setEditingDescriptionSection(null)}
-                                                            className="p-2 hover:bg-gray-100 rounded-full -ml-2"
-                                                        >
-                                                            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                                            </svg>
-                                                        </button>
-                                                        <h3 className="text-base font-semibold absolute left-1/2 -translate-x-1/2">
-                                                            {sections.find(s => s.id === editingDescriptionSection)?.title}
-                                                        </h3>
-                                                        <div className="w-8" />
-                                                    </div>
+                                        {/* Safety summary cards */}
+                                        <div className="space-y-4 mb-8">
+                                            {(listing.safety_items || []).filter(id => !SAFETY_DEVICES.some(device => device.id === id)).length === 0 && (
+                                                <div className="p-4 border border-gray-200 rounded-xl">
+                                                    <div className="font-medium text-gray-900 mb-1">{t('host.editor.safety.coAlarmMissing', 'Carbon monoxide alarm not reported')}</div>
+                                                </div>
+                                            )}
+                                            {!(listing.safety_items || []).some(id => id === 'smoke_alarm') && (
+                                                <div className="p-4 border border-gray-200 rounded-xl">
+                                                    <div className="font-medium text-gray-900 mb-1">{t('host.editor.safety.smokeAlarmMissing', 'Smoke alarm not reported')}</div>
+                                                </div>
+                                            )}
+                                            {(listing.safety_items || []).some(id => id === 'noise_decibel_monitor') && (
+                                                <div className="p-4 border border-gray-200 rounded-xl">
+                                                    <div className="font-medium text-gray-900 mb-1">{t('host.editor.safety.noiseMonitorPresent', 'Noise decibel monitor present')}</div>
+                                                </div>
+                                            )}
+                                        </div>
 
-                                                    {/* Modal Body */}
-                                                    <div className="flex-1 overflow-y-auto p-6">
-                                                        {editingDescriptionSection === 'propertyDetails' && (
-                                                            <p className="text-sm text-gray-600 mb-4">
-                                                                Share a general description of your property's rooms and spaces so guests know what to expect.
-                                                            </p>
-                                                        )}
-                                                        <div className="mb-2">
-                                                            <div className="text-xs text-gray-500 mb-2">
-                                                                {tempDescription.length}/500 available
-                                                            </div>
-                                                            <textarea
-                                                                value={tempDescription}
-                                                                onChange={(e) => {
-                                                                    if (e.target.value.length <= 500) {
-                                                                        setTempDescription(e.target.value);
-                                                                    }
-                                                                }}
-                                                                className="w-full min-h-[400px] text-base border-none p-0 resize-none focus:ring-0 focus:outline-none placeholder-gray-400"
-                                                                placeholder={sections.find(s => s.id === editingDescriptionSection)?.placeholder}
-                                                                autoFocus
-                                                            />
+                                        <p className="text-gray-500 mb-6">
+                                            {t('host.editor.safety.help', 'The safety devices and considerations you share with guests help them make informed decisions when booking your property.')}
+                                        </p>
+
+                                        {/* Action buttons */}
+                                        <div className="space-y-4">
+                                            <button
+                                                onClick={() => {
+                                                    setGuestSafetySection('considerations');
+                                                    setShowGuestSafety(true);
+                                                }}
+                                                className="w-full text-left p-4 border border-gray-200 rounded-xl hover:border-gray-300 transition-colors flex items-center justify-between"
+                                            >
+                                                <div>
+                                                    <div className="font-medium text-gray-900 mb-1">{t('host.editor.safety.considerations', 'Safety considerations')}</div>
+                                                    <div className="text-sm text-gray-500">
+                                                        {(listing.safety_items || []).filter(id => SAFETY_CONSIDERATIONS.some(c => c.id === id)).length > 0
+                                                            ? `${(listing.safety_items || []).filter(id => SAFETY_CONSIDERATIONS.some(c => c.id === id)).length} ${t('common.selected', 'selected')}`
+                                                            : t('host.editor.addDetails', 'Add details')}
+                                                    </div>
+                                                </div>
+                                                <ChevronLeft className="h-5 w-5 rotate-180 text-gray-400" />
+                                            </button>
+
+                                            <button
+                                                onClick={() => {
+                                                    setGuestSafetySection('devices');
+                                                    setShowGuestSafety(true);
+                                                }}
+                                                className="w-full text-left p-4 border border-gray-200 rounded-xl hover:border-gray-300 transition-colors flex items-center justify-between"
+                                            >
+                                                <div>
+                                                    <div className="font-medium text-gray-900 mb-1">{t('host.editor.safety.devices', 'Safety devices')}</div>
+                                                    <div className="text-sm text-gray-500">
+                                                        {(listing.safety_items || []).filter(id => SAFETY_DEVICES.some(d => d.id === id)).length > 0
+                                                            ? `${(listing.safety_items || []).filter(id => SAFETY_DEVICES.some(d => d.id === id)).length} ${t('common.selected', 'selected')}`
+                                                            : t('host.editor.safety.noiseMonitorPresent', 'Noise decibel monitor present')}
+                                                    </div>
+                                                </div>
+                                                <ChevronLeft className="h-5 w-5 rotate-180 text-gray-400" />
+                                            </button>
+
+                                            <button
+                                                onClick={() => {
+                                                    setGuestSafetySection('property_info');
+                                                    setShowGuestSafety(true);
+                                                }}
+                                                className="w-full text-left p-4 border border-gray-200 rounded-xl hover:border-gray-300 transition-colors flex items-center justify-between"
+                                            >
+                                                <div>
+                                                    <div className="font-medium text-gray-900 mb-1">{t('host.editor.safety.propertyInfo', 'Property info')}</div>
+                                                    <div className="text-sm text-gray-500">
+                                                        {(listing.safety_items || []).filter(id => PROPERTY_INFO.some(p => p.id === id)).length > 0
+                                                            ? `${(listing.safety_items || []).filter(id => PROPERTY_INFO.some(p => p.id === id)).length} ${t('common.selected', 'selected')}`
+                                                            : t('host.editor.addDetails', 'Add details')}
+                                                    </div>
+                                                </div>
+                                                <ChevronLeft className="h-5 w-5 rotate-180 text-gray-400" />
+                                            </button>
+                                        </div>
+                                    </div>
+                                )
+                            }
+
+                            {
+                                activeSection === 'cancellation_policy' && listing && (
+                                    <div className={`${isMobileSection ? '' : 'hidden md:block'} max-w-2xl`}>
+                                        <div className="mb-8">
+                                            <h2 className="text-2xl font-semibold mb-2">{t('host.editor.sidebar.cancellationPolicy', 'Cancellation policy')}</h2>
+                                            <p className="text-gray-500">
+                                                {t('host.editor.cancellation.help', 'Choose a policy that works for you and your guests.')}
+                                            </p>
+                                        </div>
+
+                                        <div className="space-y-4">
+                                            {cancellationPolicies.map((policy) => (
+                                                <div
+                                                    key={policy.id}
+                                                    className={`p-4 border rounded-xl cursor-pointer transition-all ${listing.cancellation_policy === policy.id
+                                                        ? 'border-black ring-1 ring-black bg-gray-50'
+                                                        : 'border-gray-200 hover:border-gray-300'
+                                                        }`}
+                                                    onClick={async () => {
+                                                        setListing({ ...listing, cancellation_policy: policy.id });
+                                                        try {
+                                                            await apiClient.put(`/listings/${id}`, { cancellation_policy: policy.id });
+                                                        } catch (error) {
+                                                            console.error('Failed to update cancellation policy:', error);
+                                                        }
+                                                    }}
+                                                >
+                                                    <div className="flex items-start justify-between">
+                                                        <div>
+                                                            <div className="font-medium text-gray-900 mb-1">{policy.label}</div>
+                                                            <div className="text-sm text-gray-500">{policy.description}</div>
+                                                        </div>
+                                                        <div className={`w-5 h-5 rounded-full border flex items-center justify-center mt-0.5 ${listing.cancellation_policy === policy.id
+                                                            ? 'border-black'
+                                                            : 'border-gray-300'
+                                                            }`}>
+                                                            {listing.cancellation_policy === policy.id && (
+                                                                <div className="w-2.5 h-2.5 bg-black rounded-full" />
+                                                            )}
                                                         </div>
                                                     </div>
-
-                                                    {/* Modal Footer */}
-                                                    <div className="p-6 border-t border-gray-200 flex items-center justify-between">
-                                                        <button
-                                                            onClick={() => setEditingDescriptionSection(null)}
-                                                            className="text-base font-medium text-gray-900 hover:underline"
-                                                        >
-                                                            Cancel
-                                                        </button>
-                                                        <Button
-                                                            onClick={handleSaveSection}
-                                                            disabled={tempDescription.length === 0}
-                                                            className="bg-gray-900 text-white hover:bg-gray-800 rounded-lg px-6 disabled:opacity-50 disabled:cursor-not-allowed"
-                                                        >
-                                                            Save
-                                                        </Button>
-                                                    </div>
                                                 </div>
-                                            </div>
-                                        )}
+                                            ))}
+                                        </div>
                                     </div>
-                                );
-                            })()}
+                                )
+                            }
 
-                            {activeSection === 'guest_safety' && listing && (
-                                <div className={`${isMobileSection ? '' : 'hidden md:block'} max-w-2xl`}>
-                                    <div className="flex items-center justify-between mb-8">
-                                        <h2 className="text-2xl font-semibold">Guest safety</h2>
+                            {
+                                photoView === 'overview' && !isMobileSection && activeSection !== 'photos' && activeSection !== 'title' && activeSection !== 'description' && activeSection !== 'pricing' && activeSection !== 'availability' && activeSection !== 'number_of_guests' && activeSection !== 'amenities' && activeSection !== 'house_rules' && activeSection !== 'guest_safety' && activeSection !== 'cancellation_policy' && (
+                                    <div className="flex items-center justify-center h-full text-gray-500">
+                                        Select a section to edit
                                     </div>
-
-                                    {/* Safety summary cards */}
-                                    <div className="space-y-4 mb-8">
-                                        {(listing.safety_items || []).filter(id => !SAFETY_DEVICES.some(device => device.id === id)).length === 0 && (
-                                            <div className="p-4 border border-gray-200 rounded-xl">
-                                                <div className="font-medium text-gray-900 mb-1">Carbon monoxide alarm not reported</div>
-                                            </div>
-                                        )}
-                                        {!(listing.safety_items || []).some(id => id === 'smoke_alarm') && (
-                                            <div className="p-4 border border-gray-200 rounded-xl">
-                                                <div className="font-medium text-gray-900 mb-1">Smoke alarm not reported</div>
-                                            </div>
-                                        )}
-                                        {(listing.safety_items || []).some(id => id === 'noise_decibel_monitor') && (
-                                            <div className="p-4 border border-gray-200 rounded-xl">
-                                                <div className="font-medium text-gray-900 mb-1">Noise decibel monitor present</div>
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    <p className="text-gray-500 mb-6">
-                                        The safety devices and considerations you share with guests help them make informed decisions when booking your property.
-                                    </p>
-
-                                    {/* Action buttons */}
-                                    <div className="space-y-4">
-                                        <button
-                                            onClick={() => {
-                                                setGuestSafetySection('considerations');
-                                                setShowGuestSafety(true);
-                                            }}
-                                            className="w-full text-left p-4 border border-gray-200 rounded-xl hover:border-gray-300 transition-colors flex items-center justify-between"
-                                        >
-                                            <div>
-                                                <div className="font-medium text-gray-900 mb-1">Safety considerations</div>
-                                                <div className="text-sm text-gray-500">
-                                                    {(listing.safety_items || []).filter(id => SAFETY_CONSIDERATIONS.some(c => c.id === id)).length > 0
-                                                        ? `${(listing.safety_items || []).filter(id => SAFETY_CONSIDERATIONS.some(c => c.id === id)).length} selected`
-                                                        : 'Add details'}
-                                                </div>
-                                            </div>
-                                            <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                            </svg>
-                                        </button>
-
-                                        <button
-                                            onClick={() => {
-                                                setGuestSafetySection('devices');
-                                                setShowGuestSafety(true);
-                                            }}
-                                            className="w-full text-left p-4 border border-gray-200 rounded-xl hover:border-gray-300 transition-colors flex items-center justify-between"
-                                        >
-                                            <div>
-                                                <div className="font-medium text-gray-900 mb-1">Safety devices</div>
-                                                <div className="text-sm text-gray-500">
-                                                    {(listing.safety_items || []).filter(id => SAFETY_DEVICES.some(d => d.id === id)).length > 0
-                                                        ? `${(listing.safety_items || []).filter(id => SAFETY_DEVICES.some(d => d.id === id)).length} selected`
-                                                        : 'Noise decibel monitor present'}
-                                                </div>
-                                            </div>
-                                            <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                            </svg>
-                                        </button>
-
-                                        <button
-                                            onClick={() => {
-                                                setGuestSafetySection('property_info');
-                                                setShowGuestSafety(true);
-                                            }}
-                                            className="w-full text-left p-4 border border-gray-200 rounded-xl hover:border-gray-300 transition-colors flex items-center justify-between"
-                                        >
-                                            <div>
-                                                <div className="font-medium text-gray-900 mb-1">Property info</div>
-                                                <div className="text-sm text-gray-500">
-                                                    {(listing.safety_items || []).filter(id => PROPERTY_INFO.some(p => p.id === id)).length > 0
-                                                        ? `${(listing.safety_items || []).filter(id => PROPERTY_INFO.some(p => p.id === id)).length} selected`
-                                                        : 'Add details'}
-                                                </div>
-                                            </div>
-                                            <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                            </svg>
-                                        </button>
-                                    </div>
-                                </div>
-                            )}
-
-                            {activeSection === 'cancellation_policy' && listing && (
-                                <div className={`${isMobileSection ? '' : 'hidden md:block'} max-w-2xl`}>
-                                    <div className="mb-8">
-                                        <h2 className="text-2xl font-semibold mb-2">Cancellation policy</h2>
-                                        <p className="text-gray-500">
-                                            Choose a policy that works for you and your guests.
-                                        </p>
-                                    </div>
-
-                                    <div className="space-y-4">
-                                        {[
-                                            {
-                                                id: 'flexible',
-                                                label: 'Flexible',
-                                                description: 'Full refund 1 day prior to arrival',
-                                            },
-                                            {
-                                                id: 'moderate',
-                                                label: 'Moderate',
-                                                description: 'Full refund 5 days prior to arrival',
-                                            },
-                                            {
-                                                id: 'strict',
-                                                label: 'Strict',
-                                                description: 'Full refund for 48 hours after booking, if the check-in date is at least 14 days away. 50% refund up to 7 days prior to arrival.',
-                                            },
-                                        ].map((policy) => (
-                                            <div
-                                                key={policy.id}
-                                                className={`p-4 border rounded-xl cursor-pointer transition-all ${listing.cancellation_policy === policy.id
-                                                    ? 'border-black ring-1 ring-black bg-gray-50'
-                                                    : 'border-gray-200 hover:border-gray-300'
-                                                    }`}
-                                                onClick={async () => {
-                                                    setListing({ ...listing, cancellation_policy: policy.id });
-                                                    try {
-                                                        await apiClient.put(`/listings/${id}`, { cancellation_policy: policy.id });
-                                                    } catch (error) {
-                                                        console.error('Failed to update cancellation policy:', error);
-                                                    }
-                                                }}
-                                            >
-                                                <div className="flex items-start justify-between">
-                                                    <div>
-                                                        <div className="font-medium text-gray-900 mb-1">{policy.label}</div>
-                                                        <div className="text-sm text-gray-500">{policy.description}</div>
-                                                    </div>
-                                                    <div className={`w-5 h-5 rounded-full border flex items-center justify-center mt-0.5 ${listing.cancellation_policy === policy.id
-                                                        ? 'border-black'
-                                                        : 'border-gray-300'
-                                                        }`}>
-                                                        {listing.cancellation_policy === policy.id && (
-                                                            <div className="w-2.5 h-2.5 bg-black rounded-full" />
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-
-                            {photoView === 'overview' && !isMobileSection && activeSection !== 'photos' && activeSection !== 'title' && activeSection !== 'description' && activeSection !== 'pricing' && activeSection !== 'availability' && activeSection !== 'number_of_guests' && activeSection !== 'amenities' && activeSection !== 'house_rules' && activeSection !== 'guest_safety' && activeSection !== 'cancellation_policy' && (
-                                <div className="flex items-center justify-center h-full text-gray-500">
-                                    Select a section to edit
-                                </div>
-                            )}
-                        </div>
-                    </main>
+                                )
+                            }
+                        </div >
+                    </main >
 
                     {/* Mobile bottom View button (mboaMaisson style) */}
-                    {photoView === 'overview' && !isMobileSection && (
-                        <div className="md:hidden fixed bottom-24 left-1/2 -translate-x-1/2 z-[60]">
-                            <button
-                                onClick={() => setShowPreview(true)}
-                                className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-gray-900 text-white shadow-lg"
-                            >
-                                <Eye className="h-5 w-5" />
-                                <span className="font-medium">View</span>
-                            </button>
-                        </div>
-                    )}
-                </div>
+                    {
+                        photoView === 'overview' && !isMobileSection && (
+                            <div className="md:hidden fixed bottom-24 left-1/2 -translate-x-1/2 z-[60]">
+                                <button
+                                    onClick={() => setShowPreview(true)}
+                                    className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-gray-900 text-white shadow-lg"
+                                >
+                                    <Eye className="h-5 w-5" />
+                                    <span className="font-medium">View</span>
+                                </button>
+                            </div>
+                        )
+                    }
+                </div >
 
                 {/* Listing Preview Modal */}
-                {listing && (
-                    <ListingPreview
-                        listing={listing}
-                        isOpen={showPreview}
-                        onClose={() => setShowPreview(false)}
-                    />
-                )}
+                {
+                    listing && (
+                        <ListingPreview
+                            listing={listing}
+                            isOpen={showPreview}
+                            onClose={() => setShowPreview(false)}
+                        />
+                    )
+                }
 
-                {showAddAmenities && listing && (
-                    <AddAmenitiesPanel
-                        selectedAmenities={listing.amenities || []}
-                        onToggle={async (amenityId) => {
-                            const currentAmenities = listing.amenities || [];
-                            const newAmenities = currentAmenities.includes(amenityId)
-                                ? currentAmenities.filter(id => id !== amenityId)
-                                : [...currentAmenities, amenityId];
+                {
+                    showAddAmenities && listing && (
+                        <AddAmenitiesPanel
+                            selectedAmenities={listing.amenities || []}
+                            onToggle={async (amenityId) => {
+                                const currentAmenities = listing.amenities || [];
+                                const newAmenities = currentAmenities.includes(amenityId)
+                                    ? currentAmenities.filter(id => id !== amenityId)
+                                    : [...currentAmenities, amenityId];
 
-                            setListing({ ...listing, amenities: newAmenities });
+                                setListing({ ...listing, amenities: newAmenities });
 
-                            // Save to backend using the correct amenities endpoint
-                            try {
-                                await apiClient.post(`/listings/${id}/amenities`, { amenities: newAmenities });
-                            } catch (error) {
-                                console.error('Failed to update amenities:', error);
-                                // Revert on failure
-                                setListing({ ...listing, amenities: currentAmenities });
-                            }
-                        }}
-                        onClose={() => setShowAddAmenities(false)}
-                    />
-                )}
+                                // Save to backend using the correct amenities endpoint
+                                try {
+                                    await apiClient.post(`/listings/${id}/amenities`, { amenities: newAmenities });
+                                } catch (error) {
+                                    console.error('Failed to update amenities:', error);
+                                    // Revert on failure
+                                    setListing({ ...listing, amenities: currentAmenities });
+                                }
+                            }}
+                            onClose={() => setShowAddAmenities(false)}
+                        />
+                    )
+                }
 
-                {showGuestSafety && listing && (
-                    <GuestSafetyModal
-                        isOpen={showGuestSafety}
-                        onClose={() => setShowGuestSafety(false)}
-                        selectedItems={listing.safety_items || []}
-                        initialSection={guestSafetySection}
-                        onSave={async (items) => {
-                            setListing({ ...listing, safety_items: items });
+                {
+                    showGuestSafety && listing && (
+                        <GuestSafetyModal
+                            isOpen={showGuestSafety}
+                            onClose={() => setShowGuestSafety(false)}
+                            selectedItems={listing.safety_items || []}
+                            initialSection={guestSafetySection}
+                            onSave={async (items) => {
+                                setListing({ ...listing, safety_items: items });
 
-                            // Save to backend
-                            try {
-                                await apiClient.put(`/listings/${id}`, { safety_items: items });
-                            } catch (error) {
-                                console.error('Failed to update safety items:', error);
-                                // Revert on failure
-                                setListing({ ...listing, safety_items: listing.safety_items || [] });
-                            }
-                        }}
-                    />
-                )}
+                                // Save to backend
+                                try {
+                                    await apiClient.put(`/listings/${id}`, { safety_items: items });
+                                } catch (error) {
+                                    console.error('Failed to update safety items:', error);
+                                    // Revert on failure
+                                    setListing({ ...listing, safety_items: listing.safety_items || [] });
+                                }
+                            }}
+                        />
+                    )
+                }
 
                 {/* Location Detail Modals */}
                 <LocationDetailModals
@@ -1585,74 +1530,78 @@ const ListingEditor: React.FC = () => {
                 />
 
                 {/* All Photos Modal */}
-                {showAllPhotos && listing && (
-                    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-                        <div className="bg-white rounded-2xl w-full max-w-6xl max-h-[90vh] flex flex-col">
-                            <div className="p-6 border-b border-gray-200 flex items-center justify-between">
-                                <h2 className="text-2xl font-semibold">All photos ({listing.photos.length})</h2>
-                                <button
-                                    onClick={() => setShowAllPhotos(false)}
-                                    className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-                                >
-                                    <X className="h-5 w-5" />
-                                </button>
-                            </div>
-                            <div className="flex-1 overflow-y-auto p-6">
-                                {listing.photos.length > 0 ? (
-                                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                                        {listing.photos.map((photo) => (
-                                            <div
-                                                key={photo.id}
-                                                className="aspect-square rounded-lg overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
-                                                onClick={() => setSelectedPhoto(photo.url)}
-                                            >
-                                                <img
-                                                    src={getImageUrl(photo.url)}
-                                                    alt={photo.caption || 'Listing photo'}
-                                                    className="w-full h-full object-cover"
-                                                />
-                                            </div>
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <div className="text-center py-12 text-gray-500">
-                                        No photos uploaded yet
-                                    </div>
-                                )}
-                            </div>
-                            <div className="p-6 border-t border-gray-200 flex justify-end">
-                                <Button
-                                    onClick={() => setShowAllPhotos(false)}
-                                    className="bg-gray-900 text-white hover:bg-gray-800 rounded-lg px-6"
-                                >
-                                    Close
-                                </Button>
+                {
+                    showAllPhotos && listing && (
+                        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+                            <div className="bg-white rounded-2xl w-full max-w-6xl max-h-[90vh] flex flex-col">
+                                <div className="p-6 border-b border-gray-200 flex items-center justify-between">
+                                    <h2 className="text-2xl font-semibold">All photos ({listing.photos.length})</h2>
+                                    <button
+                                        onClick={() => setShowAllPhotos(false)}
+                                        className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                                    >
+                                        <X className="h-5 w-5" />
+                                    </button>
+                                </div>
+                                <div className="flex-1 overflow-y-auto p-6">
+                                    {listing.photos.length > 0 ? (
+                                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                                            {listing.photos.map((photo) => (
+                                                <div
+                                                    key={photo.id}
+                                                    className="aspect-square rounded-lg overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
+                                                    onClick={() => setSelectedPhoto(photo.url)}
+                                                >
+                                                    <img
+                                                        src={getImageUrl(photo.url)}
+                                                        alt={photo.caption || 'Listing photo'}
+                                                        className="w-full h-full object-cover"
+                                                    />
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="text-center py-12 text-gray-500">
+                                            No photos uploaded yet
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="p-6 border-t border-gray-200 flex justify-end">
+                                    <Button
+                                        onClick={() => setShowAllPhotos(false)}
+                                        className="bg-gray-900 text-white hover:bg-gray-800 rounded-lg px-6"
+                                    >
+                                        Close
+                                    </Button>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                )}
+                    )
+                }
 
                 {/* Photo Lightbox */}
-                {selectedPhoto && (
-                    <div className="fixed inset-0 bg-black z-[60] flex items-center justify-center" onClick={() => setSelectedPhoto(null)}>
-                        <button
-                            onClick={() => setSelectedPhoto(null)}
-                            className="absolute top-4 left-4 p-2 bg-black bg-opacity-50 text-white rounded-full hover:bg-opacity-75 transition-all"
-                        >
-                            <X className="h-6 w-6" />
-                        </button>
-                        <img
-                            src={getImageUrl(selectedPhoto)}
-                            alt="Full size view"
-                            className="max-w-full max-h-full object-contain p-4"
-                            onClick={(e) => e.stopPropagation()}
-                        />
-                    </div>
-                )}
-            </div>
+                {
+                    selectedPhoto && (
+                        <div className="fixed inset-0 bg-black z-[60] flex items-center justify-center" onClick={() => setSelectedPhoto(null)}>
+                            <button
+                                onClick={() => setSelectedPhoto(null)}
+                                className="absolute top-4 left-4 p-2 bg-black bg-opacity-50 text-white rounded-full hover:bg-opacity-75 transition-all"
+                            >
+                                <X className="h-6 w-6" />
+                            </button>
+                            <img
+                                src={getImageUrl(selectedPhoto)}
+                                alt="Full size view"
+                                className="max-w-full max-h-full object-contain p-4"
+                                onClick={(e) => e.stopPropagation()}
+                            />
+                        </div>
+                    )
+                }
+            </div >
 
             {/* Mobile Bottom Nav */}
-            <nav className="md:hidden fixed bottom-0 inset-x-0 z-50 border-t bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60 pb-safe">
+            < nav className="md:hidden fixed bottom-0 inset-x-0 z-50 border-t bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60 pb-safe" >
                 <div className="max-w-7xl mx-auto px-6">
                     <ul className="grid grid-cols-4 h-16 text-xs">
                         <li className="flex items-center justify-center">
@@ -1681,7 +1630,7 @@ const ListingEditor: React.FC = () => {
                         </li>
                     </ul>
                 </div>
-            </nav>
+            </nav >
         </>
     );
 };

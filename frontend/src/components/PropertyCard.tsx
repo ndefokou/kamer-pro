@@ -26,18 +26,18 @@ const PropertyCard = ({
     isGuestFavorite = false,
 }: PropertyCardProps) => {
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
-    const { isInWishlist, addToWishlist, removeFromWishlist } = useWishlist();
+    const { isInWishlist, addToWishlist, removeFromWishlistByProduct } = useWishlist();
     const { toast } = useToast();
-    const inWishlist = isInWishlist(parseInt(id, 10));
+    const inWishlist = isInWishlist(id);
 
     const handleWishlistToggle = async (e: React.MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
 
         try {
-            const productId = parseInt(id, 10);
+            const productId = id;
             if (inWishlist) {
-                await removeFromWishlist(productId);
+                await removeFromWishlistByProduct(productId);
             } else {
                 await addToWishlist(productId);
             }

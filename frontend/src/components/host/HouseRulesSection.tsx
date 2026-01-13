@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Minus, Plus, ChevronRight, X, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -40,6 +41,7 @@ const HouseRulesSection: React.FC<HouseRulesSectionProps> = ({
     onMaxGuestsChange
 }) => {
     const [activeSubView, setActiveSubView] = useState<'main' | 'times' | 'additional'>('main');
+    const { t } = useTranslation();
 
     const toggleRule = (key: keyof HouseRules) => {
         onRulesChange({ ...rules, [key]: !rules[key as keyof HouseRules] });
@@ -60,12 +62,12 @@ const HouseRulesSection: React.FC<HouseRulesSectionProps> = ({
                     >
                         <ChevronRight className="h-5 w-5 rotate-180" />
                     </button>
-                    <h2 className="text-2xl font-semibold">Check-in and checkout times</h2>
+                    <h2 className="text-2xl font-semibold">{t('host.editor.houseRules.checkInCheckout', 'Check-in and checkout times')}</h2>
                 </div>
 
                 <div className="space-y-6">
                     <div>
-                        <label className="block text-base font-medium text-gray-900 mb-2">Check-in start</label>
+                        <label className="block text-base font-medium text-gray-900 mb-2">{t('host.editor.houseRules.checkInStart', 'Check-in start')}</label>
                         <div className="relative">
                             <select
                                 value={rules.check_in_start}
@@ -81,7 +83,7 @@ const HouseRulesSection: React.FC<HouseRulesSectionProps> = ({
                     </div>
 
                     <div>
-                        <label className="block text-base font-medium text-gray-900 mb-2">Check-in end</label>
+                        <label className="block text-base font-medium text-gray-900 mb-2">{t('host.editor.houseRules.checkInEnd', 'Check-in end')}</label>
                         <div className="relative">
                             <select
                                 value={rules.check_in_end}
@@ -97,7 +99,7 @@ const HouseRulesSection: React.FC<HouseRulesSectionProps> = ({
                     </div>
 
                     <div>
-                        <label className="block text-base font-medium text-gray-900 mb-2">Checkout time</label>
+                        <label className="block text-base font-medium text-gray-900 mb-2">{t('host.editor.houseRules.checkoutTime', 'Checkout time')}</label>
                         <div className="relative">
                             <select
                                 value={rules.checkout_time}
@@ -132,15 +134,15 @@ const HouseRulesSection: React.FC<HouseRulesSectionProps> = ({
                     >
                         <ChevronRight className="h-5 w-5 rotate-180" />
                     </button>
-                    <h2 className="text-2xl font-semibold">Additional rules</h2>
-                    <p className="text-gray-500 mt-2">Share anything else you expect from guests.</p>
+                    <h2 className="text-2xl font-semibold">{t('host.editor.houseRules.additional', 'Additional rules')}</h2>
+                    <p className="text-gray-500 mt-2">{t('host.editor.houseRules.additionalHelp', 'Share anything else you expect from guests.')}</p>
                 </div>
 
                 <textarea
                     value={rules.additional_rules}
                     onChange={(e) => onRulesChange({ ...rules, additional_rules: e.target.value })}
                     className="w-full h-48 p-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent resize-none"
-                    placeholder="e.g. No shoes in the house"
+                    placeholder={t('host.editor.houseRules.additionalPlaceholder', 'e.g. No shoes in the house')}
                 />
 
                 <div className="mt-8 pt-6 border-t border-gray-200">
@@ -155,20 +157,20 @@ const HouseRulesSection: React.FC<HouseRulesSectionProps> = ({
     return (
         <div className="max-w-2xl mx-auto">
             <div className="mb-8">
-                <h2 className="text-2xl font-semibold mb-2">House rules</h2>
+                <h2 className="text-2xl font-semibold mb-2">{t('host.editor.houseRules.title', 'House rules')}</h2>
                 <p className="text-gray-500">
-                    Guests are expected to follow your rules and may be removed from mboaMaisson if they don't.
+                    {t('host.editor.houseRules.subtitle', "Guests are expected to follow your rules and may be removed from mboaMaisson if they don't.")}
                 </p>
             </div>
 
             <div className="space-y-6">
                 {/* Toggles */}
                 {[
-                    { key: 'pets_allowed', label: 'Pets allowed', sub: 'You can refuse pets, but must reasonably accommodate service animals.' },
-                    { key: 'events_allowed', label: 'Events allowed' },
-                    { key: 'smoking_allowed', label: 'Smoking, vaping, e-cigarettes allowed' },
-                    { key: 'quiet_hours', label: 'Quiet hours' },
-                    { key: 'commercial_photography_allowed', label: 'Commercial photography and filming allowed' },
+                    { key: 'pets_allowed', label: t('host.editor.houseRules.pets', 'Pets allowed'), sub: t('host.editor.houseRules.petsSub', 'You can refuse pets, but must reasonably accommodate service animals.') },
+                    { key: 'events_allowed', label: t('host.editor.houseRules.events', 'Events allowed') },
+                    { key: 'smoking_allowed', label: t('host.editor.houseRules.smoking', 'Smoking, vaping, e-cigarettes allowed') },
+                    { key: 'quiet_hours', label: t('host.editor.houseRules.quietHours', 'Quiet hours') },
+                    { key: 'commercial_photography_allowed', label: t('host.editor.houseRules.photography', 'Commercial photography and filming allowed') },
                 ].map(({ key, label, sub }) => (
                     <div key={key} className="flex items-center justify-between py-4 border-b border-gray-100">
                         <div className="pr-4">
@@ -207,7 +209,7 @@ const HouseRulesSection: React.FC<HouseRulesSectionProps> = ({
 
                 {/* Guest Count */}
                 <div className="flex items-center justify-between py-4 border-b border-gray-100">
-                    <div className="text-base font-medium text-gray-900">Number of guests</div>
+                    <div className="text-base font-medium text-gray-900">{t('host.editor.houseRules.numberOfGuests', 'Number of guests')}</div>
                     <div className="flex items-center gap-4">
                         <button
                             onClick={() => onMaxGuestsChange(Math.max(1, maxGuests - 1))}
@@ -232,7 +234,7 @@ const HouseRulesSection: React.FC<HouseRulesSectionProps> = ({
                     onClick={() => setActiveSubView('times')}
                     className="w-full flex items-center justify-between py-4 border-b border-gray-100 hover:bg-gray-50 transition-colors text-left"
                 >
-                    <span className="text-base font-medium text-gray-900">Check-in and checkout times</span>
+                    <span className="text-base font-medium text-gray-900">{t('host.editor.houseRules.checkInCheckout', 'Check-in and checkout times')}</span>
                     <ChevronRight className="h-5 w-5 text-gray-400" />
                 </button>
 
@@ -241,8 +243,8 @@ const HouseRulesSection: React.FC<HouseRulesSectionProps> = ({
                     className="w-full flex items-center justify-between py-4 border-b border-gray-100 hover:bg-gray-50 transition-colors text-left"
                 >
                     <div className="pr-4">
-                        <div className="text-base font-medium text-gray-900">Additional rules</div>
-                        <div className="text-sm text-gray-500 mt-1">Share anything else you expect from guests.</div>
+                        <div className="text-base font-medium text-gray-900">{t('host.editor.houseRules.additional', 'Additional rules')}</div>
+                        <div className="text-sm text-gray-500 mt-1">{t('host.editor.houseRules.additionalHelp', 'Share anything else you expect from guests.')}</div>
                     </div>
                     <ChevronRight className="h-5 w-5 text-gray-400" />
                 </button>

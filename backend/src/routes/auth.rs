@@ -11,7 +11,7 @@ use uuid::Uuid;
 pub struct User {
     pub id: i32,
     pub username: String,
-    pub email: Option<String>,
+    pub email: String,
     pub credential_id: Option<String>,
     pub public_key: Option<String>,
     pub counter: Option<i64>,
@@ -74,7 +74,7 @@ pub struct AuthenticationCompleteResponse {
     pub token: String,
     pub user_id: i32,
     pub username: String,
-    pub email: Option<String>,
+    pub email: String,
 }
 
 #[post("/register/start")]
@@ -250,7 +250,7 @@ pub struct SimpleRegisterRequest {
     pub username: String,
     pub password: String,
     pub phone: Option<String>,
-    pub email: Option<String>,
+    pub email: String,
 }
 
 #[post("/register")]
@@ -271,21 +271,24 @@ pub async fn simple_register(
         });
     }
 
-    // Check if email already exists (only when provided)
-    if let Some(email) = &req.email {
-        if !email.trim().is_empty() {
-            let existing_email: Result<User, _> =
-                sqlx::query_as("SELECT * FROM users WHERE email = ?")
-                    .bind(email)
-                    .fetch_one(pool.get_ref())
-                    .await;
+    // Check if email is provided and not empty
+    if req.email.trim().is_empty() {
+        return HttpResponse::BadRequest().json(ErrorResponse {
+            error: "Email cannot be empty".to_string(),
+        });
+    }
 
-            if existing_email.is_ok() {
-                return HttpResponse::BadRequest().json(ErrorResponse {
-                    error: "Email already exists".to_string(),
-                });
-            }
-        }
+    // Check if email already exists
+    let existing_email: Result<User, _> =
+        sqlx::query_as("SELECT * FROM users WHERE email = ?")
+            .bind(&req.email)
+            .fetch_one(pool.get_ref())
+            .await;
+
+    if existing_email.is_ok() {
+        return HttpResponse::BadRequest().json(ErrorResponse {
+            error: "Email already exists".to_string(),
+        });
     }
 
     let now = Utc::now().to_rfc3339();

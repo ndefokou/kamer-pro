@@ -72,8 +72,8 @@ export class WebAuthService {
   async register(
     username: string,
     password: string,
-    phone?: string,
-    email?: string,
+    phone: string,
+    email: string,
   ): Promise<AuthenticationCompleteResponse> {
     const response = await apiClient.post("/auth/register", {
       username,

@@ -55,7 +55,7 @@ const Pricing: React.FC = () => {
                                 id="pricePerNight"
                                 type="number"
                                 min={0}
-                                value={pricePerNight}
+                                value={pricePerNight || ''}
                                 onChange={(e) => setPricePerNight(parseFloat(e.target.value) || 0)}
                                 className="pl-10 text-2xl h-16"
                                 placeholder={t('common.zero', '0') as string}
@@ -76,7 +76,7 @@ const Pricing: React.FC = () => {
                                 id="cleaningFee"
                                 type="number"
                                 min={0}
-                                value={cleaningFee}
+                                value={cleaningFee || ''}
                                 onChange={(e) => setCleaningFee(parseFloat(e.target.value) || 0)}
                                 className="pl-10"
                                 placeholder={t('common.zero', '0') as string}

@@ -66,7 +66,7 @@ const PriceSettingsModal: React.FC<PriceSettingsModalProps> = ({ settings, onClo
                             <span className="text-3xl font-semibold">$</span>
                             <input
                                 type="number"
-                                value={basePrice}
+                                value={basePrice === 0 ? '' : basePrice}
                                 onChange={(e) => setBasePrice(Number(e.target.value))}
                                 className="text-3xl font-semibold border-none bg-transparent p-0 w-28 focus:outline-none focus:ring-0"
                             />
@@ -90,7 +90,7 @@ const PriceSettingsModal: React.FC<PriceSettingsModalProps> = ({ settings, onClo
                             <span className="text-3xl font-semibold">$</span>
                             <input
                                 type="number"
-                                value={weekendPrice}
+                                value={weekendPrice === 0 ? '' : weekendPrice}
                                 onChange={(e) => setWeekendPrice(Number(e.target.value))}
                                 className="text-3xl font-semibold border-none bg-transparent p-0 w-28 focus:outline-none focus:ring-0"
                             />
@@ -133,7 +133,7 @@ const PriceSettingsModal: React.FC<PriceSettingsModalProps> = ({ settings, onClo
                         <div className="flex items-baseline gap-2 mb-2">
                             <input
                                 type="number"
-                                value={weeklyDiscount}
+                                value={weeklyDiscount === 0 ? '' : weeklyDiscount}
                                 onChange={(e) => setWeeklyDiscount(Number(e.target.value))}
                                 className="text-3xl font-semibold border-none bg-transparent p-0 w-20 focus:outline-none focus:ring-0"
                                 min="0"
@@ -155,7 +155,7 @@ const PriceSettingsModal: React.FC<PriceSettingsModalProps> = ({ settings, onClo
                         <div className="flex items-baseline gap-2 mb-2">
                             <input
                                 type="number"
-                                value={monthlyDiscount}
+                                value={monthlyDiscount === 0 ? '' : monthlyDiscount}
                                 onChange={(e) => setMonthlyDiscount(Number(e.target.value))}
                                 className="text-3xl font-semibold border-none bg-transparent p-0 w-20 focus:outline-none focus:ring-0"
                                 min="0"
