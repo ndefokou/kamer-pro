@@ -326,6 +326,14 @@
       "publishListing": "Publier l'annonce"
     }
   },
+  "messages": {
+    "title": "Messages",
+    "searchPlaceholder": "Rechercher des messages",
+    "noMessages": "Aucun message pour le moment",
+    "responseTime": "Temps de réponse : {{time}}",
+    "typePlaceholder": "Tapez un message...",
+    "selectConversation": "Sélectionnez une conversation pour commencer à envoyer des messages"
+  },
   "edit": "Modifier",
   "selected": "sélectionné(s)",
   "please enter your username": "Veuillez entrer votre nom d'utilisateur",

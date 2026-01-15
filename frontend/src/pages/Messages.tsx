@@ -5,13 +5,15 @@ import { getConversations, getMessages, sendMessage, Conversation, Message } fro
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Loader2, Send, Search, MoreVertical } from 'lucide-react';
+import { Loader2, Send, Search, MoreVertical, ChevronLeft } from 'lucide-react';
 import { format } from 'date-fns';
 import { getImageUrl } from '@/lib/utils';
 import Header from '@/components/Header';
 import HostHeader from '@/components/HostHeader';
+import { useTranslation } from 'react-i18next';
 
 const Messages: React.FC = () => {
+    const { t } = useTranslation();
     const [searchParams, setSearchParams] = useSearchParams();
     const conversationIdParam = searchParams.get('conversationId');
     const isHostView = searchParams.get('view') === 'host';
@@ -92,16 +94,16 @@ const Messages: React.FC = () => {
                         {/* Sidebar - Conversations List */}
                         <div className={`w-full md:w-1/3 border-r flex flex-col ${selectedConversationId ? 'hidden md:flex' : 'flex'}`}>
                             <div className="p-4 border-b">
-                                <h2 className="text-xl font-bold mb-4">Messages</h2>
+                                <h2 className="text-xl font-bold mb-4">{t('messages.title', 'Messages')}</h2>
                                 <div className="relative">
                                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                                    <Input placeholder="Search messages" className="pl-9 bg-gray-50 border-gray-200" />
+                                    <Input placeholder={t('messages.searchPlaceholder', 'Search messages')} className="pl-9 bg-gray-50 border-gray-200" />
                                 </div>
                             </div>
                             <div className="flex-1 overflow-y-auto">
                                 {conversations?.length === 0 ? (
                                     <div className="p-8 text-center text-gray-500">
-                                        No messages yet
+                                        {t('messages.noMessages', 'No messages yet')}
                                     </div>
                                 ) : (
                                     conversations?.map((conv) => (
@@ -132,7 +134,7 @@ const Messages: React.FC = () => {
                                                         {conv.listing_title}
                                                     </p>
                                                     <p className={`text-sm truncate ${!conv.last_message?.read_at && conv.last_message?.sender_id !== currentUserId ? 'font-bold text-black' : 'text-gray-500'}`}>
-                                                        {conv.last_message?.content || 'No messages yet'}
+                                                        {conv.last_message?.content || t('messages.noMessages', 'No messages yet')}
                                                     </p>
                                                 </div>
                                             </div>
@@ -166,7 +168,7 @@ const Messages: React.FC = () => {
                                             </Avatar>
                                             <div>
                                                 <h3 className="font-semibold">{selectedConversation.other_user.name}</h3>
-                                                <p className="text-xs text-gray-500">Response time: 1 hour</p>
+                                                <p className="text-xs text-gray-500">{t('messages.responseTime', { time: '1 hour', defaultValue: 'Response time: 1 hour' })}</p>
                                             </div>
                                         </div>
                                         <div className="flex items-center gap-2">
@@ -221,7 +223,7 @@ const Messages: React.FC = () => {
                                             <Input
                                                 value={newMessage}
                                                 onChange={(e) => setNewMessage(e.target.value)}
-                                                placeholder="Type a message..."
+                                                placeholder={t('messages.typePlaceholder', 'Type a message...')}
                                                 className="flex-1"
                                                 disabled={sendMessageMutation.isPending}
                                             />
@@ -237,7 +239,7 @@ const Messages: React.FC = () => {
                                 </>
                             ) : (
                                 <div className="flex-1 flex items-center justify-center text-gray-400">
-                                    Select a conversation to start messaging
+                                    {t('messages.selectConversation', 'Select a conversation to start messaging')}
                                 </div>
                             )}
                         </div>
@@ -247,8 +249,5 @@ const Messages: React.FC = () => {
         </div>
     );
 };
-
-// Missing import fix
-import { ChevronLeft } from 'lucide-react';
 
 export default Messages;

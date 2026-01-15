@@ -333,6 +333,14 @@
       "publishListing": "Publish listing"
     }
   },
+  "messages": {
+    "title": "Messages",
+    "searchPlaceholder": "Search messages",
+    "noMessages": "No messages yet",
+    "responseTime": "Response time: {{time}}",
+    "typePlaceholder": "Type a message...",
+    "selectConversation": "Select a conversation to start messaging"
+  },
   "edit": "Edit",
   "selected": "selected",
   "please enter your username": "Please enter your username",

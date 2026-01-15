@@ -617,7 +617,7 @@ const HostCalendar: React.FC = () => {
                                 <div className="p-1.5 rounded-full group-active:scale-95 transition-transform group-hover:bg-gray-100">
                                     <Home className="h-6 w-6 text-gray-500 group-hover:text-gray-900 transition-colors" />
                                 </div>
-                                <span className="text-[10px] font-medium text-gray-500 group-hover:text-gray-900 transition-colors">Listening</span>
+                                <span className="text-[10px] font-medium text-gray-500 group-hover:text-gray-900 transition-colors">{t('nav.listening', 'Listening')}</span>
                             </a>
                         </li>
                         <li className="flex items-center justify-center">
@@ -625,7 +625,7 @@ const HostCalendar: React.FC = () => {
                                 <div className="p-1.5 rounded-full group-active:scale-95 transition-transform">
                                     <CalendarIcon className="h-6 w-6 text-primary fill-current" />
                                 </div>
-                                <span className="text-[10px] font-medium text-primary">Calendar</span>
+                                <span className="text-[10px] font-medium text-primary">{t('nav.calendar', 'Calendar')}</span>
                             </a>
                         </li>
                         <li className="flex items-center justify-center">
@@ -633,7 +633,7 @@ const HostCalendar: React.FC = () => {
                                 <div className="p-1.5 rounded-full group-active:scale-95 transition-transform group-hover:bg-gray-100">
                                     <Grid3x3 className="h-6 w-6 text-gray-500 group-hover:text-gray-900 transition-colors" />
                                 </div>
-                                <span className="text-[10px] font-medium text-gray-500 group-hover:text-gray-900 transition-colors">Listings</span>
+                                <span className="text-[10px] font-medium text-gray-500 group-hover:text-gray-900 transition-colors">{t('nav.listings', 'Listings')}</span>
                             </a>
                         </li>
                         <li className="flex items-center justify-center">
@@ -641,7 +641,7 @@ const HostCalendar: React.FC = () => {
                                 <div className="p-1.5 rounded-full group-active:scale-95 transition-transform group-hover:bg-gray-100">
                                     <Mail className="h-6 w-6 text-gray-500 group-hover:text-gray-900 transition-colors" />
                                 </div>
-                                <span className="text-[10px] font-medium text-gray-500 group-hover:text-gray-900 transition-colors">Messages</span>
+                                <span className="text-[10px] font-medium text-gray-500 group-hover:text-gray-900 transition-colors">{t('nav.messages', 'Messages')}</span>
                             </a>
                         </li>
                     </ul>
