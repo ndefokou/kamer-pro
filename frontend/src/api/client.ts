@@ -8,19 +8,24 @@ const apiClient = axios.create({
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response && error.response.status === 401 && !error.config.url?.includes("/account/me")) {
-      // Clear local storage and redirect to login if token is invalid/expired
+    const isAuthPage = window.location.pathname.includes("/webauth-login");
+
+    if (error.response && error.response.status === 401 && !isAuthPage && !error.config.url?.includes("/account/me")) {
+      
+      // Clear any stale auth data
       localStorage.removeItem("token");
       localStorage.removeItem("username");
       localStorage.removeItem("userId");
 
-      // Only redirect if we are not already on the login page to avoid loops
-      if (!window.location.pathname.includes("/webauth-login")) {
-        const current = `${window.location.pathname}${window.location.search}`;
-        const redirect = encodeURIComponent(current || "/");
-        window.location.href = `/webauth-login?redirect=${redirect}`;
-      }
+      // Redirect to login, preserving the intended destination
+      const current = `${window.location.pathname}${window.location.search}`;
+      const redirect = encodeURIComponent(current || "/");
+      window.location.href = `/webauth-login?redirect=${redirect}`;
+      
+    } else if (error.response && error.response.status === 401 && isAuthPage) {
+        console.log("Session check failed on auth page, this is expected.");
     }
+
     return Promise.reject(error);
   }
 );

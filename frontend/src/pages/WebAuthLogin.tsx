@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { WebAuthService } from "@/services/webAuthService";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
+import { Eye, EyeOff } from "lucide-react";
 
 const webAuth = new WebAuthService();
 
@@ -28,22 +29,30 @@ const WebAuthLogin = () => {
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const redirectTo = useMemo(() => params.get("redirect") || "/host/dashboard", [params]);
-  const { login, user } = useAuth();
+  const { login, user, loading: authLoading } = useAuth();
 
   const [activeTab, setActiveTab] = useState<"login" | "register">((params.get("tab") as "login" | "register") || "login");
 
-  // Shared state
+  // Login state
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
+
+  // Register state
   const [username, setUsername] = useState("");
+  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  // Shared state
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Register state
-  const [phone, setPhone] = useState("");
-  const [email, setEmail] = useState("");
-
   useEffect(() => {
-      const tab = params.get("tab");
+    const tab = params.get("tab");
     if (tab === "login" || tab === "register") {
       setActiveTab(tab);
     }
@@ -59,12 +68,12 @@ const WebAuthLogin = () => {
     setLoading(true);
     setError(null);
     try {
-      if (!username.trim() || !password) {
-        setError("Please enter username and password");
+      if (!loginEmail.trim() || !loginPassword) {
+        setError("Please enter email and password");
         return;
       }
 
-      await withRetry(() => webAuth.login(username.trim(), password));
+      await withRetry(() => webAuth.login(loginEmail.trim(), loginPassword));
       await login(); // Refresh session in context
       navigate(redirectTo, { replace: true });
     } catch (err: unknown) {
@@ -82,14 +91,19 @@ const WebAuthLogin = () => {
     setLoading(true);
     setError(null);
     try {
-        if (!username.trim() || !phone.trim() || !password || !email.trim()) {
-            setError("Please enter username, phone, email, and password");
-            return;
-        }
+      if (!username.trim() || !phone.trim() || !password || !email.trim() || !confirmPassword) {
+        setError("Please fill in all fields");
+        return;
+      }
 
-        await withRetry(() => webAuth.register(username.trim(), password, phone.trim(), email.trim()));
-        await login(); // Refresh session in context
-        navigate(redirectTo, { replace: true });
+      if (password !== confirmPassword) {
+        setError("Passwords do not match");
+        return;
+      }
+
+      await withRetry(() => webAuth.register(username.trim(), password, phone.trim(), email.trim()));
+      await login(); // Refresh session in context
+      navigate(redirectTo, { replace: true });
     } catch (err: unknown) {
       const message =
         (err as { response?: { data?: { error?: string } } })?.response?.data?.error ||
@@ -100,6 +114,14 @@ const WebAuthLogin = () => {
       setLoading(false);
     }
   };
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div>Loading...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-white flex items-center justify-center px-4 py-10">
@@ -127,52 +149,114 @@ const WebAuthLogin = () => {
 
         {/* Form */}
         <div className="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
-          <div>
-            <label className="block text-sm font-medium mb-1">Username</label>
-            <input
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300"
-              placeholder="johndoe"
-            />
-          </div>
-
-          {activeTab === "register" && (
-            <div>
-              <label className="block text-sm font-medium mb-1">Phone (WhatsApp)</label>
-              <input
-                type="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300"
-                placeholder="+237 6xx xx xx xx"
-              />
-            </div>
-          )}
-
-          {activeTab === "register" && (
+          {activeTab === "login" ? (
+            <>
               <div>
-                  <label className="block text-sm font-medium mb-1">Email</label>
-                  <input
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300"
-                      placeholder="you@example.com"
-                  />
+                <label className="block text-sm font-medium mb-1">Email</label>
+                <input
+                  type="email"
+                  value={loginEmail}
+                  onChange={(e) => setLoginEmail(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300"
+                  placeholder="you@example.com"
+                />
               </div>
-          )}
 
-          <div>
-              <label className="block text-sm font-medium mb-1">Password</label>
-              <input
-                  type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300"
-              placeholder="••••••••"
-            />
-          </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Password</label>
+                <div className="relative">
+                  <input
+                    type={showLoginPassword ? "text" : "password"}
+                    value={loginPassword}
+                    onChange={(e) => setLoginPassword(e.target.value)}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-gray-300"
+                    placeholder="••••••••"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowLoginPassword(!showLoginPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                  >
+                    {showLoginPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+              </div>
+            </>
+          ) : (
+            <>
+              <div>
+                <label className="block text-sm font-medium mb-1">Username</label>
+                <input
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300"
+                  placeholder="johndoe"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Email</label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300"
+                  placeholder="you@example.com"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Phone (WhatsApp)</label>
+                <input
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300"
+                  placeholder="+237 6xx xx xx xx"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Password</label>
+                <div className="relative">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-gray-300"
+                    placeholder="••••••••"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Confirm Password</label>
+                <div className="relative">
+                  <input
+                    type={showConfirmPassword ? "text" : "password"}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-gray-300"
+                    placeholder="••••••••"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                  >
+                    {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
 
           {error && <div className="text-sm text-red-600">{error}</div>}
 

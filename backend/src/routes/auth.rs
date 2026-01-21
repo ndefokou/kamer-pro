@@ -258,19 +258,6 @@ pub async fn simple_register(
     pool: web::Data<SqlitePool>,
     req: web::Json<SimpleRegisterRequest>,
 ) -> impl Responder {
-    // Check if username already exists
-    let existing_username: Result<User, _> =
-        sqlx::query_as("SELECT * FROM users WHERE username = ?")
-            .bind(&req.username)
-            .fetch_one(pool.get_ref())
-            .await;
-
-    if existing_username.is_ok() {
-        return HttpResponse::BadRequest().json(ErrorResponse {
-            error: "User already exists".to_string(),
-        });
-    }
-
     // Check if email is provided and not empty
     if req.email.trim().is_empty() {
         return HttpResponse::BadRequest().json(ErrorResponse {
@@ -278,12 +265,11 @@ pub async fn simple_register(
         });
     }
 
-    // Check if email already exists
-    let existing_email: Result<User, _> =
-        sqlx::query_as("SELECT * FROM users WHERE email = ?")
-            .bind(&req.email)
-            .fetch_one(pool.get_ref())
-            .await;
+    // Check if email already exists (email is the unique identifier)
+    let existing_email: Result<User, _> = sqlx::query_as("SELECT * FROM users WHERE email = ?")
+        .bind(&req.email)
+        .fetch_one(pool.get_ref())
+        .await;
 
     if existing_email.is_ok() {
         return HttpResponse::BadRequest().json(ErrorResponse {
@@ -363,7 +349,7 @@ pub async fn simple_register(
 
 #[derive(Deserialize)]
 pub struct SimpleLoginRequest {
-    pub username: String,
+    pub email: String,
     pub password: String,
 }
 
@@ -373,8 +359,8 @@ pub async fn simple_login(
     req: web::Json<SimpleLoginRequest>,
 ) -> impl Responder {
     // Verify user exists
-    let user: Result<User, _> = sqlx::query_as("SELECT * FROM users WHERE username = ?")
-        .bind(&req.username)
+    let user: Result<User, _> = sqlx::query_as("SELECT * FROM users WHERE email = ?")
+        .bind(&req.email)
         .fetch_one(pool.get_ref())
         .await;
 
@@ -415,12 +401,12 @@ pub async fn simple_login(
                     })
             } else {
                 HttpResponse::Unauthorized().json(ErrorResponse {
-                    error: "Invalid username or password".to_string(),
+                    error: "Invalid email or password".to_string(),
                 })
             }
         }
         Err(_) => HttpResponse::Unauthorized().json(ErrorResponse {
-            error: "Invalid username or password".to_string(),
+            error: "Invalid email or password".to_string(),
         }),
     }
 }

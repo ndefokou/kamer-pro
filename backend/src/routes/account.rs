@@ -63,15 +63,20 @@ struct ProfileRow {
 
 #[derive(Serialize)]
 pub struct AccountResponse {
-    user: UserRow,
-    profile: ProfileRow,
+    user: Option<UserRow>,
+    profile: Option<ProfileRow>,
 }
 
 #[get("/me")]
 pub async fn get_me(req: HttpRequest, pool: web::Data<SqlitePool>) -> impl Responder {
     let user_id = match extract_user_id(&req) {
         Ok(id) => id,
-        Err(resp) => return resp,
+        Err(_) => {
+            return HttpResponse::Ok().json(AccountResponse {
+                user: None,
+                profile: None,
+            })
+        }
     };
 
     let user: Result<UserRow, _> = sqlx::query_as(
@@ -102,7 +107,10 @@ pub async fn get_me(req: HttpRequest, pool: web::Data<SqlitePool>) -> impl Respo
         ..Default::default()
     });
 
-    HttpResponse::Ok().json(AccountResponse { user, profile })
+    HttpResponse::Ok().json(AccountResponse {
+        user: Some(user),
+        profile: Some(profile),
+    })
 }
 
 #[get("/user/{id}")]
@@ -134,7 +142,10 @@ pub async fn get_user_by_id(path: web::Path<i32>, pool: web::Data<SqlitePool>) -
 
     let profile = profile.unwrap_or_else(|_| ProfileRow { user_id, ..Default::default() });
 
-    HttpResponse::Ok().json(AccountResponse { user, profile })
+    HttpResponse::Ok().json(AccountResponse {
+        user: Some(user),
+        profile: Some(profile),
+    })
 }
 
 #[derive(Deserialize, Debug)]

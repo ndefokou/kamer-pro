@@ -8,6 +8,7 @@ import {
   WishlistContext,
   ApiWishlistItem,
 } from "./WishlistContextTypes";
+import { useAuth } from "./AuthContext";
 
 export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
@@ -17,6 +18,7 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const refreshingRef = useRef(false);
+  const { user, loading: authLoading } = useAuth();
 
   const refreshWishlist = useCallback(async () => {
     if (refreshingRef.current) return;
@@ -155,8 +157,13 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   useEffect(() => {
-    refreshWishlist();
-  }, [refreshWishlist]);
+    if (user && !authLoading) {
+      refreshWishlist();
+    } else if (!user && !authLoading) {
+      setWishlistItems([]);
+      setWishlistCount(0);
+    }
+  }, [user, authLoading, refreshWishlist]);
 
   const clearWishlist = async () => {
     setIsLoading(true);

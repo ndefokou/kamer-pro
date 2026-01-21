@@ -85,11 +85,11 @@ export class WebAuthService {
   }
 
   async login(
-    username: string,
+    email: string,
     password: string
   ): Promise<AuthenticationCompleteResponse> {
     const response = await apiClient.post("/auth/login", {
-      username,
+      email,
       password,
     });
     return response.data;

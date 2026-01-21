@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { useWishlist } from "@/hooks/useWishlist";
 import { useMessaging } from "@/hooks/useMessaging";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -42,23 +43,15 @@ const Navbar = () => {
   const { wishlistCount } = useWishlist();
   const { unreadCount } = useMessaging();
   const username = localStorage.getItem("username");
-  const [isAuth, setIsAuth] = useState(false);
+  const { user, logout } = useAuth();
+  const isAuth = !!user;
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     setSearchQuery(searchParams.get("search") || "");
   }, [searchParams]);
 
-  useEffect(() => {
-    (async () => {
-      try {
-        await apiClient.get("/account/me");
-        setIsAuth(true);
-      } catch {
-        setIsAuth(false);
-      }
-    })();
-  }, []);
+  // Auth state is now derived from AuthContext
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -71,16 +64,11 @@ const Navbar = () => {
 
   const handleLogout = async () => {
     try {
-      await apiClient.post("/auth/logout");
-    } catch (e) {
-      console.warn("logout failed", e);
+      await logout();
+    } finally {
+      setIsMobileMenuOpen(false);
+      navigate("/");
     }
-    localStorage.removeItem("token");
-    localStorage.removeItem("username");
-    localStorage.removeItem("userId");
-    setIsMobileMenuOpen(false);
-    setIsAuth(false);
-    navigate("/");
   };
 
   const handleNavigation = (path: string) => {

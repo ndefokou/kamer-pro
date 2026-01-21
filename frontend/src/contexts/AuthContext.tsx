@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode, useCallback, useRef } from 'react';
 import apiClient from '@/api/client';
 
 interface User {
@@ -25,11 +25,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const checkSession = useCallback(async () => {
     try {
       const response = await apiClient.get('/account/me');
-      // The backend returns { user: {...}, profile: {...} }
-      const userData = response.data.user || response.data;
-      setUser(userData);
-      if (userData?.id) {
+      // The backend returns { user: {...}, profile: {...} } or { user: null, profile: null } when unauthenticated
+      const data = response.data;
+      const userData = data && typeof data === 'object' && 'user' in data ? data.user : data;
+      if (userData && userData.id) {
+        setUser(userData);
         localStorage.setItem('userId', userData.id.toString());
+      } else {
+        setUser(null);
+        localStorage.removeItem('userId');
       }
     } catch (error) {
       // If 401 or other error, user is not logged in
@@ -40,7 +44,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
+  const hasCheckedRef = useRef(false);
   useEffect(() => {
+    if (hasCheckedRef.current) return;
+    hasCheckedRef.current = true;
     checkSession();
   }, [checkSession]);
 

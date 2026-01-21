@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { AxiosError } from 'axios';
 import { useQueryClient } from '@tanstack/react-query';
 import apiClient from '@/api/client';
+import { useAuth } from './AuthContext';
 
 // ============================================================================
 // Types
@@ -139,160 +140,7 @@ export const HostProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [isSaving, setIsSaving] = useState(false);
     const [saveError, setSaveError] = useState<string | null>(null);
     const queryClient = useQueryClient();
-
-    // Load draft from localStorage on mount or when userId changes
-    useEffect(() => {
-        const userId = localStorage.getItem('userId');
-        if (!userId) {
-            setDraft(defaultDraft);
-            return;
-        }
-
-        const userDraftKey = `${DRAFT_KEY}_${userId}`;
-        const savedDraft = localStorage.getItem(userDraftKey);
-
-        if (savedDraft) {
-            try {
-                const parsed = JSON.parse(savedDraft);
-                setDraft({ ...defaultDraft, ...parsed });
-            } catch (error) {
-                console.error('Failed to parse saved draft:', error);
-                setDraft(defaultDraft);
-            }
-        } else {
-            setDraft(defaultDraft);
-        }
-    }, []); // We actually want to check this when the component mounts, but also we need to handle login/logout. 
-    // Ideally we should listen to userId changes, but it's in localStorage. 
-    // For now, let's stick to mount, but we might need a way to trigger reload.
-    // Actually, let's make it depend on a "key" that changes, or we can expose a "reload" function.
-    // But wait, if I logout and login, the app might reload or at least the context might re-mount if it's high up?
-    // HostProvider is in App.tsx, so it doesn't unmount on route change.
-    // We need to listen to storage events or expose a reset.
-
-    // Better approach:
-    // We can't easily listen to localStorage changes from the same window.
-    // However, when we login/logout, we usually navigate or reload.
-    // Let's make sure we check userId.
-
-    // Let's add a check for userId in the effect.
-    // Since we don't have a user context that provides userId, we have to rely on reading it.
-    // But we can't put localStorage.getItem('userId') in the dependency array.
-
-    // Let's modify the effect to run periodically or expose a way to refresh.
-    // OR, simpler: The user is redirected to login, which is a separate page. 
-    // When they come back, the Provider might not have unmounted.
-    // We should probably expose a `refreshSession` or similar, OR just rely on the fact that 
-    // when we login, we usually do a full page reload or at least a significant state change.
-    // BUT, `HostProvider` wraps `RouterProvider`.
-
-    // Let's look at `Navbar.tsx`. It handles logout by `navigate("/")`.
-    // `WebAuthLogin` handles login by `navigate(redirectTo)`.
-    // The `HostProvider` will NOT unmount.
-
-    // So we need to react to login/logout.
-    // We can add a `useEffect` that checks `localStorage.getItem('userId')` on location change?
-    // Or we can just make `loadDraft` public and call it?
-
-    // Let's stick to the plan: Update key.
-    // And I will add a `useEffect` that runs on location change to check if userId changed?
-    // No, that's messy.
-
-    // Let's just use the `key` prop on the provider? No.
-
-    // Let's just update the `useEffect` to be smarter.
-    // Actually, `HostProvider` is inside `App`, so it persists.
-    // We need a way to reset when user changes.
-    // I will add a `useEffect` that checks for userId changes.
-
-    // Wait, I can't easily detect localStorage changes.
-    // But I can check it every time we try to save or access the draft.
-
-    // Let's go with:
-    // 1. Update `loadDraft` to take userId into account.
-    // 2. Update `saveDraft` (already does).
-    // 3. Update the auto-save effect.
-
-    // But the initial load is the problem.
-    // If I login, `HostProvider` is already mounted with `defaultDraft`.
-    // I need to load the user's draft.
-
-    // I will add a `key` to `HostProvider` in `App.tsx`?
-    // No, `App.tsx` renders `HostProvider`.
-
-    // Let's just modify `HostContext` to check userId.
-
-    // For now, I will implement the key change and the logic to load/save based on that key.
-    // I will also add a `useEffect` that listens to `storage` events (for cross-tab) 
-    // AND maybe we can hook into the router location to re-check user?
-
-    // Actually, `WebAuthLogin` does `navigate`.
-    // Let's just add a simple check:
-
-    /*
-    useEffect(() => {
-        const checkUser = () => {
-            const currentUserId = localStorage.getItem('userId');
-            // logic to switch draft if user changed
-        };
-        // ...
-    */
-
-    // Let's just stick to the requested change first: Key by userId.
-
-    useEffect(() => {
-        const loadUserDraft = () => {
-            const userId = localStorage.getItem('userId');
-            if (!userId) {
-                setDraft(defaultDraft);
-                return;
-            }
-            const userDraftKey = `${DRAFT_KEY}_${userId}`;
-            const savedDraft = localStorage.getItem(userDraftKey);
-            if (savedDraft) {
-                try {
-                    const parsed = JSON.parse(savedDraft);
-                    setDraft({ ...defaultDraft, ...parsed });
-                } catch (error) {
-                    console.error('Failed to parse saved draft:', error);
-                    setDraft(defaultDraft);
-                }
-            } else {
-                setDraft(defaultDraft);
-            }
-        };
-
-        loadUserDraft();
-
-        // Listen for custom event 'auth-change' or just poll?
-        // Let's just load on mount. 
-        // If the user logs in, the page *should* ideally reload or we should trigger a refresh.
-        // But `WebAuthLogin` just navigates.
-
-        // I will add a window event listener for 'storage' which fires on other tabs.
-        // For the same tab, we might need to manually trigger.
-
-    }, []);
-
-    // Auto-save to localStorage
-    useEffect(() => {
-        const userId = localStorage.getItem('userId');
-        if (draft.isDirty && userId) {
-            const userDraftKey = `${DRAFT_KEY}_${userId}`;
-            localStorage.setItem(userDraftKey, JSON.stringify(draft));
-        }
-    }, [draft]);
-
-    // Periodic backend sync
-    useEffect(() => {
-        const interval = setInterval(() => {
-            if (draft.isDirty && draft.id) {
-                saveDraft();
-            }
-        }, AUTOSAVE_INTERVAL);
-
-        return () => clearInterval(interval);
-    }, [draft]);
+    const { user, loading: authLoading } = useAuth();
 
     const updateDraft = useCallback((updates: Partial<ListingDraft>) => {
         setDraft(prev => ({
@@ -303,22 +151,21 @@ export const HostProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }, []);
 
     const saveDraft = useCallback(async (): Promise<{ success: boolean; id?: string; error?: string }> => {
+        if (!user) {
+            const errorMsg = 'Please log in to save your listing';
+            setSaveError(errorMsg);
+            return { success: false, error: errorMsg };
+        }
+
         setIsSaving(true);
         setSaveError(null);
 
         try {
-            const userId = localStorage.getItem('userId');
-
-            if (!userId) {
-                // Don't redirect here, let the component handle it or just fail
-                throw new Error('Please log in to save your listing');
-            }
-
             const payload: UpdateListingPayload = {
                 property_type: draft.propertyType,
                 title: draft.title || null,
                 description: draft.description || null,
-                price_per_night: draft.pricePerNight || 0,  // Ensure we always send a number
+                price_per_night: draft.pricePerNight || 0,
                 currency: draft.currency,
                 cleaning_fee: draft.cleaningFee,
                 max_guests: draft.maxGuests,
@@ -337,16 +184,9 @@ export const HostProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 longitude: draft.longitude,
             };
 
-            console.log('Saving draft with payload:', {
-                ...payload,
-                pricePerNight: draft.pricePerNight,
-                priceInPayload: payload.price_per_night
-            });
-
             let listingId = draft.id;
 
             if (!listingId) {
-                // If it's a new listing, create it first to get an ID
                 const createResponse = await apiClient.post('/listings', {
                     property_type: draft.propertyType,
                 });
@@ -356,10 +196,8 @@ export const HostProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 }
             }
 
-            // Now, with an ID, update the listing with the full payload
             await apiClient.put(`/listings/${listingId}`, payload);
 
-            // Sync amenities and photos
             if (draft.amenities.length > 0) {
                 await apiClient.post(`/listings/${listingId}/amenities`, {
                     amenities: draft.amenities,
@@ -376,22 +214,16 @@ export const HostProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 });
             }
 
-            setDraft(prev => ({
-                ...prev,
+            const updatedDraftState = {
+                ...draft,
                 id: listingId,
                 isDirty: false,
                 lastSaved: new Date().toISOString(),
-            }));
+            };
+            setDraft(updatedDraftState);
 
-            if (userId) {
-                const userDraftKey = `${DRAFT_KEY}_${userId}`;
-                localStorage.setItem(userDraftKey, JSON.stringify({
-                    ...draft,
-                    id: listingId,
-                    isDirty: false,
-                    lastSaved: new Date().toISOString(),
-                }));
-            }
+            const userDraftKey = `${DRAFT_KEY}_${user.id}`;
+            localStorage.setItem(userDraftKey, JSON.stringify(updatedDraftState));
 
             return { success: true, id: listingId };
 
@@ -409,21 +241,72 @@ export const HostProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } finally {
             setIsSaving(false);
         }
-    }, [draft]);
+    }, [draft, user]);
+
+    // Load draft from localStorage on mount or when user changes
+    useEffect(() => {
+        const loadUserDraft = () => {
+            if (!user) {
+                setDraft(defaultDraft);
+                return;
+            }
+
+            const userDraftKey = `${DRAFT_KEY}_${user.id}`;
+            const savedDraft = localStorage.getItem(userDraftKey);
+
+            if (savedDraft) {
+                try {
+                    const parsed = JSON.parse(savedDraft);
+                    setDraft({ ...defaultDraft, ...parsed });
+                } catch (error) {
+                    console.error('Failed to parse saved draft:', error);
+                    setDraft(defaultDraft);
+                }
+            } else {
+                setDraft(defaultDraft);
+            }
+        };
+
+        if (!authLoading) {
+            loadUserDraft();
+        }
+    }, [user, authLoading]);
+
+    // Auto-save to localStorage
+    useEffect(() => {
+        if (draft.isDirty && user) {
+            const userDraftKey = `${DRAFT_KEY}_${user.id}`;
+            localStorage.setItem(userDraftKey, JSON.stringify(draft));
+        }
+    }, [draft, user]);
+
+    // Periodic backend sync
+    useEffect(() => {
+        if (!user || authLoading) {
+            return;
+        }
+
+        const interval = setInterval(() => {
+            if (draft.isDirty && draft.id) {
+                saveDraft();
+            }
+        }, AUTOSAVE_INTERVAL);
+
+        return () => clearInterval(interval);
+    }, [draft, user, authLoading, saveDraft]);
 
     const loadDraft = useCallback(async (id?: string) => {
+        if (!user) return;
+
         if (!id) {
-            const userId = localStorage.getItem('userId');
-            if (userId) {
-                const userDraftKey = `${DRAFT_KEY}_${userId}`;
-                const savedDraft = localStorage.getItem(userDraftKey);
-                if (savedDraft) {
-                    try {
-                        const parsed = JSON.parse(savedDraft);
-                        setDraft({ ...defaultDraft, ...parsed });
-                    } catch (error) {
-                        console.error('Failed to parse saved draft:', error);
-                    }
+            const userDraftKey = `${DRAFT_KEY}_${user.id}`;
+            const savedDraft = localStorage.getItem(userDraftKey);
+            if (savedDraft) {
+                try {
+                    const parsed = JSON.parse(savedDraft);
+                    setDraft({ ...defaultDraft, ...parsed });
+                } catch (error) {
+                    console.error('Failed to parse saved draft:', error);
                 }
             }
             return;
@@ -434,7 +317,6 @@ export const HostProvider: React.FC<{ children: React.ReactNode }> = ({ children
             const data = response.data;
             const listingData = data.listing;
 
-            // Convert backend data to draft format
             const loadedDraft: ListingDraft = {
                 id: listingData.id,
                 step: draft.step,
@@ -468,22 +350,22 @@ export const HostProvider: React.FC<{ children: React.ReactNode }> = ({ children
             };
 
             setDraft(loadedDraft);
-            const userId = localStorage.getItem('userId');
-            if (userId) {
-                const userDraftKey = `${DRAFT_KEY}_${userId}`;
-                localStorage.setItem(userDraftKey, JSON.stringify(loadedDraft));
-            }
+            const userDraftKey = `${DRAFT_KEY}_${user.id}`;
+            localStorage.setItem(userDraftKey, JSON.stringify(loadedDraft));
 
         } catch (error) {
             console.error('Failed to load draft:', error);
         }
-    }, [draft.step]);
+    }, [draft.step, user]);
 
     const publishListing = useCallback(async (): Promise<{ success: boolean; error?: string }> => {
+        if (!user) {
+            return { success: false, error: 'Please log in to publish' };
+        }
+
         let listingId = draft.id;
 
         if (!listingId) {
-            // Save first if not saved
             const saveResult = await saveDraft();
             if (!saveResult.success || !saveResult.id) {
                 return { success: false, error: saveResult.error || 'Failed to create listing' };
@@ -492,23 +374,12 @@ export const HostProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
 
         try {
-            const userId = localStorage.getItem('userId');
-
-            if (!userId) {
-                window.location.href = '/';
-                return { success: false, error: 'Please log in to publish' };
-            }
-
             await apiClient.post(`/listings/${listingId}/publish`);
 
-            // Clear draft after successful publish
-            if (userId) {
-                const userDraftKey = `${DRAFT_KEY}_${userId}`;
-                localStorage.removeItem(userDraftKey);
-            }
+            const userDraftKey = `${DRAFT_KEY}_${user.id}`;
+            localStorage.removeItem(userDraftKey);
             setDraft(defaultDraft);
 
-            // Invalidate the products query to refetch the list
             await queryClient.invalidateQueries({ queryKey: ['products'] });
 
             return { success: true };
@@ -523,16 +394,15 @@ export const HostProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }
             return { success: false, error: errorMessage };
         }
-    }, [draft, saveDraft]);
+    }, [draft, saveDraft, user, queryClient]);
 
     const resetDraft = useCallback(() => {
         setDraft(defaultDraft);
-        const userId = localStorage.getItem('userId');
-        if (userId) {
-            const userDraftKey = `${DRAFT_KEY}_${userId}`;
+        if (user) {
+            const userDraftKey = `${DRAFT_KEY}_${user.id}`;
             localStorage.removeItem(userDraftKey);
         }
-    }, []);
+    }, [user]);
 
     const goToStep = useCallback((step: number) => {
         setDraft(prev => ({ ...prev, step, isDirty: true }));
