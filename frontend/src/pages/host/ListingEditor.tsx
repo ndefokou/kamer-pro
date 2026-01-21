@@ -12,6 +12,9 @@ import GuestSafetyModal from '@/components/host/GuestSafetyModal';
 import { LocationDetailModals } from '@/components/host/LocationDetailModals';
 import { SAFETY_CONSIDERATIONS, SAFETY_DEVICES, PROPERTY_INFO } from '@/data/guestSafety';
 import { useTranslation } from 'react-i18next';
+import { useToast } from '@/hooks/use-toast';
+import { AxiosError } from 'axios';
+import { useHost } from '@/contexts/HostContext';
 
 interface Listing {
     id: string;
@@ -57,6 +60,8 @@ const ListingEditor: React.FC = () => {
     const navigate = useNavigate();
     const { id } = useParams<{ id: string }>();
     const { t } = useTranslation();
+    const { toast } = useToast();
+    const { draft } = useHost();
     const [listing, setListing] = useState<Listing | null>(null);
     const [loading, setLoading] = useState(true);
     const [activeSection, setActiveSection] = useState('photos');
@@ -80,7 +85,7 @@ const ListingEditor: React.FC = () => {
     const handleSave = async (field: 'title' | 'description') => {
         if (!listing) return;
         try {
-            const updateData: any = {};
+            const updateData: { title?: string; description?: string } = {};
             if (field === 'title') updateData.title = tempData.title;
             if (field === 'description') updateData.description = tempData.description;
 
@@ -108,6 +113,7 @@ const ListingEditor: React.FC = () => {
     const [scenicViews, setScenicViews] = useState<string[]>([]);
     const [showGeneralLocation, setShowGeneralLocation] = useState(true);
     const [isMobileSection, setIsMobileSection] = useState(false);
+    const [isPublishing, setIsPublishing] = useState(false);
 
     useEffect(() => {
         const fetchListing = async () => {
@@ -218,6 +224,48 @@ const ListingEditor: React.FC = () => {
 
     const currentSectionLabel = sidebarItems.find(s => s.id === activeSection)?.label || t('host.editor.listingEditor', 'Listing editor');
 
+    const stepToPath = (step: number): string => {
+        switch (step) {
+            case 0: return '/host/intro';
+            case 1: return '/host/amenities';
+            case 2: return '/host/location';
+            case 3: return '/host/photos';
+            case 4: return '/host/title';
+            case 5: return '/host/description';
+            case 6: return '/host/booking-settings';
+            case 7: return '/host/pricing';
+            case 8: return '/host/safety';
+            default: return '/host/preview';
+        }
+    };
+
+    const handlePublish = async () => {
+        if (!id) return;
+        try {
+            setIsPublishing(true);
+            await apiClient.post(`/listings/${id}/publish`);
+            toast({
+                title: t('host.preview.publishedTitle', 'Listing published!'),
+                description: t('host.preview.publishedDesc', 'Your listing is now live on MboaMaison'),
+            });
+            navigate('/host/dashboard');
+        } catch (error) {
+            let message = t('host.preview.publishFailedDesc', 'Please check all required fields') as string;
+            if (error instanceof AxiosError && error.response?.data?.error) {
+                message = error.response.data.error as string;
+            } else if (error instanceof Error) {
+                message = error.message;
+            }
+            toast({
+                title: t('host.preview.publishFailedTitle', 'Failed to publish'),
+                description: message,
+                variant: 'destructive',
+            });
+        } finally {
+            setIsPublishing(false);
+        }
+    };
+
     return (
         <>
             <div className="min-h-screen bg-white flex flex-col">
@@ -246,6 +294,11 @@ const ListingEditor: React.FC = () => {
                             <Eye className="h-4 w-4" />
                             <span className="text-sm font-medium">{t('host.editor.view', 'View')}</span>
                         </button>
+                        {listing.status !== 'published' && (
+                            <Button onClick={handlePublish} disabled={isPublishing} className="rounded-full">
+                                {isPublishing ? t('host.preview.publishing', 'Publishing...') : t('host.preview.publishListing', 'Publish listing')}
+                            </Button>
+                        )}
                     </div>
                 </header>
 
@@ -259,7 +312,7 @@ const ListingEditor: React.FC = () => {
                                         <button className="px-4 py-1.5 bg-white rounded-full text-sm font-semibold shadow-sm">{t('host.editor.yourSpace', 'Your space')}</button>
                                     </div>
 
-                                    <div className="mb-8 border border-gray-200 rounded-xl p-4 flex items-center justify-between cursor-pointer hover:border-gray-300 transition-colors">
+                                    <button onClick={() => navigate(stepToPath(draft.step || 0))} className="w-full text-left mb-8 border border-gray-200 rounded-xl p-4 flex items-center justify-between cursor-pointer hover:border-gray-300 transition-colors">
                                         <div>
                                             <div className="flex items-center gap-2 mb-1">
                                                 <div className="w-2 h-2 bg-red-500 rounded-full" />
@@ -268,7 +321,7 @@ const ListingEditor: React.FC = () => {
                                             <p className="text-xs text-gray-500">{t('host.editor.finalTasksToPublish', 'Finish these final tasks to publish your listing and start getting booked.')}</p>
                                         </div>
                                         <ChevronLeft className="h-4 w-4 rotate-180 text-gray-400" />
-                                    </div>
+                                    </button>
 
                                     <div className="space-y-4">
                                         {sidebarItems.map((item) => (

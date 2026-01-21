@@ -2,11 +2,11 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
-import { Icon, LatLng } from 'leaflet';
+import { Icon, LatLng, Marker as LeafletMarker } from 'leaflet';
 import { useHost } from '@/contexts/HostContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { MapPin, Search, X } from 'lucide-react';
+import { MapPin, X } from 'lucide-react';
 import apiClient from '@/api/client';
 import 'leaflet/dist/leaflet.css';
 import { useToast } from '@/hooks/use-toast';
@@ -16,7 +16,8 @@ import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
 import markerShadow from 'leaflet/dist/images/marker-shadow.png';
 
-delete (Icon.Default.prototype as any)._getIconUrl;
+const DefaultIconProto = Icon.Default.prototype as unknown as { _getIconUrl?: unknown };
+delete DefaultIconProto._getIconUrl;
 Icon.Default.mergeOptions({
     iconUrl: markerIcon,
     iconRetinaUrl: markerIcon2x,
@@ -26,6 +27,11 @@ Icon.Default.mergeOptions({
 // Default center: Cameroon
 const DEFAULT_CENTER: [number, number] = [7.3697, 12.3547];
 const DEFAULT_ZOOM = 6;
+const GEO_ERROR = {
+    PERMISSION_DENIED: 1,
+    POSITION_UNAVAILABLE: 2,
+    TIMEOUT: 3,
+} as const;
 
 interface GeocodingResult {
     lat: string;
@@ -37,6 +43,12 @@ interface GeocodingResult {
         village?: string;
         country?: string;
     };
+}
+
+interface ListingLite {
+    latitude?: number;
+    longitude?: number;
+    address?: string;
 }
 
 // Component to handle map centering
@@ -58,7 +70,7 @@ function LocationMarker({
     position: LatLng;
     setPosition: (pos: LatLng) => void;
 }) {
-    const markerRef = useRef<any>(null);
+    const markerRef = useRef<LeafletMarker | null>(null);
 
     const eventHandlers = {
         dragend() {
@@ -104,7 +116,7 @@ const Location: React.FC = () => {
     const isEditMode = !!listingId;
 
     // State for listing data when in edit mode
-    const [listing, setListing] = useState<any>(null);
+    const [listing, setListing] = useState<ListingLite | null>(null);
     const [saving, setSaving] = useState(false);
 
     // Initialize position from draft or listing
@@ -134,6 +146,7 @@ const Location: React.FC = () => {
         isEditMode ? (listing?.address || '') : (draft.address || '')
     );
     const [showResults, setShowResults] = useState(false);
+    const [isLocating, setIsLocating] = useState(false);
 
     // Load listing data if in edit mode
     useEffect(() => {
@@ -209,6 +222,114 @@ const Location: React.FC = () => {
         setSelectedAddress('');
         setShowResults(false);
         setSearchResults([]);
+    };
+
+    const reverseGeocode = async (lat: number, lon: number) => {
+        try {
+            const response = await fetch(
+                `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=14&addressdetails=1`
+            );
+            const data = await response.json() as { display_name?: string };
+            if (data && data.display_name) {
+                const locationName = getLocationName({
+                    lat: String(lat),
+                    lon: String(lon),
+                    display_name: data.display_name,
+                } as GeocodingResult);
+                setSearchQuery(locationName);
+                setSelectedAddress(data.display_name);
+                setShowResults(false);
+                setSearchResults([]);
+            }
+        } catch (error) {
+            // silent failure
+        }
+    };
+
+    const fallbackToIPLocation = async () => {
+        try {
+            const res = await fetch('https://ipapi.co/json/');
+            const data = await res.json() as {
+                latitude?: number;
+                longitude?: number;
+                city?: string;
+                region?: string;
+                country_name?: string;
+            };
+            if (typeof data.latitude === 'number' && typeof data.longitude === 'number') {
+                const newPos = new LatLng(data.latitude, data.longitude);
+                setPosition(newPos);
+                setMapCenter(newPos);
+                setMapZoom(12);
+                const place = [data.city, data.region, data.country_name].filter(Boolean).join(', ');
+                if (place) {
+                    setSearchQuery(place);
+                    setSelectedAddress(place);
+                    setShowResults(false);
+                    setSearchResults([]);
+                } else {
+                    await reverseGeocode(data.latitude, data.longitude);
+                }
+                toast({
+                    title: t('host.location.approxTitle', 'Using approximate location'),
+                    description: t('host.location.approxDesc', "We estimated your location using your IP address."),
+                });
+            } else {
+                toast({
+                    title: t('host.location.fallbackFailedTitle', 'Approximate location failed'),
+                    description: t('host.location.fallbackFailedDesc', 'We could not determine your location.'),
+                    variant: 'destructive',
+                });
+            }
+        } catch (e) {
+            toast({
+                title: t('host.location.fallbackFailedTitle', 'Approximate location failed'),
+                description: t('host.location.fallbackFailedDesc', 'We could not determine your location.'),
+                variant: 'destructive',
+            });
+        }
+    };
+
+    const handleUseMyLocation = () => {
+        if (!navigator.geolocation) {
+            toast({
+                title: t('host.location.geolocationUnsupportedTitle', 'Location unavailable'),
+                description: t('host.location.geolocationUnsupportedDesc', 'Geolocation is not supported by your browser.'),
+                variant: 'destructive',
+            });
+            return;
+        }
+        setIsLocating(true);
+        navigator.geolocation.getCurrentPosition(
+            async (pos) => {
+                const { latitude, longitude } = pos.coords;
+                const newPos = new LatLng(latitude, longitude);
+                setPosition(newPos);
+                setMapCenter(newPos);
+                setMapZoom(15);
+                await reverseGeocode(latitude, longitude);
+                setIsLocating(false);
+            },
+            (err) => {
+                let message: string = t('host.location.geolocationError', 'Unable to retrieve your location.');
+                if (err.code === GEO_ERROR.PERMISSION_DENIED) {
+                    message = t('host.location.permissionDenied', 'Permission to access location was denied.');
+                } else if (err.code === GEO_ERROR.POSITION_UNAVAILABLE) {
+                    message = t('host.location.positionUnavailable', 'Location information is unavailable.');
+                } else if (err.code === GEO_ERROR.TIMEOUT) {
+                    message = t('host.location.timeout', 'The request to get your location timed out.');
+                }
+                toast({
+                    title: t('host.location.locationFailedTitle', 'Location failed'),
+                    description: message + ' ' + t('host.location.tryApprox', 'Trying approximate location...'),
+                    variant: 'destructive',
+                });
+                setIsLocating(false);
+                // Attempt approximate fallback
+                void fallbackToIPLocation();
+            },
+            { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+        );
     };
 
     const handleSave = async () => {
@@ -299,6 +420,14 @@ const Location: React.FC = () => {
                                 <X className="h-5 w-5" />
                             </button>
                         )}
+                    </div>
+
+                    <div className="mt-3">
+                        <Button variant="outline" size="sm" onClick={handleUseMyLocation} disabled={isLocating}>
+                            {isLocating
+                                ? t('host.location.locating', 'Locating...')
+                                : t('host.location.useMyLocation', 'Use my location')}
+                        </Button>
                     </div>
 
                     {/* Search Results Dropdown */}

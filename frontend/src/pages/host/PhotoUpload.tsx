@@ -15,6 +15,7 @@ const PhotoUpload: React.FC = () => {
     const [photos, setPhotos] = useState<string[]>(draft.photos || []);
     const [coverIndex, setCoverIndex] = useState(draft.coverPhotoIndex || 0);
     const [uploading, setUploading] = useState(false);
+    const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = e.target.files;
@@ -129,8 +130,9 @@ const PhotoUpload: React.FC = () => {
                             {photos.map((photo, index) => (
                                 <div
                                     key={index}
-                                    className={`relative aspect-square rounded-lg overflow-hidden group ${index === coverIndex ? 'ring-4 ring-primary' : ''
+                                    className={`relative aspect-square rounded-lg overflow-hidden group cursor-pointer ${index === coverIndex ? 'ring-4 ring-primary' : ''
                                         }`}
+                                    onClick={() => setSelectedPhoto(photo)}
                                 >
                                     <img
                                         src={getImageUrl(photo)}
@@ -141,7 +143,7 @@ const PhotoUpload: React.FC = () => {
                                         <Button
                                             size="sm"
                                             variant="secondary"
-                                            onClick={() => setCover(index)}
+                                            onClick={(e) => { e.stopPropagation(); setCover(index); }}
                                         >
                                             <Star className="h-4 w-4 mr-1" />
                                             {index === coverIndex ? t('host.photos.cover', 'Cover') : t('host.photos.setAsCover', 'Set as cover')}
@@ -149,7 +151,7 @@ const PhotoUpload: React.FC = () => {
                                         <Button
                                             size="sm"
                                             variant="destructive"
-                                            onClick={() => removePhoto(index)}
+                                            onClick={(e) => { e.stopPropagation(); removePhoto(index); }}
                                         >
                                             <X className="h-4 w-4" />
                                         </Button>
@@ -162,6 +164,24 @@ const PhotoUpload: React.FC = () => {
                                 </div>
                             ))}
                         </div>
+                    </div>
+                )}
+
+                {/* Photo Lightbox */}
+                {selectedPhoto && (
+                    <div className="fixed inset-0 bg-black/90 z-[60] flex items-center justify-center" onClick={() => setSelectedPhoto(null)}>
+                        <button
+                            onClick={() => setSelectedPhoto(null)}
+                            className="absolute top-4 left-4 p-2 bg-black bg-opacity-50 text-white rounded-full hover:bg-opacity-75 transition-all"
+                        >
+                            <X className="h-6 w-6" />
+                        </button>
+                        <img
+                            src={getImageUrl(selectedPhoto)}
+                            alt="Full size view"
+                            className="max-w-full max-h-full object-contain p-4"
+                            onClick={(e) => e.stopPropagation()}
+                        />
                     </div>
                 )}
 
