@@ -164,8 +164,8 @@ const MboaMaissonSearch = () => {
                             </div>
                         </div>
                     </PopoverTrigger>
-                    <PopoverContent className="w-[92vw] max-w-[360px] sm:w-[660px] sm:max-w-[660px] p-0 rounded-3xl shadow-xl border-0 mt-4 overflow-hidden" align="center">
-                        <div className="p-4 sm:p-6 max-w-[360px] mx-auto sm:max-w-none">
+                    <PopoverContent className="w-[88vw] max-w-[330px] sm:w-[660px] sm:max-w-[660px] p-0 rounded-3xl shadow-xl border-0 mt-4 overflow-hidden" align="center">
+                        <div className="p-3 sm:p-6 max-w-[330px] mx-auto sm:max-w-none">
                             {/* Top category tabs (visual only) */}
                             <div className="flex items-center justify-between mb-3">
                                 <div className="flex items-center gap-4">
@@ -218,13 +218,13 @@ const MboaMaissonSearch = () => {
 
                             {whenStep === 'dates' && activeTab === "dates" && (
                                 <div>
-                                    <div className={`rounded-2xl border border-gray-200 p-4 bg-white shadow-lg ${isMobile ? 'max-w-[320px] mx-auto' : ''}`}>
+                                    <div className={`rounded-2xl border border-gray-200 p-4 bg-white shadow-lg ${isMobile ? 'max-w-[300px] mx-auto' : ''}`}>
                                         <Calendar
                                             mode="range"
                                             selected={date}
                                             onSelect={setDate}
                                             numberOfMonths={isMobile ? 1 : 2}
-                                            className={`border-0 ${isMobile ? 'scale-[0.90] origin-top-left transform-gpu' : ''}`}
+                                            className={`border-0 ${isMobile ? 'scale-[0.86] origin-top-left transform-gpu' : ''}`}
         
                                             disabled={{ before: new Date(new Date().setHours(0, 0, 0, 0)) }}
                                             locale={fr}
@@ -234,19 +234,19 @@ const MboaMaissonSearch = () => {
                                             classNames={{
                                                 caption_label: "text-base font-semibold capitalize",
                                                 ...(isMobile ? {
-                                                    head_cell: 'text-muted-foreground rounded-md w-8 font-normal text-[0.75rem]',
-                                                    day: 'h-8 w-8 p-0 font-normal aria-selected:opacity-100 rounded-full hover:bg-gray-100',
-                                                    cell: 'h-8 w-8 text-center text-sm p-0 relative',
+                                                    head_cell: 'text-muted-foreground rounded-md w-7 font-normal text-[0.7rem]',
+                                                    day: 'h-7 w-7 p-0 font-normal aria-selected:opacity-100 rounded-full hover:bg-gray-100',
+                                                    cell: 'h-7 w-7 text-center text-[0.8rem] p-0 relative',
                                                 } : {})
                                             }}
                                         />
-                                        <div className="flex flex-wrap gap-2 mt-4">
+                                        <div className="flex flex-wrap gap-2 mt-3">
                                             {[0,1,2,3].map((tol) => (
                                                 <button
                                                     key={tol}
                                                     type="button"
                                                     onClick={() => setDateTolerance(tol as 0|1|2|3)}
-                                                    className={`px-3 py-1 rounded-full border text-sm ${dateTolerance === tol ? 'border-black bg-gray-50' : 'border-gray-300 hover:border-black'}`}
+                                                    className={`px-2.5 py-1 rounded-full border text-xs ${dateTolerance === tol ? 'border-black bg-gray-50' : 'border-gray-300 hover:border-black'}`}
                                                 >
                                                     {tol === 0 ? 'Dates exactes' : `± ${tol} jour${tol>1?'s':''}`}
                                                 </button>
@@ -257,7 +257,7 @@ const MboaMaissonSearch = () => {
                             )}
 
                             {whenStep === 'guests' && (
-                                <div className="rounded-3xl border border-gray-200 bg-white overflow-hidden shadow-lg">
+                                <div className="rounded-3xl border border-gray-200 bg-white overflow-hidden shadow-lg max-w-[330px] mx-auto">
                                     {/* Quand summary row */}
                                     <div
                                         className="flex items-center justify-between px-5 py-3 border-b border-gray-200 cursor-pointer"
