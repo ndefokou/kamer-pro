@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import apiClient from '@/api/client';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, Plus, Minus, Settings, Home, MapPin, Users, Key, BookOpen, Shield, FileText, Link as LinkIcon, Camera, Eye, X, Calendar as CalendarIcon, Grid3x3, Mail } from 'lucide-react';
+import { ChevronLeft, Plus, Minus, Settings, Home, MapPin, Users, Key, BookOpen, Shield, FileText, Link as LinkIcon, Camera, Eye, X, Grid3x3, Mail, ChevronRight } from 'lucide-react';
 import { getImageUrl } from '@/lib/utils';
 import { AMENITY_DETAILS } from '@/data/amenities';
 import AddAmenitiesPanel from '@/components/host/AddAmenitiesPanel';
@@ -10,7 +10,8 @@ import HouseRulesSection, { HouseRules, DEFAULT_HOUSE_RULES } from '@/components
 import ListingPreview from '@/components/host/ListingPreview';
 import GuestSafetyModal from '@/components/host/GuestSafetyModal';
 import { LocationDetailModals } from '@/components/host/LocationDetailModals';
-import { SAFETY_CONSIDERATIONS, SAFETY_DEVICES, PROPERTY_INFO } from '@/data/guestSafety';
+import PriceSettingsModal from '@/components/host/PriceSettingsModal';
+import { SAFETY_CONSIDERATIONS, SAFETY_DEVICES } from '@/data/guestSafety';
 import { useTranslation } from 'react-i18next';
 import { useToast } from '@/hooks/use-toast';
 import { AxiosError } from 'axios';
@@ -69,6 +70,7 @@ const ListingEditor: React.FC = () => {
     const [settings, setSettings] = useState<ListingSettings | null>(null);
     const [showAddAmenities, setShowAddAmenities] = useState(false);
     const [showPreview, setShowPreview] = useState(false);
+    const [showPriceSettings, setShowPriceSettings] = useState(false);
     const [editingDescriptionSection, setEditingDescriptionSection] = useState<string | null>(null);
     const [tempDescription, setTempDescription] = useState('');
     const [tempData, setTempData] = useState<{ title?: string; description?: string }>({});
@@ -91,16 +93,53 @@ const ListingEditor: React.FC = () => {
 
             await apiClient.put(`/listings/${id}`, updateData);
             setListing({ ...listing, ...updateData });
+            toast({ title: t('common.saved', 'Saved'), description: t('host.editor.savedSuccessfully', 'Your changes have been saved.') });
         } catch (error) {
             console.error(`Failed to update ${field}:`, error);
+            toast({ title: t('common.error', 'Error'), description: t('host.editor.saveFailed', 'Failed to save changes'), variant: 'destructive' });
         }
     };
     const [showGuestSafety, setShowGuestSafety] = useState(false);
-    const [guestSafetySection, setGuestSafetySection] = useState<'considerations' | 'devices' | 'property_info'>('considerations');
+    const [guestSafetySection, setGuestSafetySection] = useState<'considerations' | 'devices'>('considerations');
     const [showAllPhotos, setShowAllPhotos] = useState(false);
     const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
+    const [selectedPhotoIndex, setSelectedPhotoIndex] = useState<number | null>(null);
     const [uploading, setUploading] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const lightboxTouchStartX = useRef<number | null>(null);
+
+    const openLightbox = (url: string) => {
+        setSelectedPhoto(url);
+        if (listing) {
+            const idx = listing.photos.findIndex(p => p.url === url);
+            setSelectedPhotoIndex(idx >= 0 ? idx : 0);
+        }
+    };
+
+    const showPrevPhoto = useCallback(() => {
+        if (!listing || selectedPhotoIndex === null) return;
+        const nextIndex = (selectedPhotoIndex - 1 + listing.photos.length) % listing.photos.length;
+        setSelectedPhotoIndex(nextIndex);
+        setSelectedPhoto(listing.photos[nextIndex].url);
+    }, [listing, selectedPhotoIndex]);
+
+    const showNextPhoto = useCallback(() => {
+        if (!listing || selectedPhotoIndex === null) return;
+        const nextIndex = (selectedPhotoIndex + 1) % listing.photos.length;
+        setSelectedPhotoIndex(nextIndex);
+        setSelectedPhoto(listing.photos[nextIndex].url);
+    }, [listing, selectedPhotoIndex]);
+
+    useEffect(() => {
+        if (!selectedPhoto) return;
+        const onKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'ArrowLeft') showPrevPhoto();
+            else if (e.key === 'ArrowRight') showNextPhoto();
+            else if (e.key === 'Escape') setSelectedPhoto(null);
+        };
+        window.addEventListener('keydown', onKeyDown);
+        return () => window.removeEventListener('keydown', onKeyDown);
+    }, [selectedPhoto, selectedPhotoIndex, listing, showPrevPhoto, showNextPhoto]);
 
     // Location detail modals
     const [showAddressModal, setShowAddressModal] = useState(false);
@@ -437,44 +476,21 @@ const ListingEditor: React.FC = () => {
                                             {t('host.editor.photoTourHelp', 'Manage photos and add details. Guests will only see your tour if every room has a photo.')}
                                         </p>
 
-                                        <div className="grid grid-cols-3 gap-6">
-                                            {/* Bedroom Card */}
-                                            <div className="group cursor-pointer" onClick={() => navigate(`/host/editor/${id}/bedroom`)}>
-                                                <div className="aspect-square bg-gray-50 rounded-xl overflow-hidden mb-3 relative">
-                                                    <div className="w-full h-full flex items-center justify-center bg-white">
-                                                        <img src="/bedroom-placeholder.jpg" alt="Bedroom placeholder" className="w-full h-full object-contain p-4" />
-                                                    </div>
+                                        <div className="grid grid-cols-3 gap-4">
+                                            {listing.photos.map((photo) => (
+                                                <div
+                                                    key={photo.id}
+                                                    className="aspect-[4/3] rounded-xl overflow-hidden bg-gray-100 relative group cursor-pointer"
+                                                    onClick={() => openLightbox(photo.url)}
+                                                >
+                                                    <img src={getImageUrl(photo.url)} alt={photo.caption} className="w-full h-full object-cover" />
                                                 </div>
-                                                <h3 className="font-semibold text-gray-900">{t('host.editor.bedroom', 'Bedroom')}</h3>
-                                                <p className="text-sm text-gray-500">{t('host.editor.addPhotos', 'Add photos')}</p>
-                                            </div>
-
-                                            {/* Full Bathroom Card */}
-                                            <div className="group cursor-pointer" onClick={() => navigate(`/host/editor/${id}/bathroom`)}>
-                                                <div className="aspect-square bg-gray-50 rounded-xl overflow-hidden mb-3 relative">
-                                                    <div className="w-full h-full flex items-center justify-center bg-white">
-                                                        <img src="/bathroom-placeholder.jpg" alt="Bathroom placeholder" className="w-full h-full object-contain p-4" />
-                                                    </div>
+                                            ))}
+                                            {listing.photos.length === 0 && (
+                                                <div className="col-span-3 text-center py-12 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200">
+                                                    <p className="text-gray-500">{t('host.editor.noPhotosYet', 'No photos uploaded yet')}</p>
                                                 </div>
-                                                <h3 className="font-semibold text-gray-900">{t('host.editor.fullBathroom', 'Full bathroom')}</h3>
-                                                <p className="text-sm text-gray-500">{t('host.editor.addPhotos', 'Add photos')}</p>
-                                            </div>
-
-                                            {/* Additional Photos Card */}
-                                            <div className="group cursor-pointer" onClick={() => setPhotoView('additional')}>
-                                                <div className="aspect-square bg-gray-50 rounded-xl overflow-hidden mb-3 relative border-2 border-dashed border-gray-200 flex items-center justify-center hover:border-gray-300 transition-colors">
-                                                    {listing.photos.length > 0 ? (
-                                                        <img src={getImageUrl(listing.photos[0].url)} alt="Additional" className="w-full h-full object-cover" />
-                                                    ) : (
-                                                        <div className="text-center">
-                                                            <Plus className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                                                            <span className="text-sm font-medium text-gray-600">{t('host.editor.addPhotos', 'Add photos')}</span>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                                <h3 className="font-semibold text-gray-900">{t('host.editor.additionalPhotos', 'Additional photos')}</h3>
-                                                <p className="text-sm text-gray-500">{listing.photos.length} {t('host.editor.photos', 'photos')}</p>
-                                            </div>
+                                            )}
                                         </div>
                                     </div>
                                 )
@@ -512,7 +528,7 @@ const ListingEditor: React.FC = () => {
                                                 <div
                                                     key={photo.id}
                                                     className="aspect-[4/3] rounded-xl overflow-hidden bg-gray-100 relative group cursor-pointer"
-                                                    onClick={() => setSelectedPhoto(photo.url)}
+                                                    onClick={() => openLightbox(photo.url)}
                                                 >
                                                     <img src={getImageUrl(photo.url)} alt={photo.caption} className="w-full h-full object-cover" />
                                                 </div>
@@ -557,57 +573,38 @@ const ListingEditor: React.FC = () => {
                                 <div className={`${isMobileSection ? '' : 'hidden md:block'} max-w-2xl`}>
                                     <div className="mb-6">
                                         <h2 className="text-2xl font-semibold mb-2">{t('host.editor.sidebar.pricing', 'Pricing')}</h2>
-                                        <p className="text-gray-500">
-                                            {t('host.editor.pricing.help', 'These settings apply to all nights, unless you customize them by date.')} <span className="underline font-medium cursor-pointer">{t('host.editor.pricing.learnMore', 'Learn more')}</span>
-                                        </p>
+                                        <p className="text-gray-500">{t('host.editor.pricing.simpleHelp', 'Set your nightly price')}</p>
                                     </div>
 
-                                    <div className="space-y-6">
-                                        <div className="flex items-center justify-between py-4 border-b">
-                                            <span className="text-gray-600">{t('host.editor.pricing.nightlyPrice', 'Nightly price')}</span>
-                                            <span className="text-xl font-semibold text-green-600">${listing.price_per_night}</span>
+                                    <div className="border border-gray-300 rounded-xl p-4 mb-4">
+                                        <label className="block text-sm text-gray-600 mb-2">{t('host.editor.pricing.nightlyPrice', 'Nightly price')}</label>
+                                        <div className="flex items-baseline gap-1">
+                                            <span className="text-3xl font-semibold">$</span>
+                                            <input
+                                                type="number"
+                                                value={settings.base_price ?? listing.price_per_night}
+                                                onChange={(e) => setSettings({ ...settings, base_price: Number(e.target.value) })}
+                                                className="text-3xl font-semibold border-none bg-transparent p-0 w-32 focus:outline-none focus:ring-0"
+                                                min={0}
+                                            />
                                         </div>
-                                        <div className="flex items-center justify-between py-4 border-b">
-                                            <span className="text-gray-600">{t('host.editor.pricing.smartPricing', 'Smart Pricing')}</span>
-                                            <div className="w-12 h-6 bg-gray-200 rounded-full relative cursor-pointer">
-                                                <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full shadow-sm" />
-                                            </div>
-                                        </div>
-                                        <div className="flex items-center justify-between py-4 border-b">
-                                            <span className="text-gray-600">{t('host.editor.pricing.customWeekendPrice', 'Custom weekend price')}</span>
-                                            <span className="text-gray-400">--</span>
-                                        </div>
+                                    </div>
 
-                                        <div className="pt-4">
-                                            <h3 className="font-semibold mb-4">{t('host.editor.pricing.discounts', 'Discounts')}</h3>
-                                            <div className="space-y-4">
-                                                <div className="flex items-center justify-between">
-                                                    <div>
-                                                        <div className="text-gray-600">{t('host.editor.pricing.weekly', 'Weekly')}</div>
-                                                        <div className="text-sm text-gray-400">{t('host.editor.pricing.weeklyHelp', 'For 7 nights or more')}</div>
-                                                    </div>
-                                                    <div className="text-gray-400">
-                                                        {listing.price_per_night ? (
-                                                            <span className="text-sm">{t('host.editor.pricing.weeklyAverage', 'Weekly average is')} ${listing.price_per_night * 7}</span>
-                                                        ) : '--'}
-                                                    </div>
-                                                </div>
-                                                <div className="flex items-center justify-between">
-                                                    <div>
-                                                        <div className="text-gray-600">{t('host.editor.pricing.monthly', 'Monthly')}</div>
-                                                        <div className="text-sm text-gray-400">{t('host.editor.pricing.monthlyHelp', 'For 28 nights or more')}</div>
-                                                    </div>
-                                                    <div className="text-gray-400">
-                                                        {listing.price_per_night ? (
-                                                            <span className="text-sm">{t('host.editor.pricing.monthlyAverage', 'Monthly average is')} ${listing.price_per_night * 28}</span>
-                                                        ) : '--'}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div className="mt-6 text-sm font-medium underline cursor-pointer">
-                                                {t('host.editor.pricing.moreDiscounts', 'Find more discounts and fees in the calendar')}
-                                            </div>
-                                        </div>
+                                    <div className="flex justify-end">
+                                        <Button
+                                            className="rounded-lg"
+                                            onClick={async () => {
+                                                try {
+                                                    await apiClient.put(`/calendar/${id}/settings`, { base_price: settings.base_price ?? listing.price_per_night });
+                                                    toast({ title: t('common.saved', 'Saved'), description: t('host.editor.pricing.updated', 'Nightly price updated') });
+                                                } catch (error) {
+                                                    console.error('Failed to update price:', error);
+                                                    toast({ title: t('common.error', 'Error'), description: t('host.editor.pricing.updateFailed', 'Failed to update price'), variant: 'destructive' });
+                                                }
+                                            }}
+                                        >
+                                            {t('common.save', 'Save')}
+                                        </Button>
                                     </div>
                                 </div>
                             )}
@@ -987,17 +984,7 @@ const ListingEditor: React.FC = () => {
                                                         <ChevronLeft className="h-5 w-5 rotate-180 text-gray-400" />
                                                     </button>
 
-                                                    {/* Getting around */}
-                                                    <button
-                                                        onClick={() => setShowGettingAroundModal(true)}
-                                                        className="w-full p-4 flex items-center justify-between hover:bg-gray-50 transition-colors text-left"
-                                                    >
-                                                        <div className="flex-1">
-                                                            <div className="font-medium text-gray-900 mb-1">{t('host.editor.location.gettingAround', 'Getting around')}</div>
-                                                            <div className="text-sm text-gray-500">{t('host.editor.addDetails', 'Add details')}</div>
-                                                        </div>
-                                                        <ChevronLeft className="h-5 w-5 rotate-180 text-gray-400" />
-                                                    </button>
+                                                    
 
                                                     {/* Scenic views */}
                                                     <button
@@ -1298,23 +1285,7 @@ const ListingEditor: React.FC = () => {
                                                 <ChevronLeft className="h-5 w-5 rotate-180 text-gray-400" />
                                             </button>
 
-                                            <button
-                                                onClick={() => {
-                                                    setGuestSafetySection('property_info');
-                                                    setShowGuestSafety(true);
-                                                }}
-                                                className="w-full text-left p-4 border border-gray-200 rounded-xl hover:border-gray-300 transition-colors flex items-center justify-between"
-                                            >
-                                                <div>
-                                                    <div className="font-medium text-gray-900 mb-1">{t('host.editor.safety.propertyInfo', 'Property info')}</div>
-                                                    <div className="text-sm text-gray-500">
-                                                        {(listing.safety_items || []).filter(id => PROPERTY_INFO.some(p => p.id === id)).length > 0
-                                                            ? `${(listing.safety_items || []).filter(id => PROPERTY_INFO.some(p => p.id === id)).length} ${t('common.selected', 'selected')}`
-                                                            : t('host.editor.addDetails', 'Add details')}
-                                                    </div>
-                                                </div>
-                                                <ChevronLeft className="h-5 w-5 rotate-180 text-gray-400" />
-                                            </button>
+                                            
                                         </div>
                                     </div>
                                 )
@@ -1603,7 +1574,7 @@ const ListingEditor: React.FC = () => {
                                                 <div
                                                     key={photo.id}
                                                     className="aspect-square rounded-lg overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
-                                                    onClick={() => setSelectedPhoto(photo.url)}
+                                                    onClick={() => openLightbox(photo.url)}
                                                 >
                                                     <img
                                                         src={getImageUrl(photo.url)}
@@ -1635,12 +1606,39 @@ const ListingEditor: React.FC = () => {
                 {/* Photo Lightbox */}
                 {
                     selectedPhoto && (
-                        <div className="fixed inset-0 bg-black z-[60] flex items-center justify-center" onClick={() => setSelectedPhoto(null)}>
+                        <div
+                            className="fixed inset-0 bg-black z-[60] flex items-center justify-center"
+                            onClick={() => setSelectedPhoto(null)}
+                            onTouchStart={(e) => { lightboxTouchStartX.current = e.touches[0].clientX; }}
+                            onTouchEnd={(e) => {
+                                const startX = lightboxTouchStartX.current;
+                                const endX = e.changedTouches[0].clientX;
+                                if (startX !== null) {
+                                    const dx = endX - startX;
+                                    if (Math.abs(dx) > 40) {
+                                        if (dx > 0) showPrevPhoto(); else showNextPhoto();
+                                    }
+                                }
+                                lightboxTouchStartX.current = null;
+                            }}
+                        >
                             <button
                                 onClick={() => setSelectedPhoto(null)}
                                 className="absolute top-4 left-4 p-2 bg-black bg-opacity-50 text-white rounded-full hover:bg-opacity-75 transition-all"
                             >
                                 <X className="h-6 w-6" />
+                            </button>
+                            <button
+                                onClick={(e) => { e.stopPropagation(); showPrevPhoto(); }}
+                                className="absolute left-4 top-1/2 -translate-y-1/2 p-2 bg-black bg-opacity-50 text-white rounded-full hover:bg-opacity-75 transition-all"
+                            >
+                                <ChevronLeft className="h-6 w-6" />
+                            </button>
+                            <button
+                                onClick={(e) => { e.stopPropagation(); showNextPhoto(); }}
+                                className="absolute right-4 top-1/2 -translate-y-1/2 p-2 bg-black bg-opacity-50 text-white rounded-full hover:bg-opacity-75 transition-all"
+                            >
+                                <ChevronRight className="h-6 w-6" />
                             </button>
                             <img
                                 src={getImageUrl(selectedPhoto)}
@@ -1661,12 +1659,6 @@ const ListingEditor: React.FC = () => {
                             <a href="/host/listening" className="flex flex-col items-center gap-1 text-gray-600">
                                 <Home className="h-5 w-5" />
                                 <span>Listening</span>
-                            </a>
-                        </li>
-                        <li className="flex items-center justify-center">
-                            <a href={`/host/calendar?listing=${id}`} className="flex flex-col items-center gap-1 text-gray-600">
-                                <CalendarIcon className="h-5 w-5" />
-                                <span>Calendar</span>
                             </a>
                         </li>
                         <li className="flex items-center justify-center">

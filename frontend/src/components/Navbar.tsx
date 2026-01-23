@@ -11,9 +11,7 @@ import {
   User,
   LogOut,
   Menu,
-  X,
   Globe,
-  MessageSquare,
   Search,
 } from "lucide-react";
 import { useWishlist } from "@/hooks/useWishlist";

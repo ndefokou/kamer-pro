@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Search, MapPin, Minus, Plus, Calendar as CalendarIcon } from "lucide-react";
+import { Search, Minus, Plus, Calendar as CalendarIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -9,19 +9,19 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover";
-import { format, addMonths } from "date-fns";
+import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { DateRange } from "react-day-picker";
+type FlexibleDuration = 'weekend' | 'week' | 'month';
+const FLEXIBLE_OPTIONS = ['weekend', 'week', 'month'] as const;
 
 const MboaMaissonSearch = () => {
     const { t } = useTranslation();
     const navigate = useNavigate();
     const [where, setWhere] = useState("");
     const [date, setDate] = useState<DateRange | undefined>(undefined);
-    const [activeTab, setActiveTab] = useState<"dates" | "months" | "flexible">("dates");
-    const [monthsCount, setMonthsCount] = useState(2);
-    const [monthsStart, setMonthsStart] = useState<Date>(new Date());
-    const [flexibleDuration, setFlexibleDuration] = useState<"weekend" | "week" | "month">("weekend");
+    const [activeTab, setActiveTab] = useState<"dates" | "flexible">("dates");
+    const [flexibleDuration, setFlexibleDuration] = useState<FlexibleDuration>("weekend");
     const [flexibleMonths, setFlexibleMonths] = useState<string[]>([]);
     const [guests, setGuests] = useState({
         adults: 0,
@@ -42,12 +42,6 @@ const MboaMaissonSearch = () => {
         if (activeTab === "dates" && date?.from) {
             params.set("checkin", date.from.toISOString());
             if (date.to) params.set("checkout", date.to.toISOString());
-        } else if (activeTab === "months") {
-            const startDate = monthsStart;
-            const endDate = addMonths(monthsStart, monthsCount);
-            params.set("checkin", startDate.toISOString());
-            params.set("checkout", endDate.toISOString());
-            params.set("duration_months", monthsCount.toString());
         } else if (activeTab === "flexible") {
             params.set("flexible_duration", flexibleDuration);
             if (flexibleMonths.length > 0) {
@@ -153,8 +147,6 @@ const MboaMaissonSearch = () => {
                                         {format(date.from, "MMM dd")}
                                         {date.to ? ` - ${format(date.to, "MMM dd")}` : ""}
                                     </>
-                                ) : activeTab === "months" ? (
-                                    `${monthsCount} months from ${format(monthsStart, "MMM")}`
                                 ) : activeTab === "flexible" ? (
                                     `${flexibleDuration} in ${flexibleMonths.length > 0 ? flexibleMonths.length + " months" : "anytime"}`
                                 ) : (
@@ -173,12 +165,6 @@ const MboaMaissonSearch = () => {
                                     Dates
                                 </button>
                                 <button
-                                    onClick={() => setActiveTab("months")}
-                                    className={`px-6 py-1.5 text-sm font-semibold rounded-full transition-all ${activeTab === "months" ? "bg-white shadow-sm text-gray-900" : "text-gray-600 hover:bg-gray-200"}`}
-                                >
-                                    Months
-                                </button>
-                                <button
                                     onClick={() => setActiveTab("flexible")}
                                     className={`px-6 py-1.5 text-sm font-semibold rounded-full transition-all ${activeTab === "flexible" ? "bg-white shadow-sm text-gray-900" : "text-gray-600 hover:bg-gray-200"}`}
                                 >
@@ -194,59 +180,8 @@ const MboaMaissonSearch = () => {
                                         onSelect={setDate}
                                         numberOfMonths={2}
                                         className="rounded-md border-0"
+                                        disabled={{ before: new Date(new Date().setHours(0, 0, 0, 0)) }}
                                     />
-                                </div>
-                            )}
-
-                            {activeTab === "months" && (
-                                <div className="flex flex-col items-center py-4">
-                                    <h3 className="text-lg font-semibold mb-8">When's your trip?</h3>
-
-                                    {/* Circular Dial Implementation */}
-                                    <div className="relative w-64 h-64 mb-8 flex items-center justify-center">
-                                        {/* Dial Background */}
-                                        <div className="absolute inset-0 rounded-full border-[20px] border-gray-100"></div>
-
-                                        {/* Active Arc (Simulated with CSS conic-gradient for simplicity) */}
-                                        <div
-                                            className="absolute inset-0 rounded-full border-[20px] border-transparent"
-                                            style={{
-                                                background: `conic-gradient(from 0deg, #ff385c 0%, #ff385c ${monthsCount * 30}deg, transparent ${monthsCount * 30}deg)`,
-                                                mask: 'radial-gradient(transparent 60%, black 61%)',
-                                                WebkitMask: 'radial-gradient(transparent 60%, black 61%)'
-                                            }}
-                                        ></div>
-
-                                        {/* Handle (Simulated position) */}
-                                        <div
-                                            className="absolute w-8 h-8 bg-white rounded-full shadow-lg border border-gray-200 cursor-pointer transform -translate-y-1/2"
-                                            style={{
-                                                top: '15%',
-                                                right: '15%',
-                                            }}
-                                        ></div>
-
-                                        <div className="flex flex-col items-center z-10">
-                                            <span className="text-6xl font-bold text-gray-900">{monthsCount}</span>
-                                            <span className="text-lg font-medium text-gray-600">months</span>
-                                        </div>
-
-                                        {/* Interactive Slider Overlay (Invisible but functional) */}
-                                        <input
-                                            type="range"
-                                            min="1"
-                                            max="12"
-                                            value={monthsCount}
-                                            onChange={(e) => setMonthsCount(parseInt(e.target.value))}
-                                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                                        />
-                                    </div>
-
-                                    <div className="text-center border-b-2 border-black pb-1">
-                                        <span className="font-semibold text-gray-900">{format(monthsStart, "MMM dd, yyyy")}</span>
-                                        <span className="mx-2">to</span>
-                                        <span className="font-semibold text-gray-900">{format(addMonths(monthsStart, monthsCount), "MMM dd, yyyy")}</span>
-                                    </div>
                                 </div>
                             )}
 
@@ -255,10 +190,10 @@ const MboaMaissonSearch = () => {
                                     <div className="text-center">
                                         <h3 className="text-lg font-semibold mb-4">How long would you like to stay?</h3>
                                         <div className="flex justify-center gap-3">
-                                            {["weekend", "week", "month"].map((option) => (
+                                            {FLEXIBLE_OPTIONS.map((option) => (
                                                 <button
                                                     key={option}
-                                                    onClick={() => setFlexibleDuration(option as any)}
+                                                    onClick={() => setFlexibleDuration(option)}
                                                     className={`px-6 py-2 rounded-full border text-sm font-medium transition-colors ${flexibleDuration === option ? "border-black bg-gray-50" : "border-gray-300 hover:border-black"}`}
                                                 >
                                                     {option.charAt(0).toUpperCase() + option.slice(1)}

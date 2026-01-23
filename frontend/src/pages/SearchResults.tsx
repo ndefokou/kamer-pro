@@ -73,6 +73,21 @@ const SearchResults = () => {
         });
     }, [properties, location, guests]);
 
+    // Use all properties with coordinates for the map, regardless of left-side filters
+    const mapProperties = useMemo(() => {
+        return (properties || []).filter(
+            (p) => p.listing.latitude && p.listing.longitude
+        );
+    }, [properties]);
+
+    // Compute bounds to fit all markers
+    const mapBounds = useMemo(() => {
+        const pts = mapProperties.map(
+            (p) => [p.listing.latitude as number, p.listing.longitude as number] as [number, number]
+        );
+        return pts.length ? L.latLngBounds(pts) : undefined;
+    }, [mapProperties]);
+
     const toggleFavorite = (id: string) => {
         if (isInWishlist(id)) {
             removeFromWishlistByProduct(id);
@@ -218,12 +233,13 @@ const SearchResults = () => {
                         zoom={13}
                         scrollWheelZoom={true}
                         className="h-full w-full"
+                        bounds={mapBounds}
                     >
                         <TileLayer
                             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                         />
-                        {filteredProperties.map((product) => (
+                        {mapProperties.map((product) => (
                             product.listing.latitude && product.listing.longitude && (
                                 <Marker
                                     key={product.listing.id}

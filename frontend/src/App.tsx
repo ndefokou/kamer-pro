@@ -21,7 +21,6 @@ import BookingSettings from "./pages/host/BookingSettings";
 import Preview from "./pages/host/Preview";
 import HostDashboard from "./pages/host/HostDashboard";
 import Listening from "./pages/host/Listening";
-import HostCalendar from "./pages/host/HostCalendar";
 import ListingEditor from "./pages/host/ListingEditor";
 import BedroomEditor from "./pages/host/BedroomEditor";
 import BathroomEditor from "./pages/host/BathroomEditor";
@@ -74,7 +73,6 @@ const router = createBrowserRouter(
         { path: "preview", Component: Preview },
         { path: "dashboard", Component: HostDashboard },
         { path: "listening", Component: Listening },
-        { path: "calendar", Component: HostCalendar },
         { path: "editor/:id/bedroom", Component: BedroomEditor },
         { path: "editor/:id/bathroom", Component: BathroomEditor },
         { path: "editor/:id", Component: ListingEditor },

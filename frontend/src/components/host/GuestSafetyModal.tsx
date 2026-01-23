@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
 import { X, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { SAFETY_CONSIDERATIONS, SAFETY_DEVICES, PROPERTY_INFO, SafetyItem } from '@/data/guestSafety';
+import { SAFETY_CONSIDERATIONS, SAFETY_DEVICES, SafetyItem } from '@/data/guestSafety';
 
 interface GuestSafetyModalProps {
     isOpen: boolean;
     onClose: () => void;
     selectedItems: string[];
     onSave: (items: string[]) => void;
-    initialSection?: 'considerations' | 'devices' | 'property_info';
+    initialSection?: 'considerations' | 'devices';
 }
 
 const GuestSafetyModal: React.FC<GuestSafetyModalProps> = ({
@@ -18,7 +18,7 @@ const GuestSafetyModal: React.FC<GuestSafetyModalProps> = ({
     onSave,
     initialSection = 'considerations'
 }) => {
-    const [activeSection, setActiveSection] = useState<'considerations' | 'devices' | 'property_info' | null>(initialSection);
+    const [activeSection, setActiveSection] = useState<'considerations' | 'devices' | null>(initialSection);
     const [tempSelected, setTempSelected] = useState<string[]>(selectedItems);
 
     if (!isOpen) return null;
@@ -90,18 +90,7 @@ const GuestSafetyModal: React.FC<GuestSafetyModalProps> = ({
                         </svg>
                     </button>
 
-                    <button
-                        onClick={() => setActiveSection('property_info')}
-                        className="w-full text-left p-4 border border-gray-200 rounded-xl hover:border-gray-300 transition-colors flex items-center justify-between"
-                    >
-                        <div>
-                            <div className="font-medium text-gray-900 mb-1">Property info</div>
-                            <div className="text-sm text-gray-500">Add details</div>
-                        </div>
-                        <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                        </svg>
-                    </button>
+                    
                 </div>
             </div>
         </>
@@ -111,7 +100,7 @@ const GuestSafetyModal: React.FC<GuestSafetyModalProps> = ({
         <>
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
                 <button
-                    onClick={() => setActiveSection(null)}
+                    onClick={handleCancel}
                     className="p-2 -ml-2 hover:bg-gray-100 rounded-full transition-colors"
                 >
                     <X className="h-5 w-5" />
@@ -184,7 +173,6 @@ const GuestSafetyModal: React.FC<GuestSafetyModalProps> = ({
                 {activeSection === null && renderMainView()}
                 {activeSection === 'considerations' && renderSectionView(SAFETY_CONSIDERATIONS, 'Safety considerations')}
                 {activeSection === 'devices' && renderSectionView(SAFETY_DEVICES, 'Safety devices')}
-                {activeSection === 'property_info' && renderSectionView(PROPERTY_INFO, 'Property info')}
             </div>
         </div>
     );

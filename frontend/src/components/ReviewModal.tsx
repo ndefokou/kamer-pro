@@ -5,10 +5,16 @@ import { Textarea } from "@/components/ui/textarea";
 import { Star, SprayCan, CheckCircle, Key, MessageSquare, Map, Tag } from 'lucide-react';
 import { Label } from "@/components/ui/label";
 
+interface ReviewPayload {
+    ratings: Record<string, number>;
+    comment: string;
+    timestamp: string;
+}
+
 interface ReviewModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onSubmit: (review: any) => void;
+    onSubmit: (review: ReviewPayload) => void;
 }
 
 const categories = [
@@ -72,8 +78,8 @@ const ReviewModal: React.FC<ReviewModalProps> = ({ isOpen, onClose, onSubmit }) 
                                             >
                                                 <Star
                                                     className={`h-6 w-6 ${star <= ratings[cat.id]
-                                                            ? 'fill-black text-black'
-                                                            : 'text-gray-300'
+                                                            ? 'fill-[#FFD700] text-[#FFD700]'
+                                                            : 'text-white'
                                                         }`}
                                                 />
                                             </button>

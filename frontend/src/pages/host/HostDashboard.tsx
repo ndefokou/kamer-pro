@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import apiClient from '@/api/client';
 import { Button } from '@/components/ui/button';
-import { Plus, Grid3x3, Menu, Mail, Calendar, Home, Globe, HelpCircle, Settings, BookOpen, Users, UserPlus, LogOut } from 'lucide-react';
+import { Plus, Grid3x3, Menu, Mail, Home, Globe, HelpCircle, Settings, BookOpen, Users, UserPlus, LogOut } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getImageUrl } from '@/lib/utils';
 
@@ -73,13 +73,7 @@ const HostDashboard: React.FC = () => {
         }
     };
 
-    const handleCalendarClick = () => {
-        if (selectedListing) {
-            navigate(`/host/calendar?listing=${selectedListing}`);
-        } else if (listings.length > 0) {
-            navigate(`/host/calendar?listing=${listings[0].listing.id}`);
-        }
-    };
+    // Calendar view removed
 
     const handleLogout = async () => {
         await logout();
@@ -304,14 +298,7 @@ const HostDashboard: React.FC = () => {
                                 <span className="text-[10px] font-medium text-gray-500 group-hover:text-gray-900 transition-colors">{t('nav.listening', 'Listening')}</span>
                             </a>
                         </li>
-                        <li className="flex items-center justify-center">
-                            <a href="#" onClick={(e) => { e.preventDefault(); handleCalendarClick(); }} className="flex flex-col items-center gap-1 group w-full h-full justify-center">
-                                <div className="p-1.5 rounded-full group-active:scale-95 transition-transform group-hover:bg-gray-100">
-                                    <Calendar className="h-6 w-6 text-gray-500 group-hover:text-gray-900 transition-colors" />
-                                </div>
-                                <span className="text-[10px] font-medium text-gray-500 group-hover:text-gray-900 transition-colors">{t('nav.calendar', 'Calendar')}</span>
-                            </a>
-                        </li>
+                        
                         <li className="flex items-center justify-center">
                             <a href="/host/dashboard" className="flex flex-col items-center gap-1 group w-full h-full justify-center">
                                 <div className="p-1.5 rounded-full group-active:scale-95 transition-transform">

@@ -339,21 +339,13 @@ const Listening: React.FC = () => {
             {/* Mobile Bottom Nav */}
             <nav className="md:hidden fixed bottom-0 inset-x-0 z-50 bg-white/90 backdrop-blur-lg border-t border-gray-200 pb-safe transition-all duration-300">
                 <div className="max-w-md mx-auto px-6">
-                    <ul className="grid grid-cols-4 h-16">
+                    <ul className="grid grid-cols-3 h-16">
                         <li className="flex items-center justify-center">
                             <a href="/host/listening" className="flex flex-col items-center gap-1 group w-full h-full justify-center">
                                 <div className="p-1.5 rounded-full group-active:scale-95 transition-transform">
                                     <Home className="h-6 w-6 text-primary fill-current" />
                                 </div>
                                 <span className="text-[10px] font-medium text-primary">{t('nav.listening', 'Listening')}</span>
-                            </a>
-                        </li>
-                        <li className="flex items-center justify-center">
-                            <a href="/host/calendar" className="flex flex-col items-center gap-1 group w-full h-full justify-center">
-                                <div className="p-1.5 rounded-full group-active:scale-95 transition-transform group-hover:bg-gray-100">
-                                    <Calendar className="h-6 w-6 text-gray-500 group-hover:text-gray-900 transition-colors" />
-                                </div>
-                                <span className="text-[10px] font-medium text-gray-500 group-hover:text-gray-900 transition-colors">{t('nav.calendar', 'Calendar')}</span>
                             </a>
                         </li>
                         <li className="flex items-center justify-center">

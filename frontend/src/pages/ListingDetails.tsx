@@ -126,6 +126,7 @@ const ListingDetails: React.FC = () => {
 
     const { listing, amenities } = product;
     const totalGuests = adults + children;
+    const isHost = Number(localStorage.getItem('userId')) === listing.host_id;
 
     const isWishlisted = isInWishlist(listing.id);
 
@@ -282,6 +283,14 @@ const ListingDetails: React.FC = () => {
     };
 
     const handleReserve = async () => {
+        if (isHost) {
+            toast({
+                title: 'Not allowed',
+                description: 'You cannot reserve your own listing.',
+                variant: 'destructive'
+            });
+            return;
+        }
         if (!checkInDate || !checkOutDate) {
             setShowDatePicker(true);
             return;
@@ -296,6 +305,16 @@ const ListingDetails: React.FC = () => {
                 variant: 'destructive'
             });
             window.location.href = `/webauth-login?redirect=${encodeURIComponent(current || '/')}`;
+            return;
+        }
+
+        // Enforce host's maximum guests condition on the client as well
+        if ((listing.max_guests || 0) > 0 && totalGuests > (listing.max_guests || 0)) {
+            toast({
+                title: 'Too many guests',
+                description: `This place allows up to ${listing.max_guests} guests. Reduce the number of guests to continue.`,
+                variant: 'destructive'
+            });
             return;
         }
 
@@ -337,6 +356,27 @@ const ListingDetails: React.FC = () => {
         houseRules = listing.house_rules ? JSON.parse(listing.house_rules) : null;
     } catch (e) {
         console.error('Failed to parse house rules:', e);
+    }
+    let aboutSections: { title: string; text: string }[] = [];
+    let aboutPlain: string | null = listing.description || null;
+    try {
+        if (listing.description && listing.description.trim().startsWith('{')) {
+            const desc = JSON.parse(listing.description);
+            const pairs: Array<[string, string]> = [
+                ['listingDescription', 'About this place'],
+                ['propertyDetails', 'Property details'],
+                ['guestAccess', 'Guest access'],
+                ['guestInteraction', 'Guest interaction'],
+                ['otherNotes', 'Other notes'],
+            ];
+            aboutSections = pairs
+                .map(([key, title]) => ({ title, text: typeof desc[key] === 'string' ? desc[key].trim() : '' }))
+                .filter(s => s.text);
+            if (aboutSections.length > 0) aboutPlain = null;
+        }
+    } catch (e) {
+        aboutSections = [];
+        aboutPlain = listing.description || null;
     }
 
     return (
@@ -499,7 +539,18 @@ const ListingDetails: React.FC = () => {
                         {/* Description */}
                         <div className="border-b pb-6 mb-6">
                             <h3 className="font-semibold mb-4">About this place</h3>
-                            <p className="text-muted-foreground whitespace-pre-line">{listing.description}</p>
+                            {aboutSections.length > 0 ? (
+                                <div className="space-y-4">
+                                    {aboutSections.map((s, idx) => (
+                                        <div key={idx} className="space-y-1">
+                                            <div className="font-semibold">{s.title}</div>
+                                            <p className="text-muted-foreground whitespace-pre-line">{s.text}</p>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <p className="text-muted-foreground whitespace-pre-line">{aboutPlain}</p>
+                            )}
                         </div>
 
                         {/* Amenities */}
@@ -735,6 +786,7 @@ const ListingDetails: React.FC = () => {
                             <Button
                                 className="w-full bg-[#FF385C] hover:bg-[#D9324E] text-white font-semibold py-6 text-lg"
                                 onClick={handleReserve}
+                                disabled={isHost}
                             >
                                 Reserve
                             </Button>

@@ -260,8 +260,8 @@ export const ProductReviews = ({
             key={star}
             className={`h-5 w-5 cursor-pointer transition-colors ${
               star <= value
-                ? "fill-yellow-400 text-yellow-400"
-                : "text-gray-300"
+                ? "fill-[#FFD700] text-[#FFD700]"
+                : "text-white"
             }`}
             onMouseEnter={() => onHover?.(star)}
             onMouseLeave={() => onHover?.(0)}

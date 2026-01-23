@@ -4,8 +4,8 @@ import { X, Share, Heart, Star, Users, Home, MapPin, Wifi, Calendar, ChevronLeft
 import { Button } from '@/components/ui/button';
 import { getImageUrl } from '@/lib/utils';
 import { AMENITY_DETAILS } from '@/data/amenities';
-import { SAFETY_CONSIDERATIONS, SAFETY_DEVICES, PROPERTY_INFO } from '@/data/guestSafety';
-import { HouseRules } from './HouseRulesSection';
+import { SAFETY_CONSIDERATIONS, SAFETY_DEVICES } from '@/data/guestSafety';
+import { HouseRules, DEFAULT_HOUSE_RULES } from './HouseRulesSection';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
@@ -160,10 +160,10 @@ const ListingPreview: React.FC<ListingPreviewProps> = ({ listing, isOpen, onClos
 
     if (!isOpen) return null;
 
-    // Parse house rules
-    let houseRules: HouseRules | null = null;
+    // Parse house rules (default to sensible restrictions)
+    let houseRules: HouseRules = DEFAULT_HOUSE_RULES;
     try {
-        houseRules = listing.house_rules ? JSON.parse(listing.house_rules) : null;
+        houseRules = listing.house_rules ? JSON.parse(listing.house_rules) : DEFAULT_HOUSE_RULES;
     } catch (e) {
         console.error('Failed to parse house rules:', e);
     }
@@ -394,12 +394,10 @@ const ListingPreview: React.FC<ListingPreviewProps> = ({ listing, isOpen, onClos
                             </h2>
                             <div className="flex items-center gap-2 text-gray-600">
                                 <span>{listing.max_guests} {t('host.preview.guests', 'guests')}</span>
-                                <span>·</span>
-                                <span>1 {t('host.preview.bedroom', 'bedroom')}</span>
+
                                 <span>·</span>
                                 <span>1 {t('host.preview.bed', 'bed')}</span>
-                                <span>·</span>
-                                <span>1 {t('host.preview.bath', 'bath')}</span>
+
                             </div>
                         </div>
 
@@ -786,22 +784,21 @@ const ListingPreview: React.FC<ListingPreviewProps> = ({ listing, isOpen, onClos
 
                 {/* Things to Know */}
                 <div className="mt-12 pt-8 border-t border-gray-200">
-                    <h3 className="text-xl font-semibold mb-6">{t('host.preview.thingsToKnow', 'Things to know')}</h3>
+                    <h2 className="text-3xl md:text-4xl font-extrabold mb-6 text-gray-900">{t('host.preview.thingsToKnow', 'Things to Know (Important things)')}</h2>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                        {/* House Rules */}
+                        {/* House Rules */
+                        }
                         <div>
                             <h4 className="font-semibold mb-4">{t('host.preview.houseRules', 'House rules')}</h4>
                             <div className="space-y-2 text-sm text-gray-700">
-                                {houseRules && (
-                                    <>
-                                        <p>Check-in: {houseRules.check_in_start} - {houseRules.check_in_end}</p>
-                                        <p>Checkout: {houseRules.checkout_time}</p>
-                                        <p>{listing.max_guests} {t('host.preview.guests', 'guests')} maximum</p>
-                                        {!houseRules.pets_allowed && <p>{t('host.preview.noPets', 'No pets')}</p>}
-                                        {!houseRules.smoking_allowed && <p>{t('host.preview.noSmoking', 'No smoking')}</p>}
-                                        {!houseRules.events_allowed && <p>{t('host.preview.noParties', 'No parties or events')}</p>}
-                                    </>
-                                )}
+                                <>
+                                    <p>Check-in: {houseRules.check_in_start} - {houseRules.check_in_end}</p>
+                                    <p>Checkout: {houseRules.checkout_time}</p>
+                                    <p>{listing.max_guests} {t('host.preview.guests', 'guests')} maximum</p>
+                                    {!houseRules.pets_allowed && <p>{t('host.preview.noPets', 'No pets')}</p>}
+                                    {!houseRules.smoking_allowed && <p>{t('host.preview.noSmoking', 'No smoking')}</p>}
+                                    {!houseRules.events_allowed && <p>{t('host.preview.noParties', 'No parties or events')}</p>}
+                                </>
                             </div>
                         </div>
 
@@ -833,13 +830,7 @@ const ListingPreview: React.FC<ListingPreviewProps> = ({ listing, isOpen, onClos
                                     return null;
                                 })}
 
-                                {/* Property Info */}
-                                {PROPERTY_INFO.map(item => {
-                                    if (listing.safety_items?.includes(item.id)) {
-                                        return <p key={item.id}>{item.label}</p>;
-                                    }
-                                    return null;
-                                })}
+                                
                             </div>
                         </div>
 

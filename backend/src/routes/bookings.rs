@@ -95,15 +95,35 @@ pub async fn create_booking(
 
     let id = uuid::Uuid::new_v4().to_string();
 
-    // Fetch listing price and instant_book setting
-    let listing_info: Option<(f64, i32)> =
-        sqlx::query_as("SELECT price_per_night, instant_book FROM listings WHERE id = ?")
+    // Fetch listing price, instant_book, host_id and max_guests
+    let listing_info: Option<(f64, i32, i32, i32)> =
+        sqlx::query_as(
+            "SELECT COALESCE(price_per_night, 0), COALESCE(instant_book, 0), host_id, COALESCE(max_guests, 0) FROM listings WHERE id = ?"
+        )
             .bind(&booking_data.listing_id)
             .fetch_optional(pool.get_ref())
             .await
             .unwrap_or(None);
 
-    let (price_per_night, instant_book) = listing_info.unwrap_or((0.0, 0));
+    let (price_per_night, instant_book, host_id, max_guests) = listing_info.unwrap_or((0.0, 0, -1, 0));
+
+    // Forbid booking own listing
+    if host_id == user_id {
+        return HttpResponse::Forbidden()
+            .json(serde_json::json!({ "error": "You cannot book your own listing" }));
+    }
+
+    // Validate guests count
+    if booking_data.guests <= 0 {
+        return HttpResponse::BadRequest()
+            .json(serde_json::json!({ "error": "Guests must be at least 1" }));
+    }
+
+    // Enforce maximum guests configured by host
+    if max_guests > 0 && booking_data.guests > max_guests {
+        return HttpResponse::BadRequest()
+            .json(serde_json::json!({ "error": format!("Guest count exceeds maximum allowed ({})", max_guests) }));
+    }
 
     // Calculate total price
     let check_in_date = match NaiveDate::parse_from_str(&booking_data.check_in, "%Y-%m-%d") {
