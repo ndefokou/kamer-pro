@@ -19,7 +19,7 @@ import { DayPicker, DateRange } from 'react-day-picker';
 import 'react-day-picker/dist/style.css';
 import { addMonths, format } from 'date-fns';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
 import { MessageSquare, ShieldCheck, Award, Calendar as CalendarIcon, Map as MapIcon } from 'lucide-react';
 import ReviewModal from '@/components/ReviewModal';
@@ -78,7 +78,8 @@ const ListingDetails: React.FC = () => {
     const [pets, setPets] = React.useState(0);
     const [showGuestPicker, setShowGuestPicker] = React.useState(false);
     const [currentMonth, setCurrentMonth] = React.useState(new Date());
-    const [showDatePicker, setShowDatePicker] = React.useState(false);
+    const [showDatePicker, setShowDatePicker] = React.useState(false); // desktop inline calendar
+    const [showDatePickerMobile, setShowDatePickerMobile] = React.useState(false); // mobile dialog
     const [isReviewModalOpen, setIsReviewModalOpen] = React.useState(false);
     const [isShareModalOpen, setIsShareModalOpen] = React.useState(false);
     const [isMessageModalOpen, setIsMessageModalOpen] = React.useState(false);
@@ -88,6 +89,15 @@ const ListingDetails: React.FC = () => {
     const [initialPhotoIndex, setInitialPhotoIndex] = React.useState(0);
     const [reviews, setReviews] = React.useState<Review[]>([]);
     const { toast } = useToast();
+    const closeBtnRef = React.useRef<HTMLButtonElement>(null);
+    const desktopCalRef = React.useRef<HTMLDivElement>(null);
+
+    const openMobileDatePicker = () => {
+        try {
+            (document.activeElement as HTMLElement | null)?.blur?.();
+        } catch { /* noop */ }
+        setShowDatePickerMobile(true);
+    };
 
     type ReviewFormData = Pick<Review, "ratings" | "comment" | "timestamp">;
     const handleReviewSubmit = (reviewData: ReviewFormData) => {
@@ -346,7 +356,7 @@ const ListingDetails: React.FC = () => {
                 title: 'Reservation successful',
                 description: 'Your reservation request has been sent.'
             });
-            navigate('/');
+            navigate('/bookings');
         } catch (error) {
             console.error("Failed to reserve:", error);
             toast({
@@ -751,11 +761,31 @@ const ListingDetails: React.FC = () => {
 
                             <div className="border rounded-lg mb-4">
                                 <div className="grid grid-cols-2 border-b">
-                                    <div className="p-3 border-r cursor-pointer hover:bg-gray-50" onClick={() => setShowDatePicker(!showDatePicker)}>
+                                    <div
+                                        className="p-3 border-r cursor-pointer hover:bg-gray-50"
+                                        onClick={() => {
+                                            if (window.matchMedia('(max-width: 767px)').matches) {
+                                                openMobileDatePicker();
+                                            } else {
+                                                setShowDatePicker(true);
+                                                setTimeout(() => desktopCalRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 0);
+                                            }
+                                        }}
+                                    >
                                         <div className="text-[10px] font-bold uppercase">Check-in</div>
                                         <div className="text-sm">{checkInDate ? checkInDate.toLocaleDateString() : 'Add date'}</div>
                                     </div>
-                                    <div className="p-3 cursor-pointer hover:bg-gray-50" onClick={() => setShowDatePicker(!showDatePicker)}>
+                                    <div
+                                        className="p-3 cursor-pointer hover:bg-gray-50"
+                                        onClick={() => {
+                                            if (window.matchMedia('(max-width: 767px)').matches) {
+                                                openMobileDatePicker();
+                                            } else {
+                                                setShowDatePicker(true);
+                                                setTimeout(() => desktopCalRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 0);
+                                            }
+                                        }}
+                                    >
                                         <div className="text-[10px] font-bold uppercase">Checkout</div>
                                         <div className="text-sm">{checkOutDate ? checkOutDate.toLocaleDateString() : 'Add date'}</div>
                                     </div>
@@ -798,7 +828,22 @@ const ListingDetails: React.FC = () => {
                             </div>
 
                             {showDatePicker && (
-                                <div className="mb-4">
+                                <div className="mb-4" ref={desktopCalRef}>
+                                    <div className="flex items-center justify-between mb-2">
+                                        <button
+                                            className="text-sm font-semibold underline"
+                                            onClick={() => setShowDatePicker(false)}
+                                            aria-label="Close calendar"
+                                        >
+                                            Close
+                                        </button>
+                                        <button
+                                            className="text-sm underline text-muted-foreground hover:text-foreground"
+                                            onClick={() => { setCheckInDate(null); setCheckOutDate(null); }}
+                                        >
+                                            Clear dates
+                                        </button>
+                                    </div>
                                     {renderCalendar()}
                                 </div>
                             )}
@@ -806,7 +851,7 @@ const ListingDetails: React.FC = () => {
                             <Button
                                 className="w-full bg-[#FF385C] hover:bg-[#D9324E] text-white font-semibold py-6 text-lg"
                                 onClick={handleReserve}
-                                disabled={isHost}
+                                disabled={isHost || !checkInDate || !checkOutDate}
                             >
                                 Reserve
                             </Button>
@@ -1037,7 +1082,7 @@ const ListingDetails: React.FC = () => {
                             </span>
                             <span className="text-sm text-muted-foreground">/ night</span>
                         </div>
-                        <span className="text-xs font-medium underline cursor-pointer">
+                        <span className="text-xs font-medium underline cursor-pointer" onClick={openMobileDatePicker}>
                             {checkInDate && checkOutDate ?
                                 `${format(checkInDate, 'MMM d')} - ${format(checkOutDate, 'MMM d')}` :
                                 'Add dates'
@@ -1046,17 +1091,33 @@ const ListingDetails: React.FC = () => {
                     </div>
                     <Button
                         className="bg-[#FF385C] hover:bg-[#D9324E] text-white font-semibold px-8"
-                        onClick={() => setShowDatePicker(true)}
+                        onClick={() => (checkInDate && checkOutDate ? handleReserve() : openMobileDatePicker())}
                     >
-                        Reserve
+                        {checkInDate && checkOutDate ? 'Reserve' : 'Select dates'}
                     </Button>
                 </div>
             </div>
 
-            <Dialog open={showDatePicker} onOpenChange={setShowDatePicker}>
-                <DialogContent className="md:hidden w-full max-w-none p-0 gap-0">
+            <Dialog
+                open={showDatePickerMobile}
+                onOpenChange={(open) => {
+                    if (open) {
+                        try {
+                            (document.activeElement as HTMLElement | null)?.blur?.();
+                        } catch { /* noop */ }
+                    }
+                    setShowDatePickerMobile(open);
+                }}
+            >
+                <DialogContent
+                    className="md:hidden w-full max-w-none p-0 gap-0"
+                    onOpenAutoFocus={(e) => {
+                        e.preventDefault();
+                        closeBtnRef.current?.focus();
+                    }}
+                >
                     <div className="flex items-center justify-between px-4 py-3 border-b">
-                        <button className="p-2 -ml-2" aria-label="Close" onClick={() => setShowDatePicker(false)}>
+                        <button ref={closeBtnRef} className="p-2 -ml-2" aria-label="Close" onClick={() => setShowDatePickerMobile(false)}>
                             <X className="h-5 w-5" />
                         </button>
                         <button
@@ -1067,8 +1128,10 @@ const ListingDetails: React.FC = () => {
                         </button>
                     </div>
                     <div className="px-4 pt-4">
-                        <h3 className="text-lg font-semibold mb-1">Select check-in date</h3>
-                        <p className="text-sm text-muted-foreground mb-4">Add your travel dates to see exact pricing</p>
+                        <DialogHeader className="mb-2">
+                            <DialogTitle className="text-lg font-semibold">Select check-in date</DialogTitle>
+                            <DialogDescription className="text-sm text-muted-foreground">Add your travel dates to see exact pricing</DialogDescription>
+                        </DialogHeader>
                         <DayPicker
                             mode="range"
                             selected={checkInDate ? { from: checkInDate, to: checkOutDate || undefined } : undefined}
@@ -1089,8 +1152,15 @@ const ListingDetails: React.FC = () => {
                         />
                     </div>
                     <div className="p-4 border-t">
-                        <Button className="w-full" disabled={!checkInDate || !checkOutDate} onClick={() => setShowDatePicker(false)}>
-                            Save
+                        <Button
+                            className="w-full"
+                            disabled={!checkInDate || !checkOutDate}
+                            onClick={() => {
+                                setShowDatePicker(false);
+                                handleReserve();
+                            }}
+                        >
+                            Reserve
                         </Button>
                     </div>
                 </DialogContent>

@@ -266,6 +266,33 @@ export const declineBooking = async (bookingId: string, reason: string) => {
   return response.data;
 };
 
+export type BookingStatus = 'pending' | 'confirmed' | 'declined';
+export interface BookingWithDetails {
+  booking: {
+    id: string;
+    listing_id: string;
+    guest_id: number;
+    check_in: string;
+    check_out: string;
+    guests: number;
+    total_price: number;
+    status: BookingStatus;
+    created_at?: string;
+    updated_at?: string;
+  };
+  guest_name: string;
+  guest_email: string;
+  listing_title: string;
+  listing_photo?: string | null;
+  listing_city?: string | null;
+  listing_country?: string | null;
+}
+
+export const getMyBookings = async (): Promise<BookingWithDetails[]> => {
+  const response = await apiClient.get('/bookings/my');
+  return response.data;
+};
+
 // Report API
 export interface CreateReportData {
   host_id: number;

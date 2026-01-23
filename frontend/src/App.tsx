@@ -32,6 +32,7 @@ import SearchResults from "./pages/SearchResults";
 import Messages from "./pages/Messages";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import Wishlist from "./pages/Wishlist";
+import MyBookings from "./pages/MyBookings";
 
 const queryClient = new QueryClient();
 
@@ -41,6 +42,7 @@ const router = createBrowserRouter(
     { path: "/marketplace", Component: SearchResults },
     { path: "/product/:id", Component: ListingDetails },
     { path: "/messages", Component: Messages },
+    { path: "/bookings", element: <ProtectedRoute />, children: [{ index: true, Component: MyBookings }] },
     { path: "/webauth-login", Component: WebAuthLogin },
     { path: "/wishlist", Component: Wishlist },
     {

@@ -21,6 +21,94 @@ pub struct Booking {
     pub updated_at: Option<String>,
 }
 
+/// GET /api/bookings/my - Get bookings for the authenticated guest (history)
+#[get("/my")]
+pub async fn get_my_bookings(
+    pool: web::Data<SqlitePool>,
+    req: HttpRequest,
+) -> impl Responder {
+    let user_id = match extract_user_id(&req) {
+        Ok(id) => id,
+        Err(response) => return response,
+    };
+
+    let query = r#"
+        SELECT 
+            b.*,
+            u.username as guest_name,
+            u.email as guest_email,
+            l.title as listing_title,
+            l.city as listing_city,
+            l.country as listing_country,
+            (SELECT url FROM listing_photos WHERE listing_id = b.listing_id ORDER BY is_cover DESC, display_order LIMIT 1) as listing_photo
+        FROM bookings b
+        INNER JOIN listings l ON b.listing_id = l.id
+        INNER JOIN users u ON b.guest_id = u.id
+        WHERE b.guest_id = ?
+        ORDER BY b.created_at DESC
+    "#;
+
+    match sqlx::query_as::<
+        _,
+        (
+            String,
+            String,
+            i32,
+            String,
+            String,
+            i32,
+            f64,
+            String,
+            Option<String>,
+            Option<String>,
+            String,
+            String,
+            String,
+            Option<String>,
+            Option<String>,
+            Option<String>,
+        ),
+    >(query)
+    .bind(user_id)
+    .fetch_all(pool.get_ref())
+    .await
+    {
+        Ok(rows) => {
+            let bookings: Vec<BookingWithDetails> = rows
+                .into_iter()
+                .map(|row| BookingWithDetails {
+                    booking: Booking {
+                        id: row.0,
+                        listing_id: row.1,
+                        guest_id: row.2,
+                        check_in: row.3,
+                        check_out: row.4,
+                        guests: row.5,
+                        total_price: row.6,
+                        status: row.7,
+                        created_at: row.8,
+                        updated_at: row.9,
+                    },
+                    guest_name: row.10,
+                    guest_email: row.11,
+                    listing_title: row.12,
+                    listing_city: row.13,
+                    listing_country: row.14,
+                    listing_photo: row.15,
+                })
+                .collect();
+
+            HttpResponse::Ok().json(bookings)
+        }
+        Err(e) => {
+            log::error!("Failed to fetch my bookings: {:?}", e);
+            HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": format!("Database error: {}", e)
+            }))
+        }
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct BookingWithDetails {
     pub booking: Booking,

@@ -1,0 +1,64 @@
+import { useQuery } from "@tanstack/react-query";
+import { getMyBookings, type BookingWithDetails } from "@/api/client";
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
+import { Button } from "@/components/ui/button";
+
+const StatusBadge = ({ status }: { status: BookingWithDetails["booking"]["status"] }) => {
+  const color = status === "confirmed" ? "bg-green-100 text-green-700" : status === "pending" ? "bg-yellow-100 text-yellow-700" : "bg-red-100 text-red-700";
+  return <span className={`px-2 py-0.5 rounded-full text-xs font-semibold capitalize ${color}`}>{status}</span>;
+};
+
+export default function MyBookings() {
+  const { data, isLoading, error } = useQuery<BookingWithDetails[]>({
+    queryKey: ["my-bookings"],
+    queryFn: getMyBookings,
+  });
+
+  return (
+    <div className="min-h-screen bg-white">
+      <Header />
+      <main className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
+        <h1 className="text-2xl font-bold mb-6">My reservations</h1>
+        {isLoading && <div>Loading...</div>}
+        {error && <div className="text-red-600">Failed to load bookings.</div>}
+        {!isLoading && !error && (
+          (data && data.length > 0) ? (
+            <div className="grid grid-cols-1 gap-4">
+              {data.map((b) => (
+                <div key={b.booking.id} className="border rounded-xl p-4 flex gap-4 items-center bg-white">
+                  <img src={b.listing_photo || "/bathroom-placeholder.jpg"} alt="Listing" className="w-24 h-24 object-cover rounded-lg" />
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-semibold text-lg line-clamp-1">{b.listing_title}</h3>
+                      <StatusBadge status={b.booking.status} />
+                    </div>
+                    <div className="text-sm text-gray-600">
+                      {(b.listing_city || "") + ((b.listing_city && b.listing_country) ? ", " : "") + (b.listing_country || "")}
+                    </div>
+                    <div className="text-sm mt-1">
+                      {new Date(b.booking.check_in).toLocaleDateString()} - {new Date(b.booking.check_out).toLocaleDateString()} · {b.booking.guests} guest{b.booking.guests !== 1 ? "s" : ""}
+                    </div>
+                    <div className="text-sm font-semibold mt-1">
+                      Total: {new Intl.NumberFormat("fr-FR", { style: "currency", currency: "XAF", maximumFractionDigits: 0 }).format(b.booking.total_price)}
+                    </div>
+                  </div>
+                  <div className="hidden sm:block">
+                    <Button variant="outline" onClick={() => (window.location.href = `/product/${b.booking.listing_id}`)}>View listing</Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="border rounded-xl p-8 text-center bg-white">
+              <div className="text-lg font-medium mb-2">No reservations yet</div>
+              <p className="text-sm text-gray-600 mb-4">Browse the marketplace and find your first stay.</p>
+              <Button onClick={() => (window.location.href = "/marketplace")}>Explore stays</Button>
+            </div>
+          )
+        )}
+      </main>
+      <Footer />
+    </div>
+  );
+}
