@@ -42,7 +42,7 @@ const Footer = () => {
                 </div>
                 <div className="mt-8 pt-8 border-t border-gray-200 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-gray-600">
                     <div className="flex items-center gap-4">
-                        <span>© 2025 MboaMaison, Inc.</span>
+                        <span>© 2026 MboaMaison, Inc.</span>
                         <span>·</span>
                         <span className="hover:underline cursor-pointer">{t("Confidentialité")}</span>
                         <span>·</span>

@@ -791,14 +791,14 @@ const ListingPreview: React.FC<ListingPreviewProps> = ({ listing, isOpen, onClos
                         <div>
                             <h4 className="font-semibold mb-4">{t('host.preview.houseRules', 'House rules')}</h4>
                             <div className="space-y-2 text-sm text-gray-700">
-                                <>
-                                    <p>Check-in: {houseRules.check_in_start} - {houseRules.check_in_end}</p>
-                                    <p>Checkout: {houseRules.checkout_time}</p>
-                                    <p>{listing.max_guests} {t('host.preview.guests', 'guests')} maximum</p>
-                                    {!houseRules.pets_allowed && <p>{t('host.preview.noPets', 'No pets')}</p>}
-                                    {!houseRules.smoking_allowed && <p>{t('host.preview.noSmoking', 'No smoking')}</p>}
-                                    {!houseRules.events_allowed && <p>{t('host.preview.noParties', 'No parties or events')}</p>}
-                                </>
+                                <p>Check-in: {houseRules.check_in_start} - {houseRules.check_in_end}</p>
+                                <p>Checkout: {houseRules.checkout_time}</p>
+                                <p>{listing.max_guests} {t('host.preview.guests', 'guests')} maximum</p>
+                                <p>{houseRules.pets_allowed ? t('host.preview.petsAllowed', 'Pets allowed') : t('host.preview.noPets', 'No pets')}</p>
+                                <p>{houseRules.events_allowed ? t('host.preview.eventsAllowed', 'Events allowed') : t('host.preview.noParties', 'No parties or events')}</p>
+                                <p>{houseRules.smoking_allowed ? t('host.preview.smokingAllowed', 'Smoking, vaping, e-cigarettes allowed') : t('host.preview.noSmoking', 'No smoking, vaping, e-cigarettes')}</p>
+                                <p>{houseRules.quiet_hours ? t('host.preview.quietHours', 'Quiet hours enforced') : t('host.preview.noQuietHours', 'Quiet hours not enforced')}</p>
+                                <p>{houseRules.commercial_photography_allowed ? t('host.preview.photographyAllowed', 'Commercial photography and filming allowed') : t('host.preview.photographyNotAllowed', 'No commercial photography or filming')}</p>
                             </div>
                         </div>
 

@@ -85,9 +85,6 @@ const Dashboard = () => {
                     <h3 className="font-semibold text-gray-900 truncate flex-1">{product.listing.title}</h3>
                 </div>
                 <p className="text-sm text-gray-600">{product.listing.city}</p>
-                <p className="text-sm text-gray-600">
-                    16-25 dec.
-                </p>
                 <div className="flex items-baseline gap-1 pt-1">
                     <span className="font-semibold text-gray-900">{product.listing.price_per_night?.toLocaleString()} FCFA</span>
                     <span className="text-sm text-gray-600">per night</span>

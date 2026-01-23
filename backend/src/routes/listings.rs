@@ -40,6 +40,37 @@ pub struct Listing {
     pub scenic_views: Option<String>,
 }
 
+/// GET /api/listings/host/{id} - Get all published listings for a host
+#[get("/host/{id}")]
+pub async fn get_host_listings(
+    pool: web::Data<SqlitePool>,
+    path: web::Path<i32>,
+) -> impl Responder {
+    let host_id = path.into_inner();
+
+    let rows = sqlx::query_as::<_, Listing>(
+        "SELECT * FROM listings WHERE status = 'published' AND host_id = ? ORDER BY created_at DESC",
+    )
+    .bind(host_id)
+    .fetch_all(pool.get_ref())
+    .await;
+
+    match rows {
+        Ok(listings) => {
+            let mut details = Vec::new();
+            for l in listings {
+                if let Ok(d) = get_listing_with_details(pool.get_ref(), &l.id).await {
+                    details.push(d);
+                }
+            }
+            HttpResponse::Ok().json(details)
+        }
+        Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
+            "error": format!("Database error: {}", e)
+        })),
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize, sqlx::FromRow)]
 pub struct UnavailableDateRange {
     pub check_in: String,
@@ -55,6 +86,7 @@ pub struct ListingWithDetails {
     pub safety_items: Vec<String>,
     pub unavailable_dates: Vec<UnavailableDateRange>,
     pub contact_phone: Option<String>,
+    pub host_avatar: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, sqlx::FromRow)]
@@ -235,6 +267,15 @@ async fn get_listing_with_details(
     .await?
     .flatten();
 
+    // Get host avatar (from user_profiles)
+    let host_avatar: Option<String> = sqlx::query_scalar(
+        "SELECT avatar FROM user_profiles WHERE user_id = ?",
+    )
+    .bind(listing.host_id)
+    .fetch_optional(pool)
+    .await?
+    .flatten();
+
     // Parse safety items
     let safety_items: Vec<String> = listing
         .safety_devices
@@ -250,6 +291,7 @@ async fn get_listing_with_details(
         safety_items,
         unavailable_dates,
         contact_phone,
+        host_avatar,
     })
 }
 

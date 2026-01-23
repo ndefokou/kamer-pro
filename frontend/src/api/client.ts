@@ -80,6 +80,7 @@ export interface Product {
     cancellation_policy?: string;
   };
   amenities: string[];
+  host_avatar?: string | null;
   photos: {
     id: number;
     listing_id: string;
@@ -150,6 +151,35 @@ export const getMyProducts = async () => {
 
 export const getListing = async (id: string): Promise<Product> => {
   const response = await apiClient.get(`/listings/${id}`);
+  return response.data;
+};
+
+// Account API
+export interface AccountUser {
+  id: number;
+  username: string;
+  email: string;
+}
+
+export interface AccountProfile {
+  legal_name?: string | null;
+  preferred_first_name?: string | null;
+  phone?: string | null;
+  avatar?: string | null;
+}
+
+export interface AccountResponse {
+  user?: AccountUser | null;
+  profile?: AccountProfile | null;
+}
+
+export const getUserById = async (id: number): Promise<AccountResponse> => {
+  const response = await apiClient.get(`/account/user/${id}`);
+  return response.data;
+};
+
+export const getHostListings = async (hostId: number): Promise<Product[]> => {
+  const response = await apiClient.get(`/listings/host/${hostId}`);
   return response.data;
 };
 

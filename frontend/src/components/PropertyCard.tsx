@@ -137,7 +137,6 @@ const PropertyCard = ({
                     </div>
 
                     <p className="text-sm text-muted-foreground line-clamp-1">{name}</p>
-                    <p className="text-sm text-muted-foreground">16-25 dec.</p>
 
                     <div className="flex items-baseline gap-1 mt-1">
                         <span className="font-semibold text-[15px] text-foreground">

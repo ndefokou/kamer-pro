@@ -50,7 +50,6 @@ const HostDashboard: React.FC = () => {
             try {
                 const response = await apiClient.get('/listings/my-listings');
                 setListings(response.data);
-                // Set first listing as default selected
                 if (response.data.length > 0) {
                     setSelectedListing(response.data[0].listing.id);
                 }
@@ -61,8 +60,16 @@ const HostDashboard: React.FC = () => {
             }
         };
 
+        // Wait for auth to resolve to avoid calling without a session
+        if (!user) {
+            // If not logged in, show empty state quickly
+            if (loading === false) setLoading(false);
+            return;
+        }
+
         fetchListings();
-    }, []);
+        // Re-run when user changes (e.g., after login)
+    }, [user, loading]);
 
     const handleCreateListing = () => {
         if (user) {

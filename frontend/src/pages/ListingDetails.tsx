@@ -1,7 +1,7 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { getListing, createBooking } from '@/api/client';
+import { getListing, createBooking, getUserById } from '@/api/client';
 import { Button } from '@/components/ui/button';
 import { Loader2, Share, Heart, Star, Minus, Plus, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { getImageUrl } from '@/lib/utils';
@@ -14,13 +14,16 @@ import L from 'leaflet';
 import icon from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
 import Footer from '@/components/Footer';
+import Header from '@/components/Header';
 import { DayPicker, DateRange } from 'react-day-picker';
 import 'react-day-picker/dist/style.css';
 import { addMonths, format } from 'date-fns';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
 import { MessageSquare, ShieldCheck, Award, Calendar as CalendarIcon, Map as MapIcon } from 'lucide-react';
 import ReviewModal from '@/components/ReviewModal';
+import { DEFAULT_HOUSE_RULES, type HouseRules } from '@/components/host/HouseRulesSection';
 import ShareModal from '@/components/ShareModal';
 import MessageHostModal from '@/components/MessageHostModal';
 import ReportHostModal from '@/components/ReportHostModal';
@@ -59,6 +62,12 @@ const ListingDetails: React.FC = () => {
         queryKey: ['listing', id],
         queryFn: () => getListing(id!),
         enabled: !!id,
+    });
+
+    const hostQuery = useQuery({
+        queryKey: ['account-user', product?.listing?.host_id],
+        queryFn: () => getUserById(product?.listing?.host_id as number),
+        enabled: !!product?.listing?.host_id,
     });
 
     const [checkInDate, setCheckInDate] = React.useState<Date | null>(null);
@@ -125,6 +134,14 @@ const ListingDetails: React.FC = () => {
     }
 
     const { listing, amenities } = product;
+    const profile = hostQuery.data?.profile;
+    const userAccount = hostQuery.data?.user;
+    const hostName =
+        (profile?.preferred_first_name && profile.preferred_first_name.trim()) ||
+        (profile?.legal_name && profile.legal_name.trim()) ||
+        (userAccount?.username || '').trim() ||
+        'Host';
+    const hostAvatar = profile?.avatar ?? localStorage.getItem('host_avatar') ?? undefined;
     const totalGuests = adults + children;
     const isHost = Number(localStorage.getItem('userId')) === listing.host_id;
 
@@ -350,12 +367,13 @@ const ListingDetails: React.FC = () => {
         }
     };
 
-    // Parse house rules
-    let houseRules = null;
+    // Parse house rules (default to all disallowed)
+    let houseRules: HouseRules = DEFAULT_HOUSE_RULES;
     try {
-        houseRules = listing.house_rules ? JSON.parse(listing.house_rules) : null;
+        houseRules = listing.house_rules ? JSON.parse(listing.house_rules) : DEFAULT_HOUSE_RULES;
     } catch (e) {
         console.error('Failed to parse house rules:', e);
+        houseRules = DEFAULT_HOUSE_RULES;
     }
     let aboutSections: { title: string; text: string }[] = [];
     let aboutPlain: string | null = listing.description || null;
@@ -381,6 +399,8 @@ const ListingDetails: React.FC = () => {
 
     return (
         <div className="min-h-screen bg-background pb-20">
+            {/* Site Header */}
+            <Header />
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 {/* Title and Actions */}
                 <div className="flex justify-between items-start mb-6">
@@ -420,7 +440,7 @@ const ListingDetails: React.FC = () => {
                     onClose={() => setIsMessageModalOpen(false)}
                     listingId={listing.id}
                     hostId={listing.host_id}
-                    hostName="Host" // TODO: Get actual host name
+                    hostName={hostName} // TODO: Get actual host name
                 />
 
                 <ReportHostModal
@@ -529,7 +549,7 @@ const ListingDetails: React.FC = () => {
                     <div className="md:col-span-2">
                         <div className="border-b pb-6 mb-6">
                             <h2 className="text-xl font-semibold mb-1">
-                                {listing.property_type} hosted by Host
+                                {listing.property_type} hosted by {hostName}
                             </h2>
                             <p className="text-muted-foreground">
                                 {listing.max_guests} guests • {listing.bedrooms} bedrooms • {listing.beds} beds • {listing.bathrooms} baths
@@ -880,12 +900,12 @@ const ListingDetails: React.FC = () => {
                         <div className="bg-white rounded-2xl p-6 shadow-lg flex flex-col items-center text-center md:col-span-1">
                             <div className="relative mb-4">
                                 <Avatar className="h-24 w-24">
-                                    <AvatarImage src={localStorage.getItem('host_avatar') || "https://github.com/shadcn.png"} />
-                                    <AvatarFallback>HO</AvatarFallback>
+                                    <AvatarImage src={hostAvatar || undefined} />
+                                    <AvatarFallback>{(hostName || 'HO').slice(0,2).toUpperCase()}</AvatarFallback>
                                 </Avatar>
                                 {/* Removed Superhost badge as we don't have this data yet */}
                             </div>
-                            <h4 className="text-2xl font-bold mb-1">Host</h4>
+                            <h4 className="text-2xl font-bold mb-1">{hostName}</h4>
                             {/* Removed Superhost label */}
 
                             <div className="w-full space-y-4 mt-4">
@@ -960,16 +980,14 @@ const ListingDetails: React.FC = () => {
                         <div>
                             <h4 className="font-semibold mb-4">House rules</h4>
                             <div className="space-y-2 text-sm text-gray-700">
-                                {houseRules && (
-                                    <>
-                                        <p>Check-in: {houseRules.check_in_start} - {houseRules.check_in_end}</p>
-                                        <p>Checkout: {houseRules.checkout_time}</p>
-                                        <p>{listing.max_guests} guests maximum</p>
-                                        {!houseRules.pets_allowed && <p>No pets</p>}
-                                        {!houseRules.smoking_allowed && <p>No smoking</p>}
-                                        {!houseRules.events_allowed && <p>No parties or events</p>}
-                                    </>
-                                )}
+                                <p>Check-in: {houseRules.check_in_start} - {houseRules.check_in_end}</p>
+                                <p>Checkout: {houseRules.checkout_time}</p>
+                                <p>{listing.max_guests} guests maximum</p>
+                                <p>{houseRules.pets_allowed ? 'Pets allowed' : 'No pets'}</p>
+                                <p>{houseRules.events_allowed ? 'Events allowed' : 'No parties or events'}</p>
+                                <p>{houseRules.smoking_allowed ? 'Smoking, vaping, e-cigarettes allowed' : 'No smoking, vaping, e-cigarettes'}</p>
+                                <p>{houseRules.quiet_hours ? 'Quiet hours enforced' : 'Quiet hours not enforced'}</p>
+                                <p>{houseRules.commercial_photography_allowed ? 'Commercial photography and filming allowed' : 'No commercial photography or filming'}</p>
                             </div>
                         </div>
 
@@ -1028,16 +1046,55 @@ const ListingDetails: React.FC = () => {
                     </div>
                     <Button
                         className="bg-[#FF385C] hover:bg-[#D9324E] text-white font-semibold px-8"
-                        onClick={() => {
-                            // Scroll to calendar
-                            document.querySelector('.rdp')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        }}
+                        onClick={() => setShowDatePicker(true)}
                     >
                         Reserve
                     </Button>
                 </div>
             </div>
 
+            <Dialog open={showDatePicker} onOpenChange={setShowDatePicker}>
+                <DialogContent className="md:hidden w-full max-w-none p-0 gap-0">
+                    <div className="flex items-center justify-between px-4 py-3 border-b">
+                        <button className="p-2 -ml-2" aria-label="Close" onClick={() => setShowDatePicker(false)}>
+                            <X className="h-5 w-5" />
+                        </button>
+                        <button
+                            className="text-sm font-semibold underline"
+                            onClick={() => { setCheckInDate(null); setCheckOutDate(null); }}
+                        >
+                            Clear dates
+                        </button>
+                    </div>
+                    <div className="px-4 pt-4">
+                        <h3 className="text-lg font-semibold mb-1">Select check-in date</h3>
+                        <p className="text-sm text-muted-foreground mb-4">Add your travel dates to see exact pricing</p>
+                        <DayPicker
+                            mode="range"
+                            selected={checkInDate ? { from: checkInDate, to: checkOutDate || undefined } : undefined}
+                            onSelect={(range: DateRange | undefined) => {
+                                if (range?.from) setCheckInDate(range.from);
+                                setCheckOutDate(range?.to || null);
+                                if (!range) { setCheckInDate(null); setCheckOutDate(null); }
+                            }}
+                            numberOfMonths={1}
+                            disabled={[{ before: new Date() }, ...disabledDays]}
+                            modifiersStyles={{
+                                selected: { backgroundColor: '#222222', color: 'white' },
+                                range_middle: { backgroundColor: '#F7F7F7', color: '#222222' },
+                                range_start: { backgroundColor: '#222222', color: 'white' },
+                                range_end: { backgroundColor: '#222222', color: 'white' }
+                            }}
+                            className="border-0"
+                        />
+                    </div>
+                    <div className="p-4 border-t">
+                        <Button className="w-full" disabled={!checkInDate || !checkOutDate} onClick={() => setShowDatePicker(false)}>
+                            Save
+                        </Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
 
             <Footer />
         </div >
