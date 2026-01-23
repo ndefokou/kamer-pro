@@ -69,7 +69,7 @@ const Dashboard = () => {
 
 
     const PropertyCard = ({ product, index }: { product: Product; index: number }) => (
-        <div className="flex-shrink-0 w-[280px] cursor-pointer group">
+        <div className="flex-shrink-0 w-[240px] sm:w-[280px] cursor-pointer group">
             <div className="relative aspect-square rounded-xl overflow-hidden mb-3">
                 <img
                     src={getImageUrl(product.photos[0]?.url) || "https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=400&h=400&fit=crop"}
@@ -99,16 +99,18 @@ const Dashboard = () => {
                 <div className="flex items-start justify-between">
                     <h3 className="font-semibold text-gray-900 truncate flex-1">{product.listing.title}</h3>
                 </div>
-                <p className="text-sm text-gray-600">{product.listing.city}</p>
+                <p className="text-sm text-gray-700">
+                    {(product.listing.property_type || 'Appartement')} · {product.listing.city}
+                </p>
                 <div className="flex items-baseline gap-1 pt-1">
                     <span className="font-semibold text-gray-900">{product.listing.price_per_night?.toLocaleString()} FCFA</span>
-                    <span className="text-sm text-gray-600">per night</span>
+                    <span className="text-sm text-gray-600">par nuit</span>
                 </div>
             </div>
         </div>
     );
 
-    const PropertySection = ({ title, properties }: { title: string; properties: Product[] }) => {
+    const PropertySection = ({ title, properties, city }: { title: string; properties: Product[]; city?: string }) => {
         const scrollContainerRef = useRef<HTMLDivElement>(null);
         const [showLeftArrow, setShowLeftArrow] = useState(false);
         const [showRightArrow, setShowRightArrow] = useState(true);
@@ -135,7 +137,18 @@ const Dashboard = () => {
 
         return (
             <div className="mb-12 group relative">
-                <h2 className="text-2xl font-bold mb-6 text-gray-900">{title}</h2>
+                <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-2xl font-bold text-gray-900">{title}</h2>
+                    {city && (
+                        <button
+                            className="text-sm font-semibold hover:underline flex items-center gap-1"
+                            onClick={() => navigate(`/marketplace?search=${encodeURIComponent(city)}`)}
+                            aria-label={`See all stays in ${city}`}
+                        >
+                            Voir tout <span aria-hidden>›</span>
+                        </button>
+                    )}
+                </div>
 
                 <div className="relative">
                     {/* Left Arrow */}
@@ -207,13 +220,14 @@ const Dashboard = () => {
                         {grouped.map((g) => (
                             <PropertySection
                                 key={g.name || Math.random()}
-                                title={t("Stays in {{city}}", { city: g.name })}
+                                title={`Logements populaires · ${g.name}`}
                                 properties={g.items}
+                                city={g.name}
                             />
                         ))}
                         {other.length > 0 && (
                             <PropertySection
-                                title={t("Other destinations")}
+                                title={"Autres destinations"}
                                 properties={other}
                             />
                         )}
@@ -225,47 +239,48 @@ const Dashboard = () => {
             <Footer />
 
             {/* Mobile Bottom Nav */}
-            {/* Mobile Bottom Nav */}
             <nav className="md:hidden fixed bottom-0 inset-x-0 z-50 bg-white/90 backdrop-blur-lg border-t border-gray-200 pb-safe transition-all duration-300">
                 <div className="max-w-md mx-auto px-6">
-                    <ul className="grid grid-cols-3 h-16">
+                    <ul className="grid grid-cols-5 h-16">
                         <li className="flex items-center justify-center">
-                            <a href="/webauth-login?tab=register" className="flex flex-col items-center gap-1 group w-full h-full justify-center">
+                            <button onClick={() => navigate('/')} className="flex flex-col items-center gap-1 group w-full h-full justify-center">
                                 <div className="p-1.5 rounded-full group-active:scale-95 transition-transform group-hover:bg-gray-100">
-                                    <HomeIcon className="h-6 w-6 text-gray-500 group-hover:text-primary transition-colors" />
+                                    <HomeIcon className="h-6 w-6 text-gray-600 group-hover:text-primary transition-colors" />
                                 </div>
-                                <span className="text-[10px] font-medium text-gray-500 group-hover:text-primary transition-colors">{t("Become a host")}</span>
-                            </a>
-                        </li>
-                        <li className="flex items-center justify-center">
-                            <button className="flex flex-col items-center gap-1 group w-full h-full justify-center">
-                                <div className="p-1.5 rounded-full group-active:scale-95 transition-transform group-hover:bg-gray-100">
-                                    <Globe className="h-6 w-6 text-gray-500 group-hover:text-primary transition-colors" />
-                                </div>
-                                <span className="text-[10px] font-medium text-gray-500 group-hover:text-primary transition-colors">{t("Language")}</span>
+                                <span className="text-[10px] font-medium text-gray-600 group-hover:text-primary transition-colors">{t("Explore")}</span>
                             </button>
                         </li>
                         <li className="flex items-center justify-center">
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <button className="flex flex-col items-center gap-1 group w-full h-full justify-center outline-none">
-                                        <div className="p-1.5 rounded-full group-active:scale-95 transition-transform group-hover:bg-gray-100">
-                                            <User className="h-6 w-6 text-gray-500 group-hover:text-primary transition-colors" />
-                                        </div>
-                                        <span className="text-[10px] font-medium text-gray-500 group-hover:text-primary transition-colors">{user ? t("Profile") : t("Log in")}</span>
-                                    </button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" side="top" className="w-56 mb-2 p-2 rounded-xl shadow-elevated border-border/50 bg-white/95 backdrop-blur-sm">
-                                    <DropdownMenuItem onClick={() => navigate('/account')} className="rounded-lg cursor-pointer py-2.5">
-                                        <User className="mr-2 h-4 w-4" />
-                                        {t("Account")}
-                                    </DropdownMenuItem>
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem onClick={handleLogout} className="rounded-lg cursor-pointer py-2.5 text-red-600 focus:text-red-600 focus:bg-red-50">
-                                        {t("Log out")}
-                                    </DropdownMenuItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
+                            <button onClick={() => navigate('/wishlist')} className="flex flex-col items-center gap-1 group w-full h-full justify-center">
+                                <div className="p-1.5 rounded-full group-active:scale-95 transition-transform group-hover:bg-gray-100">
+                                    <Heart className="h-6 w-6 text-gray-600 group-hover:text-primary transition-colors" />
+                                </div>
+                                <span className="text-[10px] font-medium text-gray-600 group-hover:text-primary transition-colors">{t("Favorites")}</span>
+                            </button>
+                        </li>
+                        <li className="flex items-center justify-center">
+                            <button onClick={() => navigate('/bookings')} className="flex flex-col items-center gap-1 group w-full h-full justify-center">
+                                <div className="p-1.5 rounded-full group-active:scale-95 transition-transform group-hover:bg-gray-100">
+                                    <svg className="h-6 w-6 text-gray-600 group-hover:text-primary transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                                </div>
+                                <span className="text-[10px] font-medium text-gray-600 group-hover:text-primary transition-colors">{t("Reservations")}</span>
+                            </button>
+                        </li>
+                        <li className="flex items-center justify-center">
+                            <button onClick={() => navigate('/messages')} className="flex flex-col items-center gap-1 group w-full h-full justify-center">
+                                <div className="p-1.5 rounded-full group-active:scale-95 transition-transform group-hover:bg-gray-100">
+                                    <svg className="h-6 w-6 text-gray-600 group-hover:text-primary transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                                </div>
+                                <span className="text-[10px] font-medium text-gray-600 group-hover:text-primary transition-colors">{t("Messages")}</span>
+                            </button>
+                        </li>
+                        <li className="flex items-center justify-center">
+                            <button onClick={() => navigate('/account')} className="flex flex-col items-center gap-1 group w-full h-full justify-center">
+                                <div className="p-1.5 rounded-full group-active:scale-95 transition-transform group-hover:bg-gray-100">
+                                    <User className="h-6 w-6 text-gray-600 group-hover:text-primary transition-colors" />
+                                </div>
+                                <span className="text-[10px] font-medium text-gray-600 group-hover:text-primary transition-colors">{t("Profile")}</span>
+                            </button>
                         </li>
                     </ul>
                 </div>
