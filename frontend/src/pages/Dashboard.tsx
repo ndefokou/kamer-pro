@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
@@ -30,13 +30,28 @@ const Dashboard = () => {
         queryFn: () => getProducts({}),
     });
 
-    const doualaProperties = properties?.filter(p => p.listing.city?.toLowerCase() === 'douala') || [];
-    const yaoundeProperties = properties?.filter(p => p.listing.city?.toLowerCase() === 'yaoundé' || p.listing.city?.toLowerCase() === 'yaounde') || [];
-    const kribiProperties = properties?.filter(p => p.listing.city?.toLowerCase() === 'kribi') || [];
-    const otherProperties = properties?.filter(p => {
-        const city = p.listing.city?.toLowerCase();
-        return !city || (city !== 'douala' && city !== 'yaoundé' && city !== 'yaounde' && city !== 'kribi');
-    }) || [];
+    const normalizeCity = (s?: string) => (s || "").trim().toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '');
+
+    const { grouped, other } = useMemo(() => {
+        const map = new Map<string, { name: string; items: Product[] }>();
+        const otherItems: Product[] = [];
+        (properties || []).forEach((p) => {
+            const raw = (p.listing.city || '').trim();
+            const key = normalizeCity(raw);
+            if (!key) {
+                otherItems.push(p);
+                return;
+            }
+            const entry = map.get(key) || { name: raw, items: [] };
+            // Prefer the first seen non-empty cased name as display
+            if (!entry.name && raw) entry.name = raw;
+            entry.items.push(p);
+            map.set(key, entry);
+        });
+        // Sort groups by size desc
+        const groups = Array.from(map.values()).sort((a, b) => b.items.length - a.items.length);
+        return { grouped: groups, other: otherItems };
+    }, [properties]);
 
     const toggleFavorite = (id: string) => {
         if (isInWishlist(id)) {
@@ -189,22 +204,19 @@ const Dashboard = () => {
                     </div>
                 ) : (
                     <>
-                        <PropertySection
-                            title={t("Stays in Douala")}
-                            properties={doualaProperties}
-                        />
-                        <PropertySection
-                            title={t("Stays in Yaoundé")}
-                            properties={yaoundeProperties}
-                        />
-                        <PropertySection
-                            title={t("Stays in Kribi")}
-                            properties={kribiProperties}
-                        />
-                        <PropertySection
-                            title={t("Other destinations")}
-                            properties={otherProperties}
-                        />
+                        {grouped.map((g) => (
+                            <PropertySection
+                                key={g.name || Math.random()}
+                                title={t("Stays in {{city}}", { city: g.name })}
+                                properties={g.items}
+                            />
+                        ))}
+                        {other.length > 0 && (
+                            <PropertySection
+                                title={t("Other destinations")}
+                                properties={other}
+                            />
+                        )}
                     </>
                 )}
             </main>

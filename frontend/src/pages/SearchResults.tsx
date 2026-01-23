@@ -207,22 +207,7 @@ const SearchResults = () => {
                         )}
                     </div>
 
-                    {/* Pagination */}
-                    {filteredProperties.length > 0 && (
-                        <div className="flex justify-center items-center gap-4 mt-12 mb-8">
-                            <button className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors disabled:opacity-50" disabled>
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" aria-hidden="true" role="presentation" focusable="false" style={{ display: 'block', fill: 'none', height: '12px', width: '12px', stroke: 'currentcolor', strokeWidth: 5.33333, overflow: 'visible' }}><path fill="none" d="M20 28 8.7 16.7a1 1 0 0 1 0-1.4L20 4"></path></svg>
-                            </button>
-                            <div className="flex gap-2">
-                                <button className="w-8 h-8 flex items-center justify-center rounded-full bg-black text-white font-medium text-sm">1</button>
-                                <button className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 font-medium text-sm">2</button>
-                                <button className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 font-medium text-sm">3</button>
-                            </div>
-                            <button className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors">
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" aria-hidden="true" role="presentation" focusable="false" style={{ display: 'block', fill: 'none', height: '12px', width: '12px', stroke: 'currentcolor', strokeWidth: 5.33333, overflow: 'visible' }}><path fill="none" d="m12 4 11.3 11.3a1 1 0 0 1 0 1.4L12 28"></path></svg>
-                            </button>
-                        </div>
-                    )}
+                    {/* Pagination removed */}
                 </div>
 
                 {/* Map (Right) */}

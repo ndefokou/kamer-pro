@@ -3,6 +3,7 @@ import { getMyBookings, type BookingWithDetails } from "@/api/client";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
+import { getImageUrl } from "@/lib/utils";
 
 const StatusBadge = ({ status }: { status: BookingWithDetails["booking"]["status"] }) => {
   const color = status === "confirmed" ? "bg-green-100 text-green-700" : status === "pending" ? "bg-yellow-100 text-yellow-700" : "bg-red-100 text-red-700";
@@ -27,7 +28,12 @@ export default function MyBookings() {
             <div className="grid grid-cols-1 gap-4">
               {data.map((b) => (
                 <div key={b.booking.id} className="border rounded-xl p-4 flex gap-4 items-center bg-white">
-                  <img src={b.listing_photo || "/bathroom-placeholder.jpg"} alt="Listing" className="w-24 h-24 object-cover rounded-lg" />
+                  <img
+                    src={b.listing_photo ? getImageUrl(b.listing_photo) : "/bathroom-placeholder.jpg"}
+                    onError={(e) => { (e.currentTarget as HTMLImageElement).src = "/bathroom-placeholder.jpg"; }}
+                    alt="Listing"
+                    className="w-24 h-24 object-cover rounded-lg"
+                  />
                   <div className="flex-1">
                     <div className="flex items-center justify-between">
                       <h3 className="font-semibold text-lg line-clamp-1">{b.listing_title}</h3>
