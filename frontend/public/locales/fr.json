@@ -21,7 +21,8 @@
     "new": "Nouveau",
     "pendingUpload": "En attente de téléversement",
     "savePhotosCount": "Enregistrer {{count}} {{unit}}",
-    "total": "Total"
+    "total": "Total",
+    "share": "Partager"
   },
   "search destinations": "Rechercher des destinations",
   "when": "Quand",
@@ -694,5 +695,37 @@
   "Investisseurs": "Investisseurs",
   "Confidentialité": "Confidentialité",
   "Conditions": "Conditions",
-  "Plan du site": "Plan du site"
+  "Plan du site": "Plan du site",
+  "listing": {
+    "errors": {
+      "notFound": "Annonce introuvable"
+    },
+    "actions": {
+      "goHome": "Retour à l'accueil",
+      "reserve": "Réserver",
+      "close": "Fermer"
+    },
+    "details": {
+      "clearDates": "Effacer les dates",
+      "safetyProperty": "Sécurité et propriété",
+      "flexibleCancellation": "Politique d'annulation flexible",
+      "selectDates": "Sélectionner des dates"
+    },
+    "reviews": {
+      "noReviewsYet": "Aucun avis pour le moment",
+      "writeReview": "Écrire un avis"
+    },
+    "host": {
+      "meet": "Rencontrez votre hôte",
+      "reviews": "Avis",
+      "rating": "Note",
+      "yearsHosting": "Années d'hébergement",
+      "aboutTitle": "À propos de l'hôte",
+      "livesIn": "Vit à {{location}}",
+      "speaks": "Parle {{langs}}",
+      "bioDefault": "Je suis un voyageur passionné et j'aime accueillir des personnes du monde entier. Mon objectif est de rendre votre séjour le plus confortable possible.",
+      "messageCta": "Contacter l'hôte",
+      "reportCta": "Signaler cet hôte"
+    }
+  }
 }

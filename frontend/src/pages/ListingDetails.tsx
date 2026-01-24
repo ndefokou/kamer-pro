@@ -87,7 +87,7 @@ const ListingDetails: React.FC = () => {
     const [isMessageModalOpen, setIsMessageModalOpen] = React.useState(false);
     const [isReportModalOpen, setIsReportModalOpen] = React.useState(false);
     const [isPhotoGalleryOpen, setIsPhotoGalleryOpen] = React.useState(false);
-    const { t, i18n } = useTranslation();
+    const { i18n } = useTranslation();
     const locale = i18n.language?.startsWith('fr') ? 'fr-FR' : 'en-US';
 
     const [initialPhotoIndex, setInitialPhotoIndex] = React.useState(0);
@@ -141,8 +141,8 @@ const ListingDetails: React.FC = () => {
     if (error || !product) {
         return (
             <div className="min-h-screen flex flex-col items-center justify-center gap-4">
-                <h1 className="text-2xl font-bold">{t('listing.errors.notFound', 'Listing not found')}</h1>
-                <Button onClick={() => navigate('/')}>{t('listing.actions.goHome', 'Go Home')}</Button>
+                <h1 className="text-2xl font-bold">Listing not found</h1>
+                <Button onClick={() => navigate('/')}>Go Home</Button>
             </div>
         );
     }
@@ -434,11 +434,11 @@ const ListingDetails: React.FC = () => {
                             onClick={() => setIsShareModalOpen(true)}
                         >
                             <Share className="h-4 w-4" />
-                            {t('common.share', 'Share')}
+                            Share
                         </Button>
                         <Button variant="outline" size="sm" className="gap-2" onClick={handleToggleWishlist}>
                             <Heart className={`h-4 w-4 ${isWishlisted ? 'fill-red-500 text-red-500' : ''}`} />
-                            {t('common.save', 'Save')}
+                            Save
                         </Button>
                     </div>
                 </div>
@@ -547,13 +547,13 @@ const ListingDetails: React.FC = () => {
                                     setIsPhotoGalleryOpen(true);
                                 }}
                             >
-                                <span className="hidden sm:inline">{t('host.preview.showAllPhotos', 'Show all photos')}</span>
-                                <span className="sm:hidden">{t('host.editor.sidebar.photos', 'Photos')}</span>
+                                <span className="hidden sm:inline">Show all photos</span>
+                                <span className="sm:hidden">Photos</span>
                             </button>
                         </div>
                     ) : (
                         <div className="w-full h-64 md:h-[400px] bg-muted flex items-center justify-center rounded-xl">
-                            <p className="text-muted-foreground">{t('host.preview.noPhotos', 'No photos available')}</p>
+                            <p className="text-muted-foreground">No photos available</p>
                         </div>
                     )}
                 </div>
@@ -563,7 +563,7 @@ const ListingDetails: React.FC = () => {
                     <div className="md:col-span-2">
                         <div className="border-b pb-6 mb-6">
                             <h2 className="text-xl font-semibold mb-1">
-                                {t('host.preview.hostedBy', { type: listing.property_type, name: hostName })}
+                                <TranslatedText as="span" text={`${listing.property_type} hosted by ${hostName}`} />
                             </h2>
                             <p className="text-muted-foreground">
                                 {listing.max_guests} guests • {listing.bedrooms} bedrooms • {listing.beds} beds • {listing.bathrooms} baths
@@ -572,7 +572,7 @@ const ListingDetails: React.FC = () => {
 
                         {/* Description */}
                         <div className="border-b pb-6 mb-6">
-                            <h3 className="font-semibold mb-4">{t('host.preview.about', 'About this place')}</h3>
+                            <h3 className="font-semibold mb-4">About this place</h3>
                             {aboutSections.length > 0 ? (
                                 <div className="space-y-4">
                                     {aboutSections.map((s, idx) => (
@@ -589,7 +589,7 @@ const ListingDetails: React.FC = () => {
 
                         {/* Amenities */}
                         <div className="border-b pb-6 mb-6">
-                            <h3 className="font-semibold mb-4">{t('host.preview.offers', 'What this place offers')}</h3>
+                            <h3 className="font-semibold mb-4">What this place offers</h3>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 {amenities.slice(0, 10).map((amenityKey) => {
                                     const amenity = AMENITY_DETAILS[amenityKey];
@@ -605,7 +605,7 @@ const ListingDetails: React.FC = () => {
                             </div>
                             {amenities.length > 10 && (
                                 <Button variant="outline" className="mt-6">
-                                    {t('host.preview.showAllAmenities', { count: amenities.length })}
+                                    Show all {amenities.length} amenities
                                 </Button>
                             )}
                         </div>
@@ -614,13 +614,13 @@ const ListingDetails: React.FC = () => {
                         <div className="border-b pb-12 mb-12">
                             <h3 className="text-xl font-semibold mb-2">
                                 {checkInDate && checkOutDate
-                                    ? `${Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24))} ${t('common.nights', 'nights')} in ${listing.city}`
-                                    : t('host.preview.selectCheckIn', 'Select check-in date')}
+                                    ? `${Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24))} nights in ${listing.city}`
+                                    : `Select check-in date`}
                             </h3>
                             <p className="text-muted-foreground mb-6">
                                 {checkInDate && checkOutDate
                                     ? `${format(checkInDate, 'MMM d, yyyy')} - ${format(checkOutDate, 'MMM d, yyyy')}`
-                                    : t('host.preview.addDates', 'Add your travel dates for exact pricing')}
+                                    : 'Add your travel dates for exact pricing'}
                             </p>
                             <div className="hidden md:block">
                                 <DayPicker
@@ -683,7 +683,7 @@ const ListingDetails: React.FC = () => {
                                         setCheckOutDate(null);
                                     }}
                                 >
-                                    {t('listing.details.clearDates', 'Clear dates')}
+                                    Clear dates
                                 </Button>
                             </div>
                         </div>
@@ -694,10 +694,10 @@ const ListingDetails: React.FC = () => {
                                 <div className="flex items-center gap-2">
                                     <Star className="h-5 w-5 fill-current" />
                                     <h2 className="text-2xl font-semibold">
-                                        {reviews.length === 0 ? t('listing.reviews.noReviewsYet', 'No reviews yet') : `${(reviews.reduce((acc, r) => acc + Object.values(r.ratings).reduce((a, b) => a + b, 0) / 6, 0) / reviews.length).toFixed(2)} · ${reviews.length} ${t('listing.host.reviews', 'Reviews')}`}
+                                        {reviews.length === 0 ? 'No reviews yet' : `${(reviews.reduce((acc, r) => acc + Object.values(r.ratings).reduce((a, b) => a + b, 0) / 6, 0) / reviews.length).toFixed(2)} · ${reviews.length} reviews`}
                                     </h2>
                                 </div>
-                                <Button variant="outline" onClick={() => setIsReviewModalOpen(true)}>{t('listing.reviews.writeReview', 'Write a Review')}</Button>
+                                <Button variant="outline" onClick={() => setIsReviewModalOpen(true)}>Write a Review</Button>
                             </div>
 
                             <ReviewModal
@@ -757,7 +757,7 @@ const ListingDetails: React.FC = () => {
                                     <span className="text-2xl font-bold">
                                         {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XAF' }).format(listing.price_per_night || 0)}
                                     </span>
-                                    <span className="text-muted-foreground"> / {t('host.common.perNight', 'per night')}</span>
+                                    <span className="text-muted-foreground"> / night</span>
                                 </div>
                             </div>
 
@@ -774,8 +774,8 @@ const ListingDetails: React.FC = () => {
                                             }
                                         }}
                                     >
-                                        <div className="text-[10px] font-bold uppercase">{t('host.preview.checkIn', 'Check-in')}</div>
-                                        <div className="text-sm">{checkInDate ? checkInDate.toLocaleDateString() : t('host.preview.addDate', 'Add date')}</div>
+                                        <div className="text-[10px] font-bold uppercase">Check-in</div>
+                                        <div className="text-sm">{checkInDate ? checkInDate.toLocaleDateString() : 'Add date'}</div>
                                     </div>
                                     <div
                                         className="p-3 cursor-pointer hover:bg-gray-50"
@@ -788,13 +788,13 @@ const ListingDetails: React.FC = () => {
                                             }
                                         }}
                                     >
-                                        <div className="text-[10px] font-bold uppercase">{t('host.preview.checkout', 'Checkout')}</div>
-                                        <div className="text-sm">{checkOutDate ? checkOutDate.toLocaleDateString() : t('host.preview.addDate', 'Add date')}</div>
+                                        <div className="text-[10px] font-bold uppercase">Checkout</div>
+                                        <div className="text-sm">{checkOutDate ? checkOutDate.toLocaleDateString() : 'Add date'}</div>
                                     </div>
                                 </div>
                                 <div className="p-3 relative">
                                     <div className="cursor-pointer" onClick={() => setShowGuestPicker(!showGuestPicker)}>
-                                        <div className="text-[10px] font-bold uppercase">{t('host.preview.guestPicker.label', 'Guests')}</div>
+                                        <div className="text-[10px] font-bold uppercase">Guests</div>
                                         <div className="text-sm">{totalGuests} guest{totalGuests !== 1 ? 's' : ''}</div>
                                     </div>
 
@@ -803,8 +803,8 @@ const ListingDetails: React.FC = () => {
                                             {/* Adults */}
                                             <div className="flex items-center justify-between py-4 border-b border-gray-200">
                                                 <div>
-                                                    <div className="font-semibold">{t('host.preview.guestPicker.adults', 'Adults')}</div>
-                                                    <div className="text-sm text-gray-500">{t('host.preview.guestPicker.adultsAge', 'Age 13+')}</div>
+                                                    <div className="font-semibold">Adults</div>
+                                                    <div className="text-sm text-gray-500">Age 13+</div>
                                                 </div>
                                                 <div className="flex items-center gap-3">
                                                     <button
@@ -823,7 +823,7 @@ const ListingDetails: React.FC = () => {
                                                     </button>
                                                 </div>
                                             </div>
-                                            <Button variant="ghost" className="w-full mt-2" onClick={() => setShowGuestPicker(false)}>{t('host.preview.guestPicker.close', 'Close')}</Button>
+                                            <Button variant="ghost" className="w-full mt-2" onClick={() => setShowGuestPicker(false)}>Close</Button>
                                         </div>
                                     )}
                                 </div>
@@ -837,13 +837,13 @@ const ListingDetails: React.FC = () => {
                                             onClick={() => setShowDatePicker(false)}
                                             aria-label="Close calendar"
                                         >
-                                            {t('listing.actions.close', 'Close')}
+                                            Close
                                         </button>
                                         <button
                                             className="text-sm underline text-muted-foreground hover:text-foreground"
                                             onClick={() => { setCheckInDate(null); setCheckOutDate(null); }}
                                         >
-                                            {t('listing.details.clearDates', 'Clear dates')}
+                                            Clear dates
                                         </button>
                                     </div>
                                     {renderCalendar()}
@@ -855,11 +855,11 @@ const ListingDetails: React.FC = () => {
                                 onClick={handleReserve}
                                 disabled={isHost || !checkInDate || !checkOutDate}
                             >
-                                {t('listing.actions.reserve', 'Reserve')}
+                                Reserve
                             </Button>
 
                             <div className="text-center mt-4 text-sm text-muted-foreground">
-                                {t('host.preview.noCharge', "You won't be charged yet")}
+                                You won't be charged yet
                             </div>
                         </div>
                     </div>
@@ -867,7 +867,7 @@ const ListingDetails: React.FC = () => {
 
                 {/* Where you'll be */}
                 <div className="py-8 border-t border-gray-200">
-                    <h3 className="text-xl font-semibold mb-4">{t("host.preview.location.title", "Where you'll be")}</h3>
+                    <h3 className="text-xl font-semibold mb-4">Where you'll be</h3>
                     <div className="mb-6">
                         <p className="font-medium text-gray-900 text-lg">{listing.address || `${listing.city}, ${listing.country}`}</p>
                         {(listing.latitude && listing.longitude) && (
@@ -890,7 +890,7 @@ const ListingDetails: React.FC = () => {
                             <Marker position={[listing.latitude || 4.0511, listing.longitude || 9.7679]}>
                                 <Popup>
                                     <div className="font-semibold">{listing.title}</div>
-                                    <div className="text-sm text-gray-600">{t('host.preview.location.exact', 'Exact location provided after booking')}</div>
+                                    <div className="text-sm text-gray-600">Exact location provided after booking</div>
                                 </Popup>
                             </Marker>
                         </MapContainer>
@@ -903,14 +903,14 @@ const ListingDetails: React.FC = () => {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                             {listing.getting_around && (
                                 <div>
-                                    <h3 className="text-xl font-semibold mb-4">{t('host.editor.location.gettingAround', 'Getting around')}</h3>
+                                    <h3 className="text-xl font-semibold mb-4">Getting around</h3>
                                     <TranslatedText as="p" className="text-muted-foreground whitespace-pre-line" text={listing.getting_around || ''} />
                                 </div>
                             )}
 
                             {listing.scenic_views && (
                                 <div>
-                                    <h3 className="text-xl font-semibold mb-4">{t('host.editor.location.scenicViews', 'Scenic views')}</h3>
+                                    <h3 className="text-xl font-semibold mb-4">Scenic views</h3>
                                     <div className="flex flex-wrap gap-2">
                                         {(() => {
                                             try {
@@ -939,7 +939,7 @@ const ListingDetails: React.FC = () => {
 
                 {/* Host Section */}
                 <div className="mt-12 pt-8 border-t border-gray-200">
-                    <h3 className="text-xl font-semibold mb-6">{t('listing.host.meet', 'Meet your Host')}</h3>
+                    <h3 className="text-xl font-semibold mb-6">Meet your Host</h3>
                     <div className="bg-[#F0EFE9] rounded-2xl p-6 md:p-8 grid grid-cols-1 md:grid-cols-3 gap-8">
                         {/* Host Card */}
                         <div className="bg-white rounded-2xl p-6 shadow-lg flex flex-col items-center text-center md:col-span-1">
@@ -957,19 +957,19 @@ const ListingDetails: React.FC = () => {
                                 <div className="flex justify-between items-center border-b pb-4">
                                     <div className="text-left">
                                         <div className="font-bold text-lg">{reviews.length}</div>
-                                        <div className="text-xs text-muted-foreground">{t('listing.host.reviews', 'Reviews')}</div>
+                                        <div className="text-xs text-muted-foreground">Reviews</div>
                                     </div>
                                     <div className="text-right">
                                         <div className="font-bold text-lg">
                                             {reviews.length > 0
                                                 ? (reviews.reduce((acc, r) => acc + Object.values(r.ratings).reduce((a, b) => a + b, 0) / 6, 0) / reviews.length).toFixed(2)
-                                                : t('common.new', 'New')}
+                                                : "New"}
                                         </div>
-                                        <div className="text-xs text-muted-foreground">{t('listing.host.rating', 'Rating')}</div>
+                                        <div className="text-xs text-muted-foreground">Rating</div>
                                     </div>
                                     <div className="text-right">
-                                        <div className="font-bold text-lg">{t('common.new', 'New')}</div>
-                                        <div className="text-xs text-muted-foreground">{t('listing.host.yearsHosting', 'Years hosting')}</div>
+                                        <div className="font-bold text-lg">New</div>
+                                        <div className="text-xs text-muted-foreground">Years hosting</div>
                                     </div>
                                 </div>
                             </div>
@@ -980,28 +980,28 @@ const ListingDetails: React.FC = () => {
                             {/* Removed fake badges (Superhost, Response rate, Free cancellation) */}
 
                             <div className="pt-4">
-                                <h4 className="text-lg font-semibold mb-2">{t('listing.host.aboutTitle', 'About the Host')}</h4>
+                                <h4 className="text-lg font-semibold mb-2">About the Host</h4>
                                 {localStorage.getItem('host_location') && (
                                     <div className="flex items-center gap-2 mb-2 text-gray-700">
                                         <MapIcon className="h-5 w-5" />
-                                        <span>{t('listing.host.livesIn', { location: localStorage.getItem('host_location') || '' })}</span>
+                                        <span>Lives in {localStorage.getItem('host_location')}</span>
                                     </div>
                                 )}
                                 {localStorage.getItem('host_languages') && (
                                     <div className="flex items-center gap-2 mb-4 text-gray-700">
                                         <MessageSquare className="h-5 w-5" />
-                                        <span>{t('listing.host.speaks', { langs: localStorage.getItem('host_languages') || '' })}</span>
+                                        <span>Speaks {localStorage.getItem('host_languages')}</span>
                                     </div>
                                 )}
                                 <p className="text-muted-foreground mb-6">
-                                    {t('listing.host.bioDefault', 'I am a passionate traveler and I love hosting people from all over the world. My goal is to make your stay as comfortable as possible.')}
+                                    I am a passionate traveler and I love hosting people from all over the world. My goal is to make your stay as comfortable as possible.
                                 </p>
                                 <Button
                                     variant="outline"
                                     className="font-semibold border-black text-black hover:bg-gray-100"
                                     onClick={handleMessageHost}
                                 >
-                                    {t('listing.host.messageCta', 'Message Host')}
+                                    Message Host
                                 </Button>
                                 <div className="mt-4 flex justify-center md:justify-start">
                                     <button
@@ -1009,7 +1009,7 @@ const ListingDetails: React.FC = () => {
                                         className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground underline"
                                     >
                                         <ShieldCheck className="h-4 w-4" />
-                                        {t('listing.host.reportCta', 'Report this host')}
+                                        Report this host
                                     </button>
                                 </div>
                             </div>
@@ -1019,11 +1019,11 @@ const ListingDetails: React.FC = () => {
 
                 {/* Things to know */}
                 <div className="mt-12 pt-8 border-t border-gray-200">
-                    <h3 className="text-xl font-semibold mb-6">{t('host.preview.thingsToKnow', 'Things to know')}</h3>
+                    <h3 className="text-xl font-semibold mb-6">Things to know</h3>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                         {/* House Rules */}
                         <div>
-                            <h4 className="font-semibold mb-4">{t('host.preview.houseRules', 'House rules')}</h4>
+                            <h4 className="font-semibold mb-4">House rules</h4>
                             <div className="space-y-2 text-sm text-gray-700">
                                 <p>Check-in: {houseRules.check_in_start} - {houseRules.check_in_end}</p>
                                 <p>Checkout: {houseRules.checkout_time}</p>
@@ -1038,7 +1038,7 @@ const ListingDetails: React.FC = () => {
 
                         {/* Safety & Property */}
                         <div>
-                            <h4 className="font-semibold mb-4">{t('listing.details.safetyProperty', 'Safety & property')}</h4>
+                            <h4 className="font-semibold mb-4">Safety & property</h4>
                             <div className="space-y-2 text-sm text-gray-700">
                                 {listing.safety_devices && (() => {
                                     let devices: string[] = [];
@@ -1063,9 +1063,9 @@ const ListingDetails: React.FC = () => {
 
                         {/* Cancellation Policy */}
                         <div>
-                            <h4 className="font-semibold mb-4">{t('host.editor.sidebar.cancellationPolicy', 'Cancellation policy')}</h4>
+                            <h4 className="font-semibold mb-4">Cancellation policy</h4>
                             <p className="text-sm text-gray-700">
-                                {listing.cancellation_policy || t('listing.details.flexibleCancellation', 'Flexible cancellation policy')}
+                                {listing.cancellation_policy || "Flexible cancellation policy"}
                             </p>
                         </div>
                     </div>
@@ -1080,12 +1080,12 @@ const ListingDetails: React.FC = () => {
                             <span className="font-bold text-lg">
                                 {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XAF', maximumFractionDigits: 0 }).format(listing.price_per_night || 0)}
                             </span>
-                            <span className="text-sm text-muted-foreground">/ {t('host.common.perNight', 'per night')}</span>
+                            <span className="text-sm text-muted-foreground">/ night</span>
                         </div>
                         <span className="text-xs font-medium underline cursor-pointer" onClick={openMobileDatePicker}>
                             {checkInDate && checkOutDate ?
                                 `${format(checkInDate, 'MMM d')} - ${format(checkOutDate, 'MMM d')}` :
-                                t('host.preview.addDates', 'Add dates')
+                                'Add dates'
                             }
                         </span>
                     </div>
@@ -1093,7 +1093,7 @@ const ListingDetails: React.FC = () => {
                         className="bg-[#FF385C] hover:bg-[#D9324E] text-white font-semibold px-8"
                         onClick={() => (checkInDate && checkOutDate ? handleReserve() : openMobileDatePicker())}
                     >
-                        {checkInDate && checkOutDate ? t('listing.actions.reserve', 'Reserve') : t('listing.details.selectDates', 'Select dates')}
+                        {checkInDate && checkOutDate ? 'Reserve' : 'Select dates'}
                     </Button>
                 </div>
             </div>
@@ -1124,13 +1124,13 @@ const ListingDetails: React.FC = () => {
                             className="text-sm font-semibold underline"
                             onClick={() => { setCheckInDate(null); setCheckOutDate(null); }}
                         >
-                            {t('listing.details.clearDates', 'Clear dates')}
+                            Clear dates
                         </button>
                     </div>
                     <div className="px-4 pt-4">
                         <DialogHeader className="mb-2">
-                            <DialogTitle className="text-lg font-semibold">{t('host.preview.selectCheckIn', 'Select check-in date')}</DialogTitle>
-                            <DialogDescription className="text-sm text-muted-foreground">{t('host.preview.addDates', 'Add your travel dates to see exact pricing')}</DialogDescription>
+                            <DialogTitle className="text-lg font-semibold">Select check-in date</DialogTitle>
+                            <DialogDescription className="text-sm text-muted-foreground">Add your travel dates to see exact pricing</DialogDescription>
                         </DialogHeader>
                         <DayPicker
                             mode="range"
@@ -1160,7 +1160,7 @@ const ListingDetails: React.FC = () => {
                                 handleReserve();
                             }}
                         >
-                            {t('listing.actions.reserve', 'Reserve')}
+                            Reserve
                         </Button>
                     </div>
                 </DialogContent>
