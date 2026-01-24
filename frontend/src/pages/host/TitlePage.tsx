@@ -55,12 +55,12 @@ const TitlePage: React.FC = () => {
                 </div>
 
                 <div className="bg-muted p-6 rounded-lg mb-8">
-                    <h3 className="font-semibold mb-3">Tips for a great title:</h3>
+                    <h3 className="font-semibold mb-3">{t('host.title.tipsTitle', 'Tips for a great title:')}</h3>
                     <ul className="space-y-2 text-sm text-muted-foreground">
-                        <li>• Highlight what makes your place special</li>
-                        <li>• Mention the location or neighborhood</li>
-                        <li>• Keep it short and catchy</li>
-                        <li>• Avoid ALL CAPS or excessive punctuation</li>
+                        <li>• {t('host.title.tips.tip1', 'Highlight what makes your place special')}</li>
+                        <li>• {t('host.title.tips.tip2', 'Mention the location or neighborhood')}</li>
+                        <li>• {t('host.title.tips.tip3', 'Keep it short and catchy')}</li>
+                        <li>• {t('host.title.tips.tip4', 'Avoid ALL CAPS or excessive punctuation')}</li>
                     </ul>
                 </div>
 

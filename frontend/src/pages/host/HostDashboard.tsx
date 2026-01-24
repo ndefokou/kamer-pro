@@ -298,14 +298,14 @@ const HostDashboard: React.FC = () => {
                 <div className="max-w-md mx-auto px-6">
                     <ul className="grid grid-cols-4 h-16">
                         <li className="flex items-center justify-center">
-                            <a href="/host/listening" className="flex flex-col items-center gap-1 group w-full h-full justify-center">
+                            <a href="/host/reservations" className="flex flex-col items-center gap-1 group w-full h-full justify-center">
                                 <div className="p-1.5 rounded-full group-active:scale-95 transition-transform group-hover:bg-gray-100">
                                     <Home className="h-6 w-6 text-gray-500 group-hover:text-gray-900 transition-colors" />
                                 </div>
-                                <span className="text-[10px] font-medium text-gray-500 group-hover:text-gray-900 transition-colors">{t('nav.listening', 'Listening')}</span>
+                                <span className="text-[10px] font-medium text-gray-500 group-hover:text-gray-900 transition-colors">{t('nav.reservations', 'reservations')}</span>
                             </a>
                         </li>
-                        
+
                         <li className="flex items-center justify-center">
                             <a href="/host/dashboard" className="flex flex-col items-center gap-1 group w-full h-full justify-center">
                                 <div className="p-1.5 rounded-full group-active:scale-95 transition-transform">

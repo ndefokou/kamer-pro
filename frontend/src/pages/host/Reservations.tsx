@@ -35,7 +35,7 @@ interface BookingWithDetails {
 
 type TabType = 'today' | 'upcoming';
 
-const Listening: React.FC = () => {
+const Reservations: React.FC = () => {
     const navigate = useNavigate();
     const { t } = useTranslation();
     const [activeTab, setActiveTab] = useState<TabType>('today');
@@ -173,7 +173,7 @@ const Listening: React.FC = () => {
 
             <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 <div className="mb-8">
-                    <h1 className="text-3xl font-semibold text-gray-900">{t('host.listening.title', 'Listening')}</h1>
+                    <h1 className="text-3xl font-semibold text-gray-900">{t('host.reservations.title', 'Reservations')}</h1>
                 </div>
 
                 {/* Segmented control */}
@@ -199,8 +199,8 @@ const Listening: React.FC = () => {
                                 <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-5">
                                     <Calendar className="h-10 w-10 text-gray-400" />
                                 </div>
-                                <h3 className="text-xl font-semibold text-gray-900">{t('host.listening.emptyTodayTitle', 'No reservations today')}</h3>
-                                <p className="text-gray-500 mt-2">{t("host.listening.emptyTodayDesc", "You don't have any guests checking in or out today.")}</p>
+                                <h3 className="text-xl font-semibold text-gray-900">{t('host.reservations.emptyTodayTitle', 'No reservations today')}</h3>
+                                <p className="text-gray-500 mt-2">{t("host.reservations.emptyTodayDesc", "You don't have any guests checking in or out today.")}</p>
                                 <Button className="mt-6 rounded-full px-5">{t('host.common.manageListings', 'Manage Listings')}</Button>
                             </div>
                         ) : (
@@ -267,8 +267,8 @@ const Listening: React.FC = () => {
                                 <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-5">
                                     <Calendar className="h-10 w-10 text-gray-400" />
                                 </div>
-                                <h3 className="text-xl font-semibold text-gray-900">{t('host.listening.emptyUpcomingTitle', 'No upcoming reservations')}</h3>
-                                <p className="text-gray-500 mt-2">{t('host.listening.emptyUpcomingDesc', 'Finish and publish your listing to receive bookings.')}</p>
+                                <h3 className="text-xl font-semibold text-gray-900">{t('host.reservations.emptyUpcomingTitle', 'No upcoming reservations')}</h3>
+                                <p className="text-gray-500 mt-2">{t('host.reservations.emptyUpcomingDesc', 'Finish and publish your listing to receive bookings.')}</p>
                                 <Button className="mt-6 rounded-full px-5">{t('host.common.manageListings', 'Manage Listings')}</Button>
                             </div>
                         ) : (
@@ -306,14 +306,14 @@ const Listening: React.FC = () => {
             {declineDialogOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
                     <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-xl">
-                        <h3 className="text-lg font-semibold text-gray-900 mb-2">{t('host.listening.declineTitle', 'Decline Booking')}</h3>
+                        <h3 className="text-lg font-semibold text-gray-900 mb-2">{t('host.reservations.declineTitle', 'Decline Booking')}</h3>
                         <p className="text-sm text-gray-500 mb-4">
-                            {t('host.listening.declineHelp', 'Please provide a reason for declining this booking. This message will be sent to the guest.')}
+                            {t('host.reservations.declineHelp', 'Please provide a reason for declining this booking. This message will be sent to the guest.')}
                         </p>
                         <textarea
                             value={declineReason}
                             onChange={(e) => setDeclineReason(e.target.value)}
-                            placeholder={t('host.listening.declinePlaceholder', 'e.g., The dates are no longer available...') as string}
+                            placeholder={t('host.reservations.declinePlaceholder', 'e.g., The dates are no longer available...') as string}
                             className="w-full h-32 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent resize-none mb-4"
                         />
                         <div className="flex justify-end gap-3">
@@ -329,7 +329,7 @@ const Listening: React.FC = () => {
                                 disabled={!declineReason.trim() || isSubmitting}
                                 className="bg-red-600 hover:bg-red-700 text-white"
                             >
-                                {isSubmitting ? t('host.listening.declining', 'Declining...') : t('host.listening.declineCta', 'Decline Booking')}
+                                {isSubmitting ? t('host.reservations.declining', 'Declining...') : t('host.reservations.declineCta', 'Decline Booking')}
                             </Button>
                         </div>
                     </div>
@@ -341,11 +341,11 @@ const Listening: React.FC = () => {
                 <div className="max-w-md mx-auto px-6">
                     <ul className="grid grid-cols-3 h-16">
                         <li className="flex items-center justify-center">
-                            <a href="/host/listening" className="flex flex-col items-center gap-1 group w-full h-full justify-center">
+                            <a href="/host/reservations" className="flex flex-col items-center gap-1 group w-full h-full justify-center">
                                 <div className="p-1.5 rounded-full group-active:scale-95 transition-transform">
                                     <Home className="h-6 w-6 text-primary fill-current" />
                                 </div>
-                                <span className="text-[10px] font-medium text-primary">{t('nav.listening', 'Listening')}</span>
+                                <span className="text-[10px] font-medium text-primary">{t('nav.reservations', 'Reservations')}</span>
                             </a>
                         </li>
                         <li className="flex items-center justify-center">
@@ -371,4 +371,4 @@ const Listening: React.FC = () => {
     );
 };
 
-export default Listening;
+export default Reservations;

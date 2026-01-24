@@ -2,8 +2,26 @@
   "where": "Où",
   "common": {
     "back": "Retour",
+    "continue": "Continuer",
+    "cancel": "Annuler",
+    "save": "Enregistrer",
+    "saving": "Enregistrement...",
+    "loading": "Chargement...",
     "stepOf": "Étape {{current}} sur {{total}}",
-    "nights": "nuits"
+    "nights": "nuits",
+    "today": "Aujourd'hui",
+    "upcoming": "À venir",
+    "message": "Message",
+    "approve": "Approuver",
+    "decline": "Refuser",
+    "guests": "voyageurs",
+    "searching": "Recherche...",
+    "noResults": "Aucun résultat trouvé",
+    "zero": "0",
+    "new": "Nouveau",
+    "pendingUpload": "En attente de téléversement",
+    "savePhotosCount": "Enregistrer {{count}} {{unit}}",
+    "total": "Total"
   },
   "search destinations": "Rechercher des destinations",
   "when": "Quand",
@@ -54,6 +72,22 @@
   "menu": "Menu",
   "navigate through the application": "Naviguer dans l'application",
   "user": "Utilisateur",
+  "nav": {
+    "reservations": "Réservations",
+    "listings": "Annonces",
+    "messages": "Messages"
+  },
+  "account": {
+    "settings": "Paramètres du compte"
+  },
+  "auth": {
+    "logout": "Déconnexion"
+  },
+  "status": {
+    "confirmed": "Confirmée",
+    "pending": "En attente",
+    "declined": "Refusée"
+  },
   "discover products": "Trouver un logement",
   "search": "Rechercher...",
   "category": "Catégorie de propriété",
@@ -70,8 +104,13 @@
   "add new product": "Ajouter un nouveau produit",
   "fill in the details to update": "Remplissez les détails pour mettre à jour votre annonce.",
   "host": {
+    "header": {
+      "switchToTraveling": "Passer en mode voyageur",
+      "createListing": "Créer une nouvelle annonce"
+    },
     "common": {
-      "perNight": "par nuit"
+      "perNight": "par nuit",
+      "manageListings": "Gérer les annonces"
     },
     "dashboard": {
       "table": {
@@ -214,7 +253,22 @@
         "help": "Les dispositifs de sécurité et les considérations que vous partagez avec les voyageurs les aident à prendre des décisions éclairées lors de la réservation de votre propriété.",
         "considerations": "Considérations de sécurité",
         "devices": "Dispositifs de sécurité",
-        "propertyInfo": "Informations sur la propriété"
+        "propertyInfo": "Informations sur la propriété",
+        "title": "Sécurité et règlement intérieur",
+        "subtitle": "Aidez les voyageurs à se sentir en sécurité et à savoir à quoi s'attendre",
+        "devicesTitle": "Dispositifs de sécurité",
+        "devicesHelp": "Sélectionnez tous les dispositifs de sécurité disponibles dans votre logement",
+        "houseRulesTitle": "Règlement intérieur",
+        "houseRulesHelp": "Définissez des attentes claires pour vos voyageurs",
+        "houseRulesPlaceholder": "ex. Interdit de fumer, Pas d'animaux, Pas de fêtes ou événements, Heures calmes : 22 h – 8 h",
+        "commonRulesTitle": "Règles courantes :",
+        "rules": {
+          "noSmoking": "Interdit de fumer",
+          "noPets": "Pas d'animaux",
+          "noParties": "Pas de fêtes ni d'événements",
+          "quietHours": "Heures calmes (ex. 22 h – 8 h)",
+          "checkInOut": "Heures d'arrivée/de départ"
+        }
       },
       "cancellation": {
         "help": "Choisissez une politique qui vous convient, à vous et à vos voyageurs.",
@@ -244,6 +298,113 @@
         "numberOfGuests": "Nombre de voyageurs"
       },
       "addDetails": "Ajouter des détails"
+    },
+    "intro": {
+      "title": "Bienvenue ! Commençons à publier votre logement",
+      "subtitle": "Dites-nous quel type de logement vous avez"
+    },
+    "photos": {
+      "title": "Ajoutez des photos de votre logement",
+      "subtitle": "Vous aurez besoin d'au moins 3 photos pour commencer. Vous pourrez en ajouter ou les modifier plus tard.",
+      "dropTitle": "Glissez vos photos ici",
+      "dropHelp": "Choisissez au moins 3 photos",
+      "uploading": "Téléversement...",
+      "uploadFromDevice": "Téléverser depuis votre appareil",
+      "photosPlural": "photos",
+      "photoSingular": "photo",
+      "cover": "Couverture",
+      "setAsCover": "Définir comme couverture",
+      "coverPhoto": "Photo de couverture",
+      "readyToUpload": "prêtes à être téléversées"
+    },
+    "title": {
+      "title": "Donnez un titre à votre logement",
+      "subtitle": "Les titres courts fonctionnent mieux. Amusez‑vous — vous pourrez toujours le modifier plus tard.",
+      "placeholder": "ex. Appartement cosy au cœur de Yaoundé",
+      "moreCharsNeeded": "Il manque {{count}} caractères",
+      "looksGood": "C'est bon !",
+      "tipsTitle": "Astuces pour un excellent titre :",
+      "tips": {
+        "tip1": "Mettez en avant ce qui rend votre logement unique",
+        "tip2": "Mentionnez l'emplacement ou le quartier",
+        "tip3": "Restez court et accrocheur",
+        "tip4": "Évitez LES MAJUSCULES ou la ponctuation excessive"
+      }
+    },
+    "description": {
+      "title": "Rédigez votre description",
+      "subtitle": "Partagez ce qui rend votre logement spécial",
+      "placeholder": "Décrivez votre logement...",
+      "moreCharsNeeded": "Il manque {{count}} caractères",
+      "looksGood": "C'est bon !",
+      "tipsTitle": "Conseils d'écriture :",
+      "tips": {
+        "tip1": "Décrivez l'espace et comment les voyageurs l'utiliseront",
+        "tip2": "Mentionnez les équipements ou caractéristiques spéciales",
+        "tip3": "Mettez en avant ce qui est à proximité (restaurants, attractions, etc.)",
+        "tip4": "Partagez ce que les voyageurs aiment de votre logement",
+        "tip5": "Soyez honnête et précis"
+      }
+    },
+    "booking": {
+      "title": "Paramètres de réservation",
+      "subtitle": "Choisissez comment vous souhaitez confirmer les réservations",
+      "methodTitle": "Comment souhaitez‑vous confirmer les réservations ?",
+      "instantBook": "Réservation instantanée",
+      "instantDesc": "Les voyageurs peuvent réserver instantanément sans attendre votre approbation",
+      "approveRequests": "Approuver les demandes",
+      "approveDesc": "Vous approuvez chaque demande de réservation avant confirmation",
+      "stayLength": "Durée du séjour",
+      "minNights": "Nuits minimum",
+      "maxNights": "Nuits maximum (optionnel)",
+      "propertyDetails": "Détails du logement",
+      "maxGuests": "Nombre de personnes maximum",
+      "bedrooms": "Chambres",
+      "beds": "Lits",
+      "bathrooms": "Salles de bain"
+    },
+    "pricing": {
+      "title": "Définissez votre prix",
+      "subtitle": "Vous pourrez le modifier à tout moment",
+      "pricePerNight": "Prix par nuit (XAF)",
+      "cleaningFee": "Frais de ménage (optionnel)",
+      "cleaningFeeHelp": "Frais unique facturé par réservation",
+      "breakdownTitle": "Exemple de récapitulatif (3 nuits)",
+      "cleaningFeeShort": "Frais de ménage",
+      "priceShown": "Les voyageurs verront ce prix par nuit",
+      "estimatedMonthly": "Revenus mensuels estimés",
+      "estimateHint": "(Basé sur {{n}} nuits réservées par mois)"
+    },
+    "location": {
+      "title": "Où se situe votre logement ?",
+      "subtitle": "Votre adresse n'est partagée qu'après la réservation.",
+      "searchPlaceholder": "Saisissez un lieu...",
+      "useMyLocation": "Utiliser ma position",
+      "locating": "Localisation...",
+      "approxTitle": "Utilisation d'une position approximative",
+      "approxDesc": "Nous avons estimé votre position via votre adresse IP.",
+      "fallbackFailedTitle": "Échec de la localisation approximative",
+      "fallbackFailedDesc": "Nous n'avons pas pu déterminer votre position.",
+      "geolocationUnsupportedTitle": "Localisation indisponible",
+      "geolocationUnsupportedDesc": "La géolocalisation n'est pas supportée par votre navigateur.",
+      "geolocationError": "Impossible de récupérer votre position.",
+      "permissionDenied": "Autorisation d'accéder à la position refusée.",
+      "positionUnavailable": "Informations de localisation indisponibles.",
+      "timeout": "La demande de localisation a expiré.",
+      "locationFailedTitle": "Échec de la localisation",
+      "tryApprox": "Essai avec la position approximative..."
+    },
+    "reservations": {
+      "title": "Réservations",
+      "emptyTodayTitle": "Aucune réservation aujourd'hui",
+      "emptyTodayDesc": "Vous n'avez aucun voyageur arrivant ou partant aujourd'hui.",
+      "emptyUpcomingTitle": "Aucune réservation à venir",
+      "emptyUpcomingDesc": "Finalisez et publiez votre annonce pour recevoir des réservations.",
+      "declineTitle": "Refuser la réservation",
+      "declineHelp": "Veuillez indiquer un motif. Ce message sera envoyé au voyageur.",
+      "declinePlaceholder": "ex. Les dates ne sont plus disponibles...",
+      "declining": "Refus en cours...",
+      "declineCta": "Refuser la réservation"
     },
     "preview": {
       "untitled": "Annonce sans titre",
@@ -325,6 +486,41 @@
       "publishing": "Publication en cours...",
       "publishListing": "Publier l'annonce"
     }
+  },
+  "propertyTypes": {
+    "apartment": {
+      "label": "Appartement",
+      "desc": "Un logement dans un immeuble multi‑logements"
+    },
+    "house": {
+      "label": "Maison",
+      "desc": "Une maison individuelle"
+    },
+    "villa": {
+      "label": "Villa",
+      "desc": "Une propriété de luxe indépendante"
+    },
+    "studio": {
+      "label": "Studio",
+      "desc": "Un espace de vie d'une seule pièce"
+    }
+  },
+  "amenities": {
+    "wifi": "Wifi",
+    "kitchen": "Cuisine",
+    "parking": "Parking gratuit",
+    "air_conditioning": "Climatisation",
+    "heating": "Chauffage",
+    "tv": "TV",
+    "washer": "Lave‑linge",
+    "workspace": "Espace de travail dédié",
+    "pool": "Piscine",
+    "smoke_alarm": "Détecteur de fumée",
+    "carbon_monoxide_alarm": "Détecteur de monoxyde de carbone",
+    "security_cameras": "Caméras de sécurité",
+    "lock_on_bedroom": "Verrou sur la porte de la chambre",
+    "fire_extinguisher": "Extincteur",
+    "first_aid_kit": "Trousse de premiers secours"
   },
   "messages": {
     "title": "Messages",

@@ -2,8 +2,31 @@
   "marketplace": "Find a Home",
   "common": {
     "back": "Back",
+    "continue": "Continue",
+    "cancel": "Cancel",
+    "save": "Save",
+    "saving": "Saving...",
+    "loading": "Loading...",
     "stepOf": "Step {{current}} of {{total}}",
-    "nights": "nights"
+    "nights": "nights",
+    "today": "Today",
+    "upcoming": "Upcoming",
+    "message": "Message",
+    "approve": "Approve",
+    "decline": "Decline",
+    "guests": "guests",
+    "searching": "Searching...",
+    "noResults": "No results found",
+    "zero": "0",
+    "new": "New",
+    "pendingUpload": "Pending upload",
+    "savePhotosCount": "Save {{count}} {{unit}}",
+    "total": "Total"
+  },
+  "nav": {
+    "reservations": "Reservations",
+    "listings": "Listings",
+    "messages": "Messages"
   },
   "logout": "Logout",
   "login": "Login",
@@ -331,6 +354,101 @@
       "saveDraft": "Save as draft",
       "publishing": "Publishing...",
       "publishListing": "Publish listing"
+    },
+    "intro": {
+      "title": "Welcome! Let's get started listing your space",
+      "subtitle": "Tell us what kind of place you have"
+    },
+    "photos": {
+      "title": "Add photos of your place",
+      "subtitle": "You'll need at least 3 photos to get started. You can add more or make changes later.",
+      "dropTitle": "Drag your photos here",
+      "dropHelp": "Choose at least 3 photos",
+      "uploading": "Uploading...",
+      "uploadFromDevice": "Upload from your device",
+      "photosPlural": "photos",
+      "photoSingular": "photo",
+      "cover": "Cover",
+      "setAsCover": "Set as cover",
+      "coverPhoto": "Cover photo",
+      "readyToUpload": "ready to upload"
+    },
+    "title": {
+      "title": "Now, let's give your place a title",
+      "subtitle": "Short titles work best. Have fun with it—you can always change it later.",
+      "placeholder": "e.g., Cozy apartment in the heart of Yaoundé",
+      "moreCharsNeeded": "{{count}} more characters needed",
+      "looksGood": "Looks good!",
+      "tipsTitle": "Tips for a great title:",
+      "tips": {
+        "tip1": "Highlight what makes your place special",
+        "tip2": "Mention the location or neighborhood",
+        "tip3": "Keep it short and catchy",
+        "tip4": "Avoid ALL CAPS or excessive punctuation"
+      }
+    },
+    "description": {
+      "title": "Create your description",
+      "subtitle": "Share what makes your place special",
+      "placeholder": "Describe your place...",
+      "moreCharsNeeded": "{{count}} more characters needed",
+      "looksGood": "Looks good!",
+      "tipsTitle": "Writing tips:",
+      "tips": {
+        "tip1": "Describe the space and how guests will use it",
+        "tip2": "Mention special amenities or features",
+        "tip3": "Highlight what's nearby (restaurants, attractions, etc.)",
+        "tip4": "Share what guests love about your place",
+        "tip5": "Be honest and accurate"
+      }
+    },
+    "booking": {
+      "title": "Booking settings",
+      "subtitle": "Choose how you want to confirm bookings",
+      "methodTitle": "How do you want to confirm bookings?",
+      "instantBook": "Instant Book",
+      "instantDesc": "Guests can book instantly without waiting for your approval",
+      "approveRequests": "Approve requests",
+      "approveDesc": "You approve each booking request before it's confirmed",
+      "stayLength": "Stay length",
+      "minNights": "Minimum nights",
+      "maxNights": "Maximum nights (optional)",
+      "propertyDetails": "Property details",
+      "maxGuests": "Maximum people",
+      "bedrooms": "Bedrooms",
+      "beds": "Beds",
+      "bathrooms": "Bathrooms"
+    },
+    "pricing": {
+      "title": "Now, set your price",
+      "subtitle": "You can change it anytime",
+      "pricePerNight": "Price per night (XAF)",
+      "cleaningFee": "Cleaning fee (optional)",
+      "cleaningFeeHelp": "One-time fee charged per booking",
+      "breakdownTitle": "Price breakdown example (3 nights)",
+      "cleaningFeeShort": "Cleaning fee",
+      "priceShown": "Guests will see this price per night",
+      "estimatedMonthly": "Estimated monthly earnings",
+      "estimateHint": "(Based on {{n}} nights booked per month)"
+    },
+    "location": {
+      "title": "Where's your place located?",
+      "subtitle": "Your address is only shared with guests after they've made a reservation.",
+      "searchPlaceholder": "Enter a location...",
+      "useMyLocation": "Use my location",
+      "locating": "Locating...",
+      "approxTitle": "Using approximate location",
+      "approxDesc": "We estimated your location using your IP address.",
+      "fallbackFailedTitle": "Approximate location failed",
+      "fallbackFailedDesc": "We could not determine your location.",
+      "geolocationUnsupportedTitle": "Location unavailable",
+      "geolocationUnsupportedDesc": "Geolocation is not supported by your browser.",
+      "geolocationError": "Unable to retrieve your location.",
+      "permissionDenied": "Permission to access location was denied.",
+      "positionUnavailable": "Location information is unavailable.",
+      "timeout": "The request to get your location timed out.",
+      "locationFailedTitle": "Location failed",
+      "tryApprox": "Trying approximate location..."
     }
   },
   "messages": {

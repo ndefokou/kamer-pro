@@ -45,11 +45,11 @@ const HostHeader: React.FC = () => {
                     </div>
                     <nav className="hidden md:flex gap-8 text-sm font-medium">
                         <a
-                            href="/host/listening"
-                            className={`${isActive('/host/listening') ? 'text-gray-900 font-semibold relative pb-6' : 'text-gray-600 hover:text-gray-900 transition-colors'}`}
+                            href="/host/reservations"
+                            className={`${isActive('/host/reservations') ? 'text-gray-900 font-semibold relative pb-6' : 'text-gray-600 hover:text-gray-900 transition-colors'}`}
                         >
-                            {t('nav.listening', 'Listening')}
-                            {isActive('/host/listening') && <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-900"></span>}
+                            {t('nav.reservations', 'Reservations')}
+                            {isActive('/host/reservations') && <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-900"></span>}
                         </a>
                         <a
                             href="/host/dashboard"

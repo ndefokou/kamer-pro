@@ -984,7 +984,7 @@ const ListingEditor: React.FC = () => {
                                                         <ChevronLeft className="h-5 w-5 rotate-180 text-gray-400" />
                                                     </button>
 
-                                                    
+
 
                                                     {/* Scenic views */}
                                                     <button
@@ -1285,7 +1285,7 @@ const ListingEditor: React.FC = () => {
                                                 <ChevronLeft className="h-5 w-5 rotate-180 text-gray-400" />
                                             </button>
 
-                                            
+
                                         </div>
                                     </div>
                                 )
@@ -1656,9 +1656,9 @@ const ListingEditor: React.FC = () => {
                 <div className="max-w-7xl mx-auto px-6">
                     <ul className="grid grid-cols-4 h-16 text-xs">
                         <li className="flex items-center justify-center">
-                            <a href="/host/listening" className="flex flex-col items-center gap-1 text-gray-600">
+                            <a href="/host/reservations" className="flex flex-col items-center gap-1 text-gray-600">
                                 <Home className="h-5 w-5" />
-                                <span>Listening</span>
+                                <span>reservations</span>
                             </a>
                         </li>
                         <li className="flex items-center justify-center">

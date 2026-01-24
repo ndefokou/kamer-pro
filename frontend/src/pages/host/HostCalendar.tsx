@@ -263,7 +263,7 @@ const HostCalendar: React.FC = () => {
                             MboaMaison
                         </div>
                         <nav className="hidden md:flex gap-8 text-sm font-medium">
-                            <a href="/host/listening" className="text-gray-600 hover:text-gray-900 transition-colors">{t('nav.listening', 'Listening')}</a>
+                            <a href="/host/reservations" className="text-gray-600 hover:text-gray-900 transition-colors">{t('nav.reservations', 'reservations')}</a>
                             <a href="/host/calendar" className="text-gray-900 font-semibold relative pb-6">
                                 {t('nav.calendar', 'Calendar')}
                                 <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-900"></span>
@@ -613,11 +613,11 @@ const HostCalendar: React.FC = () => {
                 <div className="max-w-md mx-auto px-6">
                     <ul className="grid grid-cols-4 h-16">
                         <li className="flex items-center justify-center">
-                            <a href="/host/listening" className="flex flex-col items-center gap-1 group w-full h-full justify-center">
+                            <a href="/host/reservations" className="flex flex-col items-center gap-1 group w-full h-full justify-center">
                                 <div className="p-1.5 rounded-full group-active:scale-95 transition-transform group-hover:bg-gray-100">
                                     <Home className="h-6 w-6 text-gray-500 group-hover:text-gray-900 transition-colors" />
                                 </div>
-                                <span className="text-[10px] font-medium text-gray-500 group-hover:text-gray-900 transition-colors">{t('nav.listening', 'Listening')}</span>
+                                <span className="text-[10px] font-medium text-gray-500 group-hover:text-gray-900 transition-colors">{t('nav.reservations', 'reservations')}</span>
                             </a>
                         </li>
                         <li className="flex items-center justify-center">
