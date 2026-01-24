@@ -30,6 +30,8 @@ import ReportHostModal from '@/components/ReportHostModal';
 import PhotoGallery from '@/components/PhotoGallery';
 import { useToast } from '@/hooks/use-toast';
 import { useWishlist } from '@/hooks/useWishlist';
+import { useTranslation } from 'react-i18next';
+import TranslatedText from '@/components/TranslatedText';
 
 
 const DefaultIcon = L.icon({
@@ -85,6 +87,8 @@ const ListingDetails: React.FC = () => {
     const [isMessageModalOpen, setIsMessageModalOpen] = React.useState(false);
     const [isReportModalOpen, setIsReportModalOpen] = React.useState(false);
     const [isPhotoGalleryOpen, setIsPhotoGalleryOpen] = React.useState(false);
+    const { i18n } = useTranslation();
+    const locale = i18n.language?.startsWith('fr') ? 'fr-FR' : 'en-US';
 
     const [initialPhotoIndex, setInitialPhotoIndex] = React.useState(0);
     const [reviews, setReviews] = React.useState<Review[]>([]);
@@ -415,7 +419,7 @@ const ListingDetails: React.FC = () => {
                 {/* Title and Actions */}
                 <div className="flex justify-between items-start mb-6">
                     <div>
-                        <h1 className="text-2xl md:text-3xl font-bold mb-2">{listing.title}</h1>
+                        <h1 className="text-2xl md:text-3xl font-bold mb-2"><TranslatedText as="span" text={listing.title} /></h1>
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                             <span className="font-medium text-foreground">★ New</span>
                             <span>•</span>
@@ -559,7 +563,7 @@ const ListingDetails: React.FC = () => {
                     <div className="md:col-span-2">
                         <div className="border-b pb-6 mb-6">
                             <h2 className="text-xl font-semibold mb-1">
-                                {listing.property_type} hosted by {hostName}
+                                <TranslatedText as="span" text={`${listing.property_type} hosted by ${hostName}`} />
                             </h2>
                             <p className="text-muted-foreground">
                                 {listing.max_guests} guests • {listing.bedrooms} bedrooms • {listing.beds} beds • {listing.bathrooms} baths
@@ -574,12 +578,12 @@ const ListingDetails: React.FC = () => {
                                     {aboutSections.map((s, idx) => (
                                         <div key={idx} className="space-y-1">
                                             <div className="font-semibold">{s.title}</div>
-                                            <p className="text-muted-foreground whitespace-pre-line">{s.text}</p>
+                                            <TranslatedText as="p" className="text-muted-foreground whitespace-pre-line" text={s.text} />
                                         </div>
                                     ))}
                                 </div>
                             ) : (
-                                <p className="text-muted-foreground whitespace-pre-line">{aboutPlain}</p>
+                                <TranslatedText as="p" className="text-muted-foreground whitespace-pre-line" text={aboutPlain || ''} />
                             )}
                         </div>
 
@@ -732,13 +736,11 @@ const ListingDetails: React.FC = () => {
                                                     <div>
                                                         <div className="font-semibold">{review.user.name}</div>
                                                         <div className="text-sm text-muted-foreground">
-                                                            {new Date(review.timestamp).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                                                            {new Date(review.timestamp).toLocaleDateString(locale, { month: 'long', year: 'numeric' })}
                                                         </div>
                                                     </div>
                                                 </div>
-                                                <p className="text-muted-foreground line-clamp-3">
-                                                    {review.comment}
-                                                </p>
+                                                <TranslatedText as="p" className="text-muted-foreground line-clamp-3" text={review.comment} />
                                             </div>
                                         ))}
                                     </div>
@@ -902,9 +904,7 @@ const ListingDetails: React.FC = () => {
                             {listing.getting_around && (
                                 <div>
                                     <h3 className="text-xl font-semibold mb-4">Getting around</h3>
-                                    <p className="text-muted-foreground whitespace-pre-line">
-                                        {listing.getting_around}
-                                    </p>
+                                    <TranslatedText as="p" className="text-muted-foreground whitespace-pre-line" text={listing.getting_around || ''} />
                                 </div>
                             )}
 
@@ -921,7 +921,7 @@ const ListingDetails: React.FC = () => {
                                                 if (Array.isArray(views)) {
                                                     return views.map((view: string, index: number) => (
                                                         <div key={index} className="bg-gray-100 px-3 py-1 rounded-full text-sm text-gray-700">
-                                                            {view}
+                                                            <TranslatedText as="span" text={view} />
                                                         </div>
                                                     ));
                                                 }
@@ -1055,7 +1055,7 @@ const ListingDetails: React.FC = () => {
                                         devices = [listing.safety_devices];
                                     }
                                     return devices.map((device, index) => (
-                                        <p key={index}>{device}</p>
+                                        <TranslatedText key={index} as="p" text={device} />
                                     ));
                                 })()}
                             </div>
