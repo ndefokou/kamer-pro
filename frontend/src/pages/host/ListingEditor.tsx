@@ -1607,7 +1607,7 @@ const ListingEditor: React.FC = () => {
                 {
                     selectedPhoto && (
                         <div
-                            className="fixed inset-0 bg-black z-[60] flex items-center justify-center"
+                            className="fixed inset-0 bg-black z-[60] flex items-center justify-center p-4 md:p-8"
                             onClick={() => setSelectedPhoto(null)}
                             onTouchStart={(e) => { lightboxTouchStartX.current = e.touches[0].clientX; }}
                             onTouchEnd={(e) => {
@@ -1643,7 +1643,7 @@ const ListingEditor: React.FC = () => {
                             <img
                                 src={getImageUrl(selectedPhoto)}
                                 alt="Full size view"
-                                className="max-w-full max-h-full object-contain p-4"
+                                className="w-full h-full object-contain"
                                 onClick={(e) => e.stopPropagation()}
                             />
                         </div>

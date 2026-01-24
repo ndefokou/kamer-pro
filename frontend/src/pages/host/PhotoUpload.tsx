@@ -169,7 +169,7 @@ const PhotoUpload: React.FC = () => {
 
                 {/* Photo Lightbox */}
                 {selectedPhoto && (
-                    <div className="fixed inset-0 bg-black/90 z-[60] flex items-center justify-center" onClick={() => setSelectedPhoto(null)}>
+                    <div className="fixed inset-0 bg-black/90 z-[60] flex items-center justify-center p-4 md:p-8" onClick={() => setSelectedPhoto(null)}>
                         <button
                             onClick={() => setSelectedPhoto(null)}
                             className="absolute top-4 left-4 p-2 bg-black bg-opacity-50 text-white rounded-full hover:bg-opacity-75 transition-all"
@@ -179,7 +179,7 @@ const PhotoUpload: React.FC = () => {
                         <img
                             src={getImageUrl(selectedPhoto)}
                             alt="Full size view"
-                            className="max-w-full max-h-full object-contain p-4"
+                            className="w-full h-full object-contain"
                             onClick={(e) => e.stopPropagation()}
                         />
                     </div>

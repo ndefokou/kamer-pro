@@ -101,7 +101,7 @@ const PhotoGallery: React.FC<PhotoGalleryProps> = ({ isOpen, onClose, photos, in
                     <img
                         src={getImageUrl(photos[currentIndex].url)}
                         alt={`Photo ${currentIndex + 1}`}
-                        className="max-h-full max-w-full object-contain"
+                        className="w-full h-full object-contain"
                     />
 
                     <button
