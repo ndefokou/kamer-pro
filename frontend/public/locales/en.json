@@ -1,5 +1,10 @@
 {
   "marketplace": "Find a Home",
+  "nav": {
+    "reservations": "Reservations",
+    "listings": "Listings",
+    "messages": "Messages"
+  },
   "common": {
     "back": "Back",
     "continue": "Continue",
@@ -449,6 +454,18 @@
       "timeout": "The request to get your location timed out.",
       "locationFailedTitle": "Location failed",
       "tryApprox": "Trying approximate location..."
+    },
+    "reservations": {
+      "title": "Reservations",
+      "emptyTodayTitle": "No reservations today",
+      "emptyTodayDesc": "You don't have any guests checking in or out today.",
+      "emptyUpcomingTitle": "No upcoming reservations",
+      "emptyUpcomingDesc": "Finish and publish your listing to receive bookings.",
+      "declineTitle": "Decline Booking",
+      "declineHelp": "Please provide a reason for declining this booking. This message will be sent to the guest.",
+      "declinePlaceholder": "e.g., The dates are no longer available...",
+      "declining": "Declining...",
+      "declineCta": "Decline Booking"
     }
   },
   "messages": {
