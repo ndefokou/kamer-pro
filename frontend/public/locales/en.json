@@ -26,12 +26,8 @@
     "new": "New",
     "pendingUpload": "Pending upload",
     "savePhotosCount": "Save {{count}} {{unit}}",
-    "total": "Total"
-  },
-  "nav": {
-    "reservations": "Reservations",
-    "listings": "Listings",
-    "messages": "Messages"
+    "total": "Total",
+    "share": "Share"
   },
   "logout": "Logout",
   "login": "Login",
@@ -623,5 +619,37 @@
   "failed to delete product": "Failed to delete product",
   "product deleted successfully": "Product deleted successfully",
   "findArchitect": "Find an Architect",
-  "contact seller via chat": "Contact seller via chat"
+  "contact seller via chat": "Contact seller via chat",
+  "listing": {
+    "errors": {
+      "notFound": "Listing not found"
+    },
+    "actions": {
+      "goHome": "Go Home",
+      "reserve": "Reserve",
+      "close": "Close"
+    },
+    "details": {
+      "clearDates": "Clear dates",
+      "safetyProperty": "Safety & property",
+      "flexibleCancellation": "Flexible cancellation policy",
+      "selectDates": "Select dates"
+    },
+    "reviews": {
+      "noReviewsYet": "No reviews yet",
+      "writeReview": "Write a Review"
+    },
+    "host": {
+      "meet": "Meet your Host",
+      "reviews": "Reviews",
+      "rating": "Rating",
+      "yearsHosting": "Years hosting",
+      "aboutTitle": "About the Host",
+      "livesIn": "Lives in {{location}}",
+      "speaks": "Speaks {{langs}}",
+      "bioDefault": "I am a passionate traveler and I love hosting people from all over the world. My goal is to make your stay as comfortable as possible.",
+      "messageCta": "Message Host",
+      "reportCta": "Report this host"
+    }
+  }
 }
