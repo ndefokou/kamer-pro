@@ -85,6 +85,28 @@ pub async fn add_review(
     };
 
     let listing_id = path.into_inner();
+    // Prevent duplicate review from the same user for the same listing
+    match sqlx::query_scalar::<_, i64>(
+        "SELECT 1 FROM reviews WHERE listing_id = ? AND guest_id = ? LIMIT 1",
+    )
+    .bind(&listing_id)
+    .bind(user_id)
+    .fetch_optional(pool.get_ref())
+    .await
+    {
+        Ok(Some(_)) => {
+            return HttpResponse::Conflict().json(serde_json::json!({
+                "error": "You have already reviewed this listing"
+            }));
+        }
+        Ok(None) => {}
+        Err(e) => {
+            log::error!("Failed to check existing review: {:?}", e);
+            return HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": "Database error"
+            }));
+        }
+    }
     let ratings_json = body.ratings.to_string();
 
     let insert = sqlx::query(
@@ -100,6 +122,12 @@ pub async fn add_review(
     let result = match insert {
         Ok(r) => r,
         Err(e) => {
+            let msg = format!("{:?}", e);
+            if msg.contains("UNIQUE") {
+                return HttpResponse::Conflict().json(serde_json::json!({
+                    "error": "You have already reviewed this listing"
+                }));
+            }
             log::error!("Failed to insert review: {:?}", e);
             return HttpResponse::InternalServerError().json(serde_json::json!({
                 "error": "Failed to save review"

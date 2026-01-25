@@ -50,6 +50,7 @@ interface Review {
         name: string;
         avatar: string;
     };
+    guestId?: number;
     ratings: Record<string, number>;
     comment: string;
     timestamp: string;
@@ -116,6 +117,7 @@ const ListingDetails: React.FC = () => {
                 name: row.username || 'Guest',
                 avatar: row.avatar || 'https://github.com/shadcn.png',
             },
+            guestId: Number(row.guest_id),
             ratings: parsedRatings,
             comment: row.comment || '',
             timestamp: row.created_at || new Date().toISOString(),
@@ -146,9 +148,22 @@ const ListingDetails: React.FC = () => {
             setReviews(prev => [ui, ...prev]);
             setIsReviewModalOpen(false);
             toast({ title: 'Review submitted', description: 'Thank you for your feedback!' });
-        } catch (error) {
+        } catch (error: unknown) {
             console.error('Failed to submit review', error);
-            toast({ title: 'Failed to submit review', description: 'Please log in and try again.', variant: 'destructive' });
+            const err = error as { response?: { status?: number } };
+            const status = err.response?.status;
+            if (status === 409) {
+                setIsReviewModalOpen(false);
+                toast({ title: 'Already reviewed', description: 'You can only review this listing once.', variant: 'destructive' });
+                return;
+            }
+            if (status === 401) {
+                toast({ title: 'Login required', description: 'Please log in to write a review.', variant: 'destructive' });
+                const current = `${window.location.pathname}${window.location.search}`;
+                window.location.href = `/webauth-login?redirect=${encodeURIComponent(current || '/')}`;
+                return;
+            }
+            toast({ title: 'Failed to submit review', description: 'Please try again later.', variant: 'destructive' });
         }
     };
 
@@ -193,8 +208,10 @@ const ListingDetails: React.FC = () => {
     const hostAvatar = profile?.avatar ?? localStorage.getItem('host_avatar') ?? undefined;
     const totalGuests = adults + children;
     const isHost = Number(localStorage.getItem('userId')) === listing.host_id;
+    const currentUserId = Number(localStorage.getItem('userId') || '') || null;
 
     const isWishlisted = isInWishlist(listing.id);
+    const hasReviewed = !!currentUserId && reviews.some(r => r.guestId === currentUserId);
 
     const handleToggleWishlist = () => {
         if (!id) return;
@@ -732,7 +749,29 @@ const ListingDetails: React.FC = () => {
                                         {reviews.length === 0 ? 'No reviews yet' : `${(reviews.reduce((acc, r) => acc + Object.values(r.ratings).reduce((a, b) => a + b, 0) / 6, 0) / reviews.length).toFixed(2)} · ${reviews.length} reviews`}
                                     </h2>
                                 </div>
-                                <Button variant="outline" onClick={() => setIsReviewModalOpen(true)}>Write a Review</Button>
+                                <Button
+                                    variant="outline"
+                                    disabled={hasReviewed}
+                                    onClick={() => {
+                                        if (!currentUserId) {
+                                            toast({
+                                                title: 'Login required',
+                                                description: 'Please log in to write a review.',
+                                                variant: 'destructive'
+                                            });
+                                            const current = `${window.location.pathname}${window.location.search}`;
+                                            window.location.href = `/webauth-login?redirect=${encodeURIComponent(current || '/')}`;
+                                            return;
+                                        }
+                                        if (hasReviewed) {
+                                            toast({ title: 'Already reviewed', description: 'You can only review this listing once.' });
+                                            return;
+                                        }
+                                        setIsReviewModalOpen(true);
+                                    }}
+                                >
+                                    Write a Review
+                                </Button>
                             </div>
 
                             <ReviewModal
