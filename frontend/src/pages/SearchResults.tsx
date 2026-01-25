@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { Heart, Star, Menu, User, Globe, Home as HomeIcon } from "lucide-react";
@@ -36,6 +36,18 @@ const DefaultIcon = L.icon({
 
 L.Marker.prototype.options.icon = DefaultIcon;
 
+const FitMapBounds = ({ bounds, singlePoint }: { bounds?: L.LatLngBoundsExpression; singlePoint?: [number, number] | null }) => {
+    const map = useMap();
+    useEffect(() => {
+        if (bounds) {
+            map.fitBounds(bounds, { padding: [24, 24] });
+        } else if (singlePoint) {
+            map.setView(singlePoint, 12);
+        }
+    }, [map, bounds, singlePoint]);
+    return null;
+};
+
 const SearchResults = () => {
     const { t } = useTranslation();
     const navigate = useNavigate();
@@ -52,7 +64,6 @@ const SearchResults = () => {
     const { data: properties, isLoading } = useQuery<Product[]>({
         queryKey: ["products", location, guests],
         queryFn: () => getProducts({
-            location: location || undefined,
             guests: guests > 0 ? guests : undefined,
         }),
     });
@@ -108,11 +119,18 @@ const SearchResults = () => {
 
     const filteredProperties = useMemo(() => {
         if (!properties) return [] as Product[];
+        const locNorm = normalizeCity(location);
         return properties.filter((p) => {
-            // Filter by location
-            if (location && !p.listing.city?.toLowerCase().includes(location.toLowerCase()) &&
-                !p.listing.address?.toLowerCase().includes(location.toLowerCase())) {
-                return false;
+            // Filter by location (accent-insensitive + inference)
+            if (locNorm) {
+                const cityNorm = normalizeCity(p.listing.city || "");
+                const addrNorm = normalizeCity(p.listing.address || "");
+                const inferredNorm = normalizeCity(inferCity(p));
+                const matches =
+                    cityNorm.includes(locNorm) ||
+                    addrNorm.includes(locNorm) ||
+                    inferredNorm.includes(locNorm);
+                if (!matches) return false;
             }
 
             // Filter by guests
@@ -125,7 +143,7 @@ const SearchResults = () => {
 
             return true;
         });
-    }, [properties, location, guests]);
+    }, [properties, location, guests, inferCity]);
 
     const groupedByCity = useMemo(() => {
         const map = new Map<string, { name: string; items: Product[] }>();
@@ -153,20 +171,36 @@ const SearchResults = () => {
         return ordered.map(g => [g.name, g.items] as [string, Product[]]);
     }, [filteredProperties, preferredOrder, inferCity]);
 
-    // Use all properties with coordinates for the map, regardless of left-side filters
-    const mapProperties = useMemo(() => {
-        return (properties || []).filter(
-            (p) => p.listing.latitude && p.listing.longitude
-        );
-    }, [properties]);
+    const mapPoints = useMemo(() => {
+        const pts: { id: string; lat: number; lon: number; product: Product }[] = [];
+        for (const p of filteredProperties) {
+            if (p.listing.latitude && p.listing.longitude) {
+                pts.push({ id: p.listing.id, lat: p.listing.latitude, lon: p.listing.longitude, product: p });
+                continue;
+            }
+            const inferred = inferCity(p) || p.listing.city || '';
+            const key = normalizeCity(inferred);
+            const cityKey = (Object.keys(knownCities) as Array<keyof typeof knownCities>).find(k => k === key);
+            const city = cityKey ? knownCities[cityKey] : undefined;
+            if (city && typeof city.lat === 'number' && typeof city.lon === 'number') {
+                pts.push({ id: p.listing.id, lat: city.lat, lon: city.lon, product: p });
+            }
+        }
+        return pts;
+    }, [filteredProperties, inferCity, knownCities]);
 
     // Compute bounds to fit all markers
     const mapBounds = useMemo(() => {
-        const pts = mapProperties.map(
-            (p) => [p.listing.latitude as number, p.listing.longitude as number] as [number, number]
-        );
+        const pts = mapPoints.map((p) => [p.lat, p.lon] as [number, number]);
         return pts.length ? L.latLngBounds(pts) : undefined;
-    }, [mapProperties]);
+    }, [mapPoints]);
+
+    const singlePoint = useMemo(() => {
+        if (mapPoints.length === 1) {
+            return [mapPoints[0].lat, mapPoints[0].lon] as [number, number];
+        }
+        return null;
+    }, [mapPoints]);
 
     const toggleFavorite = (id: string) => {
         if (isInWishlist(id)) {
@@ -286,31 +320,26 @@ const SearchResults = () => {
                         zoom={13}
                         scrollWheelZoom={true}
                         className="h-full w-full"
-                        bounds={mapBounds}
                     >
                         <TileLayer
                             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                         />
-                        {mapProperties.map((product) => (
-                            product.listing.latitude && product.listing.longitude && (
-                                <Marker
-                                    key={product.listing.id}
-                                    position={[product.listing.latitude, product.listing.longitude]}
-                                >
-                                    <Popup>
-                                        <div className="w-48">
-                                            <img
-                                                src={getImageUrl(product.photos[0]?.url) || "https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=400&h=400&fit=crop"}
-                                                alt={product.listing.title}
-                                                className="w-full h-32 object-cover rounded-lg mb-2"
-                                            />
-                                            <h3 className="font-semibold text-sm truncate">{product.listing.title}</h3>
-                                            <p className="text-sm font-bold">{product.listing.price_per_night?.toLocaleString()} FCFA</p>
-                                        </div>
-                                    </Popup>
-                                </Marker>
-                            )
+                        <FitMapBounds bounds={mapBounds} singlePoint={singlePoint} />
+                        {mapPoints.map(({ id, lat, lon, product }) => (
+                            <Marker key={id} position={[lat, lon]}>
+                                <Popup>
+                                    <div className="w-48">
+                                        <img
+                                            src={getImageUrl(product.photos[0]?.url) || "https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=400&h=400&fit=crop"}
+                                            alt={product.listing.title}
+                                            className="w-full h-32 object-cover rounded-lg mb-2"
+                                        />
+                                        <h3 className="font-semibold text-sm truncate">{product.listing.title}</h3>
+                                        <p className="text-sm font-bold">{product.listing.price_per_night?.toLocaleString()} FCFA</p>
+                                    </div>
+                                </Popup>
+                            </Marker>
                         ))}
                     </MapContainer>
                 </div>
