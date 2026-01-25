@@ -52,7 +52,7 @@ const Header: React.FC = () => {
                 </>
             ) : (
                 <>
-                    <DropdownMenuItem onClick={() => navigate('/webauth-login?tab=register')} className="flex flex-col items-start gap-1 cursor-pointer">
+                    <DropdownMenuItem onClick={() => navigate('/webauth-login?tab=register&redirect=/host/dashboard')} className="flex flex-col items-start gap-1 cursor-pointer">
                         <div className="font-semibold">{t("Become a host")}</div>
                         <div className="text-xs text-gray-500">Become a host and earn extra income easily.</div>
                     </DropdownMenuItem>
@@ -90,7 +90,7 @@ const Header: React.FC = () => {
                     <div className="hidden md:flex items-center gap-4">
                         <button
                             className="text-sm font-semibold hover:bg-gray-100 px-4 py-3 rounded-full transition-colors"
-                            onClick={() => navigate('/webauth-login?tab=register')}
+                            onClick={() => navigate(user ? '/host/dashboard' : '/webauth-login?tab=register&redirect=/host/dashboard')}
                         >
                             {t("Become a host")}
                         </button>
@@ -114,7 +114,7 @@ const Header: React.FC = () => {
                         <LanguageSwitcher />
                         <button
                             className="text-xs font-semibold hover:bg-gray-100 px-3 py-2 rounded-full transition-colors"
-                            onClick={() => navigate('/webauth-login?tab=register')}
+                            onClick={() => navigate(user ? '/host/dashboard' : '/webauth-login?tab=register&redirect=/host/dashboard')}
                         >
                             {t("Become a host")}
                         </button>

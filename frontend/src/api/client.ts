@@ -102,6 +102,11 @@ export interface Product {
   contact_phone?: string | null;
 }
 
+export interface TownCount {
+  city: string;
+  count: number;
+}
+
 export interface ProductFilters {
   search?: string;
   category?: string;
@@ -128,6 +133,11 @@ export const getProducts = async (filters: ProductFilters): Promise<Product[]> =
   if (params.date) queryParams.date = params.date;
 
   const response = await apiClient.get("/listings", { params: queryParams });
+  return response.data;
+};
+
+export const getTowns = async (): Promise<TownCount[]> => {
+  const response = await apiClient.get("/listings/towns");
   return response.data;
 };
 

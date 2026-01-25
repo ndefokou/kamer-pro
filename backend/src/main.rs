@@ -79,6 +79,7 @@ async fn main() -> std::io::Result<()> {
                     .service(
                         web::scope("/listings")
                             .service(routes::listings::get_all_listings)
+                            .service(routes::listings::get_towns)
                             .service(routes::listings::get_host_listings)
                             .service(routes::listings::create_listing)
                             .service(routes::listings::get_my_listings)

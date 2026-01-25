@@ -6,7 +6,7 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { Heart, Star, Menu, User, Globe, Home as HomeIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { getProducts, Product } from "@/api/client";
+import { getProducts, Product, getTowns, TownCount } from "@/api/client";
 import MboaMaissonSearch from "@/components/Search";
 import { getImageUrl } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
@@ -20,6 +20,8 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { useWishlist } from "@/hooks/useWishlist";
 import Header from "@/components/Header";
+import HorizontalPropertySection from "@/components/HorizontalPropertySection";
+import PropertyCard from "@/components/PropertyCard";
 
 // Fix Leaflet default icon issue
 import icon from "leaflet/dist/images/marker-icon.png";
@@ -48,12 +50,20 @@ const SearchResults = () => {
     const guests = parseInt(searchParams.get("guests") || "0");
 
     const { data: properties, isLoading } = useQuery<Product[]>({
-        queryKey: ["products"],
-        queryFn: () => getProducts({}),
+        queryKey: ["products", location, guests],
+        queryFn: () => getProducts({
+            location: location || undefined,
+            guests: guests > 0 ? guests : undefined,
+        }),
+    });
+
+    const { data: towns } = useQuery<TownCount[]>({
+        queryKey: ["towns"],
+        queryFn: getTowns,
     });
 
     const filteredProperties = useMemo(() => {
-        if (!properties) return [];
+        if (!properties) return [] as Product[];
         return properties.filter((p) => {
             // Filter by location
             if (location && !p.listing.city?.toLowerCase().includes(location.toLowerCase()) &&
@@ -72,6 +82,30 @@ const SearchResults = () => {
             return true;
         });
     }, [properties, location, guests]);
+
+    const groupedByCity = useMemo(() => {
+        const map: Record<string, Product[]> = {};
+        for (const p of filteredProperties) {
+            const key = (p.listing.city || "Unknown").trim();
+            if (!map[key]) map[key] = [];
+            map[key].push(p);
+        }
+        const ordered = Object.entries(map);
+        if (towns && towns.length > 0) {
+            const order = towns.map((t) => t.city.toLowerCase());
+            ordered.sort((a, b) => {
+                const ia = order.indexOf(a[0].toLowerCase());
+                const ib = order.indexOf(b[0].toLowerCase());
+                if (ia !== -1 && ib !== -1) return ia - ib;
+                if (ia !== -1) return -1;
+                if (ib !== -1) return 1;
+                return a[0].localeCompare(b[0]);
+            });
+        } else {
+            ordered.sort((a, b) => a[0].localeCompare(b[0]));
+        }
+        return ordered;
+    }, [filteredProperties, towns]);
 
     // Use all properties with coordinates for the map, regardless of left-side filters
     const mapProperties = useMemo(() => {
@@ -118,7 +152,7 @@ const SearchResults = () => {
                 </>
             ) : (
                 <>
-                    <DropdownMenuItem onClick={() => navigate('/webauth-login?tab=register')} className="font-semibold">
+                    <DropdownMenuItem onClick={() => navigate('/webauth-login?tab=register&redirect=/host/dashboard')} className="font-semibold">
                         {t("Become a host")}
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
@@ -147,65 +181,54 @@ const SearchResults = () => {
                         <h1 className="text-2xl font-bold mt-1">Stays in {location || "Cameroon"}</h1>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                        {isLoading ? (
-                            <div className="col-span-full flex flex-col items-center justify-center py-20 gap-4">
-                                <div className="relative">
-                                    <div className="h-12 w-12 rounded-full border-4 border-primary/30 border-t-primary animate-spin" />
-                                    <div className="absolute inset-0 flex items-center justify-center">
-                                        <HomeIcon className="h-4 w-4 text-primary/50" />
-                                    </div>
+                    {towns && towns.length > 0 && (
+                        <div className="flex gap-2 overflow-x-auto pb-3 mb-4 -mx-2 px-2" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
+                            {towns.map((t) => (
+                                <button
+                                    key={t.city}
+                                    onClick={() => navigate(`/marketplace?search=${encodeURIComponent(t.city)}${guests>0?`&guests=${guests}`:''}`)}
+                                    className={`px-3 py-1.5 rounded-full border text-sm whitespace-nowrap ${t.city.toLowerCase() === location.toLowerCase() ? 'bg-black text-white border-black' : 'bg-white text-gray-800 border-gray-200 hover:border-black'}`}
+                                >
+                                    {t.city} <span className="text-gray-500">({t.count})</span>
+                                </button>
+                            ))}
+                        </div>
+                    )}
+
+                    {isLoading ? (
+                        <div className="flex flex-col items-center justify-center py-20 gap-4">
+                            <div className="relative">
+                                <div className="h-12 w-12 rounded-full border-4 border-primary/30 border-t-primary animate-spin" />
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                    <HomeIcon className="h-4 w-4 text-primary/50" />
                                 </div>
-                                <p className="text-muted-foreground animate-pulse">Loading stays...</p>
                             </div>
-                        ) : filteredProperties.length === 0 ? (
-                            <div className="col-span-full text-center py-20">
-                                <p className="text-gray-600">No stays found matching your criteria.</p>
-                                <Button variant="outline" className="mt-4" onClick={() => navigate('/')}>
-                                    Clear filters
-                                </Button>
-                            </div>
-                        ) : (
-                            filteredProperties.map((product) => (
-                                <div key={product.listing.id} className="group cursor-pointer" onClick={() => navigate(`/product/${product.listing.id}`)}>
-                                    <div className="relative aspect-[4/3] rounded-xl overflow-hidden mb-3">
-                                        <img
-                                            src={getImageUrl(product.photos[0]?.url) || "https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=400&h=400&fit=crop"}
-                                            alt={product.listing.title}
-                                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                            <p className="text-muted-foreground animate-pulse">Loading stays...</p>
+                        </div>
+                    ) : filteredProperties.length === 0 ? (
+                        <div className="text-center py-20">
+                            <p className="text-gray-600">No stays found matching your criteria.</p>
+                            <Button variant="outline" className="mt-4" onClick={() => navigate('/') }>
+                                Clear filters
+                            </Button>
+                        </div>
+                    ) : (
+                        groupedByCity.map(([city, items]) => (
+                            <HorizontalPropertySection key={city} title={city}>
+                                {items.map((product) => (
+                                    <div key={product.listing.id} className="w-[200px] sm:w-[280px]">
+                                        <PropertyCard
+                                            id={product.listing.id}
+                                            name={product.listing.title ?? "Untitled"}
+                                            location={product.listing.city ?? "Unknown"}
+                                            price={product.listing.price_per_night ?? 0}
+                                            images={product.photos.map((photo) => ({ image_url: photo.url }))}
                                         />
-                                        <button
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                toggleFavorite(product.listing.id);
-                                            }}
-                                            className="absolute top-3 right-3 p-2 rounded-full hover:scale-110 transition-transform"
-                                        >
-                                            <Heart
-                                                className={`h-6 w-6 ${isInWishlist(product.listing.id)
-                                                    ? 'fill-[#FF385C] text-[#FF385C]'
-                                                    : 'fill-black/50 text-white stroke-white stroke-2'
-                                                    }`}
-                                            />
-                                        </button>
-                                        <div className="absolute top-3 left-3 bg-white px-2 py-1 rounded-md text-xs font-semibold shadow-sm">
-                                            Guest favorite
-                                        </div>
                                     </div>
-                                    <div className="space-y-1">
-                                        <div className="flex justify-between items-start">
-                                            <h3 className="font-semibold text-gray-900 truncate flex-1">{product.listing.title}</h3>
-                                        </div>
-                                        <p className="text-sm text-gray-500">{product.listing.property_type}</p>
-                                        <div className="flex items-baseline gap-1 pt-1">
-                                            <span className="font-semibold text-gray-900">{product.listing.price_per_night?.toLocaleString()} FCFA</span>
-                                            <span className="text-sm text-gray-600">per night</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            ))
-                        )}
-                    </div>
+                                ))}
+                            </HorizontalPropertySection>
+                        ))
+                    )}
 
                     {/* Pagination removed */}
                 </div>
@@ -251,3 +274,4 @@ const SearchResults = () => {
 };
 
 export default SearchResults;
+

@@ -28,7 +28,7 @@ const withRetry = async <T,>(fn: () => Promise<T>, attempts = 3, baseDelayMs = 6
 const WebAuthLogin = () => {
   const navigate = useNavigate();
   const [params] = useSearchParams();
-  const redirectTo = useMemo(() => params.get("redirect") || "/host/dashboard", [params]);
+  const redirectTo = useMemo(() => params.get("redirect") || "/", [params]);
   const { login, user, loading: authLoading } = useAuth();
 
   const [activeTab, setActiveTab] = useState<"login" | "register">((params.get("tab") as "login" | "register") || "login");

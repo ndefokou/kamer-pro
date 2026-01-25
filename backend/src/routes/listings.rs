@@ -183,6 +183,32 @@ pub struct ListingFilters {
     pub guests: Option<i32>,
 }
 
+#[derive(Debug, Serialize, Deserialize, sqlx::FromRow)]
+pub struct CityCount {
+    pub city: String,
+    pub count: i64,
+}
+
+#[get("/towns")]
+pub async fn get_towns(pool: web::Data<SqlitePool>) -> impl Responder {
+    let result = sqlx::query_as::<_, CityCount>(
+        "SELECT city as city, COUNT(*) as count
+         FROM listings
+         WHERE status = 'published' AND city IS NOT NULL AND TRIM(city) != ''
+         GROUP BY city
+         ORDER BY count DESC",
+    )
+    .fetch_all(pool.get_ref())
+    .await;
+
+    match result {
+        Ok(rows) => HttpResponse::Ok().json(rows),
+        Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
+            "error": format!("Database error: {}", e)
+        })),
+    }
+}
+
 // ============================================================================
 // Helper Functions
 // ============================================================================
