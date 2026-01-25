@@ -1016,7 +1016,7 @@ const ListingDetails: React.FC = () => {
                     <h3 className="text-xl font-semibold mb-6">Meet your Host</h3>
                     <div className="bg-[#F0EFE9] rounded-2xl p-6 md:p-8 grid grid-cols-1 md:grid-cols-3 gap-8">
                         {/* Host Card */}
-                        <div className="bg-white rounded-2xl p-6 shadow-lg flex flex-col items-center text-center md:col-span-1">
+                        <div className="bg-white rounded-2xl p-6 shadow-lg flex flex-col items-center text-center md:col-span-1 cursor-pointer hover:shadow-xl transition" onClick={() => navigate(`/hosts/${listing.host_id}`)}>
                             <div className="relative mb-4">
                                 <Avatar className="h-24 w-24">
                                     <AvatarImage src={hostAvatar || undefined} />

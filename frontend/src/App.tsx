@@ -32,6 +32,7 @@ import SearchResults from "./pages/SearchResults";
 import Messages from "./pages/Messages";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import Wishlist from "./pages/Wishlist";
+import HostProfile from "./pages/HostProfile";
 import MyBookings from "./pages/MyBookings";
 
 const queryClient = new QueryClient();
@@ -40,6 +41,7 @@ const router = createBrowserRouter(
   [
     { path: "/", Component: Dashboard },
     { path: "/marketplace", Component: SearchResults },
+    { path: "/hosts/:id", Component: HostProfile },
     { path: "/product/:id", Component: ListingDetails },
     { path: "/messages", Component: Messages },
     { path: "/bookings", element: <ProtectedRoute />, children: [{ index: true, Component: MyBookings }] },
