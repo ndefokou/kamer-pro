@@ -186,14 +186,14 @@ const Dashboard = () => {
         return (
             <div className="mb-12 group relative">
                 <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-2xl font-bold text-gray-900">{title}</h2>
+                    <h2 className="text-2xl font-bold text-gray-900">{city ? t('popularStaysIn', { city }) : title}</h2>
                     {city && (
                         <button
                             className="text-sm font-semibold hover:underline flex items-center gap-1"
                             onClick={() => navigate(`/marketplace?search=${encodeURIComponent(city)}`)}
                             aria-label={`See all stays in ${city}`}
                         >
-                            Voir tout <span aria-hidden>›</span>
+                            {t('seeAll')} <span aria-hidden>›</span>
                         </button>
                     )}
                 </div>

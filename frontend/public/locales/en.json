@@ -27,7 +27,8 @@
     "pendingUpload": "Pending upload",
     "savePhotosCount": "Save {{count}} {{unit}}",
     "total": "Total",
-    "share": "Share"
+    "share": "Share",
+    "seeAll": "See all"
   },
   "logout": "Logout",
   "login": "Login",
@@ -652,4 +653,6 @@
       "reportCta": "Report this host"
     }
   }
+  ,
+  "popularStaysIn": "Popular stays · {{city}}"
 }

@@ -22,7 +22,8 @@
     "pendingUpload": "En attente de téléversement",
     "savePhotosCount": "Enregistrer {{count}} {{unit}}",
     "total": "Total",
-    "share": "Partager"
+    "share": "Partager",
+    "seeAll": "Voir tout"
   },
   "search destinations": "Rechercher des destinations",
   "when": "Quand",
@@ -728,4 +729,6 @@
       "reportCta": "Signaler cet hôte"
     }
   }
+  ,
+  "popularStaysIn": "Logements populaires · {{city}}"
 }
