@@ -117,8 +117,8 @@ const Dashboard = () => {
 
 
     const PropertyCard = ({ product, index }: { product: Product; index: number }) => (
-        <div className="flex-shrink-0 w-[240px] sm:w-[280px] cursor-pointer group">
-            <div className="relative aspect-square rounded-xl overflow-hidden mb-3">
+        <div className="flex-shrink-0 w-[180px] sm:w-[240px] md:w-[280px] cursor-pointer group">
+            <div className="relative aspect-[4/3] sm:aspect-square rounded-xl overflow-hidden mb-2">
                 <img
                     src={getImageUrl(product.photos[0]?.url) || "https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=400&h=400&fit=crop"}
                     alt={product.listing.title || "Property image"}
@@ -145,14 +145,14 @@ const Dashboard = () => {
             </div>
             <div className="space-y-1">
                 <div className="flex items-start justify-between">
-                    <h3 className="font-semibold text-gray-900 truncate flex-1">{product.listing.title}</h3>
+                    <h3 className="font-semibold text-gray-900 truncate flex-1 text-[13px] sm:text-sm">{product.listing.title}</h3>
                 </div>
-                <p className="text-sm text-gray-700">
+                <p className="text-xs sm:text-sm text-gray-700">
                     {(product.listing.property_type || 'Appartement')} · {product.listing.city}
                 </p>
-                <div className="flex items-baseline gap-1 pt-1">
-                    <span className="font-semibold text-gray-900">{product.listing.price_per_night?.toLocaleString()} FCFA</span>
-                    <span className="text-sm text-gray-600">par nuit</span>
+                <div className="flex items-baseline gap-1 pt-0.5">
+                    <span className="font-semibold text-gray-900 text-[13px] sm:text-[15px]">{product.listing.price_per_night?.toLocaleString()} FCFA</span>
+                    <span className="text-xs sm:text-sm text-gray-600">par nuit</span>
                 </div>
             </div>
         </div>
@@ -213,7 +213,7 @@ const Dashboard = () => {
                     <div
                         ref={scrollContainerRef}
                         onScroll={handleScroll}
-                        className="flex gap-6 overflow-x-auto pb-4 snap-x snap-mandatory scroll-smooth [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']"
+                        className="flex gap-4 md:gap-6 overflow-x-auto pb-3 snap-x snap-mandatory scroll-smooth [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']"
                     >
                         {properties.filter(Boolean).map((product, index) => (
                             <PropertyCard key={product.listing.id} product={product} index={index} />
