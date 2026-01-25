@@ -49,6 +49,8 @@ interface ListingLite {
     latitude?: number;
     longitude?: number;
     address?: string;
+    city?: string;
+    country?: string;
 }
 
 // Component to handle map centering
@@ -147,6 +149,8 @@ const Location: React.FC = () => {
     );
     const [showResults, setShowResults] = useState(false);
     const [isLocating, setIsLocating] = useState(false);
+    const [selectedCity, setSelectedCity] = useState<string>(draft.city || '');
+    const [selectedCountry, setSelectedCountry] = useState<string>(draft.country || '');
 
     // Load listing data if in edit mode
     useEffect(() => {
@@ -156,6 +160,9 @@ const Location: React.FC = () => {
                     const response = await apiClient.get(`/listings/${listingId}`);
                     const listingData = response.data.listing;
                     setListing(listingData);
+
+                    if (listingData.city) setSelectedCity(listingData.city);
+                    if (listingData.country) setSelectedCountry(listingData.country);
 
                     if (listingData.latitude && listingData.longitude) {
                         const pos = new LatLng(listingData.latitude, listingData.longitude);
@@ -213,6 +220,11 @@ const Location: React.FC = () => {
         const locationName = getLocationName(result);
         setSearchQuery(locationName);
         setSelectedAddress(result.display_name);
+        // Save structured location info
+        const city = result.address?.city || result.address?.town || result.address?.village || '';
+        const country = result.address?.country || '';
+        setSelectedCity(city);
+        setSelectedCountry(country);
         setShowResults(false);
         setSearchResults([]);
     };
@@ -229,7 +241,7 @@ const Location: React.FC = () => {
             const response = await fetch(
                 `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=14&addressdetails=1`
             );
-            const data = await response.json() as { display_name?: string };
+            const data = await response.json() as { display_name?: string; address?: { city?: string; town?: string; village?: string; country?: string } };
             if (data && data.display_name) {
                 const locationName = getLocationName({
                     lat: String(lat),
@@ -238,6 +250,10 @@ const Location: React.FC = () => {
                 } as GeocodingResult);
                 setSearchQuery(locationName);
                 setSelectedAddress(data.display_name);
+                const city = data.address?.city || data.address?.town || data.address?.village || '';
+                const country = data.address?.country || '';
+                setSelectedCity(city);
+                setSelectedCountry(country);
                 setShowResults(false);
                 setSearchResults([]);
             }
@@ -265,6 +281,8 @@ const Location: React.FC = () => {
                 if (place) {
                     setSearchQuery(place);
                     setSelectedAddress(place);
+                    if (data.city) setSelectedCity(data.city);
+                    if (data.country_name) setSelectedCountry(data.country_name);
                     setShowResults(false);
                     setSearchResults([]);
                 } else {
@@ -332,12 +350,22 @@ const Location: React.FC = () => {
         );
     };
 
+    interface LocationPayload {
+        latitude: number;
+        longitude: number;
+        address: string;
+        city?: string;
+        country?: string;
+    }
+
     const handleSave = async () => {
-        const locationData = {
+        const locationData: LocationPayload = {
             latitude: position.lat,
             longitude: position.lng,
             address: selectedAddress || searchQuery || `${position.lat.toFixed(6)}, ${position.lng.toFixed(6)}`,
         };
+        if (selectedCity) locationData.city = selectedCity;
+        if (selectedCountry) locationData.country = selectedCountry;
 
         if (isEditMode && listingId) {
             // Save directly to listing
@@ -374,6 +402,8 @@ const Location: React.FC = () => {
                 latitude: position.lat,
                 longitude: position.lng,
                 address: selectedAddress || searchQuery || `${position.lat.toFixed(6)}, ${position.lng.toFixed(6)}`,
+                city: selectedCity,
+                country: selectedCountry,
             });
             previousStep();
             navigate('/host/amenities');

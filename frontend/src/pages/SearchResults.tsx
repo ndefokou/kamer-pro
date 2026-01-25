@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
@@ -62,6 +62,50 @@ const SearchResults = () => {
         queryFn: getTowns,
     });
 
+    // City inference (same behavior as home page)
+    const normalizeCity = (s?: string) => (s || "").trim().toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '');
+    const preferredOrder = useMemo(() => ["yaounde", "douala", "kribi"], []);
+    const knownCities = useMemo(() => ({
+        yaounde: { display: 'Yaounde', lat: 3.8480, lon: 11.5021, synonyms: ['bastos','biyem','nkolbisson','melen','odza','nkolmesseng','nkoabang','ekounou','essos','madagascar'] },
+        douala: { display: 'Douala', lat: 4.0511, lon: 9.7679, synonyms: ['akwa','bonapriso','bonanjo','deido','makepe','ndogbong','logbaba','bepanda','bonamoussadi'] },
+        kribi:   { display: 'Kribi',   lat: 2.9400, lon: 9.9100, synonyms: ['mpalla','londji','ebambe','lolabe'] },
+    }) as const, []);
+
+    const distanceKm = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+        const toRad = (d: number) => d * Math.PI / 180;
+        const R = 6371;
+        const dLat = toRad(lat2 - lat1);
+        const dLon = toRad(lon2 - lon1);
+        const a = Math.sin(dLat/2)**2 + Math.cos(toRad(lat1))*Math.cos(toRad(lat2))*Math.sin(dLon/2)**2;
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        return R * c;
+    };
+
+    const inferCity = useCallback((p: Product): string => {
+        const text = [p.listing.city, p.listing.address, p.listing.title].filter(Boolean).join(' ');
+        const norm = normalizeCity(text);
+        if (norm) {
+            for (const key of preferredOrder) {
+                if (norm.includes(key)) return knownCities[key as keyof typeof knownCities].display;
+                const syns = knownCities[key as keyof typeof knownCities].synonyms;
+                if (syns.some(s => norm.includes(s))) return knownCities[key as keyof typeof knownCities].display;
+            }
+        }
+        if (p.listing.latitude && p.listing.longitude) {
+            const { latitude, longitude } = p.listing;
+            let best: { key: keyof typeof knownCities; dist: number } | null = null;
+            (Object.keys(knownCities) as Array<keyof typeof knownCities>).forEach((key) => {
+                const city = knownCities[key];
+                const d = distanceKm(latitude!, longitude!, city.lat, city.lon);
+                if (!best || d < best.dist) best = { key, dist: d };
+            });
+            if (best && best.dist <= 120) {
+                return knownCities[best.key].display;
+            }
+        }
+        return '';
+    }, [preferredOrder, knownCities]);
+
     const filteredProperties = useMemo(() => {
         if (!properties) return [] as Product[];
         return properties.filter((p) => {
@@ -84,28 +128,30 @@ const SearchResults = () => {
     }, [properties, location, guests]);
 
     const groupedByCity = useMemo(() => {
-        const map: Record<string, Product[]> = {};
+        const map = new Map<string, { name: string; items: Product[] }>();
         for (const p of filteredProperties) {
-            const key = (p.listing.city || "Unknown").trim();
-            if (!map[key]) map[key] = [];
-            map[key].push(p);
+            let name = (p.listing.city || '').trim();
+            if (!name) name = inferCity(p);
+            const key = normalizeCity(name);
+            if (!key) continue;
+            const entry = map.get(key) || { name, items: [] };
+            if (!entry.name && name) entry.name = name;
+            entry.items.push(p);
+            map.set(key, entry);
         }
-        const ordered = Object.entries(map);
-        if (towns && towns.length > 0) {
-            const order = towns.map((t) => t.city.toLowerCase());
-            ordered.sort((a, b) => {
-                const ia = order.indexOf(a[0].toLowerCase());
-                const ib = order.indexOf(b[0].toLowerCase());
-                if (ia !== -1 && ib !== -1) return ia - ib;
-                if (ia !== -1) return -1;
-                if (ib !== -1) return 1;
-                return a[0].localeCompare(b[0]);
-            });
-        } else {
-            ordered.sort((a, b) => a[0].localeCompare(b[0]));
-        }
-        return ordered;
-    }, [filteredProperties, towns]);
+
+        // Sort: Yaounde, Douala, Kribi, then by item count desc
+        const ordered = Array.from(map.values()).sort((a, b) => {
+            const ia = preferredOrder.indexOf(normalizeCity(a.name));
+            const ib = preferredOrder.indexOf(normalizeCity(b.name));
+            if (ia !== -1 && ib !== -1) return ia - ib;
+            if (ia !== -1) return -1;
+            if (ib !== -1) return 1;
+            return b.items.length - a.items.length;
+        });
+
+        return ordered.map(g => [g.name, g.items] as [string, Product[]]);
+    }, [filteredProperties, preferredOrder, inferCity]);
 
     // Use all properties with coordinates for the map, regardless of left-side filters
     const mapProperties = useMemo(() => {
@@ -220,7 +266,7 @@ const SearchResults = () => {
                                         <PropertyCard
                                             id={product.listing.id}
                                             name={product.listing.title ?? "Untitled"}
-                                            location={product.listing.city ?? "Unknown"}
+                                            location={product.listing.city || inferCity(product) || "Unknown"}
                                             price={product.listing.price_per_night ?? 0}
                                             images={product.photos.map((photo) => ({ image_url: photo.url }))}
                                         />
