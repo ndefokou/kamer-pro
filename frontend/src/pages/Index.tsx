@@ -34,44 +34,47 @@ const Index = () => {
 
         <HorizontalPropertySection title="Popular stays">
           {popularListings.map((product) => (
-            <PropertyCard
-              key={product.listing.id}
-              id={product.listing.id}
-              name={product.listing.title ?? "Untitled"}
-              location={product.listing.city ?? "Unknown"}
-              price={product.listing.price_per_night ?? 0}
-              images={product.photos.map((photo) => ({ image_url: photo.url }))}
-            />
+            <div key={product.listing.id} className="w-[200px] sm:w-[280px]">
+              <PropertyCard
+                id={product.listing.id}
+                name={product.listing.title ?? "Untitled"}
+                location={product.listing.city ?? "Unknown"}
+                price={product.listing.price_per_night ?? 0}
+                images={product.photos.map((photo) => ({ image_url: photo.url }))}
+              />
+            </div>
           ))}
         </HorizontalPropertySection>
         <HorizontalPropertySection title="Available next month">
           {nextMonthListings.map((product) => (
-            <PropertyCard
-              key={product.listing.id}
-              id={product.listing.id}
-              name={product.listing.title ?? "Untitled"}
-              location={product.listing.city ?? "Unknown"}
-              price={product.listing.price_per_night ?? 0}
-              images={product.photos.map((photo) => ({ image_url: photo.url }))}
-            />
+            <div key={product.listing.id} className="w-[200px] sm:w-[280px]">
+              <PropertyCard
+                id={product.listing.id}
+                name={product.listing.title ?? "Untitled"}
+                location={product.listing.city ?? "Unknown"}
+                price={product.listing.price_per_night ?? 0}
+                images={product.photos.map((photo) => ({ image_url: photo.url }))}
+              />
+            </div>
           ))}
         </HorizontalPropertySection>
         <HorizontalPropertySection title="Nearby stays">
           {nearbyListings.map((product) => (
-            <PropertyCard
-              key={product.listing.id}
-              id={product.listing.id}
-              name={product.listing.title ?? "Untitled"}
-              location={product.listing.city ?? "Unknown"}
-              price={product.listing.price_per_night ?? 0}
-              images={product.photos.map((photo) => ({ image_url: photo.url }))}
-            />
+            <div key={product.listing.id} className="w-[200px] sm:w-[280px]">
+              <PropertyCard
+                id={product.listing.id}
+                name={product.listing.title ?? "Untitled"}
+                location={product.listing.city ?? "Unknown"}
+                price={product.listing.price_per_night ?? 0}
+                images={product.photos.map((photo) => ({ image_url: photo.url }))}
+              />
+            </div>
           ))}
         </HorizontalPropertySection>
 
         {/* All Listings */}
         <section className="py-12">
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6">
             {products?.map((product) => (
               <PropertyCard
                 key={product.listing.id}

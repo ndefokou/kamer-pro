@@ -109,6 +109,16 @@ const Header: React.FC = () => {
                             </DropdownMenuContent>
                         </DropdownMenu>
                     </div>
+
+                    <div className="md:hidden flex items-center gap-2">
+                        <LanguageSwitcher />
+                        <button
+                            className="text-xs font-semibold hover:bg-gray-100 px-3 py-2 rounded-full transition-colors"
+                            onClick={() => navigate('/webauth-login?tab=register')}
+                        >
+                            {t("Become a host")}
+                        </button>
+                    </div>
                 </div>
             </div>
         </header>

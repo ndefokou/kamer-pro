@@ -84,7 +84,7 @@ const HorizontalPropertySection = ({
                 <div
                     ref={scrollContainerRef}
                     onScroll={handleScroll}
-                    className="flex gap-6 overflow-x-auto scrollbar-hide scroll-smooth pb-4 px-4 md:px-0 -mx-4 md:mx-0"
+                    className="flex gap-4 md:gap-6 overflow-x-auto scrollbar-hide scroll-smooth pb-4 px-4 md:px-0 -mx-4 md:mx-0"
                     style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
                 >
                     {children}
