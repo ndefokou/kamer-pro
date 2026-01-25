@@ -40,6 +40,100 @@ pub struct Listing {
     pub scenic_views: Option<String>,
 }
 
+/// GET /api/listings/{id}/reviews - List reviews for a listing (with usernames)
+#[get("/{id}/reviews")]
+pub async fn get_reviews(pool: web::Data<SqlitePool>, path: web::Path<String>) -> impl Responder {
+    let listing_id = path.into_inner();
+
+    let query = r#"
+        SELECT r.id, r.listing_id, r.guest_id, r.ratings, r.comment, r.created_at,
+               u.username as username,
+               p.avatar as avatar
+        FROM reviews r
+        LEFT JOIN users u ON u.id = r.guest_id
+        LEFT JOIN user_profiles p ON p.user_id = r.guest_id
+        WHERE r.listing_id = ?
+        ORDER BY r.created_at DESC
+    "#;
+
+    match sqlx::query_as::<_, ReviewRow>(query)
+        .bind(listing_id)
+        .fetch_all(pool.get_ref())
+        .await
+    {
+        Ok(rows) => HttpResponse::Ok().json(rows),
+        Err(e) => {
+            log::error!("Failed to fetch reviews: {:?}", e);
+            HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": "Database error"
+            }))
+        }
+    }
+}
+
+/// POST /api/listings/{id}/reviews - Create a review for a listing
+#[post("/{id}/reviews")]
+pub async fn add_review(
+    pool: web::Data<SqlitePool>,
+    req: HttpRequest,
+    path: web::Path<String>,
+    body: web::Json<CreateReviewRequest>,
+) -> impl Responder {
+    let user_id = match extract_user_id(&req) {
+        Ok(id) => id,
+        Err(response) => return response,
+    };
+
+    let listing_id = path.into_inner();
+    let ratings_json = body.ratings.to_string();
+
+    let insert = sqlx::query(
+        "INSERT INTO reviews (listing_id, guest_id, ratings, comment) VALUES (?, ?, ?, ?)",
+    )
+    .bind(&listing_id)
+    .bind(user_id)
+    .bind(&ratings_json)
+    .bind(&body.comment)
+    .execute(pool.get_ref())
+    .await;
+
+    let result = match insert {
+        Ok(r) => r,
+        Err(e) => {
+            log::error!("Failed to insert review: {:?}", e);
+            return HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": "Failed to save review"
+            }));
+        }
+    };
+
+    let new_id = result.last_insert_rowid();
+
+    let select = r#"
+        SELECT r.id, r.listing_id, r.guest_id, r.ratings, r.comment, r.created_at,
+               u.username as username,
+               p.avatar as avatar
+        FROM reviews r
+        LEFT JOIN users u ON u.id = r.guest_id
+        LEFT JOIN user_profiles p ON p.user_id = r.guest_id
+        WHERE r.id = ?
+    "#;
+
+    match sqlx::query_as::<_, ReviewRow>(select)
+        .bind(new_id)
+        .fetch_one(pool.get_ref())
+        .await
+    {
+        Ok(row) => HttpResponse::Ok().json(row),
+        Err(e) => {
+            log::error!("Failed to read inserted review: {:?}", e);
+            HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": "Failed to load saved review"
+            }))
+        }
+    }
+}
+
 /// GET /api/listings/host/{id} - Get all published listings for a host
 #[get("/host/{id}")]
 pub async fn get_host_listings(
@@ -107,6 +201,25 @@ pub struct ListingVideo {
     pub listing_id: String,
     pub url: String,
     pub uploaded_at: Option<String>,
+}
+
+// Reviews
+#[derive(Debug, Serialize, Deserialize, sqlx::FromRow)]
+pub struct ReviewRow {
+    pub id: i64,
+    pub listing_id: String,
+    pub guest_id: i32,
+    pub ratings: Option<String>,
+    pub comment: Option<String>,
+    pub created_at: Option<String>,
+    pub username: Option<String>,
+    pub avatar: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct CreateReviewRequest {
+    pub ratings: serde_json::Value,
+    pub comment: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, sqlx::FromRow)]

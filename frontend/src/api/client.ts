@@ -164,6 +164,31 @@ export const getListing = async (id: string): Promise<Product> => {
   return response.data;
 };
 
+// Reviews API (listings)
+export interface ListingReview {
+  id: number;
+  listing_id: string;
+  guest_id: number;
+  ratings?: string | Record<string, number>;
+  comment?: string | null;
+  created_at?: string | null;
+  username?: string | null;
+  avatar?: string | null;
+}
+
+export const getListingReviews = async (listingId: string): Promise<ListingReview[]> => {
+  const response = await apiClient.get(`/listings/${listingId}/reviews`);
+  return response.data;
+};
+
+export const addListingReview = async (
+  listingId: string,
+  payload: { ratings: Record<string, number>; comment?: string },
+) => {
+  const response = await apiClient.post(`/listings/${listingId}/reviews`, payload);
+  return response.data as ListingReview;
+};
+
 // Account API
 export interface AccountUser {
   id: number;

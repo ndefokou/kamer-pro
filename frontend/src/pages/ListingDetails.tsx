@@ -1,7 +1,7 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { getListing, createBooking, getUserById } from '@/api/client';
+import { getListing, createBooking, getUserById, getListingReviews, addListingReview, ListingReview } from '@/api/client';
 import { Button } from '@/components/ui/button';
 import { Loader2, Share, Heart, Star, Minus, Plus, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { getImageUrl } from '@/lib/utils';
@@ -103,18 +103,53 @@ const ListingDetails: React.FC = () => {
         setShowDatePickerMobile(true);
     };
 
-    type ReviewFormData = Pick<Review, "ratings" | "comment" | "timestamp">;
-    const handleReviewSubmit = (reviewData: ReviewFormData) => {
-        const newReview: Review = {
-            id: Date.now(),
+    // Map backend review row to UI Review
+    const mapRowToReview = React.useCallback((row: ListingReview): Review => {
+        let parsedRatings: Record<string, number> = { cleanliness: 5, accuracy: 5, checkin: 5, communication: 5, location: 5, value: 5 };
+        try {
+            if (row.ratings && typeof row.ratings === 'string') parsedRatings = JSON.parse(row.ratings);
+            if (row.ratings && typeof row.ratings === 'object') parsedRatings = row.ratings as Record<string, number>;
+        } catch { /* keep defaults */ }
+        return {
+            id: Number(row.id),
             user: {
-                name: 'Guest User',
-                avatar: 'https://github.com/shadcn.png'
+                name: row.username || 'Guest',
+                avatar: row.avatar || 'https://github.com/shadcn.png',
             },
-            ...reviewData
+            ratings: parsedRatings,
+            comment: row.comment || '',
+            timestamp: row.created_at || new Date().toISOString(),
         };
-        setReviews(prev => [newReview, ...prev]);
-        setIsReviewModalOpen(false);
+    }, []);
+
+    // Load reviews from backend
+    React.useEffect(() => {
+        const load = async () => {
+            if (!id) return;
+            try {
+                const rows = await getListingReviews(id);
+                setReviews(rows.map(mapRowToReview));
+            } catch (e) {
+                // silent fail in UI
+                console.error('Failed to load reviews', e);
+            }
+        };
+        load();
+    }, [id, mapRowToReview]);
+
+    type ReviewFormData = Pick<Review, 'ratings' | 'comment' | 'timestamp'>;
+    const handleReviewSubmit = async (reviewData: ReviewFormData) => {
+        if (!id) return;
+        try {
+            const saved = await addListingReview(id, { ratings: reviewData.ratings, comment: reviewData.comment });
+            const ui = mapRowToReview(saved);
+            setReviews(prev => [ui, ...prev]);
+            setIsReviewModalOpen(false);
+            toast({ title: 'Review submitted', description: 'Thank you for your feedback!' });
+        } catch (error) {
+            console.error('Failed to submit review', error);
+            toast({ title: 'Failed to submit review', description: 'Please log in and try again.', variant: 'destructive' });
+        }
     };
 
     const sortedPhotos = React.useMemo(() => {

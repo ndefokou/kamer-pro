@@ -81,6 +81,8 @@ async fn main() -> std::io::Result<()> {
                             .service(routes::listings::get_all_listings)
                             .service(routes::listings::get_towns)
                             .service(routes::listings::get_host_listings)
+                            .service(routes::listings::get_reviews)
+                            .service(routes::listings::add_review)
                             .service(routes::listings::create_listing)
                             .service(routes::listings::get_my_listings)
                             .service(routes::listings::get_listing)
