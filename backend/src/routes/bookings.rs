@@ -259,6 +259,29 @@ pub async fn create_booking(
             .json(serde_json::json!({ "error": "Selected dates are already booked" }));
     }
 
+    // Check for host-blocked dates (calendar_pricing.is_available = 0) within the requested range
+    // We treat the date range as [check_in, check_out) so check_out itself is not counted
+    let blocked_count: i32 = sqlx::query_scalar(
+        r#"
+        SELECT COUNT(*) FROM calendar_pricing
+        WHERE listing_id = ?
+          AND date >= ?
+          AND date < ?
+          AND is_available = 0
+        "#,
+    )
+    .bind(&booking_data.listing_id)
+    .bind(&booking_data.check_in)
+    .bind(&booking_data.check_out)
+    .fetch_one(pool.get_ref())
+    .await
+    .unwrap_or(0);
+
+    if blocked_count > 0 {
+        return HttpResponse::BadRequest()
+            .json(serde_json::json!({ "error": "Selected dates are unavailable" }));
+    }
+
     let status = if instant_book == 1 {
         "confirmed"
     } else {

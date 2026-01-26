@@ -77,7 +77,7 @@
   "loading": "Loading...",
   "product not found": "Product not found",
   "choose your role": "Choose Your Role",
-  "how would you like to use MboaMaison": "How would you like to use MboaMaison?",
+  "how would you like to use MboaMaison": "How would you like to use Le Mboko?",
   "buyer": "Buyer",
   "browse and purchase products": "Browse and purchase products from sellers in Yaoundé",
   "browse products by category": "Browse products by category",
@@ -259,7 +259,7 @@
       },
       "houseRules": {
         "title": "House rules",
-        "subtitle": "Guests are expected to follow your rules and may be removed from mboaMaisson if they don't.",
+        "subtitle": "Guests are expected to follow your rules and may be removed from Mboko if they don't.",
         "checkInCheckout": "Check-in and checkout times",
         "checkInStart": "Check-in start",
         "checkInEnd": "Check-in end",
@@ -339,7 +339,7 @@
       "title": "Preview your listing",
       "subtitle": "Here's how your listing will appear to guests",
       "publishedTitle": "Listing published!",
-      "publishedDesc": "Your listing is now live on MboaMaison",
+      "publishedDesc": "Your listing is now live on Le Mboko",
       "publishFailedTitle": "Failed to publish",
       "publishFailedDesc": "Please check all required fields",
       "draftSavedTitle": "Draft saved",
@@ -486,7 +486,7 @@
   "youll be asked to authenticate": "You'll be asked to authenticate with your security key or device biometrics.",
   "signing in": "Signing in...",
   "authenticate": "Authenticate",
-  "new to MboaMaison": "New to MboaMaison?",
+  "new to MboaMaison": "New to Le Mboko?",
   "this may take a moment": "This may take a moment",
   "please fill in all fields": "Please fill in all fields",
   "failed to create credential": "Failed to create credential",
@@ -655,5 +655,6 @@
   }
   ,
   "popularStaysIn": "Popular stays · {{city}}",
-  "seeAll": "See all"
+  "seeAll": "See all",
+  "other Locations": "Other locations"
 }

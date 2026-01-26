@@ -19,8 +19,7 @@ chrono = { version = "0.4", features = ["serde"] }
 log = "0.4"
 env_logger = "0.9"
 actix-files = "0.6"
-aws-config = "1.1"
-aws-sdk-s3 = "1.15"
+reqwest = { version = "0.11", features = ["json", "multipart"] }
 bytes = "1.5"
 
 [dev-dependencies]

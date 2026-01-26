@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { getProducts, Product, getTowns, TownCount } from "@/api/client";
 import PropertyCard from "@/components/PropertyCard";
-import MboaMaissonSearch from "@/components/Search";
+import MbokoSearch from "@/components/Search";
 import HorizontalPropertySection from "@/components/HorizontalPropertySection";
 import { getImageUrl } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
@@ -38,7 +38,7 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
-        <MboaMaissonSearch />
+        <MbokoSearch />
 
         {towns && towns.length > 0 && (
           <HorizontalPropertySection title="Browse by town">

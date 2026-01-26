@@ -417,13 +417,23 @@ async fn get_listing_with_details(
             .fetch_all(pool)
             .await?;
 
-    // Get unavailable dates
-    let unavailable_dates = sqlx::query_as::<_, UnavailableDateRange>(
+    // Get unavailable dates from confirmed bookings
+    let mut unavailable_dates = sqlx::query_as::<_, UnavailableDateRange>(
         "SELECT check_in, check_out FROM bookings WHERE listing_id = ? AND status = 'confirmed' AND check_out >= DATE('now')"
     )
     .bind(listing_id)
     .fetch_all(pool)
     .await?;
+
+    // Include host-blocked dates (calendar_pricing.is_available = 0) as single-day ranges [date, date+1]
+    let blocked_dates = sqlx::query_as::<_, UnavailableDateRange>(
+        "SELECT date AS check_in, DATE(date, '+1 day') AS check_out FROM calendar_pricing WHERE listing_id = ? AND is_available = 0 AND date >= DATE('now')"
+    )
+    .bind(listing_id)
+    .fetch_all(pool)
+    .await?;
+
+    unavailable_dates.extend(blocked_dates);
 
     // Get host contact phone (from user_profiles)
     let contact_phone: Option<String> = sqlx::query_scalar(

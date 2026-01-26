@@ -22,7 +22,7 @@ const Preview: React.FC = () => {
         if (result.success) {
             toast({
                 title: t('host.preview.publishedTitle', 'Listing published!'),
-                description: t('host.preview.publishedDesc', 'Your listing is now live on MboaMaison'),
+                description: t('host.preview.publishedDesc', 'Your listing is now live on Le Mboko'),
             });
             navigate('/host/dashboard');
         } else {

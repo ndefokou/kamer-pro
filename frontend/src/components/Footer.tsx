@@ -19,7 +19,7 @@ const Footer = () => {
                     <div>
                         <h3 className="font-semibold text-gray-900 mb-4">{t("Communauté")}</h3>
                         <ul className="space-y-3 text-sm text-gray-600">
-                            <li className="hover:underline cursor-pointer">{t("mboaMaisson.org")}</li>
+                            <li className="hover:underline cursor-pointer">{t("Mboko.org")}</li>
                             <li className="hover:underline cursor-pointer">{t("Fonctionnalités")}</li>
                         </ul>
                     </div>
@@ -32,7 +32,7 @@ const Footer = () => {
                         </ul>
                     </div>
                     <div>
-                        <h3 className="font-semibold text-gray-900 mb-4">MboaMaison</h3>
+                        <h3 className="font-semibold text-gray-900 mb-4">Le Mboko</h3>
                         <ul className="space-y-3 text-sm text-gray-600">
                             <li className="hover:underline cursor-pointer">{t("Newsroom")}</li>
                             <li className="hover:underline cursor-pointer">{t("Carrières")}</li>
@@ -42,7 +42,7 @@ const Footer = () => {
                 </div>
                 <div className="mt-8 pt-8 border-t border-gray-200 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-gray-600">
                     <div className="flex items-center gap-4">
-                        <span>© 2026 MboaMaison, Inc.</span>
+                        <span>© 2026 Le Mboko, Inc.</span>
                         <span>·</span>
                         <span className="hover:underline cursor-pointer">{t("Confidentialité")}</span>
                         <span>·</span>

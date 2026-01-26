@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Menu, ChevronDown, X, Check, Calendar as CalendarIcon, Grid3x3, Mail, Home, Globe, HelpCircle, Settings, BookOpen, Users, UserPlus, LogOut, Plus } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { getImageUrl } from '@/lib/utils';
 import CalendarGrid from '@/components/host/CalendarGrid';
 import PriceSettingsModal from '@/components/host/PriceSettingsModal';
 import AvailabilitySettingsModal from '../../components/host/AvailabilitySettingsModal';
@@ -16,6 +17,17 @@ interface CalendarPricing {
     date: string;
     price: number;
     is_available: number;
+}
+
+interface MyListing {
+    listing: {
+        id: string;
+        title?: string;
+        city?: string;
+        country?: string;
+        status?: string;
+    };
+    photos?: { url: string }[];
 }
 
 interface ListingSettings {
@@ -52,6 +64,8 @@ const HostCalendar: React.FC = () => {
     const [editingPrice, setEditingPrice] = useState<number>(0);
     const [showCustomSettings, setShowCustomSettings] = useState(false);
     const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+    const [myListings, setMyListings] = useState<MyListing[]>([]);
+    const [listingsLoading, setListingsLoading] = useState<boolean>(false);
     const username = localStorage.getItem('username') || '';
     const getInitials = (name: string) => {
         const n = name?.trim();
@@ -110,16 +124,19 @@ const HostCalendar: React.FC = () => {
     useEffect(() => {
         const initCalendar = async () => {
             if (!listingId) {
+                setListingsLoading(true);
                 try {
                     const response = await apiClient.get('/listings/my-listings');
-                    if (response.data && response.data.length > 0) {
-                        navigate(`/host/calendar?listing=${response.data[0].listing.id}`, { replace: true });
-                    } else {
+                    const rows = Array.isArray(response.data) ? response.data : [];
+                    setMyListings(rows);
+                    if (rows.length === 0) {
                         navigate('/host/dashboard');
                     }
                 } catch (error) {
                     console.error('Failed to fetch listings:', error);
                     navigate('/host/dashboard');
+                } finally {
+                    setListingsLoading(false);
                 }
                 return;
             }
@@ -150,7 +167,7 @@ const HostCalendar: React.FC = () => {
 
         const currentAvailability = selectedDates.every(date => {
             const data = pricingData.get(date);
-            return data?.is_available === 1;
+            return (data?.is_available ?? 1) === 1;
         });
 
         try {
@@ -250,7 +267,7 @@ const HostCalendar: React.FC = () => {
         : settings?.base_price || listingPrice;
 
     const isAvailable = selectedDates.length > 0
-        ? selectedDates.every(date => pricingData.get(date)?.is_available === 1)
+        ? selectedDates.every(date => (pricingData.get(date)?.is_available ?? 1) === 1)
         : true;
 
     return (
@@ -260,7 +277,7 @@ const HostCalendar: React.FC = () => {
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 md:h-20 flex items-center justify-between">
                     <div className="flex items-center gap-12">
                         <div className="text-green-600 font-bold text-xl cursor-pointer" onClick={() => navigate('/')}>
-                            MboaMaison
+                            Le Mboko
                         </div>
                         <nav className="hidden md:flex gap-8 text-sm font-medium">
                             <a href="/host/reservations" className="text-gray-600 hover:text-gray-900 transition-colors">{t('nav.reservations', 'reservations')}</a>
@@ -314,25 +331,6 @@ const HostCalendar: React.FC = () => {
                                     </button>
                                     <button
                                         className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100"
-                                        onClick={() => { setIsUserMenuOpen(false); navigate('/account?tab=languages'); }}
-                                    >
-                                        <Globe className="h-5 w-5" />
-                                        <span>{t('account.languagesCurrency', 'Languages & currency')}</span>
-                                    </button>
-                                    <button className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100">
-                                        <BookOpen className="h-5 w-5" />
-                                        <span>{t('host.header.hostingResources', 'Hosting resources')}</span>
-                                    </button>
-                                    <button className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100">
-                                        <HelpCircle className="h-5 w-5" />
-                                        <span>{t('common.getHelp', 'Get help')}</span>
-                                    </button>
-                                    <button className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100">
-                                        <Users className="h-5 w-5" />
-                                        <span>{t('host.header.findCoHost', 'Find a co-host')}</span>
-                                    </button>
-                                    <button
-                                        className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100"
                                         onClick={() => {
                                             setIsUserMenuOpen(false);
                                             navigate('/host/intro');
@@ -340,10 +338,6 @@ const HostCalendar: React.FC = () => {
                                     >
                                         <Plus className="h-5 w-5" />
                                         <span>{t('host.header.createListing', 'Create a new listing')}</span>
-                                    </button>
-                                    <button className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100">
-                                        <UserPlus className="h-5 w-5" />
-                                        <span>{t('host.header.referHost', 'Refer a host')}</span>
                                     </button>
                                     <div className="pt-3 mt-2 border-t">
                                         <button
@@ -370,6 +364,43 @@ const HostCalendar: React.FC = () => {
 
             {/* Main Content */}
             <main className="max-w-[1440px] mx-auto px-4 sm:px-6 pb-24 md:pb-12">
+                {!listingId ? (
+                    <div className="py-10">
+                        <div className="mb-6">
+                            <h2 className="text-2xl font-semibold">{t('host.calendar.pickListing', 'Choose a listing')}</h2>
+                            <p className="text-gray-600">{t('host.calendar.pickListingHelp', 'Select a listing to manage its availability')}</p>
+                        </div>
+                        {listingsLoading ? (
+                            <div className="text-gray-500">{t('common.loading', 'Loading...')}</div>
+                        ) : myListings.length > 0 ? (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {myListings.map((item) => (
+                                    <button
+                                        key={item.listing.id}
+                                        onClick={() => navigate(`/host/calendar?listing=${item.listing.id}`)}
+                                        className="text-left bg-white rounded-xl border border-gray-200 hover:shadow-md transition overflow-hidden"
+                                    >
+                                        <div className="h-40 bg-gray-100">
+                                            {item.photos?.[0]?.url ? (
+                                                <img src={getImageUrl(item.photos[0].url)} alt={item.listing.title || 'Listing'} className="w-full h-full object-cover" />
+                                            ) : (
+                                                <div className="w-full h-full flex items-center justify-center text-gray-400">
+                                                    <Home className="h-8 w-8" />
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div className="p-4">
+                                            <div className="font-medium text-gray-900 truncate">{item.listing.title || t('host.dashboard.untitled', 'Untitled Listing')}</div>
+                                            <div className="text-sm text-gray-500 truncate">{[item.listing.city, item.listing.country].filter(Boolean).join(', ')}</div>
+                                        </div>
+                                    </button>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="text-gray-500">{t('host.calendar.noListings', 'No listings yet')}</div>
+                        )}
+                    </div>
+                ) : (
                 <div className="flex flex-col lg:flex-row gap-8">
                     {/* Calendar Section */}
                     <div className="flex-1">
@@ -402,6 +433,15 @@ const HostCalendar: React.FC = () => {
                                     </select>
                                     <ChevronDown className="h-6 w-6 text-gray-400 absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none group-hover:text-gray-600 transition-colors" />
                                 </div>
+                            </div>
+                            <div>
+                                <Button
+                                    variant="outline"
+                                    className="rounded-full border-gray-300"
+                                    onClick={() => navigate('/host/calendar')}
+                                >
+                                    {t('host.calendar.changeListing', 'Change listing')}
+                                </Button>
                             </div>
                         </div>
 
@@ -457,11 +497,11 @@ const HostCalendar: React.FC = () => {
                                                 <span className="text-sm font-medium">{t('host.calendar.available', 'Available')}</span>
                                                 <button
                                                     onClick={handleAvailabilityToggle}
-                                                    className={`w-12 h-6 rounded-full transition-colors ${isAvailable ? 'bg-white' : 'bg-gray-600'
-                                                        }`}
+                                                    className={`w-12 h-6 rounded-full transition-colors ${isAvailable ? 'bg-green-500' : 'bg-red-500'}`}
+                                                    aria-pressed={isAvailable}
+                                                    aria-label={isAvailable ? t('host.calendar.available', 'Available') : t('host.calendar.unavailable', 'Unavailable')}
                                                 >
-                                                    <div className={`w-5 h-5 rounded-full bg-gray-900 transition-transform ${isAvailable ? 'translate-x-6' : 'translate-x-0.5'
-                                                        }`} />
+                                                    <div className={`w-5 h-5 rounded-full bg-white shadow-sm transition-transform ${isAvailable ? 'translate-x-6' : 'translate-x-0.5'}`} />
                                                 </button>
                                             </div>
 
@@ -606,7 +646,44 @@ const HostCalendar: React.FC = () => {
                         </div>
                     </div>
                 </div>
+                )}
             </main>
+
+            {/* Mobile selected-dates quick controls */}
+            {selectedDates.length > 0 && (
+                <div className="md:hidden fixed bottom-20 inset-x-0 z-40 px-4">
+                    <div className="bg-gray-900 text-white rounded-2xl p-4 shadow-lg">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                <span className="text-sm font-medium">
+                                    {selectedDates.length === 1
+                                        ? new Date(selectedDates[0]).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                                        : `${selectedDates.length} dates`}
+                                </span>
+                            </div>
+                            <button
+                                onClick={() => setSelectedDates([])}
+                                className="p-1 hover:bg-gray-800 rounded-full"
+                                aria-label={t('common.clear', 'Clear selection')}
+                            >
+                                <X className="h-5 w-5" />
+                            </button>
+                        </div>
+
+                        <div className="flex items-center justify-between py-2 mt-1">
+                            <span className="text-sm font-medium">{t('host.calendar.available', 'Available')}</span>
+                            <button
+                                onClick={handleAvailabilityToggle}
+                                className={`w-12 h-6 rounded-full transition-colors ${isAvailable ? 'bg-green-500' : 'bg-red-500'}`}
+                                aria-pressed={isAvailable}
+                                aria-label={isAvailable ? t('host.calendar.available', 'Available') : t('host.calendar.unavailable', 'Unavailable')}
+                            >
+                                <div className={`w-5 h-5 rounded-full bg-white shadow-sm transition-transform ${isAvailable ? 'translate-x-6' : 'translate-x-0.5'}`} />
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Mobile Bottom Nav */}
             <nav className="md:hidden fixed bottom-0 inset-x-0 z-50 bg-white/90 backdrop-blur-lg border-t border-gray-200 pb-safe transition-all duration-300">

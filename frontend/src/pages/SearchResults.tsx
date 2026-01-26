@@ -7,7 +7,7 @@ import "leaflet/dist/leaflet.css";
 import { Heart, Star, Menu, User, Globe, Home as HomeIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getProducts, Product, getTowns, TownCount } from "@/api/client";
-import MboaMaissonSearch from "@/components/Search";
+import MbokoSearch from "@/components/Search";
 import { getImageUrl } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
 import {
@@ -22,6 +22,7 @@ import { useWishlist } from "@/hooks/useWishlist";
 import Header from "@/components/Header";
 import HorizontalPropertySection from "@/components/HorizontalPropertySection";
 import PropertyCard from "@/components/PropertyCard";
+import NearbyPOI from "@/components/NearbyPOI";
 
 // Fix Leaflet default icon issue
 import icon from "leaflet/dist/images/marker-icon.png";
@@ -40,7 +41,7 @@ const FitMapBounds = ({ bounds, singlePoint }: { bounds?: L.LatLngBoundsExpressi
     const map = useMap();
     useEffect(() => {
         if (bounds) {
-            map.fitBounds(bounds, { padding: [24, 24] });
+            map.fitBounds(bounds, { padding: [24, 24], maxZoom: 12 });
         } else if (singlePoint) {
             map.setView(singlePoint, 12);
         }
@@ -77,9 +78,31 @@ const SearchResults = () => {
     const normalizeCity = (s?: string) => (s || "").trim().toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '');
     const preferredOrder = useMemo(() => ["yaounde", "douala", "kribi"], []);
     const knownCities = useMemo(() => ({
-        yaounde: { display: 'Yaounde', lat: 3.8480, lon: 11.5021, synonyms: ['bastos','biyem','nkolbisson','melen','odza','nkolmesseng','nkoabang','ekounou','essos','madagascar'] },
-        douala: { display: 'Douala', lat: 4.0511, lon: 9.7679, synonyms: ['akwa','bonapriso','bonanjo','deido','makepe','ndogbong','logbaba','bepanda','bonamoussadi'] },
-        kribi:   { display: 'Kribi',   lat: 2.9400, lon: 9.9100, synonyms: ['mpalla','londji','ebambe','lolabe'] },
+        yaounde:   { display: 'Yaounde',   lat: 3.8480,  lon: 11.5021, synonyms: ['bastos','biyem','nkolbisson','melen','odza','nkolmesseng','nkoabang','ekounou','essos','madagascar'] },
+        douala:    { display: 'Douala',    lat: 4.0511,  lon: 9.7679,  synonyms: ['akwa','bonapriso','bonanjo','deido','makepe','ndogbong','logbaba','bepanda','bonamoussadi'] },
+        kribi:     { display: 'Kribi',     lat: 2.9400,  lon: 9.9100,  synonyms: ['mpalla','londji','ebambe','lolabe'] },
+        buea:      { display: 'Buea',      lat: 4.1527,  lon: 9.2410,  synonyms: ['molyko','muea','mile 17','bongo square','great soppo','small soppo','bokwango','limbe','tiko','kumba'] },
+        bamenda:   { display: 'Bamenda',   lat: 5.9631,  lon: 10.1591, synonyms: ['mankon','bambili','nkambé','kumbo'] },
+        bafoussam: { display: 'Bafoussam', lat: 5.4769,  lon: 10.4170, synonyms: ['dschang','bandjoun','foumban'] },
+        ngaoundere:{ display: 'Ngaoundere',lat: 7.3263,  lon: 13.5847, synonyms: ['adamawa','tibati','meiganga'] },
+        garoua:    { display: 'Garoua',    lat: 9.3000,  lon: 13.4000, synonyms: [] },
+        maroua:    { display: 'Maroua',    lat: 10.5956, lon: 14.3247, synonyms: ['far north'] },
+        bertoua:   { display: 'Bertoua',   lat: 4.5833,  lon: 13.6833, synonyms: [] },
+        ebolowa:   { display: 'Ebolowa',   lat: 2.9000,  lon: 11.1500, synonyms: ['south'] },
+    }) as const, []);
+
+    // Regions to their main cities for filtering when search is a region name
+    const regions = useMemo(() => ({
+        'centre': ['yaounde'],
+        'littoral': ['douala','nkongsamba','edea'],
+        'south': ['kribi','ebolowa'],
+        'southwest': ['buea','limbe','tiko','kumba'],
+        'northwest': ['bamenda','kumbo','ndop'],
+        'west': ['bafoussam','dschang','bandjoun'],
+        'adamawa': ['ngaoundere','tibati','meiganga'],
+        'north': ['garoua'],
+        'far north': ['maroua','kousseri'],
+        'east': ['bertoua','batouri'],
     }) as const, []);
 
     const distanceKm = (lat1: number, lon1: number, lat2: number, lon2: number) => {
@@ -100,6 +123,13 @@ const SearchResults = () => {
                 if (norm.includes(key)) return knownCities[key as keyof typeof knownCities].display;
                 const syns = knownCities[key as keyof typeof knownCities].synonyms;
                 if (syns.some(s => norm.includes(s))) return knownCities[key as keyof typeof knownCities].display;
+            }
+            // Check other known cities (e.g., Buea) by text/synonyms
+            for (const key of (Object.keys(knownCities) as Array<keyof typeof knownCities>)) {
+                if ((preferredOrder as readonly string[]).includes(key as string)) continue;
+                if (norm.includes(key)) return knownCities[key].display;
+                const syns = knownCities[key].synonyms;
+                if (syns.some(s => norm.includes(s))) return knownCities[key].display;
             }
         }
         if (p.listing.latitude && p.listing.longitude) {
@@ -123,14 +153,29 @@ const SearchResults = () => {
         return properties.filter((p) => {
             // Filter by location (accent-insensitive + inference)
             if (locNorm) {
-                const cityNorm = normalizeCity(p.listing.city || "");
-                const addrNorm = normalizeCity(p.listing.address || "");
-                const inferredNorm = normalizeCity(inferCity(p));
-                const matches =
-                    cityNorm.includes(locNorm) ||
-                    addrNorm.includes(locNorm) ||
-                    inferredNorm.includes(locNorm);
-                if (!matches) return false;
+                if (locNorm === 'other') {
+                    const inferredKey = normalizeCity(inferCity(p));
+                    const explicitKey = normalizeCity(p.listing.city || "");
+                    const key = inferredKey || explicitKey;
+                    if (key && preferredOrder.includes(key)) {
+                        return false;
+                    }
+                } else if ((Object.keys(regions) as Array<keyof typeof regions>).includes(locNorm as keyof typeof regions)) {
+                    const allowed = regions[locNorm as keyof typeof regions].map((c) => normalizeCity(c));
+                    const cityNorm = normalizeCity(p.listing.city || "");
+                    const inferredNorm = normalizeCity(inferCity(p));
+                    const key = cityNorm || inferredNorm;
+                    if (!key || !allowed.includes(key)) return false;
+                } else {
+                    const cityNorm = normalizeCity(p.listing.city || "");
+                    const addrNorm = normalizeCity(p.listing.address || "");
+                    const inferredNorm = normalizeCity(inferCity(p));
+                    const matches =
+                        cityNorm.includes(locNorm) ||
+                        addrNorm.includes(locNorm) ||
+                        inferredNorm.includes(locNorm);
+                    if (!matches) return false;
+                }
             }
 
             // Filter by guests
@@ -143,7 +188,7 @@ const SearchResults = () => {
 
             return true;
         });
-    }, [properties, location, guests, inferCity]);
+    }, [properties, location, guests, inferCity, preferredOrder, regions]);
 
     const groupedByCity = useMemo(() => {
         const map = new Map<string, { name: string; items: Product[] }>();
@@ -172,10 +217,10 @@ const SearchResults = () => {
     }, [filteredProperties, preferredOrder, inferCity]);
 
     const mapPoints = useMemo(() => {
-        const pts: { id: string; lat: number; lon: number; product: Product }[] = [];
+        const raw: { id: string; lat: number; lon: number; product: Product }[] = [];
         for (const p of filteredProperties) {
-            if (p.listing.latitude && p.listing.longitude) {
-                pts.push({ id: p.listing.id, lat: p.listing.latitude, lon: p.listing.longitude, product: p });
+            if (typeof p.listing.latitude === 'number' && typeof p.listing.longitude === 'number') {
+                raw.push({ id: p.listing.id, lat: p.listing.latitude, lon: p.listing.longitude, product: p });
                 continue;
             }
             const inferred = inferCity(p) || p.listing.city || '';
@@ -183,10 +228,36 @@ const SearchResults = () => {
             const cityKey = (Object.keys(knownCities) as Array<keyof typeof knownCities>).find(k => k === key);
             const city = cityKey ? knownCities[cityKey] : undefined;
             if (city && typeof city.lat === 'number' && typeof city.lon === 'number') {
-                pts.push({ id: p.listing.id, lat: city.lat, lon: city.lon, product: p });
+                raw.push({ id: p.listing.id, lat: city.lat, lon: city.lon, product: p });
             }
         }
-        return pts;
+
+        // Spread overlapping markers slightly so they don't sit exactly on top of each other
+        const groups = new Map<string, { idxs: number[]; lat: number; lon: number }>();
+        raw.forEach((pt, i) => {
+            const key = `${pt.lat.toFixed(5)},${pt.lon.toFixed(5)}`;
+            const g = groups.get(key);
+            if (g) {
+                g.idxs.push(i);
+            } else {
+                groups.set(key, { idxs: [i], lat: pt.lat, lon: pt.lon });
+            }
+        });
+
+        const spread = [...raw];
+        groups.forEach(({ idxs, lat, lon }) => {
+            if (idxs.length <= 1) return;
+            const radius = 0.0007; // ~70-80m
+            const lonAdjust = (d: number) => d / Math.cos((lat * Math.PI) / 180);
+            idxs.forEach((idx, order) => {
+                const angle = (2 * Math.PI * order) / idxs.length;
+                const dLat = radius * Math.cos(angle);
+                const dLon = lonAdjust(radius * Math.sin(angle));
+                spread[idx] = { ...spread[idx], lat: lat + dLat, lon: lon + dLon };
+            });
+        });
+
+        return spread;
     }, [filteredProperties, inferCity, knownCities]);
 
     // Compute bounds to fit all markers
@@ -326,6 +397,7 @@ const SearchResults = () => {
                             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                         />
                         <FitMapBounds bounds={mapBounds} singlePoint={singlePoint} />
+                        <NearbyPOI />
                         {mapPoints.map(({ id, lat, lon, product }) => (
                             <Marker key={id} position={[lat, lon]}>
                                 <Popup>

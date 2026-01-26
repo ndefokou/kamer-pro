@@ -85,11 +85,11 @@ const Navbar = () => {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link to="/marketplace" className="flex items-center space-x-2">
-            <Store className="h-6 w-6" />
+            <img src="/logo.png" alt="Le Mboko" className="h-6 w-6 object-contain" />
             <span className="text-xl font-bold hidden sm:inline">
-              MboaMaison
+              Le Mboko
             </span>
-            <span className="text-xl font-bold sm:hidden">KL</span>
+            <span className="text-xl font-bold sm:hidden">LM</span>
           </Link>
 
           {/* Search Bar */}

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import apiClient from '@/api/client';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, Plus, Minus, Settings, Home, MapPin, Users, Key, BookOpen, Shield, FileText, Link as LinkIcon, Camera, Eye, X, Grid3x3, Mail, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Minus, Settings, Home, MapPin, Users, Key, BookOpen, Shield, FileText, Link as LinkIcon, Camera, Eye, X, Grid3x3, Mail } from 'lucide-react';
 import { getImageUrl } from '@/lib/utils';
 import { AMENITY_DETAILS } from '@/data/amenities';
 import AddAmenitiesPanel from '@/components/host/AddAmenitiesPanel';
@@ -54,6 +54,9 @@ interface ListingSettings {
     preparation_time: string;
     availability_window: number;
 }
+
+
+ 
 
 
 
@@ -154,6 +157,8 @@ const ListingEditor: React.FC = () => {
     const [isMobileSection, setIsMobileSection] = useState(false);
     const [isPublishing, setIsPublishing] = useState(false);
 
+    
+
     useEffect(() => {
         const fetchListing = async () => {
             try {
@@ -185,6 +190,8 @@ const ListingEditor: React.FC = () => {
             fetchSettings();
         }
     }, [id]);
+
+    
 
     if (loading) {
         return <div className="min-h-screen flex items-center justify-center">{t('common.loading', 'Loading...')}</div>;
@@ -285,7 +292,7 @@ const ListingEditor: React.FC = () => {
             await apiClient.post(`/listings/${id}/publish`);
             toast({
                 title: t('host.preview.publishedTitle', 'Listing published!'),
-                description: t('host.preview.publishedDesc', 'Your listing is now live on MboaMaison'),
+                description: t('host.preview.publishedDesc', 'Your listing is now live on Le Mboko'),
             });
             navigate('/host/dashboard');
         } catch (error) {
@@ -776,6 +783,8 @@ const ListingEditor: React.FC = () => {
                                     </div>
                                 </div >
                             )}
+
+                            
 
                             {
                                 activeSection === 'number_of_guests' && (
@@ -1349,7 +1358,7 @@ const ListingEditor: React.FC = () => {
                         </div >
                     </main >
 
-                    {/* Mobile bottom View button (mboaMaisson style) */}
+                    {/* Mobile bottom View button (Mboko style) */}
                     {
                         photoView === 'overview' && !isMobileSection && (
                             <div className="md:hidden fixed bottom-24 left-1/2 -translate-x-1/2 z-[60]">

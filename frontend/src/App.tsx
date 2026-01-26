@@ -24,6 +24,7 @@ import Reservations from "./pages/host/Reservations";
 import ListingEditor from "./pages/host/ListingEditor";
 import BedroomEditor from "./pages/host/BedroomEditor";
 import BathroomEditor from "./pages/host/BathroomEditor";
+import HostCalendar from "./pages/host/HostCalendar";
 import WebAuthLogin from "./pages/WebAuthLogin";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import AccountSettings from "./pages/account/AccountSettings";
@@ -77,6 +78,7 @@ const router = createBrowserRouter(
         { path: "preview", Component: Preview },
         { path: "dashboard", Component: HostDashboard },
         { path: "reservations", Component: Reservations },
+        { path: "calendar", Component: HostCalendar },
         { path: "editor/:id/bedroom", Component: BedroomEditor },
         { path: "editor/:id/bathroom", Component: BathroomEditor },
         { path: "editor/:id", Component: ListingEditor },
