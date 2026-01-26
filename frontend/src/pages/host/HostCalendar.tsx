@@ -649,6 +649,42 @@ const HostCalendar: React.FC = () => {
                 )}
             </main>
 
+            {/* Mobile selected-dates quick controls */}
+            {selectedDates.length > 0 && (
+                <div className="md:hidden fixed bottom-20 inset-x-0 z-40 px-4">
+                    <div className="bg-gray-900 text-white rounded-2xl p-4 shadow-lg">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                <span className="text-sm font-medium">
+                                    {selectedDates.length === 1
+                                        ? new Date(selectedDates[0]).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                                        : `${selectedDates.length} dates`}
+                                </span>
+                            </div>
+                            <button
+                                onClick={() => setSelectedDates([])}
+                                className="p-1 hover:bg-gray-800 rounded-full"
+                                aria-label={t('common.clear', 'Clear selection')}
+                            >
+                                <X className="h-5 w-5" />
+                            </button>
+                        </div>
+
+                        <div className="flex items-center justify-between py-2 mt-1">
+                            <span className="text-sm font-medium">{t('host.calendar.available', 'Available')}</span>
+                            <button
+                                onClick={handleAvailabilityToggle}
+                                className={`w-12 h-6 rounded-full transition-colors ${isAvailable ? 'bg-green-500' : 'bg-red-500'}`}
+                                aria-pressed={isAvailable}
+                                aria-label={isAvailable ? t('host.calendar.available', 'Available') : t('host.calendar.unavailable', 'Unavailable')}
+                            >
+                                <div className={`w-5 h-5 rounded-full bg-white shadow-sm transition-transform ${isAvailable ? 'translate-x-6' : 'translate-x-0.5'}`} />
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Mobile Bottom Nav */}
             <nav className="md:hidden fixed bottom-0 inset-x-0 z-50 bg-white/90 backdrop-blur-lg border-t border-gray-200 pb-safe transition-all duration-300">
                 <div className="max-w-md mx-auto px-6">
