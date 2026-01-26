@@ -36,6 +36,7 @@ const Dashboard = () => {
         yaounde: { display: 'Yaounde', lat: 3.8480, lon: 11.5021, synonyms: ['bastos','biyem','nkolbisson','melen','odza','nkolmesseng','nkoabang','ekounou','essos','madagascar'] },
         douala: { display: 'Douala', lat: 4.0511, lon: 9.7679, synonyms: ['akwa','bonapriso','bonanjo','deido','makepe','ndogbong','logbaba','bepanda','bonamoussadi'] },
         kribi:   { display: 'Kribi',   lat: 2.9400, lon: 9.9100, synonyms: ['mpalla','londji','ebambe','lolabe'] },
+        buea:    { display: 'Buea',    lat: 4.1527, lon: 9.2410, synonyms: ['molyko','muea','mile 17','bongo square','great soppo','small soppo','bokwango'] },
     }) as const, []);
 
     const distanceKm = (lat1: number, lon1: number, lat2: number, lon2: number) => {
@@ -57,6 +58,13 @@ const Dashboard = () => {
                 const syns = knownCities[key as keyof typeof knownCities].synonyms;
                 if (syns.some(s => norm.includes(s))) return knownCities[key as keyof typeof knownCities].display;
             }
+            // Check other known cities (e.g., Buea)
+            for (const key of (Object.keys(knownCities) as Array<keyof typeof knownCities>)) {
+                if ((preferredOrder as readonly string[]).includes(key as string)) continue;
+                if (norm.includes(key)) return knownCities[key].display;
+                const syns = knownCities[key].synonyms;
+                if (syns.some(s => norm.includes(s))) return knownCities[key].display;
+            }
         }
         if (p.listing.latitude && p.listing.longitude) {
             const { latitude, longitude } = p.listing;
@@ -73,15 +81,15 @@ const Dashboard = () => {
         return '';
     }, [preferredOrder, knownCities]);
 
-    const { grouped, other } = useMemo(() => {
+    const { grouped, other, buea } = useMemo(() => {
         const map = new Map<string, { name: string; items: Product[] }>();
-        const otherItems: Product[] = [];
+        const otherItemsNoKey: Product[] = [];
         (properties || []).forEach((p) => {
             let raw = (p.listing.city || '').trim();
             if (!raw) raw = inferCity(p);
             const key = normalizeCity(raw);
             if (!key) {
-                otherItems.push(p);
+                otherItemsNoKey.push(p);
                 return;
             }
             const entry = map.get(key) || { name: raw, items: [] };
@@ -98,7 +106,11 @@ const Dashboard = () => {
             if (ib !== -1) return 1;
             return b.items.length - a.items.length;
         });
-        return { grouped: groups, other: otherItems };
+        const bueaItems = groups.find(g => normalizeCity(g.name) === 'buea')?.items ?? [];
+        const nonPreferred = groups
+            .filter(g => !preferredOrder.includes(normalizeCity(g.name)) && normalizeCity(g.name) !== 'buea')
+            .flatMap(g => g.items);
+        return { grouped: groups, other: [...nonPreferred, ...otherItemsNoKey], buea: bueaItems };
     }, [properties, preferredOrder, inferCity]);
 
     const toggleFavorite = (id: string) => {
@@ -183,15 +195,17 @@ const Dashboard = () => {
 
         if (!properties || properties.length === 0) return null;
 
+        const isOther = !!city && normalizeCity(city) === 'other';
+
         return (
             <div className="mb-12 group relative">
                 <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-2xl font-bold text-gray-900">{city ? t('popularStaysIn', { city }) : title}</h2>
+                    <h2 className="text-2xl font-bold text-gray-900">{city && !isOther ? t('popularStaysIn', { city }) : title}</h2>
                     {city && (
                         <button
                             className="text-sm font-semibold hover:underline flex items-center gap-1"
-                            onClick={() => navigate(`/marketplace?search=${encodeURIComponent(city)}`)}
-                            aria-label={`See all stays in ${city}`}
+                            onClick={() => navigate(`/marketplace?search=${encodeURIComponent(isOther ? 'other' : city)}`)}
+                            aria-label={isOther ? t('otherLocations') : `See all stays in ${city}`}
                         >
                             {t('seeAll')} <span aria-hidden>›</span>
                         </button>
@@ -276,6 +290,22 @@ const Dashboard = () => {
                                     city={g.name}
                                 />
                             ))}
+                        {buea.length > 0 && (
+                            <PropertySection
+                                key="buea-section"
+                                title={t('popularStaysIn', { city: 'Buea' })}
+                                properties={buea}
+                                city="Buea"
+                            />
+                        )}
+                        {other.length > 0 && (
+                            <PropertySection
+                                key="other-locations"
+                                title={t('otherLocations')}
+                                properties={other}
+                                city="other"
+                            />
+                        )}
                     </>
                 )}
             </main>

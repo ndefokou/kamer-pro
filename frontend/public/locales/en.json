@@ -655,5 +655,6 @@
   }
   ,
   "popularStaysIn": "Popular stays · {{city}}",
-  "seeAll": "See all"
+  "seeAll": "See all",
+  "other Locations": "Other locations"
 }

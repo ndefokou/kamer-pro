@@ -80,6 +80,7 @@ const SearchResults = () => {
         yaounde: { display: 'Yaounde', lat: 3.8480, lon: 11.5021, synonyms: ['bastos','biyem','nkolbisson','melen','odza','nkolmesseng','nkoabang','ekounou','essos','madagascar'] },
         douala: { display: 'Douala', lat: 4.0511, lon: 9.7679, synonyms: ['akwa','bonapriso','bonanjo','deido','makepe','ndogbong','logbaba','bepanda','bonamoussadi'] },
         kribi:   { display: 'Kribi',   lat: 2.9400, lon: 9.9100, synonyms: ['mpalla','londji','ebambe','lolabe'] },
+        buea:    { display: 'Buea',    lat: 4.1527, lon: 9.2410, synonyms: ['molyko','muea','mile 17','bongo square','great soppo','small soppo','bokwango'] },
     }) as const, []);
 
     const distanceKm = (lat1: number, lon1: number, lat2: number, lon2: number) => {
@@ -100,6 +101,13 @@ const SearchResults = () => {
                 if (norm.includes(key)) return knownCities[key as keyof typeof knownCities].display;
                 const syns = knownCities[key as keyof typeof knownCities].synonyms;
                 if (syns.some(s => norm.includes(s))) return knownCities[key as keyof typeof knownCities].display;
+            }
+            // Check other known cities (e.g., Buea) by text/synonyms
+            for (const key of (Object.keys(knownCities) as Array<keyof typeof knownCities>)) {
+                if ((preferredOrder as readonly string[]).includes(key as string)) continue;
+                if (norm.includes(key)) return knownCities[key].display;
+                const syns = knownCities[key].synonyms;
+                if (syns.some(s => norm.includes(s))) return knownCities[key].display;
             }
         }
         if (p.listing.latitude && p.listing.longitude) {
@@ -123,14 +131,23 @@ const SearchResults = () => {
         return properties.filter((p) => {
             // Filter by location (accent-insensitive + inference)
             if (locNorm) {
-                const cityNorm = normalizeCity(p.listing.city || "");
-                const addrNorm = normalizeCity(p.listing.address || "");
-                const inferredNorm = normalizeCity(inferCity(p));
-                const matches =
-                    cityNorm.includes(locNorm) ||
-                    addrNorm.includes(locNorm) ||
-                    inferredNorm.includes(locNorm);
-                if (!matches) return false;
+                if (locNorm === 'other') {
+                    const inferredKey = normalizeCity(inferCity(p));
+                    const explicitKey = normalizeCity(p.listing.city || "");
+                    const key = inferredKey || explicitKey;
+                    if (key && preferredOrder.includes(key)) {
+                        return false;
+                    }
+                } else {
+                    const cityNorm = normalizeCity(p.listing.city || "");
+                    const addrNorm = normalizeCity(p.listing.address || "");
+                    const inferredNorm = normalizeCity(inferCity(p));
+                    const matches =
+                        cityNorm.includes(locNorm) ||
+                        addrNorm.includes(locNorm) ||
+                        inferredNorm.includes(locNorm);
+                    if (!matches) return false;
+                }
             }
 
             // Filter by guests
@@ -143,7 +160,7 @@ const SearchResults = () => {
 
             return true;
         });
-    }, [properties, location, guests, inferCity]);
+    }, [properties, location, guests, inferCity, preferredOrder]);
 
     const groupedByCity = useMemo(() => {
         const map = new Map<string, { name: string; items: Product[] }>();

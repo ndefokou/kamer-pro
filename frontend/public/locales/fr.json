@@ -730,5 +730,7 @@
     }
   }
   ,
-  "popularStaysIn": "Logements populaires · {{city}}"
+  "popularStaysIn": "Logements populaires · {{city}}",
+  "other Locations": "Autres destinations",
+  "seeAll": "Voir tout"
 }
