@@ -77,10 +77,31 @@ const SearchResults = () => {
     const normalizeCity = (s?: string) => (s || "").trim().toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '');
     const preferredOrder = useMemo(() => ["yaounde", "douala", "kribi"], []);
     const knownCities = useMemo(() => ({
-        yaounde: { display: 'Yaounde', lat: 3.8480, lon: 11.5021, synonyms: ['bastos','biyem','nkolbisson','melen','odza','nkolmesseng','nkoabang','ekounou','essos','madagascar'] },
-        douala: { display: 'Douala', lat: 4.0511, lon: 9.7679, synonyms: ['akwa','bonapriso','bonanjo','deido','makepe','ndogbong','logbaba','bepanda','bonamoussadi'] },
-        kribi:   { display: 'Kribi',   lat: 2.9400, lon: 9.9100, synonyms: ['mpalla','londji','ebambe','lolabe'] },
-        buea:    { display: 'Buea',    lat: 4.1527, lon: 9.2410, synonyms: ['molyko','muea','mile 17','bongo square','great soppo','small soppo','bokwango'] },
+        yaounde:   { display: 'Yaounde',   lat: 3.8480,  lon: 11.5021, synonyms: ['bastos','biyem','nkolbisson','melen','odza','nkolmesseng','nkoabang','ekounou','essos','madagascar'] },
+        douala:    { display: 'Douala',    lat: 4.0511,  lon: 9.7679,  synonyms: ['akwa','bonapriso','bonanjo','deido','makepe','ndogbong','logbaba','bepanda','bonamoussadi'] },
+        kribi:     { display: 'Kribi',     lat: 2.9400,  lon: 9.9100,  synonyms: ['mpalla','londji','ebambe','lolabe'] },
+        buea:      { display: 'Buea',      lat: 4.1527,  lon: 9.2410,  synonyms: ['molyko','muea','mile 17','bongo square','great soppo','small soppo','bokwango','limbe','tiko','kumba'] },
+        bamenda:   { display: 'Bamenda',   lat: 5.9631,  lon: 10.1591, synonyms: ['mankon','bambili','nkambé','kumbo'] },
+        bafoussam: { display: 'Bafoussam', lat: 5.4769,  lon: 10.4170, synonyms: ['dschang','bandjoun','foumban'] },
+        ngaoundere:{ display: 'Ngaoundere',lat: 7.3263,  lon: 13.5847, synonyms: ['adamawa','tibati','meiganga'] },
+        garoua:    { display: 'Garoua',    lat: 9.3000,  lon: 13.4000, synonyms: [] },
+        maroua:    { display: 'Maroua',    lat: 10.5956, lon: 14.3247, synonyms: ['far north'] },
+        bertoua:   { display: 'Bertoua',   lat: 4.5833,  lon: 13.6833, synonyms: [] },
+        ebolowa:   { display: 'Ebolowa',   lat: 2.9000,  lon: 11.1500, synonyms: ['south'] },
+    }) as const, []);
+
+    // Regions to their main cities for filtering when search is a region name
+    const regions = useMemo(() => ({
+        'centre': ['yaounde'],
+        'littoral': ['douala','nkongsamba','edea'],
+        'south': ['kribi','ebolowa'],
+        'southwest': ['buea','limbe','tiko','kumba'],
+        'northwest': ['bamenda','kumbo','ndop'],
+        'west': ['bafoussam','dschang','bandjoun'],
+        'adamawa': ['ngaoundere','tibati','meiganga'],
+        'north': ['garoua'],
+        'far north': ['maroua','kousseri'],
+        'east': ['bertoua','batouri'],
     }) as const, []);
 
     const distanceKm = (lat1: number, lon1: number, lat2: number, lon2: number) => {
@@ -138,6 +159,12 @@ const SearchResults = () => {
                     if (key && preferredOrder.includes(key)) {
                         return false;
                     }
+                } else if ((Object.keys(regions) as Array<keyof typeof regions>).includes(locNorm as keyof typeof regions)) {
+                    const allowed = regions[locNorm as keyof typeof regions].map((c) => normalizeCity(c));
+                    const cityNorm = normalizeCity(p.listing.city || "");
+                    const inferredNorm = normalizeCity(inferCity(p));
+                    const key = cityNorm || inferredNorm;
+                    if (!key || !allowed.includes(key)) return false;
                 } else {
                     const cityNorm = normalizeCity(p.listing.city || "");
                     const addrNorm = normalizeCity(p.listing.address || "");
@@ -160,7 +187,7 @@ const SearchResults = () => {
 
             return true;
         });
-    }, [properties, location, guests, inferCity, preferredOrder]);
+    }, [properties, location, guests, inferCity, preferredOrder, regions]);
 
     const groupedByCity = useMemo(() => {
         const map = new Map<string, { name: string; items: Product[] }>();

@@ -81,6 +81,16 @@ const MboaMaissonSearch = () => {
         { name: "Yaounde", desc: "Political capital of Cameroon", icon: "🏛️" },
         { name: "Douala", desc: "Economic capital of Cameroon", icon: "🏙️" },
         { name: "Kribi", desc: "Seaside resort", icon: "🏖️" },
+        { name: "Centre", desc: "Region • Yaounde and surroundings", icon: "📍" },
+        { name: "Littoral", desc: "Region • Douala and surroundings", icon: "🌊" },
+        { name: "South", desc: "Region • Kribi, Ebolowa", icon: "🌴" },
+        { name: "Southwest", desc: "Region • Buea, Limbe, Tiko", icon: "🌋" },
+        { name: "Northwest", desc: "Region • Bamenda", icon: "⛰️" },
+        { name: "West", desc: "Region • Bafoussam, Dschang", icon: "🏞️" },
+        { name: "Adamawa", desc: "Region • Ngaoundere", icon: "🐄" },
+        { name: "North", desc: "Region • Garoua", icon: "🌾" },
+        { name: "Far North", desc: "Region • Maroua", icon: "🏜️" },
+        { name: "East", desc: "Region • Bertoua", icon: "🌳" },
     ];
 
     return (
