@@ -285,7 +285,7 @@ const ListingEditor: React.FC = () => {
             await apiClient.post(`/listings/${id}/publish`);
             toast({
                 title: t('host.preview.publishedTitle', 'Listing published!'),
-                description: t('host.preview.publishedDesc', 'Your listing is now live on MboaMaison'),
+                description: t('host.preview.publishedDesc', 'Your listing is now live on Le Mboko'),
             });
             navigate('/host/dashboard');
         } catch (error) {
@@ -1349,7 +1349,7 @@ const ListingEditor: React.FC = () => {
                         </div >
                     </main >
 
-                    {/* Mobile bottom View button (mboaMaisson style) */}
+                    {/* Mobile bottom View button (Mboko style) */}
                     {
                         photoView === 'overview' && !isMobileSection && (
                             <div className="md:hidden fixed bottom-24 left-1/2 -translate-x-1/2 z-[60]">

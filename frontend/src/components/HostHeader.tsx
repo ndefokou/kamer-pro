@@ -40,8 +40,9 @@ const HostHeader: React.FC = () => {
         <header className="border-b bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60 sticky top-0 z-50 pt-safe">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 md:h-20 flex items-center justify-between">
                 <div className="flex items-center gap-12">
-                    <div className="text-green-600 font-bold text-xl cursor-pointer" onClick={() => navigate('/')}>
-                        MboaMaison
+                    <div className="flex items-center gap-2 text-green-600 font-bold text-xl cursor-pointer" onClick={() => navigate('/')}>
+                        <img src="/logo.png" alt="Le Mboko" className="h-8 w-8 object-contain" />
+                        <span>Le Mboko</span>
                     </div>
                     <nav className="hidden md:flex gap-8 text-sm font-medium">
                         <a

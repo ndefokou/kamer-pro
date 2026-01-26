@@ -7,7 +7,7 @@ import "leaflet/dist/leaflet.css";
 import { Heart, Star, Menu, User, Globe, Home as HomeIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getProducts, Product, getTowns, TownCount } from "@/api/client";
-import MboaMaissonSearch from "@/components/Search";
+import MbokoSearch from "@/components/Search";
 import { getImageUrl } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
 import {
@@ -22,6 +22,7 @@ import { useWishlist } from "@/hooks/useWishlist";
 import Header from "@/components/Header";
 import HorizontalPropertySection from "@/components/HorizontalPropertySection";
 import PropertyCard from "@/components/PropertyCard";
+import NearbyPOI from "@/components/NearbyPOI";
 
 // Fix Leaflet default icon issue
 import icon from "leaflet/dist/images/marker-icon.png";
@@ -40,7 +41,7 @@ const FitMapBounds = ({ bounds, singlePoint }: { bounds?: L.LatLngBoundsExpressi
     const map = useMap();
     useEffect(() => {
         if (bounds) {
-            map.fitBounds(bounds, { padding: [24, 24] });
+            map.fitBounds(bounds, { padding: [24, 24], maxZoom: 12 });
         } else if (singlePoint) {
             map.setView(singlePoint, 12);
         }
@@ -216,10 +217,10 @@ const SearchResults = () => {
     }, [filteredProperties, preferredOrder, inferCity]);
 
     const mapPoints = useMemo(() => {
-        const pts: { id: string; lat: number; lon: number; product: Product }[] = [];
+        const raw: { id: string; lat: number; lon: number; product: Product }[] = [];
         for (const p of filteredProperties) {
-            if (p.listing.latitude && p.listing.longitude) {
-                pts.push({ id: p.listing.id, lat: p.listing.latitude, lon: p.listing.longitude, product: p });
+            if (typeof p.listing.latitude === 'number' && typeof p.listing.longitude === 'number') {
+                raw.push({ id: p.listing.id, lat: p.listing.latitude, lon: p.listing.longitude, product: p });
                 continue;
             }
             const inferred = inferCity(p) || p.listing.city || '';
@@ -227,10 +228,36 @@ const SearchResults = () => {
             const cityKey = (Object.keys(knownCities) as Array<keyof typeof knownCities>).find(k => k === key);
             const city = cityKey ? knownCities[cityKey] : undefined;
             if (city && typeof city.lat === 'number' && typeof city.lon === 'number') {
-                pts.push({ id: p.listing.id, lat: city.lat, lon: city.lon, product: p });
+                raw.push({ id: p.listing.id, lat: city.lat, lon: city.lon, product: p });
             }
         }
-        return pts;
+
+        // Spread overlapping markers slightly so they don't sit exactly on top of each other
+        const groups = new Map<string, { idxs: number[]; lat: number; lon: number }>();
+        raw.forEach((pt, i) => {
+            const key = `${pt.lat.toFixed(5)},${pt.lon.toFixed(5)}`;
+            const g = groups.get(key);
+            if (g) {
+                g.idxs.push(i);
+            } else {
+                groups.set(key, { idxs: [i], lat: pt.lat, lon: pt.lon });
+            }
+        });
+
+        const spread = [...raw];
+        groups.forEach(({ idxs, lat, lon }) => {
+            if (idxs.length <= 1) return;
+            const radius = 0.0007; // ~70-80m
+            const lonAdjust = (d: number) => d / Math.cos((lat * Math.PI) / 180);
+            idxs.forEach((idx, order) => {
+                const angle = (2 * Math.PI * order) / idxs.length;
+                const dLat = radius * Math.cos(angle);
+                const dLon = lonAdjust(radius * Math.sin(angle));
+                spread[idx] = { ...spread[idx], lat: lat + dLat, lon: lon + dLon };
+            });
+        });
+
+        return spread;
     }, [filteredProperties, inferCity, knownCities]);
 
     // Compute bounds to fit all markers
@@ -370,6 +397,7 @@ const SearchResults = () => {
                             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                         />
                         <FitMapBounds bounds={mapBounds} singlePoint={singlePoint} />
+                        <NearbyPOI />
                         {mapPoints.map(({ id, lat, lon, product }) => (
                             <Marker key={id} position={[lat, lon]}>
                                 <Popup>

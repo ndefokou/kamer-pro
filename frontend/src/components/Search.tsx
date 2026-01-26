@@ -16,7 +16,7 @@ import { DateRange } from "react-day-picker";
 type FlexibleDuration = 'weekend' | 'week' | 'month';
 const FLEXIBLE_OPTIONS = ['weekend', 'week', 'month'] as const;
 
-const MboaMaissonSearch = () => {
+const MbokoSearch = () => {
     const { t } = useTranslation();
     const navigate = useNavigate();
     const [where, setWhere] = useState("");
@@ -435,4 +435,4 @@ const MboaMaissonSearch = () => {
     );
 };
 
-export default MboaMaissonSearch;
+export default MbokoSearch;

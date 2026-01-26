@@ -71,11 +71,8 @@ const Header: React.FC = () => {
                 <div className="flex items-center justify-between h-16 md:h-20">
                     {/* Logo */}
                     <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate("/")}>
-                        <svg className="h-8 w-8 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-                            <polyline points="9 22 9 12 15 12 15 22" />
-                        </svg>
-                        <span className="text-xl font-bold text-primary">MboaMaison</span>
+                        <img src="/logo.png" alt="Le Mboko" className="h-8 w-8 object-contain" />
+                        <span className="text-xl font-bold text-primary">Le Mboko</span>
                     </div>
 
                     {/* Navigation Tabs */}

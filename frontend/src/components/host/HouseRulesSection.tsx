@@ -159,7 +159,7 @@ const HouseRulesSection: React.FC<HouseRulesSectionProps> = ({
             <div className="mb-8">
                 <h2 className="text-2xl font-semibold mb-2">{t('host.editor.houseRules.title', 'House rules')}</h2>
                 <p className="text-gray-500">
-                    {t('host.editor.houseRules.subtitle', "Guests are expected to follow your rules and may be removed from mboaMaisson if they don't.")}
+                    {t('host.editor.houseRules.subtitle', "Guests are expected to follow your rules and may be removed from Mboko if they don't.")}
                 </p>
             </div>
 

@@ -120,7 +120,7 @@ export const PROPERTY_INFO: SafetyItem[] = [
     {
         id: 'weapons on property',
         label: 'Weapon(s) on the property',
-        description: 'There\'s at least one weapon stored on this property. Check your local laws for specific requirements.\n\nReminder: mboaMaisson requires all weapons to be properly stored and secured.',
+        description: 'There\'s at least one weapon stored on this property. Check your local laws for specific requirements.\n\nReminder: Mboko requires all weapons to be properly stored and secured.',
         category: 'property_info',
     },
 ];

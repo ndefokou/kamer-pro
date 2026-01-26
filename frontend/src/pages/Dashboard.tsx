@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Heart, Star, Home as HomeIcon, Globe, Menu, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getProducts, Product } from "@/api/client";
-import MboaMaissonSearch from "@/components/Search";
+import MbokoSearch from "@/components/Search";
 import { getImageUrl } from "@/lib/utils";
 import {
     DropdownMenu,
@@ -257,7 +257,7 @@ const Dashboard = () => {
             {/* Search Bar */}
             <div className="border-b border-gray-200 bg-white">
                 <div className="container mx-auto px-4 sm:px-6 py-6">
-                    <MboaMaissonSearch />
+                    <MbokoSearch />
                 </div>
             </div>
 

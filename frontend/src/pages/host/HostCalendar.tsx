@@ -260,7 +260,7 @@ const HostCalendar: React.FC = () => {
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 md:h-20 flex items-center justify-between">
                     <div className="flex items-center gap-12">
                         <div className="text-green-600 font-bold text-xl cursor-pointer" onClick={() => navigate('/')}>
-                            MboaMaison
+                            Le Mboko
                         </div>
                         <nav className="hidden md:flex gap-8 text-sm font-medium">
                             <a href="/host/reservations" className="text-gray-600 hover:text-gray-900 transition-colors">{t('nav.reservations', 'reservations')}</a>
