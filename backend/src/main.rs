@@ -7,6 +7,7 @@ use std::env;
 
 mod middleware;
 mod routes;
+mod s3;
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     println!("Rust application starting...");
@@ -52,6 +53,20 @@ async fn main() -> std::io::Result<()> {
         .expect("Failed to run migrations");
     println!("Migrations completed successfully.");
 
+    // Initialize S3 storage
+    println!("Initializing S3 storage...");
+    let s3_storage = match s3::S3Storage::new().await {
+        Ok(storage) => {
+            println!("S3 storage initialized successfully.");
+            storage
+        }
+        Err(e) => {
+            eprintln!("Warning: Failed to initialize S3 storage: {}", e);
+            eprintln!("Image uploads will not work. Please check S3 configuration.");
+            panic!("S3 storage initialization failed");
+        }
+    };
+
     let uploads_dir_clone = uploads_dir.clone();
 
     HttpServer::new(move || {
@@ -59,6 +74,7 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .wrap(cors)
             .app_data(web::Data::new(pool.clone()))
+            .app_data(web::Data::new(s3_storage.clone()))
             .service(
                 web::scope("/api")
                     .service(

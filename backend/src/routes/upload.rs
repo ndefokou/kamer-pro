@@ -3,8 +3,6 @@ use actix_web::{post, web, Error, HttpRequest, HttpResponse};
 use futures_util::stream::{StreamExt, TryStreamExt};
 use serde::Serialize;
 use sqlx::SqlitePool;
-use std::io::Write;
-use uuid::Uuid;
 
 #[derive(Serialize)]
 struct ErrorResponse {
@@ -18,37 +16,46 @@ struct UploadResponse {
 
 // New endpoint for uploading images without product ID (for host onboarding)
 #[post("/images")]
-pub async fn upload_images_standalone(mut payload: Multipart) -> Result<HttpResponse, Error> {
-    let mut file_paths = Vec::new();
+pub async fn upload_images_standalone(
+    mut payload: Multipart,
+    s3: web::Data<crate::s3::S3Storage>,
+) -> Result<HttpResponse, Error> {
+    let mut file_urls = Vec::new();
 
     while let Ok(Some(mut field)) = payload.try_next().await {
         let content_disposition = field.content_disposition();
         if let Some(filename) = content_disposition.get_filename() {
-            let unique_filename = format!("{}-{}", Uuid::new_v4().to_string(), filename);
-            let filepath = format!("./public/uploads/{}", unique_filename);
+            // Clone filename and content_type to avoid borrow issues
+            let filename = filename.to_string();
+            let content_type = field.content_type().to_string();
+            
+            // Read file data into memory
+            let mut file_data = Vec::new();
+            while let Some(chunk) = field.next().await {
+                let data = chunk.map_err(|e| {
+                    eprintln!("Failed to read chunk: {}", e);
+                    actix_web::error::ErrorInternalServerError("Failed to read file")
+                })?;
+                file_data.extend_from_slice(&data);
+            }
 
-            // Create the uploads directory if it doesn't exist
-            if let Some(p) = std::path::Path::new(&filepath).parent() {
-                if !p.exists() {
-                    std::fs::create_dir_all(p).map_err(|e| {
-                        eprintln!("Failed to create directory for {}: {}", filepath, e);
-                        actix_web::error::ErrorInternalServerError("Failed to save file")
-                    })?;
+            // Upload to S3
+            match s3.upload_file(file_data, &filename, &content_type).await {
+                Ok(url) => {
+                    println!("Successfully uploaded file to S3: {}", url);
+                    file_urls.push(url);
+                }
+                Err(e) => {
+                    eprintln!("Failed to upload to S3: {}", e);
+                    return Ok(HttpResponse::InternalServerError().json(ErrorResponse {
+                        message: format!("Failed to upload file: {}", e),
+                    }));
                 }
             }
-
-            let mut f = web::block(move || std::fs::File::create(filepath)).await??;
-            while let Some(chunk) = field.next().await {
-                let data = chunk.unwrap();
-                f = web::block(move || f.write_all(&data).map(|_| f)).await??;
-            }
-
-            // Return URL that can be accessed via the /uploads route
-            file_paths.push(format!("/uploads/{}", unique_filename));
         }
     }
 
-    Ok(HttpResponse::Ok().json(UploadResponse { urls: file_paths }))
+    Ok(HttpResponse::Ok().json(UploadResponse { urls: file_urls }))
 }
 
 #[post("/upload/{productId}")]
