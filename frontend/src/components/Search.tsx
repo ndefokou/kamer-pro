@@ -78,9 +78,6 @@ const MboaMaissonSearch = () => {
     };
 
     const suggestions = [
-        { name: "Yaounde", desc: "Political capital of Cameroon", icon: "🏛️" },
-        { name: "Douala", desc: "Economic capital of Cameroon", icon: "🏙️" },
-        { name: "Kribi", desc: "Seaside resort", icon: "🏖️" },
         { name: "Centre", desc: "Region • Yaounde and surroundings", icon: "📍" },
         { name: "Littoral", desc: "Region • Douala and surroundings", icon: "🌊" },
         { name: "South", desc: "Region • Kribi, Ebolowa", icon: "🌴" },
