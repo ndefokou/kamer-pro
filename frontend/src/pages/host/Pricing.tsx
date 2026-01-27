@@ -5,7 +5,8 @@ import { useHost } from '@/contexts/HostContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { DollarSign } from 'lucide-react';
+import { Banknote } from 'lucide-react';
+import { formatPrice } from '@/lib/utils';
 
 const Pricing: React.FC = () => {
     const navigate = useNavigate();
@@ -48,9 +49,9 @@ const Pricing: React.FC = () => {
 
                 <div className="mb-8 p-6 border rounded-lg">
                     <div className="mb-6">
-                        <Label htmlFor="pricePerNight" className="text-lg">{t('host.pricing.pricePerNight', 'Price per night (XAF)')}</Label>
+                        <Label htmlFor="pricePerNight" className="text-lg">{t('host.pricing.pricePerNight', 'Price per night (FCFA)')}</Label>
                         <div className="relative mt-2">
-                            <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                            <Banknote className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                             <Input
                                 id="pricePerNight"
                                 type="number"
@@ -71,7 +72,7 @@ const Pricing: React.FC = () => {
                     <div>
                         <Label htmlFor="cleaningFee" className="text-lg">{t('host.pricing.cleaningFee', 'Cleaning fee (optional)')}</Label>
                         <div className="relative mt-2">
-                            <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                            <Banknote className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                             <Input
                                 id="cleaningFee"
                                 type="number"
@@ -93,22 +94,22 @@ const Pricing: React.FC = () => {
                         <h3 className="font-semibold mb-4">{t('host.pricing.breakdownTitle', 'Price breakdown example (3 nights)')}</h3>
                         <div className="space-y-2 text-sm">
                             <div className="flex justify-between">
-                                <span>{pricePerNight.toLocaleString()} XAF × {3} {t('common.nights', 'nights')}</span>
-                                <span>{(pricePerNight * 3).toLocaleString()} XAF</span>
+                                <span>{formatPrice(pricePerNight)} × {3} {t('common.nights', 'nights')}</span>
+                                <span>{formatPrice(pricePerNight * 3)}</span>
                             </div>
                             {cleaningFee > 0 && (
                                 <div className="flex justify-between">
                                     <span>{t('host.pricing.cleaningFeeShort', 'Cleaning fee')}</span>
-                                    <span>{cleaningFee.toLocaleString()} XAF</span>
+                                    <span>{formatPrice(cleaningFee)}</span>
                                 </div>
                             )}
                             <div className="border-t pt-2 flex justify-between font-semibold">
                                 <span>{t('common.total', 'Total')}</span>
-                                <span>{totalPerBooking.toLocaleString()} XAF</span>
+                                <span>{formatPrice(totalPerBooking)}</span>
                             </div>
                         </div>
                         <p className="text-xs text-muted-foreground mt-4">
-                            {t('host.pricing.estimatedMonthly', 'Estimated monthly earnings')}: {monthlyEstimate.toLocaleString()} XAF
+                            {t('host.pricing.estimatedMonthly', 'Estimated monthly earnings')}: {formatPrice(monthlyEstimate)}
                             <br />
                             {t('host.pricing.estimateHint', '(Based on {{n}} nights booked per month)', { n: estimatedNights })}
                         </p>

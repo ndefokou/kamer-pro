@@ -1,6 +1,6 @@
 use actix_web::{delete, get, post, put, web, HttpRequest, HttpResponse, Responder};
 use serde::{Deserialize, Serialize};
-use sqlx::SqlitePool;
+use sqlx::PgPool;
 use uuid::Uuid;
 
 // ============================================================================
@@ -27,14 +27,14 @@ pub struct Listing {
     pub bedrooms: Option<i32>,
     pub beds: Option<i32>,
     pub bathrooms: Option<f64>,
-    pub instant_book: Option<i32>,
+    pub instant_book: Option<bool>,
     pub min_nights: Option<i32>,
     pub max_nights: Option<i32>,
     pub safety_devices: Option<String>,
     pub house_rules: Option<String>,
-    pub created_at: Option<String>,
-    pub updated_at: Option<String>,
-    pub published_at: Option<String>,
+    pub created_at: Option<chrono::NaiveDateTime>,
+    pub updated_at: Option<chrono::NaiveDateTime>,
+    pub published_at: Option<chrono::NaiveDateTime>,
     pub cancellation_policy: Option<String>,
     pub getting_around: Option<String>,
     pub scenic_views: Option<String>,
@@ -42,7 +42,7 @@ pub struct Listing {
 
 /// GET /api/listings/{id}/reviews - List reviews for a listing (with usernames)
 #[get("/{id}/reviews")]
-pub async fn get_reviews(pool: web::Data<SqlitePool>, path: web::Path<String>) -> impl Responder {
+pub async fn get_reviews(pool: web::Data<PgPool>, path: web::Path<String>) -> impl Responder {
     let listing_id = path.into_inner();
 
     let query = r#"
@@ -52,7 +52,7 @@ pub async fn get_reviews(pool: web::Data<SqlitePool>, path: web::Path<String>) -
         FROM reviews r
         LEFT JOIN users u ON u.id = r.guest_id
         LEFT JOIN user_profiles p ON p.user_id = r.guest_id
-        WHERE r.listing_id = ?
+        WHERE r.listing_id = $1
         ORDER BY r.created_at DESC
     "#;
 
@@ -74,7 +74,7 @@ pub async fn get_reviews(pool: web::Data<SqlitePool>, path: web::Path<String>) -
 /// POST /api/listings/{id}/reviews - Create a review for a listing
 #[post("/{id}/reviews")]
 pub async fn add_review(
-    pool: web::Data<SqlitePool>,
+    pool: web::Data<PgPool>,
     req: HttpRequest,
     path: web::Path<String>,
     body: web::Json<CreateReviewRequest>,
@@ -86,8 +86,8 @@ pub async fn add_review(
 
     let listing_id = path.into_inner();
     // Prevent duplicate review from the same user for the same listing
-    match sqlx::query_scalar::<_, i64>(
-        "SELECT 1 FROM reviews WHERE listing_id = ? AND guest_id = ? LIMIT 1",
+    match sqlx::query_scalar::<_, i32>(
+        "SELECT 1 FROM reviews WHERE listing_id = $1 AND guest_id = $2 LIMIT 1",
     )
     .bind(&listing_id)
     .bind(user_id)
@@ -110,13 +110,13 @@ pub async fn add_review(
     let ratings_json = body.ratings.to_string();
 
     let insert = sqlx::query(
-        "INSERT INTO reviews (listing_id, guest_id, ratings, comment) VALUES (?, ?, ?, ?)",
+        "INSERT INTO reviews (listing_id, guest_id, ratings, comment) VALUES ($1, $2, $3, $4) RETURNING id",
     )
     .bind(&listing_id)
     .bind(user_id)
     .bind(&ratings_json)
     .bind(&body.comment)
-    .execute(pool.get_ref())
+    .fetch_one(pool.get_ref())
     .await;
 
     let result = match insert {
@@ -135,7 +135,7 @@ pub async fn add_review(
         }
     };
 
-    let new_id = result.last_insert_rowid();
+    let new_id: i32 = sqlx::Row::get(&result, "id");
 
     let select = r#"
         SELECT r.id, r.listing_id, r.guest_id, r.ratings, r.comment, r.created_at,
@@ -144,7 +144,7 @@ pub async fn add_review(
         FROM reviews r
         LEFT JOIN users u ON u.id = r.guest_id
         LEFT JOIN user_profiles p ON p.user_id = r.guest_id
-        WHERE r.id = ?
+        WHERE r.id = $1
     "#;
 
     match sqlx::query_as::<_, ReviewRow>(select)
@@ -165,13 +165,13 @@ pub async fn add_review(
 /// GET /api/listings/host/{id} - Get all published listings for a host
 #[get("/host/{id}")]
 pub async fn get_host_listings(
-    pool: web::Data<SqlitePool>,
+    pool: web::Data<PgPool>,
     path: web::Path<i32>,
 ) -> impl Responder {
     let host_id = path.into_inner();
 
     let rows = sqlx::query_as::<_, Listing>(
-        "SELECT * FROM listings WHERE status = 'published' AND host_id = ? ORDER BY created_at DESC",
+        "SELECT * FROM listings WHERE status = 'published' AND host_id = $1 ORDER BY created_at DESC",
     )
     .bind(host_id)
     .fetch_all(pool.get_ref())
@@ -195,8 +195,8 @@ pub async fn get_host_listings(
 
 #[derive(Debug, Serialize, Deserialize, sqlx::FromRow)]
 pub struct UnavailableDateRange {
-    pub check_in: String,
-    pub check_out: String,
+    pub check_in: chrono::NaiveDate,
+    pub check_out: chrono::NaiveDate,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -218,9 +218,9 @@ pub struct ListingPhoto {
     pub url: String,
     pub caption: Option<String>,
     pub room_type: Option<String>,
-    pub is_cover: i32,
+    pub is_cover: bool,
     pub display_order: i32,
-    pub uploaded_at: Option<String>,
+    pub uploaded_at: Option<chrono::NaiveDateTime>,
 }
 
 #[derive(Debug, Serialize, Deserialize, sqlx::FromRow)]
@@ -228,18 +228,18 @@ pub struct ListingVideo {
     pub id: i32,
     pub listing_id: String,
     pub url: String,
-    pub uploaded_at: Option<String>,
+    pub uploaded_at: Option<chrono::NaiveDateTime>,
 }
 
 // Reviews
 #[derive(Debug, Serialize, Deserialize, sqlx::FromRow)]
 pub struct ReviewRow {
-    pub id: i64,
+    pub id: i32,
     pub listing_id: String,
     pub guest_id: i32,
     pub ratings: Option<String>,
     pub comment: Option<String>,
-    pub created_at: Option<String>,
+    pub created_at: Option<chrono::NaiveDateTime>,
     pub username: Option<String>,
     pub avatar: Option<String>,
 }
@@ -331,7 +331,7 @@ pub struct CityCount {
 }
 
 #[get("/towns")]
-pub async fn get_towns(pool: web::Data<SqlitePool>) -> impl Responder {
+pub async fn get_towns(pool: web::Data<PgPool>) -> impl Responder {
     let result = sqlx::query_as::<_, CityCount>(
         "SELECT city as city, COUNT(*) as count
          FROM listings
@@ -383,18 +383,18 @@ fn extract_user_id(req: &HttpRequest) -> Result<i32, HttpResponse> {
 }
 
 async fn get_listing_with_details(
-    pool: &SqlitePool,
+    pool: &PgPool,
     listing_id: &str,
 ) -> Result<ListingWithDetails, sqlx::Error> {
     // Get listing
-    let listing = sqlx::query_as::<_, Listing>("SELECT * FROM listings WHERE id = ?")
+    let listing = sqlx::query_as::<_, Listing>("SELECT * FROM listings WHERE id = $1")
         .bind(listing_id)
         .fetch_one(pool)
         .await?;
 
     // Get amenities
     let amenities =
-        sqlx::query_as::<_, ListingAmenity>("SELECT * FROM listing_amenities WHERE listing_id = ?")
+        sqlx::query_as::<_, ListingAmenity>("SELECT * FROM listing_amenities WHERE listing_id = $1")
             .bind(listing_id)
             .fetch_all(pool)
             .await?
@@ -404,7 +404,7 @@ async fn get_listing_with_details(
 
     // Get photos
     let photos = sqlx::query_as::<_, ListingPhoto>(
-        "SELECT * FROM listing_photos WHERE listing_id = ? ORDER BY display_order, id",
+        "SELECT * FROM listing_photos WHERE listing_id = $1 ORDER BY display_order, id",
     )
     .bind(listing_id)
     .fetch_all(pool)
@@ -412,22 +412,22 @@ async fn get_listing_with_details(
 
     // Get videos
     let videos =
-        sqlx::query_as::<_, ListingVideo>("SELECT * FROM listing_videos WHERE listing_id = ?")
+        sqlx::query_as::<_, ListingVideo>("SELECT * FROM listing_videos WHERE listing_id = $1")
             .bind(listing_id)
             .fetch_all(pool)
             .await?;
 
     // Get unavailable dates from confirmed bookings
     let mut unavailable_dates = sqlx::query_as::<_, UnavailableDateRange>(
-        "SELECT check_in, check_out FROM bookings WHERE listing_id = ? AND status = 'confirmed' AND check_out >= DATE('now')"
+        "SELECT check_in, check_out FROM bookings WHERE listing_id = $1 AND status = 'confirmed' AND check_out >= CURRENT_DATE"
     )
     .bind(listing_id)
     .fetch_all(pool)
     .await?;
 
-    // Include host-blocked dates (calendar_pricing.is_available = 0) as single-day ranges [date, date+1]
+    // Include host-blocked dates (calendar_pricing.is_available = false) as single-day ranges [date, date+1]
     let blocked_dates = sqlx::query_as::<_, UnavailableDateRange>(
-        "SELECT date AS check_in, DATE(date, '+1 day') AS check_out FROM calendar_pricing WHERE listing_id = ? AND is_available = 0 AND date >= DATE('now')"
+        "SELECT date AS check_in, (date + INTERVAL '1 day') AS check_out FROM calendar_pricing WHERE listing_id = $1 AND is_available = FALSE AND date >= CURRENT_DATE"
     )
     .bind(listing_id)
     .fetch_all(pool)
@@ -437,7 +437,7 @@ async fn get_listing_with_details(
 
     // Get host contact phone (from user_profiles)
     let contact_phone: Option<String> = sqlx::query_scalar(
-        "SELECT phone FROM user_profiles WHERE user_id = ?",
+        "SELECT phone FROM user_profiles WHERE user_id = $1",
     )
     .bind(listing.host_id)
     .fetch_optional(pool)
@@ -446,7 +446,7 @@ async fn get_listing_with_details(
 
     // Get host avatar (from user_profiles)
     let host_avatar: Option<String> = sqlx::query_scalar(
-        "SELECT avatar FROM user_profiles WHERE user_id = ?",
+        "SELECT avatar FROM user_profiles WHERE user_id = $1",
     )
     .bind(listing.host_id)
     .fetch_optional(pool)
@@ -527,7 +527,7 @@ fn validate_listing_for_publish(listing: &ListingWithDetails) -> Result<(), Stri
 /// POST /api/listings - Create new draft listing
 #[post("")]
 pub async fn create_listing(
-    pool: web::Data<SqlitePool>,
+    pool: web::Data<PgPool>,
     req: HttpRequest,
     body: web::Json<CreateListingRequest>,
 ) -> impl Responder {
@@ -537,7 +537,7 @@ pub async fn create_listing(
     };
 
     // Check if user exists, create if not
-    let user_exists: Option<i32> = match sqlx::query_scalar("SELECT id FROM users WHERE id = ?")
+    let user_exists: Option<i32> = match sqlx::query_scalar("SELECT id FROM users WHERE id = $1")
         .bind(user_id)
         .fetch_optional(pool.get_ref())
         .await
@@ -555,7 +555,7 @@ pub async fn create_listing(
         log::info!("User ID {} not found, creating new user", user_id);
 
         // Auto-create user with basic info
-        match sqlx::query("INSERT INTO users (id, username, email) VALUES (?, ?, ?)")
+        match sqlx::query("INSERT INTO users (id, username, email) VALUES ($1, $2, $3)")
             .bind(user_id)
             .bind(format!("host_{}", user_id))
             .bind(format!("host_{}@mboamaison.com", user_id))
@@ -581,7 +581,7 @@ pub async fn create_listing(
     );
 
     let result = sqlx::query(
-        "INSERT INTO listings (id, host_id, status, property_type) VALUES (?, ?, 'draft', ?)",
+        "INSERT INTO listings (id, host_id, status, property_type) VALUES ($1, $2, 'draft', $3)",
     )
     .bind(&listing_id)
     .bind(user_id)
@@ -616,7 +616,7 @@ pub async fn create_listing(
 
 /// GET /api/listings/:id - Get listing details
 #[get("/{id}")]
-pub async fn get_listing(pool: web::Data<SqlitePool>, path: web::Path<String>) -> impl Responder {
+pub async fn get_listing(pool: web::Data<PgPool>, path: web::Path<String>) -> impl Responder {
     let listing_id = path.into_inner();
 
     match get_listing_with_details(pool.get_ref(), &listing_id).await {
@@ -633,7 +633,7 @@ pub async fn get_listing(pool: web::Data<SqlitePool>, path: web::Path<String>) -
 /// PUT /api/listings/:id - Update listing (autosave)
 #[put("/{id}")]
 pub async fn update_listing(
-    pool: web::Data<SqlitePool>,
+    pool: web::Data<PgPool>,
     req: HttpRequest,
     path: web::Path<String>,
     body: web::Json<UpdateListingRequest>,
@@ -646,7 +646,7 @@ pub async fn update_listing(
     let listing_id = path.into_inner();
 
     // Verify ownership
-    let owner_check = sqlx::query_scalar::<_, i32>("SELECT host_id FROM listings WHERE id = ?")
+    let owner_check = sqlx::query_scalar::<_, i32>("SELECT host_id FROM listings WHERE id = $1")
         .bind(&listing_id)
         .fetch_optional(pool.get_ref())
         .await;
@@ -654,7 +654,7 @@ pub async fn update_listing(
     match owner_check {
         Ok(Some(host_id)) if host_id == user_id => {
             // Build dynamic update query using QueryBuilder to prevent SQL injection
-            let mut query_builder: sqlx::QueryBuilder<sqlx::Sqlite> =
+            let mut query_builder: sqlx::QueryBuilder<sqlx::Postgres> =
                 sqlx::QueryBuilder::new("UPDATE listings SET updated_at = CURRENT_TIMESTAMP");
 
             if let Some(ref property_type) = body.property_type {
@@ -719,7 +719,7 @@ pub async fn update_listing(
             }
             if let Some(instant_book) = body.instant_book {
                 query_builder.push(", instant_book = ");
-                query_builder.push_bind(if instant_book { 1 } else { 0 });
+                query_builder.push_bind(instant_book);
             }
             if let Some(min_nights) = body.min_nights {
                 query_builder.push(", min_nights = ");
@@ -783,7 +783,7 @@ pub async fn update_listing(
 /// DELETE /api/listings/:id - Delete listing
 #[delete("/{id}")]
 pub async fn delete_listing(
-    pool: web::Data<SqlitePool>,
+    pool: web::Data<PgPool>,
     req: HttpRequest,
     path: web::Path<String>,
 ) -> impl Responder {
@@ -795,14 +795,14 @@ pub async fn delete_listing(
     let listing_id = path.into_inner();
 
     // Verify ownership
-    let owner_check = sqlx::query_scalar::<_, i32>("SELECT host_id FROM listings WHERE id = ?")
+    let owner_check = sqlx::query_scalar::<_, i32>("SELECT host_id FROM listings WHERE id = $1")
         .bind(&listing_id)
         .fetch_optional(pool.get_ref())
         .await;
 
     match owner_check {
         Ok(Some(host_id)) if host_id == user_id => {
-            match sqlx::query("DELETE FROM listings WHERE id = ?")
+            match sqlx::query("DELETE FROM listings WHERE id = $1")
                 .bind(&listing_id)
                 .execute(pool.get_ref())
                 .await
@@ -829,14 +829,14 @@ pub async fn delete_listing(
 
 /// GET /api/listings/my-listings - Get host's listings
 #[get("/my-listings")]
-pub async fn get_my_listings(pool: web::Data<SqlitePool>, req: HttpRequest) -> impl Responder {
+pub async fn get_my_listings(pool: web::Data<PgPool>, req: HttpRequest) -> impl Responder {
     let user_id = match extract_user_id(&req) {
         Ok(id) => id,
         Err(response) => return response,
     };
 
     let result = sqlx::query_as::<_, Listing>(
-        "SELECT * FROM listings WHERE host_id = ? ORDER BY created_at DESC",
+        "SELECT * FROM listings WHERE host_id = $1 ORDER BY created_at DESC",
     )
     .bind(&user_id)
     .fetch_all(pool.get_ref())
@@ -862,7 +862,7 @@ pub async fn get_my_listings(pool: web::Data<SqlitePool>, req: HttpRequest) -> i
 /// POST /api/listings/:id/publish - Publish listing
 #[post("/{id}/publish")]
 pub async fn publish_listing(
-    pool: web::Data<SqlitePool>,
+    pool: web::Data<PgPool>,
     req: HttpRequest,
     path: web::Path<String>,
 ) -> impl Responder {
@@ -875,7 +875,7 @@ pub async fn publish_listing(
     log::info!("Publishing listing {} for user {}", listing_id, user_id);
 
     // Verify ownership
-    let owner_check = sqlx::query_scalar::<_, i32>("SELECT host_id FROM listings WHERE id = ?")
+    let owner_check = sqlx::query_scalar::<_, i32>("SELECT host_id FROM listings WHERE id = $1")
         .bind(&listing_id)
         .fetch_optional(pool.get_ref())
         .await;
@@ -901,7 +901,7 @@ pub async fn publish_listing(
                     
                     // Publish listing
                     match sqlx::query(
-                        "UPDATE listings SET status = 'published', published_at = CURRENT_TIMESTAMP WHERE id = ?"
+                        "UPDATE listings SET status = 'published', published_at = CURRENT_TIMESTAMP WHERE id = $1"
                     )
                     .bind(&listing_id)
                     .execute(pool.get_ref())
@@ -963,7 +963,7 @@ pub async fn publish_listing(
 /// POST /api/listings/:id/unpublish - Unpublish listing
 #[post("/{id}/unpublish")]
 pub async fn unpublish_listing(
-    pool: web::Data<SqlitePool>,
+    pool: web::Data<PgPool>,
     req: HttpRequest,
     path: web::Path<String>,
 ) -> impl Responder {
@@ -975,14 +975,14 @@ pub async fn unpublish_listing(
     let listing_id = path.into_inner();
 
     // Verify ownership
-    let owner_check = sqlx::query_scalar::<_, i32>("SELECT host_id FROM listings WHERE id = ?")
+    let owner_check = sqlx::query_scalar::<_, i32>("SELECT host_id FROM listings WHERE id = $1")
         .bind(&listing_id)
         .fetch_optional(pool.get_ref())
         .await;
 
     match owner_check {
         Ok(Some(host_id)) if host_id == user_id => {
-            match sqlx::query("UPDATE listings SET status = 'unpublished' WHERE id = ?")
+            match sqlx::query("UPDATE listings SET status = 'unpublished' WHERE id = $1")
                 .bind(&listing_id)
                 .execute(pool.get_ref())
                 .await
@@ -1013,7 +1013,7 @@ pub async fn unpublish_listing(
 /// POST /api/listings/:id/amenities - Add amenities to listing
 #[post("/{id}/amenities")]
 pub async fn add_amenities(
-    pool: web::Data<SqlitePool>,
+    pool: web::Data<PgPool>,
     req: HttpRequest,
     path: web::Path<String>,
     body: web::Json<AddAmenitiesRequest>,
@@ -1026,7 +1026,7 @@ pub async fn add_amenities(
     let listing_id = path.into_inner();
 
     // Verify ownership
-    let owner_check = sqlx::query_scalar::<_, i32>("SELECT host_id FROM listings WHERE id = ?")
+    let owner_check = sqlx::query_scalar::<_, i32>("SELECT host_id FROM listings WHERE id = $1")
         .bind(&listing_id)
         .fetch_optional(pool.get_ref())
         .await;
@@ -1034,7 +1034,7 @@ pub async fn add_amenities(
     match owner_check {
         Ok(Some(host_id)) if host_id == user_id => {
             // Delete existing amenities
-            let _ = sqlx::query("DELETE FROM listing_amenities WHERE listing_id = ?")
+            let _ = sqlx::query("DELETE FROM listing_amenities WHERE listing_id = $1")
                 .bind(&listing_id)
                 .execute(pool.get_ref())
                 .await;
@@ -1042,7 +1042,7 @@ pub async fn add_amenities(
             // Insert new amenities
             for amenity in &body.amenities {
                 let _ = sqlx::query(
-                    "INSERT INTO listing_amenities (listing_id, amenity_type) VALUES (?, ?)",
+                    "INSERT INTO listing_amenities (listing_id, amenity_type) VALUES ($1, $2)",
                 )
                 .bind(&listing_id)
                 .bind(amenity)
@@ -1072,7 +1072,7 @@ pub async fn add_amenities(
 /// POST /api/listings/:id/photos - Sync photos for a listing
 #[post("/{id}/photos")]
 pub async fn sync_photos(
-    pool: web::Data<SqlitePool>,
+    pool: web::Data<PgPool>,
     req: HttpRequest,
     path: web::Path<String>,
     body: web::Json<SyncPhotosRequest>,
@@ -1085,7 +1085,7 @@ pub async fn sync_photos(
     let listing_id = path.into_inner();
 
     // Verify ownership
-    let owner_check = sqlx::query_scalar::<_, i32>("SELECT host_id FROM listings WHERE id = ?")
+    let owner_check = sqlx::query_scalar::<_, i32>("SELECT host_id FROM listings WHERE id = $1")
         .bind(&listing_id)
         .fetch_optional(pool.get_ref())
         .await;
@@ -1103,7 +1103,7 @@ pub async fn sync_photos(
             };
 
             // Delete existing photos
-            if let Err(e) = sqlx::query("DELETE FROM listing_photos WHERE listing_id = ?")
+            if let Err(e) = sqlx::query("DELETE FROM listing_photos WHERE listing_id = $1")
                 .bind(&listing_id)
                 .execute(&mut *tx)
                 .await
@@ -1116,14 +1116,10 @@ pub async fn sync_photos(
 
             // Insert new photos
             for photo in &body.photos {
-                let is_cover = if photo.is_cover.unwrap_or(false) {
-                    1
-                } else {
-                    0
-                };
+                let is_cover = photo.is_cover.unwrap_or(false);
                 let display_order = photo.display_order.unwrap_or(0);
 
-                if let Err(e) = sqlx::query("INSERT INTO listing_photos (listing_id, url, caption, room_type, is_cover, display_order) VALUES (?, ?, ?, ?, ?, ?)")
+                if let Err(e) = sqlx::query("INSERT INTO listing_photos (listing_id, url, caption, room_type, is_cover, display_order) VALUES ($1, $2, $3, $4, $5, $6)")
                     .bind(&listing_id)
                     .bind(&photo.url)
                     .bind(&photo.caption)
@@ -1167,7 +1163,7 @@ pub async fn sync_photos(
 /// POST /api/listings/:id/videos - Add video to listing
 #[post("/{id}/videos")]
 pub async fn add_video(
-    pool: web::Data<SqlitePool>,
+    pool: web::Data<PgPool>,
     req: HttpRequest,
     path: web::Path<String>,
     body: web::Json<AddVideoRequest>,
@@ -1180,7 +1176,7 @@ pub async fn add_video(
     let listing_id = path.into_inner();
 
     // Verify ownership
-    let owner_check = sqlx::query_scalar::<_, i32>("SELECT host_id FROM listings WHERE id = ?")
+    let owner_check = sqlx::query_scalar::<_, i32>("SELECT host_id FROM listings WHERE id = $1")
         .bind(&listing_id)
         .fetch_optional(pool.get_ref())
         .await;
@@ -1188,12 +1184,12 @@ pub async fn add_video(
     match owner_check {
         Ok(Some(host_id)) if host_id == user_id => {
             // Delete existing video (only one allowed)
-            let _ = sqlx::query("DELETE FROM listing_videos WHERE listing_id = ?")
+            let _ = sqlx::query("DELETE FROM listing_videos WHERE listing_id = $1")
                 .bind(&listing_id)
                 .execute(pool.get_ref())
                 .await;
 
-            match sqlx::query("INSERT INTO listing_videos (listing_id, url) VALUES (?, ?)")
+            match sqlx::query("INSERT INTO listing_videos (listing_id, url) VALUES ($1, $2)")
                 .bind(&listing_id)
                 .bind(&body.url)
                 .execute(pool.get_ref())
@@ -1225,10 +1221,10 @@ pub async fn add_video(
 /// GET /api/listings - Get all published listings (for marketplace)
 #[get("")]
 pub async fn get_all_listings(
-    pool: web::Data<SqlitePool>,
+    pool: web::Data<PgPool>,
     query: web::Query<ListingFilters>,
 ) -> impl Responder {
-    let mut query_builder: sqlx::QueryBuilder<sqlx::Sqlite> =
+    let mut query_builder: sqlx::QueryBuilder<sqlx::Postgres> =
         sqlx::QueryBuilder::new("SELECT * FROM listings WHERE status = 'published'");
 
     if let Some(ref search) = query.search {

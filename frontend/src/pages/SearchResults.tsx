@@ -7,7 +7,7 @@ import "leaflet/dist/leaflet.css";
 import { Home as HomeIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getProducts, Product, getTowns, TownCount } from "@/api/client";
-import { getImageUrl } from "@/lib/utils";
+import { getImageUrl, formatPrice } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
 import {
     DropdownMenuItem,
@@ -74,31 +74,31 @@ const SearchResults = () => {
     const normalizeCity = (s?: string) => (s || "").trim().toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '');
     const preferredOrder = useMemo(() => ["yaounde", "douala", "kribi"], []);
     const knownCities = useMemo(() => ({
-        yaounde:   { display: 'Yaounde',   lat: 3.8480,  lon: 11.5021, synonyms: ['bastos','biyem','nkolbisson','melen','odza','nkolmesseng','nkoabang','ekounou','essos','madagascar'] },
-        douala:    { display: 'Douala',    lat: 4.0511,  lon: 9.7679,  synonyms: ['akwa','bonapriso','bonanjo','deido','makepe','ndogbong','logbaba','bepanda','bonamoussadi'] },
-        kribi:     { display: 'Kribi',     lat: 2.9400,  lon: 9.9100,  synonyms: ['mpalla','londji','ebambe','lolabe'] },
-        buea:      { display: 'Buea',      lat: 4.1527,  lon: 9.2410,  synonyms: ['molyko','muea','mile 17','bongo square','great soppo','small soppo','bokwango','limbe','tiko','kumba'] },
-        bamenda:   { display: 'Bamenda',   lat: 5.9631,  lon: 10.1591, synonyms: ['mankon','bambili','nkambé','kumbo'] },
-        bafoussam: { display: 'Bafoussam', lat: 5.4769,  lon: 10.4170, synonyms: ['dschang','bandjoun','foumban'] },
-        ngaoundere:{ display: 'Ngaoundere',lat: 7.3263,  lon: 13.5847, synonyms: ['adamawa','tibati','meiganga'] },
-        garoua:    { display: 'Garoua',    lat: 9.3000,  lon: 13.4000, synonyms: [] },
-        maroua:    { display: 'Maroua',    lat: 10.5956, lon: 14.3247, synonyms: ['far north'] },
-        bertoua:   { display: 'Bertoua',   lat: 4.5833,  lon: 13.6833, synonyms: [] },
-        ebolowa:   { display: 'Ebolowa',   lat: 2.9000,  lon: 11.1500, synonyms: ['south'] },
+        yaounde: { display: 'Yaounde', lat: 3.8480, lon: 11.5021, synonyms: ['bastos', 'biyem', 'nkolbisson', 'melen', 'odza', 'nkolmesseng', 'nkoabang', 'ekounou', 'essos', 'madagascar'] },
+        douala: { display: 'Douala', lat: 4.0511, lon: 9.7679, synonyms: ['akwa', 'bonapriso', 'bonanjo', 'deido', 'makepe', 'ndogbong', 'logbaba', 'bepanda', 'bonamoussadi'] },
+        kribi: { display: 'Kribi', lat: 2.9400, lon: 9.9100, synonyms: ['mpalla', 'londji', 'ebambe', 'lolabe'] },
+        buea: { display: 'Buea', lat: 4.1527, lon: 9.2410, synonyms: ['molyko', 'muea', 'mile 17', 'bongo square', 'great soppo', 'small soppo', 'bokwango', 'limbe', 'tiko', 'kumba'] },
+        bamenda: { display: 'Bamenda', lat: 5.9631, lon: 10.1591, synonyms: ['mankon', 'bambili', 'nkambé', 'kumbo'] },
+        bafoussam: { display: 'Bafoussam', lat: 5.4769, lon: 10.4170, synonyms: ['dschang', 'bandjoun', 'foumban'] },
+        ngaoundere: { display: 'Ngaoundere', lat: 7.3263, lon: 13.5847, synonyms: ['adamawa', 'tibati', 'meiganga'] },
+        garoua: { display: 'Garoua', lat: 9.3000, lon: 13.4000, synonyms: [] },
+        maroua: { display: 'Maroua', lat: 10.5956, lon: 14.3247, synonyms: ['far north'] },
+        bertoua: { display: 'Bertoua', lat: 4.5833, lon: 13.6833, synonyms: [] },
+        ebolowa: { display: 'Ebolowa', lat: 2.9000, lon: 11.1500, synonyms: ['south'] },
     }) as const, []);
 
     // Regions to their main cities for filtering when search is a region name
     const regions = useMemo(() => ({
         'centre': ['yaounde'],
-        'littoral': ['douala','nkongsamba','edea'],
-        'south': ['kribi','ebolowa'],
-        'southwest': ['buea','limbe','tiko','kumba'],
-        'northwest': ['bamenda','kumbo','ndop'],
-        'west': ['bafoussam','dschang','bandjoun'],
-        'adamawa': ['ngaoundere','tibati','meiganga'],
+        'littoral': ['douala', 'nkongsamba', 'edea'],
+        'south': ['kribi', 'ebolowa'],
+        'southwest': ['buea', 'limbe', 'tiko', 'kumba'],
+        'northwest': ['bamenda', 'kumbo', 'ndop'],
+        'west': ['bafoussam', 'dschang', 'bandjoun'],
+        'adamawa': ['ngaoundere', 'tibati', 'meiganga'],
         'north': ['garoua'],
-        'far north': ['maroua','kousseri'],
-        'east': ['bertoua','batouri'],
+        'far north': ['maroua', 'kousseri'],
+        'east': ['bertoua', 'batouri'],
     }) as const, []);
 
     const distanceKm = (lat1: number, lon1: number, lat2: number, lon2: number) => {
@@ -106,8 +106,8 @@ const SearchResults = () => {
         const R = 6371;
         const dLat = toRad(lat2 - lat1);
         const dLon = toRad(lon2 - lon1);
-        const a = Math.sin(dLat/2)**2 + Math.cos(toRad(lat1))*Math.cos(toRad(lat2))*Math.sin(dLon/2)**2;
-        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
         return R * c;
     };
 
@@ -333,7 +333,7 @@ const SearchResults = () => {
                             {towns.map((t) => (
                                 <button
                                     key={t.city}
-                                    onClick={() => navigate(`/marketplace?search=${encodeURIComponent(t.city)}${guests>0?`&guests=${guests}`:''}`)}
+                                    onClick={() => navigate(`/marketplace?search=${encodeURIComponent(t.city)}${guests > 0 ? `&guests=${guests}` : ''}`)}
                                     className={`px-3 py-1.5 rounded-full border text-sm whitespace-nowrap ${t.city.toLowerCase() === location.toLowerCase() ? 'bg-black text-white border-black' : 'bg-white text-gray-800 border-gray-200 hover:border-black'}`}
                                 >
                                     {t.city} <span className="text-gray-500">({t.count})</span>
@@ -355,7 +355,7 @@ const SearchResults = () => {
                     ) : filteredProperties.length === 0 ? (
                         <div className="text-center py-20">
                             <p className="text-gray-600">No stays found matching your criteria.</p>
-                            <Button variant="outline" className="mt-4" onClick={() => navigate('/') }>
+                            <Button variant="outline" className="mt-4" onClick={() => navigate('/')}>
                                 Clear filters
                             </Button>
                         </div>
@@ -404,7 +404,7 @@ const SearchResults = () => {
                                             className="w-full h-32 object-cover rounded-lg mb-2"
                                         />
                                         <h3 className="font-semibold text-sm truncate">{product.listing.title}</h3>
-                                        <p className="text-sm font-bold">{product.listing.price_per_night?.toLocaleString()} FCFA</p>
+                                        <p className="text-sm font-bold">{formatPrice(product.listing.price_per_night || 0)}</p>
                                     </div>
                                 </Popup>
                             </Marker>

@@ -4,11 +4,27 @@ services:
     ports:
       - "8081:8082"
     environment:
-      - DATABASE_URL=sqlite:/app/data/database.db
+      - DATABASE_URL=${DATABASE_URL}
       - RUST_LOG=info
+      - RESET_DB=${RESET_DB:-false}
+      - SUPABASE_PUBLIC_URL=${SUPABASE_PUBLIC_URL}
+      - SUPABASE_BUCKET=${SUPABASE_BUCKET}
+      - SUPABASE_SERVICE_KEY=${SUPABASE_SERVICE_KEY}
     volumes:
-      - db-data:/app/data
       - uploads-data:/app/public/uploads
+    depends_on:
+      - postgres
+
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=kamerpro
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
 
   frontend:
     build: ./frontend

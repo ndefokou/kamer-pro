@@ -1,6 +1,6 @@
 use actix_web::{get, post, web, HttpRequest, HttpResponse, Responder};
 use serde::{Deserialize, Serialize};
-use sqlx::SqlitePool;
+use sqlx::PgPool;
 
 #[derive(Serialize, Deserialize, sqlx::FromRow)]
 pub struct UserRole {
@@ -47,7 +47,7 @@ fn extract_user_id_from_token(token: &str) -> Result<i32, actix_web::Error> {
 }
 
 #[get("")]
-pub async fn get_user_role(req: HttpRequest, pool: web::Data<SqlitePool>) -> impl Responder {
+pub async fn get_user_role(req: HttpRequest, pool: web::Data<PgPool>) -> impl Responder {
     let user_id = match get_user_id_from_headers(&req) {
         Ok(id) => id,
         Err(_) => {
@@ -58,7 +58,7 @@ pub async fn get_user_role(req: HttpRequest, pool: web::Data<SqlitePool>) -> imp
     };
 
     let user_role: Result<UserRole, _> =
-        sqlx::query_as("SELECT * FROM user_roles WHERE user_id = ?")
+        sqlx::query_as("SELECT * FROM user_roles WHERE user_id = $1")
             .bind(user_id)
             .fetch_one(pool.get_ref())
             .await;
@@ -74,7 +74,7 @@ pub async fn get_user_role(req: HttpRequest, pool: web::Data<SqlitePool>) -> imp
 #[post("")]
 pub async fn set_user_role(
     req: HttpRequest,
-    pool: web::Data<SqlitePool>,
+    pool: web::Data<PgPool>,
     payload: web::Json<SetRolePayload>,
 ) -> impl Responder {
     let user_id = match get_user_id_from_headers(&req) {
@@ -88,7 +88,7 @@ pub async fn set_user_role(
 
     // Check if user already has a role
     let existing_role: Result<Option<UserRole>, _> =
-        sqlx::query_as("SELECT * FROM user_roles WHERE user_id = ?")
+        sqlx::query_as("SELECT * FROM user_roles WHERE user_id = $1")
             .bind(user_id)
             .fetch_optional(pool.get_ref())
             .await;
@@ -96,7 +96,7 @@ pub async fn set_user_role(
     match existing_role {
         Ok(Some(_)) => {
             // User has a role, update it
-            let result = sqlx::query("UPDATE user_roles SET role = ? WHERE user_id = ?")
+            let result = sqlx::query("UPDATE user_roles SET role = $1 WHERE user_id = $2")
                 .bind(&payload.role)
                 .bind(user_id)
                 .execute(pool.get_ref())
@@ -104,7 +104,7 @@ pub async fn set_user_role(
             match result {
                 Ok(_) => {
                     let updated_role: UserRole =
-                        sqlx::query_as("SELECT * FROM user_roles WHERE user_id = ?")
+                        sqlx::query_as("SELECT * FROM user_roles WHERE user_id = $1")
                             .bind(user_id)
                             .fetch_one(pool.get_ref())
                             .await
@@ -118,16 +118,19 @@ pub async fn set_user_role(
         }
         Ok(None) => {
             // User does not have a role, insert it
-            let result = sqlx::query("INSERT INTO user_roles (user_id, role) VALUES (?, ?)")
-                .bind(user_id)
-                .bind(&payload.role)
-                .execute(pool.get_ref())
-                .await;
+            let result: Result<(i32,), _> = sqlx::query_as(
+                "INSERT INTO user_roles (user_id, role) VALUES ($1, $2) RETURNING id",
+            )
+            .bind(user_id)
+            .bind(&payload.role)
+            .fetch_one(pool.get_ref())
+            .await;
+
             match result {
-                Ok(res) => {
-                    let role_id = res.last_insert_rowid() as i32;
+                Ok(row) => {
+                    let role_id = row.0;
                     let user_role: UserRole =
-                        sqlx::query_as("SELECT * FROM user_roles WHERE id = ?")
+                        sqlx::query_as("SELECT * FROM user_roles WHERE id = $1")
                             .bind(role_id)
                             .fetch_one(pool.get_ref())
                             .await

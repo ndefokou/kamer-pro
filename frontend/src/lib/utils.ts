@@ -18,3 +18,7 @@ export const getImageUrl = (imagePath: string) => {
     : imagePath;
   return `${backendUrl}/${imagePathClean}`;
 };
+
+export const formatPrice = (price: number) => {
+  return `${price.toLocaleString()} FCFA`;
+};

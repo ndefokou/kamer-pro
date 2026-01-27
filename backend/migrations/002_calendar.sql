@@ -1,10 +1,10 @@
 -- Calendar pricing table for date-specific pricing and availability
 CREATE TABLE IF NOT EXISTS calendar_pricing (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     listing_id TEXT NOT NULL,
     date DATE NOT NULL,
-    price REAL NOT NULL,
-    is_available INTEGER DEFAULT 1,
+    price DOUBLE PRECISION NOT NULL,
+    is_available BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (listing_id) REFERENCES listings(id) ON DELETE CASCADE,
@@ -16,14 +16,14 @@ CREATE INDEX IF NOT EXISTS idx_calendar_pricing_date ON calendar_pricing(date);
 
 -- Listing settings for pricing and availability rules
 CREATE TABLE IF NOT EXISTS listing_settings (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     listing_id TEXT NOT NULL UNIQUE,
     -- Pricing
-    base_price REAL,
-    weekend_price REAL,
-    smart_pricing_enabled INTEGER DEFAULT 0,
-    weekly_discount REAL DEFAULT 0,
-    monthly_discount REAL DEFAULT 0,
+    base_price DOUBLE PRECISION,
+    weekend_price DOUBLE PRECISION,
+    smart_pricing_enabled BOOLEAN DEFAULT FALSE,
+    weekly_discount DOUBLE PRECISION DEFAULT 0,
+    monthly_discount DOUBLE PRECISION DEFAULT 0,
     -- Availability
     min_nights INTEGER DEFAULT 1,
     max_nights INTEGER DEFAULT 365,

@@ -4,7 +4,7 @@ import { Heart, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useWishlist } from "@/hooks/useWishlist";
 import { useToast } from "@/hooks/use-toast";
-import { getImageUrl } from "@/lib/utils";
+import { getImageUrl, formatPrice } from "@/lib/utils";
 
 interface PropertyCardProps {
     id: string;
@@ -140,11 +140,7 @@ const PropertyCard = ({
 
                     <div className="flex items-baseline gap-1 mt-1">
                         <span className="font-semibold text-[15px] text-foreground">
-                            {new Intl.NumberFormat("fr-FR", {
-                                style: "currency",
-                                currency: "XAF",
-                                maximumFractionDigits: 0,
-                            }).format(price)}
+                            {formatPrice(price)}
                         </span>
                         <span className="text-sm text-muted-foreground">/ night</span>
                     </div>

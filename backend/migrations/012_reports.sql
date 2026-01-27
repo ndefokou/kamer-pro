@@ -1,6 +1,6 @@
 -- Reports table
 CREATE TABLE IF NOT EXISTS reports (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     reporter_id INTEGER NOT NULL,
     host_id INTEGER NOT NULL,
     listing_id TEXT,

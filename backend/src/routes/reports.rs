@@ -1,7 +1,7 @@
 use crate::middleware::auth::extract_user_id_from_token;
 use actix_web::{post, web, HttpRequest, HttpResponse, Responder};
 use serde::{Deserialize, Serialize};
-use sqlx::SqlitePool;
+use sqlx::PgPool;
 
 #[derive(Debug, Deserialize)]
 pub struct CreateReportRequest {
@@ -49,7 +49,7 @@ fn extract_user_id(req: &HttpRequest) -> Result<i32, HttpResponse> {
 
 #[post("")]
 pub async fn create_report(
-    pool: web::Data<SqlitePool>,
+    pool: web::Data<PgPool>,
     req: HttpRequest,
     report_data: web::Json<CreateReportRequest>,
 ) -> impl Responder {
@@ -61,7 +61,7 @@ pub async fn create_report(
     let result = sqlx::query(
         r#"
         INSERT INTO reports (reporter_id, host_id, listing_id, reason)
-        VALUES (?, ?, ?, ?)
+        VALUES ($1, $2, $3, $4)
         "#,
     )
     .bind(user_id)

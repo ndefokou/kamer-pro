@@ -1,7 +1,7 @@
 use actix_web::{get, post, web, HttpRequest, HttpResponse, Responder};
 use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
-use sqlx::SqlitePool;
+use sqlx::PgPool;
 
 // ============================================================================
 // Data Structures
@@ -24,7 +24,7 @@ pub struct Booking {
 /// GET /api/bookings/my - Get bookings for the authenticated guest (history)
 #[get("/my")]
 pub async fn get_my_bookings(
-    pool: web::Data<SqlitePool>,
+    pool: web::Data<PgPool>,
     req: HttpRequest,
 ) -> impl Responder {
     let user_id = match extract_user_id(&req) {
@@ -44,7 +44,7 @@ pub async fn get_my_bookings(
         FROM bookings b
         INNER JOIN listings l ON b.listing_id = l.id
         INNER JOIN users u ON b.guest_id = u.id
-        WHERE b.guest_id = ?
+        WHERE b.guest_id = $1
         ORDER BY b.created_at DESC
     "#;
 
@@ -172,7 +172,7 @@ fn extract_user_id(req: &HttpRequest) -> Result<i32, HttpResponse> {
 /// POST /api/bookings - Create a new booking
 #[post("")]
 pub async fn create_booking(
-    pool: web::Data<SqlitePool>,
+    pool: web::Data<PgPool>,
     req: HttpRequest,
     booking_data: web::Json<CreateBookingRequest>,
 ) -> impl Responder {
@@ -186,7 +186,7 @@ pub async fn create_booking(
     // Fetch listing price, instant_book, host_id and max_guests
     let listing_info: Option<(f64, i32, i32, i32)> =
         sqlx::query_as(
-            "SELECT COALESCE(price_per_night, 0), COALESCE(instant_book, 0), host_id, COALESCE(max_guests, 0) FROM listings WHERE id = ?"
+            "SELECT COALESCE(price_per_night, 0), COALESCE(instant_book, 0), host_id, COALESCE(max_guests, 0) FROM listings WHERE id = $1"
         )
             .bind(&booking_data.listing_id)
             .fetch_optional(pool.get_ref())
@@ -239,12 +239,12 @@ pub async fn create_booking(
     let total_price = price_per_night * days as f64;
 
     // Check for overlapping bookings
-    let overlap_count: i32 = sqlx::query_scalar(
+    let overlap_count: i64 = sqlx::query_scalar(
         r#"
         SELECT COUNT(*) FROM bookings 
-        WHERE listing_id = ? 
+        WHERE listing_id = $1 
         AND status = 'confirmed'
-        AND check_in < ? AND check_out > ?
+        AND check_in < $2 AND check_out > $3
         "#,
     )
     .bind(&booking_data.listing_id)
@@ -261,12 +261,12 @@ pub async fn create_booking(
 
     // Check for host-blocked dates (calendar_pricing.is_available = 0) within the requested range
     // We treat the date range as [check_in, check_out) so check_out itself is not counted
-    let blocked_count: i32 = sqlx::query_scalar(
+    let blocked_count: i64 = sqlx::query_scalar(
         r#"
         SELECT COUNT(*) FROM calendar_pricing
-        WHERE listing_id = ?
-          AND date >= ?
-          AND date < ?
+        WHERE listing_id = $1
+          AND date >= $2
+          AND date < $3
           AND is_available = 0
         "#,
     )
@@ -291,7 +291,7 @@ pub async fn create_booking(
     let result = sqlx::query(
         r#"
         INSERT INTO bookings (id, listing_id, guest_id, check_in, check_out, guests, total_price, status)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
         "#
     )
     .bind(&id)
@@ -322,7 +322,7 @@ pub async fn create_booking(
 /// POST /api/bookings/{id}/approve - Approve a booking
 #[post("/{id}/approve")]
 pub async fn approve_booking(
-    pool: web::Data<SqlitePool>,
+    pool: web::Data<PgPool>,
     req: HttpRequest,
     path: web::Path<String>,
 ) -> impl Responder {
@@ -338,7 +338,7 @@ pub async fn approve_booking(
         SELECT EXISTS(
             SELECT 1 FROM bookings b
             JOIN listings l ON b.listing_id = l.id
-            WHERE b.id = ? AND l.host_id = ?
+            WHERE b.id = $1 AND l.host_id = $2
         )
         "#,
     )
@@ -354,7 +354,7 @@ pub async fn approve_booking(
         }));
     }
 
-    let result = sqlx::query("UPDATE bookings SET status = 'confirmed' WHERE id = ?")
+    let result = sqlx::query("UPDATE bookings SET status = 'confirmed' WHERE id = $1")
         .bind(&booking_id)
         .execute(pool.get_ref())
         .await;
@@ -372,7 +372,7 @@ pub async fn approve_booking(
 /// POST /api/bookings/{id}/decline - Decline a booking
 #[post("/{id}/decline")]
 pub async fn decline_booking(
-    pool: web::Data<SqlitePool>,
+    pool: web::Data<PgPool>,
     req: HttpRequest,
     path: web::Path<String>,
     body: web::Json<DeclineBookingRequest>,
@@ -389,7 +389,7 @@ pub async fn decline_booking(
         SELECT b.guest_id, b.listing_id
         FROM bookings b
         JOIN listings l ON b.listing_id = l.id
-        WHERE b.id = ? AND l.host_id = ?
+        WHERE b.id = $1 AND l.host_id = $2
         "#,
     )
     .bind(&booking_id)
@@ -407,7 +407,7 @@ pub async fn decline_booking(
         }
     };
 
-    let result = sqlx::query("UPDATE bookings SET status = 'declined' WHERE id = ?")
+    let result = sqlx::query("UPDATE bookings SET status = 'declined' WHERE id = $1")
         .bind(&booking_id)
         .execute(pool.get_ref())
         .await;
@@ -416,7 +416,7 @@ pub async fn decline_booking(
         Ok(_) => {
             // Find or create conversation
             let conversation_id = match sqlx::query_scalar::<_, String>(
-                "SELECT id FROM conversations WHERE listing_id = ? AND guest_id = ? AND host_id = ?"
+                "SELECT id FROM conversations WHERE listing_id = $1 AND guest_id = $2 AND host_id = $3"
             )
             .bind(&listing_id)
             .bind(guest_id)
@@ -429,7 +429,7 @@ pub async fn decline_booking(
                 None => {
                     let new_id = uuid::Uuid::new_v4().to_string();
                     let _ = sqlx::query(
-                        "INSERT INTO conversations (id, listing_id, guest_id, host_id) VALUES (?, ?, ?, ?)"
+                        "INSERT INTO conversations (id, listing_id, guest_id, host_id) VALUES ($1, $2, $3, $4)"
                     )
                     .bind(&new_id)
                     .bind(&listing_id)
@@ -446,7 +446,7 @@ pub async fn decline_booking(
             let message_id = uuid::Uuid::new_v4().to_string();
             
             let _ = sqlx::query(
-                "INSERT INTO messages (id, conversation_id, sender_id, content) VALUES (?, ?, ?, ?)"
+                "INSERT INTO messages (id, conversation_id, sender_id, content) VALUES ($1, $2, $3, $4)"
             )
             .bind(&message_id)
             .bind(&conversation_id)
@@ -456,7 +456,7 @@ pub async fn decline_booking(
             .await;
 
             // Update conversation timestamp
-            let _ = sqlx::query("UPDATE conversations SET updated_at = CURRENT_TIMESTAMP WHERE id = ?")
+            let _ = sqlx::query("UPDATE conversations SET updated_at = CURRENT_TIMESTAMP WHERE id = $1")
                 .bind(&conversation_id)
                 .execute(pool.get_ref())
                 .await;
@@ -473,7 +473,7 @@ pub async fn decline_booking(
 
 /// GET /api/bookings/host/today - Get today's reservations for host
 #[get("/host/today")]
-pub async fn get_today_bookings(pool: web::Data<SqlitePool>, req: HttpRequest) -> impl Responder {
+pub async fn get_today_bookings(pool: web::Data<PgPool>, req: HttpRequest) -> impl Responder {
     let user_id = match extract_user_id(&req) {
         Ok(id) => id,
         Err(response) => return response,
@@ -491,7 +491,7 @@ pub async fn get_today_bookings(pool: web::Data<SqlitePool>, req: HttpRequest) -
         FROM bookings b
         INNER JOIN listings l ON b.listing_id = l.id
         INNER JOIN users u ON b.guest_id = u.id
-        WHERE l.host_id = ?
+        WHERE l.host_id = $1
         AND (DATE(b.check_in) = DATE('now') OR b.status = 'pending')
         ORDER BY CASE WHEN b.status = 'pending' THEN 0 ELSE 1 END, b.check_in ASC
     "#;
@@ -560,7 +560,7 @@ pub async fn get_today_bookings(pool: web::Data<SqlitePool>, req: HttpRequest) -
 /// GET /api/bookings/host/upcoming - Get upcoming reservations for host
 #[get("/host/upcoming")]
 pub async fn get_upcoming_bookings(
-    pool: web::Data<SqlitePool>,
+    pool: web::Data<PgPool>,
     req: HttpRequest,
 ) -> impl Responder {
     let user_id = match extract_user_id(&req) {
@@ -580,7 +580,7 @@ pub async fn get_upcoming_bookings(
         FROM bookings b
         INNER JOIN listings l ON b.listing_id = l.id
         INNER JOIN users u ON b.guest_id = u.id
-        WHERE l.host_id = ?
+        WHERE l.host_id = $1
         AND DATE(b.check_in) > DATE('now')
         AND b.status != 'pending'
         ORDER BY b.check_in ASC

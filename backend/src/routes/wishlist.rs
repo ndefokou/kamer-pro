@@ -1,6 +1,6 @@
 use actix_web::{delete, get, post, web, HttpRequest, HttpResponse, Responder};
 use serde::{Deserialize, Serialize};
-use sqlx::SqlitePool;
+use sqlx::PgPool;
 
 use crate::middleware::auth::extract_user_id_from_token;
 
@@ -38,7 +38,7 @@ fn extract_user_id(req: &HttpRequest) -> Result<i32, HttpResponse> {
 }
 
 #[get("")]
-async fn get_wishlist(pool: web::Data<SqlitePool>, req: HttpRequest) -> impl Responder {
+async fn get_wishlist(pool: web::Data<PgPool>, req: HttpRequest) -> impl Responder {
     let user_id = match extract_user_id(&req) {
         Ok(id) => id,
         Err(response) => return response,
@@ -57,7 +57,7 @@ async fn get_wishlist(pool: web::Data<SqlitePool>, req: HttpRequest) -> impl Res
         FROM wishlist w
         JOIN listings l ON w.product_id = l.id
         LEFT JOIN user_profiles up ON l.host_id = up.user_id
-        WHERE w.user_id = ?
+        WHERE w.user_id = $1
         ORDER BY w.created_at DESC
         "#,
     )
@@ -78,7 +78,7 @@ async fn get_wishlist(pool: web::Data<SqlitePool>, req: HttpRequest) -> impl Res
 
 #[post("")]
 pub async fn add_to_wishlist(
-    pool: web::Data<SqlitePool>,
+    pool: web::Data<PgPool>,
     req: HttpRequest,
     body: web::Json<AddToWishlistRequest>,
 ) -> impl Responder {
@@ -89,7 +89,7 @@ pub async fn add_to_wishlist(
 
     // Validate listing exists (avoid FK error on product_id)
     let listing_exists: Result<Option<String>, _> =
-        sqlx::query_scalar("SELECT id FROM listings WHERE id = ?")
+        sqlx::query_scalar("SELECT id FROM listings WHERE id = $1")
             .bind(&body.product_id)
             .fetch_optional(pool.get_ref())
             .await;
@@ -110,7 +110,7 @@ pub async fn add_to_wishlist(
 
     // Validate user exists (avoid FK error on user_id)
     let user_exists: Result<Option<i32>, _> =
-        sqlx::query_scalar("SELECT id FROM users WHERE id = ?")
+        sqlx::query_scalar("SELECT id FROM users WHERE id = $1")
             .bind(user_id)
             .fetch_optional(pool.get_ref())
             .await;
@@ -131,7 +131,7 @@ pub async fn add_to_wishlist(
 
     // Check if item is already in wishlist
     let existing_item: Result<Option<i32>, _> =
-        sqlx::query_scalar("SELECT id FROM wishlist WHERE user_id = ? AND product_id = ?")
+        sqlx::query_scalar("SELECT id FROM wishlist WHERE user_id = $1 AND product_id = $2")
             .bind(user_id)
             .bind(&body.product_id)
             .fetch_optional(pool.get_ref())
@@ -143,7 +143,7 @@ pub async fn add_to_wishlist(
         }));
     }
 
-    let result = sqlx::query("INSERT INTO wishlist (user_id, product_id) VALUES (?, ?)")
+    let result = sqlx::query("INSERT INTO wishlist (user_id, product_id) VALUES ($1, $2)")
         .bind(user_id)
         .bind(&body.product_id)
         .execute(pool.get_ref())
@@ -164,7 +164,7 @@ pub async fn add_to_wishlist(
 
 #[delete("/{id}")]
 pub async fn remove_from_wishlist(
-    pool: web::Data<SqlitePool>,
+    pool: web::Data<PgPool>,
     req: HttpRequest,
     path: web::Path<i32>,
 ) -> impl Responder {
@@ -174,12 +174,11 @@ pub async fn remove_from_wishlist(
     };
     let wishlist_item_id = path.into_inner();
 
-    let result =
-        sqlx::query("DELETE FROM wishlist WHERE id = ? AND user_id = ?")
-            .bind(wishlist_item_id)
-            .bind(user_id)
-            .execute(pool.get_ref())
-            .await;
+    let result = sqlx::query("DELETE FROM wishlist WHERE id = $1 AND user_id = $2")
+        .bind(wishlist_item_id)
+        .bind(user_id)
+        .execute(pool.get_ref())
+        .await;
 
     match result {
         Ok(res) if res.rows_affected() > 0 => HttpResponse::Ok().json(serde_json::json!({
@@ -196,7 +195,7 @@ pub async fn remove_from_wishlist(
 
 #[delete("/product/{product_id}")]
 pub async fn remove_from_wishlist_by_product(
-    pool: web::Data<SqlitePool>,
+    pool: web::Data<PgPool>,
     req: HttpRequest,
     path: web::Path<String>,
 ) -> impl Responder {
@@ -206,7 +205,7 @@ pub async fn remove_from_wishlist_by_product(
     };
     let product_id = path.into_inner();
 
-    let result = sqlx::query("DELETE FROM wishlist WHERE product_id = ? AND user_id = ?")
+    let result = sqlx::query("DELETE FROM wishlist WHERE product_id = $1 AND user_id = $2")
         .bind(product_id)
         .bind(user_id)
         .execute(pool.get_ref())
@@ -227,7 +226,7 @@ pub async fn remove_from_wishlist_by_product(
 
 #[get("/check/{product_id}")]
 pub async fn check_wishlist(
-    pool: web::Data<SqlitePool>,
+    pool: web::Data<PgPool>,
     req: HttpRequest,
     path: web::Path<String>,
 ) -> impl Responder {
@@ -238,7 +237,7 @@ pub async fn check_wishlist(
     let product_id = path.into_inner();
 
     let result: Result<Option<i32>, _> =
-        sqlx::query_scalar("SELECT id FROM wishlist WHERE user_id = ? AND product_id = ?")
+        sqlx::query_scalar("SELECT id FROM wishlist WHERE user_id = $1 AND product_id = $2")
             .bind(user_id)
             .bind(product_id)
             .fetch_optional(pool.get_ref())

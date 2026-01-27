@@ -4,8 +4,8 @@ CREATE TABLE IF NOT EXISTS conversations (
     listing_id TEXT NOT NULL,
     guest_id INTEGER NOT NULL,
     host_id INTEGER NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (listing_id) REFERENCES listings(id),
     FOREIGN KEY (guest_id) REFERENCES users(id),
     FOREIGN KEY (host_id) REFERENCES users(id)
@@ -17,8 +17,8 @@ CREATE TABLE IF NOT EXISTS messages (
     conversation_id TEXT NOT NULL,
     sender_id INTEGER NOT NULL,
     content TEXT NOT NULL,
-    read_at DATETIME,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    read_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (conversation_id) REFERENCES conversations(id),
     FOREIGN KEY (sender_id) REFERENCES users(id)
 );

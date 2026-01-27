@@ -4,7 +4,7 @@ use actix_web::{post, web, HttpRequest, HttpResponse, Responder};
 use bcrypt::{hash, verify, DEFAULT_COST};
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
-use sqlx::SqlitePool;
+use sqlx::PgPool;
 use uuid::Uuid;
 
 #[derive(Serialize, Deserialize, sqlx::FromRow)]
@@ -14,8 +14,8 @@ pub struct User {
     pub email: String,
     pub credential_id: Option<String>,
     pub public_key: Option<String>,
-    pub counter: Option<i64>,
-    pub created_at: String,
+    pub counter: Option<i32>,
+    pub created_at: chrono::NaiveDateTime,
     pub password_hash: Option<String>,
 }
 
@@ -79,11 +79,11 @@ pub struct AuthenticationCompleteResponse {
 
 #[post("/register/start")]
 pub async fn registration_start(
-    pool: web::Data<SqlitePool>,
+    pool: web::Data<PgPool>,
     req: web::Json<RegistrationStartRequest>,
 ) -> impl Responder {
     // Check if user already exists
-    let existing_user: Result<User, _> = sqlx::query_as("SELECT * FROM users WHERE username = ?")
+    let existing_user: Result<User, _> = sqlx::query_as("SELECT * FROM users WHERE username = $1")
         .bind(&req.username)
         .fetch_one(pool.get_ref())
         .await;
@@ -107,11 +107,11 @@ pub async fn registration_start(
 
 #[post("/register/complete")]
 pub async fn registration_complete(
-    pool: web::Data<SqlitePool>,
+    pool: web::Data<PgPool>,
     req: web::Json<RegistrationCompleteRequest>,
 ) -> impl Responder {
     // Check if email already exists
-    let existing_user: Result<User, _> = sqlx::query_as("SELECT * FROM users WHERE email = ?")
+    let existing_user: Result<User, _> = sqlx::query_as("SELECT * FROM users WHERE email = $1")
         .bind(&req.email)
         .fetch_one(pool.get_ref())
         .await;
@@ -122,28 +122,28 @@ pub async fn registration_complete(
         });
     }
 
-    let now = Utc::now().to_rfc3339();
+    let now = Utc::now().naive_utc();
 
     let result = sqlx::query(
         "INSERT INTO users (username, email, credential_id, public_key, counter, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?)",
+         VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id",
     )
     .bind(&req.username)
     .bind(&req.email)
     .bind(&req.credential_id)
     .bind(&req.public_key)
-    .bind(0i64)
-    .bind(&now)
-    .bind(&now)
-    .execute(pool.get_ref())
+    .bind(0i32)
+    .bind(now)
+    .bind(now)
+    .fetch_one(pool.get_ref())
     .await;
 
     match result {
-        Ok(res) => {
-            let user_id = res.last_insert_rowid() as i32;
+        Ok(row) => {
+            let user_id: i32 = sqlx::Row::get(&row, "id");
             let token = format!("token_{}_{}", Uuid::new_v4().to_string(), user_id);
             let _ = sqlx::query(
-                "INSERT INTO sessions (token, user_id, expires_at) VALUES (?, ?, datetime('now', '+30 days'))",
+                "INSERT INTO sessions (token, user_id, expires_at) VALUES ($1, $2, NOW() + INTERVAL '30 days')",
             )
             .bind(&token)
             .bind(user_id)
@@ -175,11 +175,11 @@ pub async fn registration_complete(
 
 #[post("/login/start")]
 pub async fn authentication_start(
-    pool: web::Data<SqlitePool>,
+    pool: web::Data<PgPool>,
     req: web::Json<AuthenticationStartRequest>,
 ) -> impl Responder {
     // Check if user exists
-    let user: Result<User, _> = sqlx::query_as("SELECT * FROM users WHERE username = ?")
+    let user: Result<User, _> = sqlx::query_as("SELECT * FROM users WHERE username = $1")
         .bind(&req.username)
         .fetch_one(pool.get_ref())
         .await;
@@ -201,12 +201,12 @@ pub async fn authentication_start(
 
 #[post("/login/complete")]
 pub async fn authentication_complete(
-    pool: web::Data<SqlitePool>,
+    pool: web::Data<PgPool>,
     req: web::Json<AuthenticationCompleteRequest>,
 ) -> impl Responder {
     // Verify user exists and authenticate
     // Note: In production, the signature should be verified against the stored public key
-    let user: Result<User, _> = sqlx::query_as("SELECT * FROM users WHERE username = ?")
+    let user: Result<User, _> = sqlx::query_as("SELECT * FROM users WHERE username = $1")
         .bind(&req.username)
         .fetch_one(pool.get_ref())
         .await;
@@ -215,7 +215,7 @@ pub async fn authentication_complete(
         Ok(user) => {
             let token = format!("token_{}_{}", Uuid::new_v4().to_string(), user.id);
             let _ = sqlx::query(
-                "INSERT INTO sessions (token, user_id, expires_at) VALUES (?, ?, datetime('now', '+30 days'))",
+                "INSERT INTO sessions (token, user_id, expires_at) VALUES ($1, $2, NOW() + INTERVAL '30 days')",
             )
             .bind(&token)
             .bind(user.id)
@@ -255,7 +255,7 @@ pub struct SimpleRegisterRequest {
 
 #[post("/register")]
 pub async fn simple_register(
-    pool: web::Data<SqlitePool>,
+    pool: web::Data<PgPool>,
     req: web::Json<SimpleRegisterRequest>,
 ) -> impl Responder {
     // Check if email is provided and not empty
@@ -266,7 +266,7 @@ pub async fn simple_register(
     }
 
     // Check if email already exists (email is the unique identifier)
-    let existing_email: Result<User, _> = sqlx::query_as("SELECT * FROM users WHERE email = ?")
+    let existing_email: Result<User, _> = sqlx::query_as("SELECT * FROM users WHERE email = $1")
         .bind(&req.email)
         .fetch_one(pool.get_ref())
         .await;
@@ -277,32 +277,32 @@ pub async fn simple_register(
         });
     }
 
-    let now = Utc::now().to_rfc3339();
+    let now = Utc::now().naive_utc();
 
     let password_hash = hash(req.password.as_bytes(), DEFAULT_COST).unwrap();
 
     let result = sqlx::query(
         "INSERT INTO users (username, email, credential_id, public_key, counter, created_at, updated_at, password_hash)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id",
     )
     .bind(&req.username)
     .bind(&req.email)
     .bind(None::<String>)
     .bind(None::<String>)
-    .bind(0i64)
-    .bind(&now)
-    .bind(&now)
+    .bind(0i32)
+    .bind(now)
+    .bind(now)
     .bind(&password_hash)
-    .execute(pool.get_ref())
+    .fetch_one(pool.get_ref())
     .await;
 
     match result {
-        Ok(res) => {
-            let user_id = res.last_insert_rowid() as i32;
+        Ok(row) => {
+            let user_id: i32 = sqlx::Row::get(&row, "id");
             let token = format!("token_{}_{}", Uuid::new_v4().to_string(), user_id);
 
             let _ = sqlx::query(
-                "INSERT INTO sessions (token, user_id, expires_at) VALUES (?, ?, datetime('now', '+30 days'))",
+                "INSERT INTO sessions (token, user_id, expires_at) VALUES ($1, $2, NOW() + INTERVAL '30 days')",
             )
             .bind(&token)
             .bind(user_id)
@@ -319,7 +319,7 @@ pub async fn simple_register(
             // Upsert phone into user_profiles if provided
             if let Some(phone) = &req.phone {
                 let _ = sqlx::query(
-                    "INSERT INTO user_profiles (user_id, phone, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP)
+                    "INSERT INTO user_profiles (user_id, phone, updated_at) VALUES ($1, $2, CURRENT_TIMESTAMP)
                      ON CONFLICT(user_id) DO UPDATE SET phone = excluded.phone, updated_at = CURRENT_TIMESTAMP",
                 )
                 .bind(user_id)
@@ -355,20 +355,24 @@ pub struct SimpleLoginRequest {
 
 #[post("/login")]
 pub async fn simple_login(
-    pool: web::Data<SqlitePool>,
+    pool: web::Data<PgPool>,
     req: web::Json<SimpleLoginRequest>,
 ) -> impl Responder {
     // Verify user exists
-    let user: Result<User, _> = sqlx::query_as("SELECT * FROM users WHERE email = ?")
+    let user: Result<User, _> = sqlx::query_as("SELECT * FROM users WHERE email = $1")
         .bind(&req.email)
         .fetch_one(pool.get_ref())
         .await;
 
     match user {
         Ok(user) => {
+            println!("Login attempt for user: {}", user.username);
             let valid = if let Some(hash) = &user.password_hash {
-                verify(req.password.as_bytes(), hash).unwrap_or(false)
+                let is_valid = verify(req.password.as_bytes(), hash).unwrap_or(false);
+                println!("Password verification result: {}", is_valid);
+                is_valid
             } else {
+                println!("User has no password hash");
                 false
             };
 
@@ -376,7 +380,7 @@ pub async fn simple_login(
                 let token = format!("token_{}_{}", Uuid::new_v4().to_string(), user.id);
 
                 let _ = sqlx::query(
-                    "INSERT INTO sessions (token, user_id, expires_at) VALUES (?, ?, datetime('now', '+30 days'))",
+                    "INSERT INTO sessions (token, user_id, expires_at) VALUES ($1, $2, NOW() + INTERVAL '30 days')",
                 )
                 .bind(&token)
                 .bind(user.id)
@@ -400,21 +404,25 @@ pub async fn simple_login(
                         email: user.email,
                     })
             } else {
+                println!("Password invalid for user: {}", user.email);
                 HttpResponse::Unauthorized().json(ErrorResponse {
                     error: "Invalid email or password".to_string(),
                 })
             }
         }
-        Err(_) => HttpResponse::Unauthorized().json(ErrorResponse {
-            error: "Invalid email or password".to_string(),
-        }),
+        Err(e) => {
+            println!("User not found or database error: {}", e);
+            HttpResponse::Unauthorized().json(ErrorResponse {
+                error: "Invalid email or password".to_string(),
+            })
+        }
     }
 }
 
 #[post("/logout")]
-pub async fn logout(req: HttpRequest, pool: web::Data<SqlitePool>) -> impl Responder {
+pub async fn logout(req: HttpRequest, pool: web::Data<PgPool>) -> impl Responder {
     if let Some(c) = req.cookie("session") {
-        let _ = sqlx::query("DELETE FROM sessions WHERE token = ?")
+        let _ = sqlx::query("DELETE FROM sessions WHERE token = $1")
             .bind(c.value())
             .execute(pool.get_ref())
             .await;

@@ -7,4 +7,4 @@ CREATE TABLE IF NOT EXISTS wishlists (
     FOREIGN KEY (listing_id) REFERENCES listings(id) ON DELETE CASCADE
 );
 
-CREATE INDEX idx_wishlists_user_id ON wishlists(user_id);
+CREATE INDEX IF NOT EXISTS idx_wishlists_user_id ON wishlists(user_id);

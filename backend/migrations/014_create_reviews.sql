@@ -1,6 +1,6 @@
 -- Reviews table for listings
 CREATE TABLE IF NOT EXISTS reviews (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  id SERIAL PRIMARY KEY,
   listing_id TEXT NOT NULL,
   guest_id INTEGER NOT NULL,
   ratings TEXT, -- JSON object with keys: cleanliness, accuracy, checkin, communication, location, value

@@ -2,7 +2,7 @@ use actix_cors::Cors;
 use actix_files as fs;
 use actix_web::{web, App, HttpServer};
 use dotenv::dotenv;
-use sqlx::sqlite::SqlitePoolOptions;
+use sqlx::postgres::PgPoolOptions;
 use std::env;
 
 mod middleware;
@@ -16,18 +16,6 @@ async fn main() -> std::io::Result<()> {
     println!("Logger initialized. Starting server...");
 
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-    let db_path_str = database_url
-        .strip_prefix("sqlite:")
-        .unwrap_or(&database_url);
-    let db_path = std::path::Path::new(db_path_str);
-    if !db_path.exists() {
-        if let Some(parent) = db_path.parent() {
-            if !parent.exists() {
-                std::fs::create_dir_all(parent).expect("Failed to create database directory");
-            }
-        }
-        std::fs::File::create(db_path).expect("Failed to create database file");
-    }
 
     // Create the uploads directory if it doesn't exist
     let uploads_dir = std::path::Path::new("public").join("uploads");
@@ -39,7 +27,7 @@ async fn main() -> std::io::Result<()> {
         println!("Created uploads directory");
     }
 
-    let pool = SqlitePoolOptions::new()
+    let pool = PgPoolOptions::new()
         .max_connections(5)
         .connect(&database_url)
         .await

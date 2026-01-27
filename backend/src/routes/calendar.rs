@@ -1,6 +1,6 @@
 use actix_web::{get, put, web, HttpRequest, HttpResponse, Responder};
 use serde::{Deserialize, Serialize};
-use sqlx::SqlitePool;
+use sqlx::PgPool;
 
 // ============================================================================
 // Data Structures
@@ -97,11 +97,11 @@ fn extract_user_id(req: &HttpRequest) -> Result<i32, HttpResponse> {
 }
 
 async fn verify_listing_ownership(
-    pool: &SqlitePool,
+    pool: &PgPool,
     listing_id: &str,
     user_id: i32,
 ) -> Result<(), HttpResponse> {
-    let owner_check = sqlx::query_scalar::<_, i32>("SELECT host_id FROM listings WHERE id = ?")
+    let owner_check = sqlx::query_scalar::<_, i32>("SELECT host_id FROM listings WHERE id = $1")
         .bind(listing_id)
         .fetch_optional(pool)
         .await;
@@ -127,7 +127,7 @@ async fn verify_listing_ownership(
 /// GET /api/calendar/:listing_id - Get calendar data for date range
 #[get("/{listing_id}")]
 pub async fn get_calendar(
-    pool: web::Data<SqlitePool>,
+    pool: web::Data<PgPool>,
     req: HttpRequest,
     path: web::Path<String>,
     query: web::Query<CalendarQuery>,
@@ -146,7 +146,7 @@ pub async fn get_calendar(
     // Fetch calendar pricing for date range
     let query_str = r#"
         SELECT * FROM calendar_pricing
-        WHERE listing_id = ? AND date >= ? AND date <= ?
+        WHERE listing_id = $1 AND date >= $2 AND date <= $3
         ORDER BY date ASC
     "#;
 
@@ -170,7 +170,7 @@ pub async fn get_calendar(
 /// PUT /api/calendar/:listing_id/dates - Update pricing/availability for specific dates
 #[put("/{listing_id}/dates")]
 pub async fn update_calendar_dates(
-    pool: web::Data<SqlitePool>,
+    pool: web::Data<PgPool>,
     req: HttpRequest,
     path: web::Path<String>,
     body: web::Json<UpdateCalendarDatesRequest>,
@@ -189,8 +189,8 @@ pub async fn update_calendar_dates(
     // Get base price from listing or settings
     let base_price: Option<f64> = sqlx::query_scalar(
         "SELECT COALESCE(
-            (SELECT base_price FROM listing_settings WHERE listing_id = ?),
-            (SELECT price_per_night FROM listings WHERE id = ?)
+            (SELECT base_price FROM listing_settings WHERE listing_id = $1),
+            (SELECT price_per_night FROM listings WHERE id = $2)
         )",
     )
     .bind(&listing_id)
@@ -216,7 +216,7 @@ pub async fn update_calendar_dates(
         let result = sqlx::query(
             r#"
             INSERT INTO calendar_pricing (listing_id, date, price, is_available, updated_at)
-            VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
+            VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP)
             ON CONFLICT(listing_id, date) DO UPDATE SET
                 price = excluded.price,
                 is_available = excluded.is_available,
@@ -246,7 +246,7 @@ pub async fn update_calendar_dates(
 /// GET /api/calendar/:listing_id/settings - Get listing settings
 #[get("/{listing_id}/settings")]
 pub async fn get_settings(
-    pool: web::Data<SqlitePool>,
+    pool: web::Data<PgPool>,
     req: HttpRequest,
     path: web::Path<String>,
 ) -> impl Responder {
@@ -262,7 +262,7 @@ pub async fn get_settings(
     }
 
     match sqlx::query_as::<_, ListingSettings>(
-        "SELECT * FROM listing_settings WHERE listing_id = ?",
+        "SELECT * FROM listing_settings WHERE listing_id = $1",
     )
     .bind(&listing_id)
     .fetch_optional(pool.get_ref())
@@ -274,7 +274,7 @@ pub async fn get_settings(
             let result = sqlx::query(
                 r#"
                 INSERT INTO listing_settings (listing_id)
-                VALUES (?)
+                VALUES ($1)
                 "#,
             )
             .bind(&listing_id)
@@ -285,7 +285,7 @@ pub async fn get_settings(
                 Ok(_) => {
                     // Fetch the newly created settings
                     match sqlx::query_as::<_, ListingSettings>(
-                        "SELECT * FROM listing_settings WHERE listing_id = ?",
+                        "SELECT * FROM listing_settings WHERE listing_id = $1",
                     )
                     .bind(&listing_id)
                     .fetch_one(pool.get_ref())
@@ -314,7 +314,7 @@ pub async fn get_settings(
 /// PUT /api/calendar/:listing_id/settings - Update listing settings
 #[put("/{listing_id}/settings")]
 pub async fn update_settings(
-    pool: web::Data<SqlitePool>,
+    pool: web::Data<PgPool>,
     req: HttpRequest,
     path: web::Path<String>,
     body: web::Json<UpdateSettingsRequest>,
@@ -331,7 +331,7 @@ pub async fn update_settings(
     }
 
     // Build dynamic update query
-    let mut query_builder: sqlx::QueryBuilder<sqlx::Sqlite> =
+    let mut query_builder: sqlx::QueryBuilder<sqlx::Postgres> =
         sqlx::QueryBuilder::new("UPDATE listing_settings SET updated_at = CURRENT_TIMESTAMP");
 
     if let Some(base_price) = body.base_price {
@@ -386,7 +386,7 @@ pub async fn update_settings(
         Ok(_) => {
             // Fetch updated settings
             match sqlx::query_as::<_, ListingSettings>(
-                "SELECT * FROM listing_settings WHERE listing_id = ?",
+                "SELECT * FROM listing_settings WHERE listing_id = $1",
             )
             .bind(&listing_id)
             .fetch_one(pool.get_ref())

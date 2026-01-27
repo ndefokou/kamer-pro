@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { getListing, createBooking, getUserById, getListingReviews, addListingReview, ListingReview } from '@/api/client';
 import { Button } from '@/components/ui/button';
 import { Loader2, Share, Heart, Star, Minus, Plus, ChevronLeft, ChevronRight, X } from 'lucide-react';
-import { getImageUrl } from '@/lib/utils';
+import { getImageUrl, formatPrice } from '@/lib/utils';
 import { AMENITY_DETAILS } from '@/data/amenities';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -829,7 +829,7 @@ const ListingDetails: React.FC = () => {
                             <div className="flex justify-between items-end mb-6">
                                 <div>
                                     <span className="text-2xl font-bold">
-                                        {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XAF' }).format(listing.price_per_night || 0)}
+                                        {formatPrice(listing.price_per_night || 0)}
                                     </span>
                                     <span className="text-muted-foreground"> / night</span>
                                 </div>
@@ -1020,7 +1020,7 @@ const ListingDetails: React.FC = () => {
                             <div className="relative mb-4">
                                 <Avatar className="h-24 w-24">
                                     <AvatarImage src={hostAvatar || undefined} />
-                                    <AvatarFallback>{(hostName || 'HO').slice(0,2).toUpperCase()}</AvatarFallback>
+                                    <AvatarFallback>{(hostName || 'HO').slice(0, 2).toUpperCase()}</AvatarFallback>
                                 </Avatar>
                                 {/* Removed Superhost badge as we don't have this data yet */}
                             </div>
@@ -1152,7 +1152,7 @@ const ListingDetails: React.FC = () => {
                     <div className="flex flex-col">
                         <div className="flex items-baseline gap-1">
                             <span className="font-bold text-lg">
-                                {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XAF', maximumFractionDigits: 0 }).format(listing.price_per_night || 0)}
+                                {formatPrice(listing.price_per_night || 0)}
                             </span>
                             <span className="text-sm text-muted-foreground">/ night</span>
                         </div>

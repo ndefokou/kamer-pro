@@ -31,14 +31,14 @@ COPY . .
 RUN cargo build -j 2 --release
 
 # Download pre-compiled sqlx-cli binary
-RUN cargo install sqlx-cli --version=0.7.3 --features native-tls,rustls --no-default-features
+RUN cargo install sqlx-cli --version=0.7.3 --features native-tls,rustls,postgres --no-default-features
 
 # 2. Runtime stage
 FROM alpine:3.20
 WORKDIR /app
 
 # Install runtime dependencies
-RUN apk add --no-cache openssl ca-certificates curl libgcc sqlite su-exec
+RUN apk add --no-cache openssl ca-certificates curl libgcc postgresql-client su-exec
 
 COPY --from=builder /usr/src/app/target/release/backend .
 COPY --from=builder /usr/local/cargo/bin/sqlx /usr/local/bin/

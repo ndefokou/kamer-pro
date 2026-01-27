@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS user_profiles (
   phone TEXT,
   residential_address TEXT,
   mailing_address TEXT,
-  identity_verified INTEGER DEFAULT 0,
+  identity_verified BOOLEAN DEFAULT FALSE,
   language TEXT,
   currency TEXT,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

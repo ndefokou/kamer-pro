@@ -1,7 +1,7 @@
 use crate::middleware::auth::extract_user_id_from_token;
 use actix_web::{get, post, web, HttpRequest, HttpResponse, Responder};
 use serde::{Deserialize, Serialize};
-use sqlx::SqlitePool;
+use sqlx::PgPool;
 use uuid::Uuid;
 
 // ============================================================================
@@ -14,8 +14,8 @@ pub struct Conversation {
     pub listing_id: String,
     pub guest_id: i32,
     pub host_id: i32,
-    pub created_at: String,
-    pub updated_at: String,
+    pub created_at: chrono::NaiveDateTime,
+    pub updated_at: chrono::NaiveDateTime,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -33,8 +33,8 @@ pub struct Message {
     pub conversation_id: String,
     pub sender_id: i32,
     pub content: String,
-    pub read_at: Option<String>,
-    pub created_at: String,
+    pub read_at: Option<chrono::NaiveDateTime>,
+    pub created_at: chrono::NaiveDateTime,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -94,7 +94,7 @@ fn extract_user_id(req: &HttpRequest) -> Result<i32, HttpResponse> {
 /// POST /api/messages/conversations - Start a conversation
 #[post("/conversations")]
 pub async fn create_conversation(
-    pool: web::Data<SqlitePool>,
+    pool: web::Data<PgPool>,
     req: HttpRequest,
     body: web::Json<CreateConversationRequest>,
 ) -> impl Responder {
@@ -105,7 +105,7 @@ pub async fn create_conversation(
 
     // Check if conversation already exists
     let existing_conversation = sqlx::query_as::<_, Conversation>(
-        "SELECT * FROM conversations WHERE listing_id = ? AND guest_id = ? AND host_id = ?",
+        "SELECT * FROM conversations WHERE listing_id = $1 AND guest_id = $2 AND host_id = $3",
     )
     .bind(&body.listing_id)
     .bind(user_id)
@@ -118,7 +118,7 @@ pub async fn create_conversation(
         Ok(None) => {
             let new_id = Uuid::new_v4().to_string();
             let result = sqlx::query(
-                "INSERT INTO conversations (id, listing_id, guest_id, host_id) VALUES (?, ?, ?, ?)",
+                "INSERT INTO conversations (id, listing_id, guest_id, host_id) VALUES ($1, $2, $3, $4)",
             )
             .bind(&new_id)
             .bind(&body.listing_id)
@@ -148,7 +148,7 @@ pub async fn create_conversation(
     // Send the initial message
     let message_id = Uuid::new_v4().to_string();
     match sqlx::query(
-        "INSERT INTO messages (id, conversation_id, sender_id, content) VALUES (?, ?, ?, ?)",
+        "INSERT INTO messages (id, conversation_id, sender_id, content) VALUES ($1, $2, $3, $4)",
     )
     .bind(&message_id)
     .bind(&conversation_id)
@@ -159,11 +159,12 @@ pub async fn create_conversation(
     {
         Ok(_) => {
             // Update conversation updated_at
-            let _ =
-                sqlx::query("UPDATE conversations SET updated_at = CURRENT_TIMESTAMP WHERE id = ?")
-                    .bind(&conversation_id)
-                    .execute(pool.get_ref())
-                    .await;
+            let _ = sqlx::query(
+                "UPDATE conversations SET updated_at = CURRENT_TIMESTAMP WHERE id = $1",
+            )
+            .bind(&conversation_id)
+            .execute(pool.get_ref())
+            .await;
 
             HttpResponse::Ok().json(serde_json::json!({
                 "conversation_id": conversation_id,
@@ -181,7 +182,7 @@ pub async fn create_conversation(
 
 /// GET /api/messages/conversations - Get all conversations for user
 #[get("/conversations")]
-pub async fn get_conversations(pool: web::Data<SqlitePool>, req: HttpRequest) -> impl Responder {
+pub async fn get_conversations(pool: web::Data<PgPool>, req: HttpRequest) -> impl Responder {
     let user_id = match extract_user_id(&req) {
         Ok(id) => id,
         Err(response) => return response,
@@ -189,7 +190,7 @@ pub async fn get_conversations(pool: web::Data<SqlitePool>, req: HttpRequest) ->
 
     // Fetch conversations where user is guest or host
     let conversations = sqlx::query_as::<_, Conversation>(
-        "SELECT * FROM conversations WHERE guest_id = ? OR host_id = ? ORDER BY updated_at DESC",
+        "SELECT * FROM conversations WHERE guest_id = $1 OR host_id = $2 ORDER BY updated_at DESC",
     )
     .bind(user_id)
     .bind(user_id)
@@ -202,7 +203,7 @@ pub async fn get_conversations(pool: web::Data<SqlitePool>, req: HttpRequest) ->
             for conv in convs {
                 // Get last message
                 let last_message = sqlx::query_as::<_, Message>(
-                    "SELECT * FROM messages WHERE conversation_id = ? ORDER BY created_at DESC LIMIT 1"
+                    "SELECT * FROM messages WHERE conversation_id = $1 ORDER BY created_at DESC LIMIT 1"
                 )
                 .bind(&conv.id)
                 .fetch_optional(pool.get_ref())
@@ -217,7 +218,7 @@ pub async fn get_conversations(pool: web::Data<SqlitePool>, req: HttpRequest) ->
                 };
                 let other_user = sqlx::query_as::<_, (String, Option<String>)>(
                     // Assuming username and avatar columns
-                    "SELECT username, NULL as avatar FROM users WHERE id = ?", // Placeholder for avatar if not in DB
+                    "SELECT username, NULL as avatar FROM users WHERE id = $1", // Placeholder for avatar if not in DB
                 )
                 .bind(other_user_id)
                 .fetch_optional(pool.get_ref())
@@ -234,7 +235,7 @@ pub async fn get_conversations(pool: web::Data<SqlitePool>, req: HttpRequest) ->
 
                 // Get listing details
                 let listing = sqlx::query_as::<_, (String, Option<String>)>( // title, cover photo
-                    "SELECT title, (SELECT url FROM listing_photos WHERE listing_id = listings.id AND is_cover = 1 LIMIT 1) as image FROM listings WHERE id = ?"
+                    "SELECT title, (SELECT url FROM listing_photos WHERE listing_id = listings.id AND is_cover = TRUE LIMIT 1) as image FROM listings WHERE id = $1"
                 )
                 .bind(&conv.listing_id)
                 .fetch_optional(pool.get_ref())
@@ -263,7 +264,7 @@ pub async fn get_conversations(pool: web::Data<SqlitePool>, req: HttpRequest) ->
 /// GET /api/messages/conversations/{id} - Get messages for a conversation
 #[get("/conversations/{id}")]
 pub async fn get_messages(
-    pool: web::Data<SqlitePool>,
+    pool: web::Data<PgPool>,
     req: HttpRequest,
     path: web::Path<String>,
 ) -> impl Responder {
@@ -276,7 +277,7 @@ pub async fn get_messages(
 
     // Verify participation
     let participation = sqlx::query_scalar::<_, i32>(
-        "SELECT 1 FROM conversations WHERE id = ? AND (guest_id = ? OR host_id = ?)",
+        "SELECT 1 FROM conversations WHERE id = $1 AND (guest_id = $2 OR host_id = $3)",
     )
     .bind(&conversation_id)
     .bind(user_id)
@@ -287,7 +288,7 @@ pub async fn get_messages(
     match participation {
         Ok(Some(_)) => {
             let messages = sqlx::query_as::<_, Message>(
-                "SELECT * FROM messages WHERE conversation_id = ? ORDER BY created_at ASC",
+                "SELECT * FROM messages WHERE conversation_id = $1 ORDER BY created_at ASC",
             )
             .bind(&conversation_id)
             .fetch_all(pool.get_ref())
@@ -318,7 +319,7 @@ pub async fn get_messages(
 /// POST /api/messages - Send a message
 #[post("")]
 pub async fn send_message(
-    pool: web::Data<SqlitePool>,
+    pool: web::Data<PgPool>,
     req: HttpRequest,
     body: web::Json<SendMessageRequest>,
 ) -> impl Responder {
@@ -329,7 +330,7 @@ pub async fn send_message(
 
     // Verify participation
     let participation = sqlx::query_scalar::<_, i32>(
-        "SELECT 1 FROM conversations WHERE id = ? AND (guest_id = ? OR host_id = ?)",
+        "SELECT 1 FROM conversations WHERE id = $1 AND (guest_id = $2 OR host_id = $3)",
     )
     .bind(&body.conversation_id)
     .bind(user_id)
@@ -341,7 +342,7 @@ pub async fn send_message(
         Ok(Some(_)) => {
             let message_id = Uuid::new_v4().to_string();
             match sqlx::query(
-                "INSERT INTO messages (id, conversation_id, sender_id, content) VALUES (?, ?, ?, ?)"
+                "INSERT INTO messages (id, conversation_id, sender_id, content) VALUES ($1, $2, $3, $4)"
             )
             .bind(&message_id)
             .bind(&body.conversation_id)
@@ -352,7 +353,7 @@ pub async fn send_message(
             {
                 Ok(_) => {
                     // Update conversation updated_at
-                    let _ = sqlx::query("UPDATE conversations SET updated_at = CURRENT_TIMESTAMP WHERE id = ?")
+                    let _ = sqlx::query("UPDATE conversations SET updated_at = CURRENT_TIMESTAMP WHERE id = $1")
                         .bind(&body.conversation_id)
                         .execute(pool.get_ref())
                         .await;
@@ -384,17 +385,17 @@ pub async fn send_message(
 
 /// GET /api/messages/unread-count - Get unread message count
 #[get("/unread-count")]
-pub async fn get_unread_count(pool: web::Data<SqlitePool>, req: HttpRequest) -> impl Responder {
+pub async fn get_unread_count(pool: web::Data<PgPool>, req: HttpRequest) -> impl Responder {
     let user_id = match extract_user_id(&req) {
         Ok(id) => id,
         Err(response) => return response,
     };
 
-    let count = sqlx::query_scalar::<_, i32>(
+    let count: i64 = sqlx::query_scalar(
         "SELECT COUNT(*) FROM messages 
          JOIN conversations ON messages.conversation_id = conversations.id
-         WHERE (conversations.guest_id = ? OR conversations.host_id = ?)
-         AND messages.sender_id != ? 
+         WHERE (conversations.guest_id = $1 OR conversations.host_id = $2)
+         AND messages.sender_id != $3 
          AND messages.read_at IS NULL",
     )
     .bind(user_id)

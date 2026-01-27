@@ -3,52 +3,28 @@ set -e
 
 echo "--- Running entrypoint.sh ---"
 echo "Running as user: $(whoami)"
-echo "DATABASE_URL in entrypoint: $DATABASE_URL"
-echo "RUST_LOG in entrypoint: $RUST_LOG"
+echo "DATABASE_URL is set"
 
-# Ensure data directory exists
-mkdir -p /app/data
+# Wait for Postgres to be ready
+echo "Waiting for PostgreSQL to be ready..."
+until pg_isready -d "$DATABASE_URL"; do
+  echo "Postgres is unavailable - sleeping"
+  sleep 2
+done
+echo "PostgreSQL is ready!"
 
-echo "Permissions for /app/data before chown:"
-ls -la /app/data
-
-# Change ownership of data directory to appuser
-chown -R appuser:appuser /app/data
+# Ensure uploads directory exists and has correct permissions
+mkdir -p /app/public/uploads
 chown -R appuser:appuser /app/public
 
-echo "Permissions for /app/data after setup:"
-ls -la /app/data
+# Migration handling friendly to managed DBs (e.g., Supabase)
+if [ "$RESET_DB" = "true" ]; then
+    echo "RESET_DB=true: attempting full reset (may fail on managed DBs)..."
+    sqlx database reset -y --source /app/migrations || echo "Reset skipped/failed; continuing."
+fi
 
-# Run migrations using sqlite3
-echo "--- Running migrations ---"
-
-# Delete the old database to ensure a clean slate
-rm -f /app/data/database.db
-
-for migration in /app/migrations/*.sql; do
-    if [ -f "$migration" ]; then
-        migration_name=$(basename "$migration")
-        echo "Running migration: $migration"
-        
-        # Run the migration and exit on error
-        if ! sqlite3 /app/data/database.db < "$migration"; then
-            echo "❌ Migration $migration_name failed. Exiting."
-            exit 1
-        fi
-        
-        echo "✓ Migration $migration_name completed successfully"
-    fi
-done
-
-chown appuser:appuser /app/data/database.db
+echo "Running migrations..."
+sqlx migrate run --source /app/migrations
 
 echo "--- Starting application ---"
-echo "About to run backend binary..."
-ls -l /app/backend || echo "⚠️ Backend binary not found!"
-echo "Running as user: $(whoami)"
-
-# Run the backend
-exec su-exec appuser ./backend || {
-    echo "❌ Backend exited with code $?";
-    exit 1;
-}
+exec su-exec appuser ./backend

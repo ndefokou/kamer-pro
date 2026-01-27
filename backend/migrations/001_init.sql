@@ -1,6 +1,6 @@
 -- Users table
 CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     username TEXT NOT NULL,
     email TEXT NOT NULL UNIQUE,
     credential_id TEXT,
@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS users (
 
 -- User roles table
 CREATE TABLE IF NOT EXISTS user_roles (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL,
     role TEXT NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -37,22 +37,22 @@ CREATE TABLE IF NOT EXISTS listings (
     address TEXT,
     city TEXT,
     country TEXT DEFAULT 'Cameroon',
-    latitude REAL,
-    longitude REAL,
+    latitude DOUBLE PRECISION,
+    longitude DOUBLE PRECISION,
     
     -- Pricing
-    price_per_night REAL,
+    price_per_night DOUBLE PRECISION,
     currency TEXT DEFAULT 'XAF',
-    cleaning_fee REAL,
+    cleaning_fee DOUBLE PRECISION,
     
     -- Capacity
     max_guests INTEGER,
     bedrooms INTEGER,
     beds INTEGER,
-    bathrooms REAL,
+    bathrooms DOUBLE PRECISION,
     
     -- Booking settings
-    instant_book INTEGER DEFAULT 0,
+    instant_book BOOLEAN DEFAULT FALSE,
     min_nights INTEGER DEFAULT 1,
     max_nights INTEGER,
     
@@ -74,7 +74,7 @@ CREATE INDEX IF NOT EXISTS idx_listings_city ON listings(city);
 
 -- Listing amenities table
 CREATE TABLE IF NOT EXISTS listing_amenities (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     listing_id TEXT NOT NULL,
     amenity_type TEXT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -86,10 +86,10 @@ CREATE INDEX IF NOT EXISTS idx_listing_amenities_listing_id ON listing_amenities
 
 -- Listing photos table
 CREATE TABLE IF NOT EXISTS listing_photos (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     listing_id TEXT NOT NULL,
     url TEXT NOT NULL,
-    is_cover INTEGER DEFAULT 0,
+    is_cover BOOLEAN DEFAULT FALSE,
     display_order INTEGER DEFAULT 0,
     uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (listing_id) REFERENCES listings(id) ON DELETE CASCADE
@@ -99,7 +99,7 @@ CREATE INDEX IF NOT EXISTS idx_listing_photos_listing_id ON listing_photos(listi
 
 -- Listing videos table
 CREATE TABLE IF NOT EXISTS listing_videos (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     listing_id TEXT NOT NULL,
     url TEXT NOT NULL,
     uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -116,7 +116,7 @@ CREATE TABLE IF NOT EXISTS bookings (
     check_in DATE NOT NULL,
     check_out DATE NOT NULL,
     guests INTEGER NOT NULL,
-    total_price REAL NOT NULL,
+    total_price DOUBLE PRECISION NOT NULL,
     status TEXT DEFAULT 'pending', -- pending, confirmed, cancelled, completed
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

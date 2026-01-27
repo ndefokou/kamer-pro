@@ -1,6 +1,6 @@
 use actix_web::{get, put, web, HttpRequest, HttpResponse, Responder};
 use serde::{Deserialize, Serialize};
-use sqlx::SqlitePool;
+use sqlx::PgPool;
 
 use crate::middleware::auth::extract_user_id_from_token;
 
@@ -35,7 +35,7 @@ struct UserRow {
     email: String,
     credential_id: Option<String>,
     public_key: Option<String>,
-    counter: Option<i64>,
+    counter: Option<i32>,
     created_at: String,
     updated_at: String,
 }
@@ -68,7 +68,7 @@ pub struct AccountResponse {
 }
 
 #[get("/me")]
-pub async fn get_me(req: HttpRequest, pool: web::Data<SqlitePool>) -> impl Responder {
+pub async fn get_me(req: HttpRequest, pool: web::Data<PgPool>) -> impl Responder {
     let user_id = match extract_user_id(&req) {
         Ok(id) => id,
         Err(_) => {
@@ -80,7 +80,7 @@ pub async fn get_me(req: HttpRequest, pool: web::Data<SqlitePool>) -> impl Respo
     };
 
     let user: Result<UserRow, _> = sqlx::query_as(
-        "SELECT id, username, email, credential_id, public_key, counter, created_at, updated_at FROM users WHERE id = ?",
+        "SELECT id, username, email, credential_id, public_key, counter, created_at::TEXT, updated_at::TEXT FROM users WHERE id = $1",
     )
     .bind(user_id)
     .fetch_one(pool.get_ref())
@@ -89,14 +89,14 @@ pub async fn get_me(req: HttpRequest, pool: web::Data<SqlitePool>) -> impl Respo
     let user = match user {
         Ok(u) => u,
         Err(_) => {
-            return HttpResponse::NotFound().json(serde_json::json!({
+            return HttpResponse::Unauthorized().json(serde_json::json!({
                 "error": "User not found"
             }))
         }
     };
 
     let profile: Result<ProfileRow, _> = sqlx::query_as(
-        "SELECT user_id, legal_name, preferred_first_name, phone, residential_address, mailing_address, identity_verified, language, currency, created_at, updated_at, notify_email, notify_sms, privacy_profile_visibility, tax_id, payout_method, travel_for_work FROM user_profiles WHERE user_id = ?",
+        "SELECT user_id, legal_name, preferred_first_name, phone, residential_address, mailing_address, identity_verified, language, currency, created_at::TEXT, updated_at::TEXT, notify_email, notify_sms, privacy_profile_visibility, tax_id, payout_method, travel_for_work FROM user_profiles WHERE user_id = $1",
     )
     .bind(user_id)
     .fetch_one(pool.get_ref())
@@ -114,11 +114,11 @@ pub async fn get_me(req: HttpRequest, pool: web::Data<SqlitePool>) -> impl Respo
 }
 
 #[get("/user/{id}")]
-pub async fn get_user_by_id(path: web::Path<i32>, pool: web::Data<SqlitePool>) -> impl Responder {
+pub async fn get_user_by_id(path: web::Path<i32>, pool: web::Data<PgPool>) -> impl Responder {
     let user_id = path.into_inner();
 
     let user: Result<UserRow, _> = sqlx::query_as(
-        "SELECT id, username, email, credential_id, public_key, counter, created_at, updated_at FROM users WHERE id = ?",
+        "SELECT id, username, email, credential_id, public_key, counter, created_at::TEXT, updated_at::TEXT FROM users WHERE id = $1",
     )
     .bind(user_id)
     .fetch_one(pool.get_ref())
@@ -127,20 +127,23 @@ pub async fn get_user_by_id(path: web::Path<i32>, pool: web::Data<SqlitePool>) -
     let user = match user {
         Ok(u) => u,
         Err(_) => {
-            return HttpResponse::NotFound().json(serde_json::json!({
+            return HttpResponse::Unauthorized().json(serde_json::json!({
                 "error": "User not found"
             }))
         }
     };
 
     let profile: Result<ProfileRow, _> = sqlx::query_as(
-        "SELECT user_id, legal_name, preferred_first_name, phone, residential_address, mailing_address, identity_verified, language, currency, created_at, updated_at, notify_email, notify_sms, privacy_profile_visibility, tax_id, payout_method, travel_for_work FROM user_profiles WHERE user_id = ?",
+        "SELECT user_id, legal_name, preferred_first_name, phone, residential_address, mailing_address, identity_verified, language, currency, created_at::TEXT, updated_at::TEXT, notify_email, notify_sms, privacy_profile_visibility, tax_id, payout_method, travel_for_work FROM user_profiles WHERE user_id = $1",
     )
     .bind(user_id)
     .fetch_one(pool.get_ref())
     .await;
 
-    let profile = profile.unwrap_or_else(|_| ProfileRow { user_id, ..Default::default() });
+    let profile = profile.unwrap_or_else(|_| ProfileRow {
+        user_id,
+        ..Default::default()
+    });
 
     HttpResponse::Ok().json(AccountResponse {
         user: Some(user),
@@ -172,7 +175,7 @@ pub struct UpdateAccountRequest {
 #[put("/update")]
 pub async fn update_account(
     req: HttpRequest,
-    pool: web::Data<SqlitePool>,
+    pool: web::Data<PgPool>,
     body: web::Json<UpdateAccountRequest>,
 ) -> impl Responder {
     let user_id = match extract_user_id(&req) {
@@ -182,32 +185,28 @@ pub async fn update_account(
 
     // Update username/email if provided
     if body.username.is_some() || body.email.is_some() {
-        let mut query = String::from("UPDATE users SET ");
-        let mut sets: Vec<&str> = Vec::new();
-        if body.username.is_some() {
-            sets.push("username = ?");
-        }
-        if body.email.is_some() {
-            sets.push("email = ?");
-        }
-        query.push_str(&sets.join(", "));
-        query.push_str(" WHERE id = ?");
+        let mut query_builder: sqlx::QueryBuilder<sqlx::Postgres> =
+            sqlx::QueryBuilder::new("UPDATE users SET updated_at = CURRENT_TIMESTAMP");
 
-        let mut q = sqlx::query(&query);
-        if let Some(u) = &body.username {
-            q = q.bind(u);
+        if let Some(ref username) = body.username {
+            query_builder.push(", username = ");
+            query_builder.push_bind(username);
         }
-        if let Some(e) = &body.email {
-            q = q.bind(e);
+        if let Some(ref email) = body.email {
+            query_builder.push(", email = ");
+            query_builder.push_bind(email);
         }
-        q = q.bind(user_id);
-        let _ = q.execute(pool.get_ref()).await;
+
+        query_builder.push(" WHERE id = ");
+        query_builder.push_bind(user_id);
+
+        let _ = query_builder.build().execute(pool.get_ref()).await;
     }
 
     // Upsert profile
     let _ = sqlx::query(
         "INSERT INTO user_profiles (user_id, legal_name, preferred_first_name, phone, residential_address, mailing_address, language, currency, notify_email, notify_sms, privacy_profile_visibility, tax_id, payout_method, travel_for_work, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, CURRENT_TIMESTAMP)
          ON CONFLICT(user_id) DO UPDATE SET
            legal_name=excluded.legal_name,
            preferred_first_name=excluded.preferred_first_name,

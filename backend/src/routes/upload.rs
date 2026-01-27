@@ -2,7 +2,7 @@ use actix_multipart::Multipart;
 use actix_web::{post, web, Error, HttpRequest, HttpResponse};
 use futures_util::stream::{StreamExt, TryStreamExt};
 use serde::Serialize;
-use sqlx::SqlitePool;
+use sqlx::PgPool;
 
 #[derive(Serialize)]
 struct ErrorResponse {
@@ -28,7 +28,7 @@ pub async fn upload_images_standalone(
             // Clone filename and content_type to avoid borrow issues
             let filename = filename.to_string();
             let content_type = field.content_type().to_string();
-            
+
             // Read file data into memory
             let mut file_data = Vec::new();
             while let Some(chunk) = field.next().await {
@@ -61,7 +61,7 @@ pub async fn upload_images_standalone(
 #[post("/upload/{productId}")]
 pub async fn upload_images(
     _req: HttpRequest,
-    _pool: web::Data<SqlitePool>,
+    _pool: web::Data<PgPool>,
     _path: web::Path<i32>,
     _payload: Multipart,
 ) -> Result<HttpResponse, Error> {

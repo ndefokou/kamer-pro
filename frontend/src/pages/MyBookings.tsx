@@ -3,7 +3,7 @@ import { getMyBookings, type BookingWithDetails } from "@/api/client";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
-import { getImageUrl } from "@/lib/utils";
+import { getImageUrl, formatPrice } from "@/lib/utils";
 
 const StatusBadge = ({ status }: { status: BookingWithDetails["booking"]["status"] }) => {
   const color = status === "confirmed" ? "bg-green-100 text-green-700" : status === "pending" ? "bg-yellow-100 text-yellow-700" : "bg-red-100 text-red-700";
@@ -46,7 +46,7 @@ export default function MyBookings() {
                       {new Date(b.booking.check_in).toLocaleDateString()} - {new Date(b.booking.check_out).toLocaleDateString()} · {b.booking.guests} guest{b.booking.guests !== 1 ? "s" : ""}
                     </div>
                     <div className="text-sm font-semibold mt-1">
-                      Total: {new Intl.NumberFormat("fr-FR", { style: "currency", currency: "XAF", maximumFractionDigits: 0 }).format(b.booking.total_price)}
+                      Total: {formatPrice(b.booking.total_price)}
                     </div>
                   </div>
                   <div className="hidden sm:block">

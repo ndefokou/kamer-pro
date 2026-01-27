@@ -2,7 +2,7 @@ use crate::middleware::auth::extract_user_id_from_token;
 use crate::routes::reports::Report;
 use actix_web::{delete, get, web, HttpRequest, HttpResponse, Responder};
 use serde::Serialize;
-use sqlx::SqlitePool;
+use sqlx::PgPool;
 
 #[derive(Debug, Serialize, sqlx::FromRow)]
 pub struct Host {
@@ -39,9 +39,9 @@ fn extract_user_id(req: &HttpRequest) -> Result<i32, HttpResponse> {
     })))
 }
 
-async fn is_admin(pool: &SqlitePool, user_id: i32) -> bool {
-    let count: i32 =
-        sqlx::query_scalar("SELECT COUNT(*) FROM user_roles WHERE user_id = ? AND role = 'admin'")
+async fn is_admin(pool: &PgPool, user_id: i32) -> bool {
+    let count: i64 =
+        sqlx::query_scalar("SELECT COUNT(*) FROM user_roles WHERE user_id = $1 AND role = 'admin'")
             .bind(user_id)
             .fetch_one(pool)
             .await
@@ -50,7 +50,7 @@ async fn is_admin(pool: &SqlitePool, user_id: i32) -> bool {
 }
 
 #[get("/hosts")]
-pub async fn get_hosts(pool: web::Data<SqlitePool>, req: HttpRequest) -> impl Responder {
+pub async fn get_hosts(pool: web::Data<PgPool>, req: HttpRequest) -> impl Responder {
     let user_id = match extract_user_id(&req) {
         Ok(id) => id,
         Err(response) => return response,
@@ -61,15 +61,15 @@ pub async fn get_hosts(pool: web::Data<SqlitePool>, req: HttpRequest) -> impl Re
             .json(serde_json::json!({ "error": "Admin access required" }));
     }
 
-    let query = r#"
+    let query_safe = r#"
         SELECT 
             u.id, u.username, u.email, u.created_at,
-            (SELECT COUNT(*) FROM listings WHERE host_id = u.id) as listing_count
+            (SELECT COUNT(*)::int FROM listings WHERE host_id = u.id) as listing_count
         FROM users u
         WHERE EXISTS (SELECT 1 FROM listings WHERE host_id = u.id)
     "#;
 
-    match sqlx::query_as::<_, Host>(query)
+    match sqlx::query_as::<_, Host>(query_safe)
         .fetch_all(pool.get_ref())
         .await
     {
@@ -84,7 +84,7 @@ pub async fn get_hosts(pool: web::Data<SqlitePool>, req: HttpRequest) -> impl Re
 
 #[delete("/hosts/{id}")]
 pub async fn delete_host(
-    pool: web::Data<SqlitePool>,
+    pool: web::Data<PgPool>,
     req: HttpRequest,
     path: web::Path<i32>,
 ) -> impl Responder {
@@ -100,25 +100,23 @@ pub async fn delete_host(
 
     let host_id = path.into_inner();
 
-    // Manually delete dependencies to avoid foreign key constraints
-
     // 0. Delete messages and conversations
     // First delete all messages in conversations involving this user (as host or guest)
-    let _ = sqlx::query("DELETE FROM messages WHERE conversation_id IN (SELECT id FROM conversations WHERE host_id = ? OR guest_id = ?)")
+    let _ = sqlx::query("DELETE FROM messages WHERE conversation_id IN (SELECT id FROM conversations WHERE host_id = $1 OR guest_id = $2)")
         .bind(host_id)
         .bind(host_id)
         .execute(pool.get_ref())
         .await;
 
     // Then delete the conversations themselves
-    let _ = sqlx::query("DELETE FROM conversations WHERE host_id = ? OR guest_id = ?")
+    let _ = sqlx::query("DELETE FROM conversations WHERE host_id = $1 OR guest_id = $2")
         .bind(host_id)
         .bind(host_id)
         .execute(pool.get_ref())
         .await;
 
     // 1. Delete reports related to this host
-    let _ = sqlx::query("DELETE FROM reports WHERE host_id = ? OR reporter_id = ?")
+    let _ = sqlx::query("DELETE FROM reports WHERE host_id = $1 OR reporter_id = $2")
         .bind(host_id)
         .bind(host_id)
         .execute(pool.get_ref())
@@ -126,54 +124,54 @@ pub async fn delete_host(
 
     // 2. Delete bookings for the host's listings
     let _ = sqlx::query(
-        "DELETE FROM bookings WHERE listing_id IN (SELECT id FROM listings WHERE host_id = ?)",
+        "DELETE FROM bookings WHERE listing_id IN (SELECT id FROM listings WHERE host_id = $1)",
     )
     .bind(host_id)
     .execute(pool.get_ref())
     .await;
 
     // 3. Delete listing amenities, photos, videos
-    let _ = sqlx::query("DELETE FROM listing_amenities WHERE listing_id IN (SELECT id FROM listings WHERE host_id = ?)")
+    let _ = sqlx::query("DELETE FROM listing_amenities WHERE listing_id IN (SELECT id FROM listings WHERE host_id = $1)")
         .bind(host_id)
         .execute(pool.get_ref())
         .await;
 
-    let _ = sqlx::query("DELETE FROM listing_photos WHERE listing_id IN (SELECT id FROM listings WHERE host_id = ?)")
+    let _ = sqlx::query("DELETE FROM listing_photos WHERE listing_id IN (SELECT id FROM listings WHERE host_id = $1)")
         .bind(host_id)
         .execute(pool.get_ref())
         .await;
 
-    let _ = sqlx::query("DELETE FROM listing_videos WHERE listing_id IN (SELECT id FROM listings WHERE host_id = ?)")
+    let _ = sqlx::query("DELETE FROM listing_videos WHERE listing_id IN (SELECT id FROM listings WHERE host_id = $1)")
         .bind(host_id)
         .execute(pool.get_ref())
         .await;
 
     // 4. Delete listings
-    let _ = sqlx::query("DELETE FROM listings WHERE host_id = ?")
+    let _ = sqlx::query("DELETE FROM listings WHERE host_id = $1")
         .bind(host_id)
         .execute(pool.get_ref())
         .await;
 
     // 5. Delete user roles
-    let _ = sqlx::query("DELETE FROM user_roles WHERE user_id = ?")
+    let _ = sqlx::query("DELETE FROM user_roles WHERE user_id = $1")
         .bind(host_id)
         .execute(pool.get_ref())
         .await;
 
     // 6. Delete sessions
-    let _ = sqlx::query("DELETE FROM sessions WHERE user_id = ?")
+    let _ = sqlx::query("DELETE FROM sessions WHERE user_id = $1")
         .bind(host_id)
         .execute(pool.get_ref())
         .await;
 
     // 7. Delete user profile
-    let _ = sqlx::query("DELETE FROM user_profiles WHERE user_id = ?")
+    let _ = sqlx::query("DELETE FROM user_profiles WHERE user_id = $1")
         .bind(host_id)
         .execute(pool.get_ref())
         .await;
 
     // Finally, delete the user
-    match sqlx::query("DELETE FROM users WHERE id = ?")
+    match sqlx::query("DELETE FROM users WHERE id = $1")
         .bind(host_id)
         .execute(pool.get_ref())
         .await
@@ -190,7 +188,7 @@ pub async fn delete_host(
 }
 
 #[get("/reports")]
-pub async fn get_reports(pool: web::Data<SqlitePool>, req: HttpRequest) -> impl Responder {
+pub async fn get_reports(pool: web::Data<PgPool>, req: HttpRequest) -> impl Responder {
     let user_id = match extract_user_id(&req) {
         Ok(id) => id,
         Err(response) => return response,

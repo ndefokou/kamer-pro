@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { X, Share, Heart, Star, Users, Home, MapPin, Wifi, Calendar, ChevronLeft, ChevronRight, Minus, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { getImageUrl } from '@/lib/utils';
+import { getImageUrl, formatPrice } from '@/lib/utils';
 import { AMENITY_DETAILS } from '@/data/amenities';
 import { SAFETY_CONSIDERATIONS, SAFETY_DEVICES } from '@/data/guestSafety';
 import { HouseRules, DEFAULT_HOUSE_RULES } from './HouseRulesSection';
@@ -477,7 +477,7 @@ const ListingPreview: React.FC<ListingPreviewProps> = ({ listing, isOpen, onClos
                         <div className="sticky top-24 border border-gray-200 rounded-xl p-6 shadow-xl">
                             <div className="mb-6">
                                 <div className="flex items-baseline gap-1 mb-1">
-                                    <span className="text-2xl font-semibold">${listing.price_per_night}</span>
+                                    <span className="text-2xl font-semibold">{formatPrice(listing.price_per_night)}</span>
                                     <span className="text-gray-600">{t('host.preview.night', 'night')}</span>
                                 </div>
                                 <div className="flex items-center gap-1 text-sm">
@@ -667,26 +667,26 @@ const ListingPreview: React.FC<ListingPreviewProps> = ({ listing, isOpen, onClos
                                 <div className="space-y-3 text-sm">
                                     <div className="flex justify-between">
                                         <span className="underline">
-                                            ${listing.price_per_night} x {Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24))} nights
+                                            {formatPrice(listing.price_per_night)} x {Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24))} nights
                                         </span>
                                         <span>
-                                            ${listing.price_per_night * Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24))}
+                                            {formatPrice(listing.price_per_night * Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24)))}
                                         </span>
                                     </div>
                                     <div className="flex justify-between">
                                         <span className="underline">{t('host.preview.cleaningFee', 'Cleaning fee')}</span>
-                                        <span>$50</span>
+                                        <span>5000 FCFA</span>
                                     </div>
                                     <div className="flex justify-between">
                                         <span className="underline">{t('host.preview.serviceFee', 'Service fee')}</span>
                                         <span>
-                                            ${Math.round(listing.price_per_night * Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24)) * 0.14)}
+                                            {formatPrice(Math.round(listing.price_per_night * Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24)) * 0.14))}
                                         </span>
                                     </div>
                                     <div className="pt-3 border-t border-gray-200 flex justify-between font-semibold">
                                         <span>{t('host.preview.total', 'Total')}</span>
                                         <span>
-                                            ${listing.price_per_night * Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24)) + 50 + Math.round(listing.price_per_night * Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24)) * 0.14)}
+                                            {formatPrice(listing.price_per_night * Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24)) + 5000 + Math.round(listing.price_per_night * Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24)) * 0.14))}
                                         </span>
                                     </div>
                                 </div>
@@ -830,7 +830,7 @@ const ListingPreview: React.FC<ListingPreviewProps> = ({ listing, isOpen, onClos
                                     return null;
                                 })}
 
-                                
+
                             </div>
                         </div>
 

@@ -5,7 +5,7 @@ import { useHost } from '@/contexts/HostContext';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Check } from 'lucide-react';
-import { getImageUrl } from '@/lib/utils';
+import { getImageUrl, formatPrice } from '@/lib/utils';
 
 const Preview: React.FC = () => {
     const navigate = useNavigate();
@@ -93,7 +93,7 @@ const Preview: React.FC = () => {
                                 </p>
                             </div>
                             <div className="text-right">
-                                <div className="text-2xl font-bold">{draft.pricePerNight?.toLocaleString()} XAF</div>
+                                <div className="text-2xl font-bold">{formatPrice(draft.pricePerNight || 0)}</div>
                                 <div className="text-sm text-muted-foreground">{t('host.common.perNight', 'per night')}</div>
                             </div>
                         </div>
@@ -131,7 +131,7 @@ const Preview: React.FC = () => {
                                 <p>• {draft.instantBook ? t('host.preview.instantAvailable', 'Instant booking available') : t('host.preview.hostApproval', 'Host approval required')}</p>
                                 <p>• {t('host.preview.minimumStay', 'Minimum stay')}: {draft.minNights} {draft.minNights !== 1 ? t('common.nights', 'nights') : t('host.preview.night', 'night')}</p>
                                 {draft.maxNights && <p>• {t('host.preview.maximumStay', 'Maximum stay')}: {draft.maxNights} {t('common.nights', 'nights')}</p>}
-                                {draft.cleaningFee && <p>• {t('host.pricing.cleaningFeeShort', 'Cleaning fee')}: {draft.cleaningFee.toLocaleString()} XAF</p>}
+                                {draft.cleaningFee && <p>• {t('host.pricing.cleaningFeeShort', 'Cleaning fee')}: {formatPrice(draft.cleaningFee)}</p>}
                             </div>
                         </div>
 

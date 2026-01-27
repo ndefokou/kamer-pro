@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import apiClient from '@/api/client';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, Plus, Minus, Settings, Home, MapPin, Users, Key, BookOpen, Shield, FileText, Link as LinkIcon, Camera, Eye, X, Grid3x3, Mail } from 'lucide-react';
-import { getImageUrl } from '@/lib/utils';
+import { getImageUrl, formatPrice } from '@/lib/utils';
 import { AMENITY_DETAILS } from '@/data/amenities';
 import AddAmenitiesPanel from '@/components/host/AddAmenitiesPanel';
 import HouseRulesSection, { HouseRules, DEFAULT_HOUSE_RULES } from '@/components/host/HouseRulesSection';
@@ -55,7 +55,7 @@ interface ListingSettings {
 }
 
 
- 
+
 
 
 
@@ -156,7 +156,7 @@ const ListingEditor: React.FC = () => {
     const [isMobileSection, setIsMobileSection] = useState(false);
     const [isPublishing, setIsPublishing] = useState(false);
 
-    
+
 
     useEffect(() => {
         const fetchListing = async () => {
@@ -190,7 +190,7 @@ const ListingEditor: React.FC = () => {
         }
     }, [id]);
 
-    
+
 
     if (loading) {
         return <div className="min-h-screen flex items-center justify-center">{t('common.loading', 'Loading...')}</div>;
@@ -216,7 +216,7 @@ const ListingEditor: React.FC = () => {
                 }
             })()
         },
-        { id: 'pricing', label: t('host.editor.sidebar.pricing', 'Pricing'), icon: null, description: `$${listing.price_per_night} ${t('host.editor.perNight', 'per night')}` },
+        { id: 'pricing', label: t('host.editor.sidebar.pricing', 'Pricing'), icon: null, description: `${formatPrice(listing.price_per_night)} ${t('host.editor.perNight', 'per night')}` },
         { id: 'availability', label: t('host.editor.sidebar.availability', 'Availability'), icon: null, description: t('host.editor.sidebar.nightStaysRange', '1 – 365 night stays') },
         { id: 'number_of_guests', label: t('host.editor.sidebar.numberOfGuests', 'Number of guests'), icon: Users, description: `${listing.max_guests} ${t('common.guests', 'guests')}` },
         {
@@ -584,8 +584,7 @@ const ListingEditor: React.FC = () => {
 
                                     <div className="border border-gray-300 rounded-xl p-4 mb-4">
                                         <label className="block text-sm text-gray-600 mb-2">{t('host.editor.pricing.nightlyPrice', 'Nightly price')}</label>
-                                        <div className="flex items-baseline gap-1">
-                                            <span className="text-3xl font-semibold">$</span>
+                                        <div className="flex items-baseline gap-2">
                                             <input
                                                 type="number"
                                                 value={settings.base_price ?? listing.price_per_night}
@@ -593,6 +592,7 @@ const ListingEditor: React.FC = () => {
                                                 className="text-3xl font-semibold border-none bg-transparent p-0 w-32 focus:outline-none focus:ring-0"
                                                 min={0}
                                             />
+                                            <span className="text-3xl font-semibold">FCFA</span>
                                         </div>
                                     </div>
 
@@ -783,7 +783,7 @@ const ListingEditor: React.FC = () => {
                                 </div >
                             )}
 
-                            
+
 
                             {
                                 activeSection === 'number_of_guests' && (

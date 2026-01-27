@@ -58,12 +58,12 @@ const PriceSettingsModal: React.FC<PriceSettingsModalProps> = ({ settings, onClo
                 <div>
                     <div className="flex items-center justify-between mb-3">
                         <h3 className="font-semibold text-gray-900">Base price</h3>
-                        <span className="text-sm text-gray-600">USD</span>
+                        <span className="text-sm text-gray-600">FCFA</span>
                     </div>
                     <div className="border border-gray-300 rounded-xl p-4 hover:border-gray-900 transition-colors">
                         <label className="block text-sm text-gray-600 mb-2">Per night</label>
                         <div className="flex items-baseline gap-1">
-                            <span className="text-3xl font-semibold">$</span>
+                            <span className="text-3xl font-semibold">FCFA</span>
                             <input
                                 type="number"
                                 value={basePrice === 0 ? '' : basePrice}
@@ -87,7 +87,7 @@ const PriceSettingsModal: React.FC<PriceSettingsModalProps> = ({ settings, onClo
                             </button>
                         </div>
                         <div className="flex items-baseline gap-1">
-                            <span className="text-3xl font-semibold">$</span>
+                            <span className="text-3xl font-semibold">FCFA</span>
                             <input
                                 type="number"
                                 value={weekendPrice === 0 ? '' : weekendPrice}
@@ -142,7 +142,7 @@ const PriceSettingsModal: React.FC<PriceSettingsModalProps> = ({ settings, onClo
                             <span className="text-3xl font-semibold">%</span>
                         </div>
                         <p className="text-xs text-gray-600">
-                            Weekly average is ${weeklyAverage}
+                            Weekly average is {weeklyAverage} FCFA
                         </p>
                     </div>
 
@@ -164,7 +164,7 @@ const PriceSettingsModal: React.FC<PriceSettingsModalProps> = ({ settings, onClo
                             <span className="text-3xl font-semibold">%</span>
                         </div>
                         <p className="text-xs text-gray-600">
-                            Monthly average is ${monthlyAverage}
+                            Monthly average is {monthlyAverage} FCFA
                         </p>
                     </div>
                 </div>

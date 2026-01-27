@@ -311,9 +311,9 @@ const AccountSettings = () => {
               <Separator />
               <SelectRow
                 label="Currency"
-                value={p.currency || undefined}
+                value={p.currency || "XAF"}
                 options={[
-                  { value: "XAF", label: "XAF" },
+                  { value: "XAF", label: "FCFA (XAF)" },
                   { value: "USD", label: "USD" },
                   { value: "EUR", label: "EUR" },
                 ]}
