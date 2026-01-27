@@ -164,6 +164,11 @@ export const getListing = async (id: string): Promise<Product> => {
   return response.data;
 };
 
+export const deleteListing = async (id: string) => {
+  const response = await apiClient.delete(`/listings/${id}`);
+  return response.data;
+};
+
 // Reviews API (listings)
 export interface ListingReview {
   id: number;

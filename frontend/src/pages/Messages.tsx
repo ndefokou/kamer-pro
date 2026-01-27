@@ -33,7 +33,7 @@ const Messages: React.FC = () => {
         queryKey: ['messages', selectedConversationId],
         queryFn: () => getMessages(selectedConversationId!),
         enabled: !!selectedConversationId,
-        refetchInterval: 5000, // Poll every 5 seconds
+        refetchInterval: 5000,
     });
 
     // Send message mutation

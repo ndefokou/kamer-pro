@@ -20,8 +20,6 @@ const Intro: React.FC = () => {
 
     // Ensure user has authentication tokens
     React.useEffect(() => {
-        // We rely on ProtectedRoute to handle redirection if not logged in.
-        // Here we just check if we have a valid session to initialize the draft if needed.
         const userId = localStorage.getItem('userId');
         if (!userId) {
             // Should not happen due to ProtectedRoute, but good for safety

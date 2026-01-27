@@ -1,21 +1,17 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useEffect, useMemo, useCallback } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { Heart, Star, Menu, User, Globe, Home as HomeIcon } from "lucide-react";
+import { Home as HomeIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getProducts, Product, getTowns, TownCount } from "@/api/client";
-import MbokoSearch from "@/components/Search";
 import { getImageUrl } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
 import {
-    DropdownMenu,
-    DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuSeparator,
-    DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/contexts/AuthContext";
 import { useWishlist } from "@/hooks/useWishlist";

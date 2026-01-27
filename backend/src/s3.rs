@@ -16,8 +16,7 @@ impl S3Storage {
         let bucket = env::var("SUPABASE_BUCKET")
             .map_err(|_| "SUPABASE_BUCKET environment variable not set")?;
         
-        // This should be the project URL (e.g. https://xyz.supabase.co)
-        // NOT the full storage URL
+        // roject URL (e.g. https://xyz.supabase.co)
         let mut project_url = env::var("SUPABASE_PUBLIC_URL")
             .map_err(|_| "SUPABASE_PUBLIC_URL environment variable not set")?;
             
@@ -31,9 +30,8 @@ impl S3Storage {
             project_url.pop();
         }
 
-        // We can reuse S3_ACCESS_KEY or S3_SECRET_KEY as the service key since
-        // the user likely put the service_role key there.
-        // Or check for SUPABASE_SERVICE_KEY
+        // euse S3_ACCESS_KEY or S3_SECRET_KEY as the service key since
+        // check for SUPABASE_SERVICE_KEY
         let service_key = env::var("S3_SECRET_KEY")
             .or_else(|_| env::var("S3_ACCESS_KEY"))
             .or_else(|_| env::var("SUPABASE_SERVICE_KEY"))

@@ -10,7 +10,6 @@ import HouseRulesSection, { HouseRules, DEFAULT_HOUSE_RULES } from '@/components
 import ListingPreview from '@/components/host/ListingPreview';
 import GuestSafetyModal from '@/components/host/GuestSafetyModal';
 import { LocationDetailModals } from '@/components/host/LocationDetailModals';
-import PriceSettingsModal from '@/components/host/PriceSettingsModal';
 import { SAFETY_CONSIDERATIONS, SAFETY_DEVICES } from '@/data/guestSafety';
 import { useTranslation } from 'react-i18next';
 import { useToast } from '@/hooks/use-toast';

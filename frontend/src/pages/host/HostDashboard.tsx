@@ -1,15 +1,25 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import apiClient from '@/api/client';
+import apiClient, { deleteListing as deleteListingApi } from '@/api/client';
 import { Button } from '@/components/ui/button';
-import { Plus, Grid3x3, Menu, Mail, Home, Globe, HelpCircle, Settings, BookOpen, Users, UserPlus, LogOut } from 'lucide-react';
+import { Plus, Grid3x3, Menu, Mail, Home, Globe, HelpCircle, Settings, BookOpen, Users, UserPlus, LogOut, Trash } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getImageUrl } from '@/lib/utils';
 
 import { useAuth } from '@/contexts/AuthContext';
 import { useHost } from '@/contexts/HostContext';
 import HostHeader from '@/components/HostHeader';
+import {
+    AlertDialog,
+    AlertDialogContent,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogCancel,
+    AlertDialogAction,
+} from '@/components/ui/alert-dialog';
 
 interface Listing {
     listing: {
@@ -41,6 +51,9 @@ const HostDashboard: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [selectedListing, setSelectedListing] = useState<string>('');
     const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+    const [deleteOpen, setDeleteOpen] = useState(false);
+    const [deleteId, setDeleteId] = useState<string | null>(null);
+    const [deleting, setDeleting] = useState(false);
 
     const username = user?.username || '';
     const initials = getInitials(username || 'User');
@@ -86,6 +99,32 @@ const HostDashboard: React.FC = () => {
         await logout();
         setIsUserMenuOpen(false);
         navigate('/');
+    };
+
+    const handleOpenDelete = (id: string) => {
+        setDeleteId(id);
+        setDeleteOpen(true);
+    };
+
+    const handleConfirmDelete = async () => {
+        if (!deleteId) return;
+        try {
+            setDeleting(true);
+            await deleteListingApi(deleteId);
+            setListings(prev => {
+                const updated = prev.filter(i => i.listing.id !== deleteId);
+                if (selectedListing === deleteId) {
+                    setSelectedListing(updated[0]?.listing.id || '');
+                }
+                return updated;
+            });
+        } catch (error) {
+            console.error('Failed to delete listing:', error);
+        } finally {
+            setDeleting(false);
+            setDeleteOpen(false);
+            setDeleteId(null);
+        }
     };
 
     // Check if any listing needs action
@@ -152,12 +191,19 @@ const HostDashboard: React.FC = () => {
                             {listings.map((item) => (
                                 <div
                                     key={item.listing.id}
-                                    className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm hover:shadow-md transition-all cursor-pointer active:scale-[0.99]"
+                                    className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm hover:shadow-md transition-all cursor-pointer active:scale-[0.99] relative"
                                     onClick={() => {
                                         setSelectedListing(item.listing.id);
                                         navigate(`/host/editor/${item.listing.id}`);
                                     }}
                                 >
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); handleOpenDelete(item.listing.id); }}
+                                        className="absolute top-3 right-3 p-2 rounded-full hover:bg-red-50 text-red-600"
+                                        aria-label={t('host.dashboard.delete', 'Delete')}
+                                    >
+                                        <Trash className="h-5 w-5" />
+                                    </button>
                                     <div className="flex items-center gap-4">
                                         <div className="h-24 w-24 rounded-xl overflow-hidden flex-shrink-0 bg-gray-100 shadow-inner">
                                             {item.photos?.[0]?.url ? (
@@ -224,6 +270,9 @@ const HostDashboard: React.FC = () => {
                                             <th className="text-left py-4 px-6 text-xs font-semibold text-gray-600 uppercase tracking-wider">
                                                 {t('host.dashboard.table.status', 'Status')}
                                             </th>
+                                            <th className="text-right py-4 px-6 text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                                {t('host.dashboard.table.actions', 'Actions')}
+                                            </th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-200">
@@ -283,6 +332,15 @@ const HostDashboard: React.FC = () => {
                                                         </span>
                                                     </div>
                                                 </td>
+                                                <td className="py-5 px-6 text-right">
+                                                    <button
+                                                        onClick={(e) => { e.stopPropagation(); handleOpenDelete(item.listing.id); }}
+                                                        className="inline-flex items-center gap-1 text-red-600 hover:text-red-700"
+                                                    >
+                                                        <Trash className="h-4 w-4" />
+                                                        <span className="text-sm font-medium">{t('common.delete', 'Delete')}</span>
+                                                    </button>
+                                                </td>
                                             </tr>
                                         ))}
                                     </tbody>
@@ -325,6 +383,23 @@ const HostDashboard: React.FC = () => {
                     </ul>
                 </div>
             </nav>
+
+            <AlertDialog open={deleteOpen} onOpenChange={(o) => { if (!o) { setDeleteOpen(false); setDeleteId(null); } }}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>{t('host.dashboard.deleteListingTitle', 'Delete listing?')}</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            {t('host.dashboard.deleteListingDesc', 'This action cannot be undone. This will permanently delete your listing and remove related data.')}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel disabled={deleting}>{t('common.cancel', 'Cancel')}</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleConfirmDelete} disabled={deleting} className="bg-red-600 hover:bg-red-700">
+                            {deleting ? t('common.deleting', 'Deleting...') : t('common.delete', 'Delete')}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 };
