@@ -47,12 +47,12 @@ async fn get_wishlist(pool: web::Data<PgPool>, req: HttpRequest) -> impl Respond
     let result = sqlx::query_as::<_, WishlistItem>(
         r#"
         SELECT
-            w.id, w.user_id, w.product_id, w.created_at,
+            w.id, w.user_id, w.product_id, w.created_at::TEXT,
             l.title as product_name,
             l.price_per_night as product_price,
             l.city as product_location,
             l.property_type as product_category,
-            (SELECT url FROM listing_photos WHERE listing_id = l.id AND is_cover = 1 LIMIT 1) as product_image,
+            (SELECT url FROM listing_photos WHERE listing_id = l.id AND is_cover = true LIMIT 1) as product_image,
             up.phone as product_contact_phone
         FROM wishlist w
         JOIN listings l ON w.product_id = l.id

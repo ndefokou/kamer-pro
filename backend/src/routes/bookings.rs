@@ -34,7 +34,7 @@ pub async fn get_my_bookings(
 
     let query = r#"
         SELECT 
-            b.*,
+            b.id, b.listing_id, b.guest_id, b.check_in::TEXT, b.check_out::TEXT, b.guests, b.total_price, b.status, b.created_at::TEXT, b.updated_at::TEXT,
             u.username as guest_name,
             u.email as guest_email,
             l.title as listing_title,
@@ -297,8 +297,8 @@ pub async fn create_booking(
     .bind(&id)
     .bind(&booking_data.listing_id)
     .bind(user_id)
-    .bind(&booking_data.check_in)
-    .bind(&booking_data.check_out)
+    .bind(check_in_date)
+    .bind(check_out_date)
     .bind(booking_data.guests)
     .bind(total_price)
     .bind(status)
@@ -481,7 +481,7 @@ pub async fn get_today_bookings(pool: web::Data<PgPool>, req: HttpRequest) -> im
 
     let query = r#"
         SELECT 
-            b.*,
+            b.id, b.listing_id, b.guest_id, b.check_in::TEXT, b.check_out::TEXT, b.guests, b.total_price, b.status, b.created_at::TEXT, b.updated_at::TEXT,
             u.username as guest_name,
             u.email as guest_email,
             l.title as listing_title,
@@ -570,7 +570,7 @@ pub async fn get_upcoming_bookings(
 
     let query = r#"
         SELECT 
-            b.*,
+            b.id, b.listing_id, b.guest_id, b.check_in::TEXT, b.check_out::TEXT, b.guests, b.total_price, b.status, b.created_at::TEXT, b.updated_at::TEXT,
             u.username as guest_name,
             u.email as guest_email,
             l.title as listing_title,
