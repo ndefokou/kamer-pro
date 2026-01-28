@@ -3,3 +3,5 @@
 
 # Development database
 dev.sqlite3
+
+Shuttle.toml
