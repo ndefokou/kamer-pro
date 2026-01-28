@@ -28,7 +28,7 @@ const router = createBrowserRouter(
       element: <ProtectedRoute />,
       children: [
         { index: true, lazy: async () => ({ Component: (await import("./pages/account/AccountSettings")).default }) },
-      ],
+      ], 
     },
     {
       path: "/admin",
