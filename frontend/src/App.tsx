@@ -9,79 +9,54 @@ import { HostProvider } from "@/contexts/HostContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
-import Intro from "./pages/host/Intro";
-import Amenities from "./pages/host/Amenities";
-import Location from "./pages/host/Location";
-import Description from "./pages/host/Description";
-import TitlePage from "./pages/host/TitlePage";
-import PhotoUpload from "./pages/host/PhotoUpload";
-import Pricing from "./pages/host/Pricing";
-import SafetyDetails from "./pages/host/SafetyDetails";
-import BookingSettings from "./pages/host/BookingSettings";
-import Preview from "./pages/host/Preview";
-import HostDashboard from "./pages/host/HostDashboard";
-import Reservations from "./pages/host/Reservations";
-import ListingEditor from "./pages/host/ListingEditor";
-import BedroomEditor from "./pages/host/BedroomEditor";
-import BathroomEditor from "./pages/host/BathroomEditor";
-import HostCalendar from "./pages/host/HostCalendar";
-import WebAuthLogin from "./pages/WebAuthLogin";
 import { ProtectedRoute } from "./components/ProtectedRoute";
-import AccountSettings from "./pages/account/AccountSettings";
-import ListingDetails from "./pages/ListingDetails";
-import SearchResults from "./pages/SearchResults";
-import Messages from "./pages/Messages";
-import AdminDashboard from "./pages/admin/AdminDashboard";
-import Wishlist from "./pages/Wishlist";
-import HostProfile from "./pages/HostProfile";
-import MyBookings from "./pages/MyBookings";
 
 const queryClient = new QueryClient();
 
 const router = createBrowserRouter(
   [
     { path: "/", Component: Dashboard },
-    { path: "/marketplace", Component: SearchResults },
-    { path: "/hosts/:id", Component: HostProfile },
-    { path: "/product/:id", Component: ListingDetails },
-    { path: "/messages", Component: Messages },
-    { path: "/bookings", element: <ProtectedRoute />, children: [{ index: true, Component: MyBookings }] },
-    { path: "/webauth-login", Component: WebAuthLogin },
-    { path: "/wishlist", Component: Wishlist },
+    { path: "/marketplace", lazy: async () => ({ Component: (await import("./pages/SearchResults")).default }) },
+    { path: "/hosts/:id", lazy: async () => ({ Component: (await import("./pages/HostProfile")).default }) },
+    { path: "/product/:id", lazy: async () => ({ Component: (await import("./pages/ListingDetails")).default }) },
+    { path: "/messages", lazy: async () => ({ Component: (await import("./pages/Messages")).default }) },
+    { path: "/bookings", element: <ProtectedRoute />, children: [{ index: true, lazy: async () => ({ Component: (await import("./pages/MyBookings")).default }) }] },
+    { path: "/webauth-login", lazy: async () => ({ Component: (await import("./pages/WebAuthLogin")).default }) },
+    { path: "/wishlist", lazy: async () => ({ Component: (await import("./pages/Wishlist")).default }) },
     {
       path: "/account",
       element: <ProtectedRoute />,
       children: [
-        { index: true, Component: AccountSettings },
+        { index: true, lazy: async () => ({ Component: (await import("./pages/account/AccountSettings")).default }) },
       ],
     },
     {
       path: "/admin",
       element: <ProtectedRoute />,
       children: [
-        { index: true, Component: AdminDashboard },
+        { index: true, lazy: async () => ({ Component: (await import("./pages/admin/AdminDashboard")).default }) },
       ],
     },
     {
       path: "/host",
       element: <ProtectedRoute />,
       children: [
-        { path: "intro", Component: Intro },
-        { path: "amenities", Component: Amenities },
-        { path: "location", Component: Location },
-        { path: "description", Component: Description },
-        { path: "title", Component: TitlePage },
-        { path: "photos", Component: PhotoUpload },
-        { path: "pricing", Component: Pricing },
-        { path: "safety", Component: SafetyDetails },
-        { path: "booking-settings", Component: BookingSettings },
-        { path: "preview", Component: Preview },
-        { path: "dashboard", Component: HostDashboard },
-        { path: "reservations", Component: Reservations },
-        { path: "calendar", Component: HostCalendar },
-        { path: "editor/:id/bedroom", Component: BedroomEditor },
-        { path: "editor/:id/bathroom", Component: BathroomEditor },
-        { path: "editor/:id", Component: ListingEditor },
+        { path: "intro", lazy: async () => ({ Component: (await import("./pages/host/Intro")).default }) },
+        { path: "amenities", lazy: async () => ({ Component: (await import("./pages/host/Amenities")).default }) },
+        { path: "location", lazy: async () => ({ Component: (await import("./pages/host/Location")).default }) },
+        { path: "description", lazy: async () => ({ Component: (await import("./pages/host/Description")).default }) },
+        { path: "title", lazy: async () => ({ Component: (await import("./pages/host/TitlePage")).default }) },
+        { path: "photos", lazy: async () => ({ Component: (await import("./pages/host/PhotoUpload")).default }) },
+        { path: "pricing", lazy: async () => ({ Component: (await import("./pages/host/Pricing")).default }) },
+        { path: "safety", lazy: async () => ({ Component: (await import("./pages/host/SafetyDetails")).default }) },
+        { path: "booking-settings", lazy: async () => ({ Component: (await import("./pages/host/BookingSettings")).default }) },
+        { path: "preview", lazy: async () => ({ Component: (await import("./pages/host/Preview")).default }) },
+        { path: "dashboard", lazy: async () => ({ Component: (await import("./pages/host/HostDashboard")).default }) },
+        { path: "reservations", lazy: async () => ({ Component: (await import("./pages/host/Reservations")).default }) },
+        { path: "calendar", lazy: async () => ({ Component: (await import("./pages/host/HostCalendar")).default }) },
+        { path: "editor/:id/bedroom", lazy: async () => ({ Component: (await import("./pages/host/BedroomEditor")).default }) },
+        { path: "editor/:id/bathroom", lazy: async () => ({ Component: (await import("./pages/host/BathroomEditor")).default }) },
+        { path: "editor/:id", lazy: async () => ({ Component: (await import("./pages/host/ListingEditor")).default }) },
       ],
     },
     { path: "*", Component: NotFound },

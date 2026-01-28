@@ -190,18 +190,20 @@ export const HostProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 const createResponse = await apiClient.post('/listings', {
                     property_type: draft.propertyType,
                 });
-                listingId = createResponse.data.listing.id;
+                listingId = createResponse.data?.id || createResponse.data?.listing?.id;
                 if (!listingId) {
                     throw new Error('Failed to create new listing.');
                 }
             }
 
-            await apiClient.put(`/listings/${listingId}`, payload);
-
+            const tasks: Promise<unknown>[] = [];
+            tasks.push(apiClient.put(`/listings/${listingId}`, payload));
             if (draft.amenities.length > 0) {
-                await apiClient.post(`/listings/${listingId}/amenities`, {
-                    amenities: draft.amenities,
-                });
+                tasks.push(
+                    apiClient.post(`/listings/${listingId}/amenities`, {
+                        amenities: draft.amenities,
+                    })
+                );
             }
             if (draft.photos.length > 0) {
                 const photoPayload = draft.photos.map((url, index) => ({
@@ -209,10 +211,13 @@ export const HostProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     is_cover: index === draft.coverPhotoIndex,
                     display_order: index,
                 }));
-                await apiClient.post(`/listings/${listingId}/photos`, {
-                    photos: photoPayload,
-                });
+                tasks.push(
+                    apiClient.post(`/listings/${listingId}/photos`, {
+                        photos: photoPayload,
+                    })
+                );
             }
+            await Promise.all(tasks);
 
             const updatedDraftState = {
                 ...draft,

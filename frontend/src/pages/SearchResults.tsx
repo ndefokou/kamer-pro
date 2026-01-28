@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useCallback } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -58,11 +58,22 @@ const SearchResults = () => {
     const checkout = searchParams.get("checkout");
     const guests = parseInt(searchParams.get("guests") || "0");
 
-    const { data: properties, isLoading } = useQuery<Product[]>({
+    const {
+        data,
+        isLoading,
+        fetchNextPage,
+        hasNextPage,
+        isFetchingNextPage,
+    } = useInfiniteQuery<Product[], Error>({
         queryKey: ["products", location, guests],
-        queryFn: () => getProducts({
+        initialPageParam: 0,
+        queryFn: ({ pageParam }) => getProducts({
+            search: location || undefined,
             guests: guests > 0 ? guests : undefined,
+            limit: 20,
+            offset: (pageParam as number) || 0,
         }),
+        getNextPageParam: (lastPage, allPages) => (lastPage.length === 20 ? allPages.length * 20 : undefined),
     });
 
     const { data: towns } = useQuery<TownCount[]>({
@@ -144,7 +155,7 @@ const SearchResults = () => {
     }, [preferredOrder, knownCities]);
 
     const filteredProperties = useMemo(() => {
-        if (!properties) return [] as Product[];
+        const properties = ((data?.pages?.flat() as Product[]) || []);
         const locNorm = normalizeCity(location);
         return properties.filter((p) => {
             // Filter by location (accent-insensitive + inference)
@@ -184,7 +195,7 @@ const SearchResults = () => {
 
             return true;
         });
-    }, [properties, location, guests, inferCity, preferredOrder, regions]);
+    }, [data?.pages, location, guests, inferCity, preferredOrder, regions]);
 
     const groupedByCity = useMemo(() => {
         const map = new Map<string, { name: string; items: Product[] }>();
@@ -377,7 +388,13 @@ const SearchResults = () => {
                         ))
                     )}
 
-                    {/* Pagination removed */}
+                    <div className="flex justify-center mt-6">
+                        {hasNextPage && (
+                            <Button onClick={() => fetchNextPage()} disabled={isFetchingNextPage} variant="outline">
+                                {isFetchingNextPage ? "Loading..." : "Load more"}
+                            </Button>
+                        )}
+                    </div>
                 </div>
 
                 {/* Map (Right) */}

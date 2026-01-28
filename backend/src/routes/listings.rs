@@ -2,6 +2,7 @@ use actix_web::{delete, get, post, put, web, HttpRequest, HttpResponse, Responde
 use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
 use uuid::Uuid;
+use std::collections::HashMap;
 
 // ============================================================================
 // Data Structures
@@ -38,6 +39,12 @@ pub struct Listing {
     pub cancellation_policy: Option<String>,
     pub getting_around: Option<String>,
     pub scenic_views: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct PageParams {
+    pub limit: Option<i64>,
+    pub offset: Option<i64>,
 }
 
 /// GET /api/listings/{id}/reviews - List reviews for a listing (with usernames)
@@ -162,35 +169,116 @@ pub async fn add_review(
     }
 }
 
-/// GET /api/listings/host/{id} - Get all published listings for a host
+/// GET /api/listings/host/{id} - Get host's published listings (paginated, lightweight)
 #[get("/host/{id}")]
 pub async fn get_host_listings(
     pool: web::Data<PgPool>,
     path: web::Path<i32>,
+    query: web::Query<PageParams>,
 ) -> impl Responder {
+    let started = std::time::Instant::now();
     let host_id = path.into_inner();
 
-    let rows = sqlx::query_as::<_, Listing>(
-        "SELECT * FROM listings WHERE status = 'published' AND host_id = $1 ORDER BY created_at DESC",
-    )
-    .bind(host_id)
-    .fetch_all(pool.get_ref())
-    .await;
+    let mut qb: sqlx::QueryBuilder<sqlx::Postgres> = sqlx::QueryBuilder::new(
+        "SELECT * FROM listings WHERE status = 'published' AND host_id = ",
+    );
+    qb.push_bind(host_id);
+    qb.push(" ORDER BY created_at DESC");
 
-    match rows {
-        Ok(listings) => {
-            let mut details = Vec::new();
-            for l in listings {
-                if let Ok(d) = get_listing_with_details(pool.get_ref(), &l.id).await {
-                    details.push(d);
-                }
-            }
-            HttpResponse::Ok().json(details)
-        }
-        Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
-            "error": format!("Database error: {}", e)
-        })),
+    let mut limit = query.limit.unwrap_or(20);
+    if limit < 1 { limit = 1; }
+    if limit > 100 { limit = 100; }
+    let offset = query.offset.unwrap_or(0).max(0);
+    qb.push(" LIMIT ");
+    qb.push_bind(limit);
+    if offset > 0 {
+        qb.push(" OFFSET ");
+        qb.push_bind(offset);
     }
+
+    let listings = match qb.build_query_as::<Listing>().fetch_all(pool.get_ref()).await {
+        Ok(rows) => rows,
+        Err(e) => {
+            return HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": format!("Database error: {}", e)
+            }));
+        }
+    };
+
+    if listings.is_empty() {
+        return HttpResponse::Ok().json(Vec::<ListingWithDetails>::new());
+    }
+
+    // Batch top photos per listing
+    let ids: Vec<String> = listings.iter().map(|l| l.id.clone()).collect();
+    let photo_rows = match sqlx::query_as::<_, ListingPhoto>(
+        r#"
+        WITH ranked AS (
+            SELECT id, listing_id, url, caption, room_type, is_cover, display_order, uploaded_at,
+                   ROW_NUMBER() OVER (PARTITION BY listing_id ORDER BY is_cover DESC, display_order, id) AS rn
+            FROM listing_photos
+            WHERE listing_id = ANY($1)
+        )
+        SELECT id, listing_id, url, caption, room_type, is_cover, display_order, uploaded_at
+        FROM ranked
+        WHERE rn <= 4
+        ORDER BY listing_id, rn
+        "#,
+    )
+    .bind(&ids)
+    .fetch_all(pool.get_ref())
+    .await
+    {
+        Ok(rows) => rows,
+        Err(e) => {
+            return HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": format!("Failed to load photos: {}", e)
+            }));
+        }
+    };
+
+    let mut photos_map: HashMap<String, Vec<ListingPhoto>> = HashMap::new();
+    for p in photo_rows.into_iter() {
+        photos_map.entry(p.listing_id.clone()).or_default().push(p);
+    }
+
+    // Fetch host profile once
+    let profile_row = sqlx::query("SELECT phone, avatar FROM user_profiles WHERE user_id = $1")
+        .bind(host_id)
+        .fetch_optional(pool.get_ref())
+        .await
+        .ok()
+        .flatten();
+    let (contact_phone, host_avatar): (Option<String>, Option<String>) = if let Some(row) = profile_row {
+        (sqlx::Row::get(&row, "phone"), sqlx::Row::get(&row, "avatar"))
+    } else {
+        (None, None)
+    };
+
+    let mut out: Vec<ListingWithDetails> = Vec::with_capacity(listings.len());
+    for l in listings {
+        let sid = l.id.clone();
+        let safety_items: Vec<String> = l
+            .safety_devices
+            .as_ref()
+            .and_then(|s| serde_json::from_str(s).ok())
+            .unwrap_or_default();
+        out.push(ListingWithDetails {
+            listing: l,
+            amenities: Vec::new(),
+            photos: photos_map.remove(&sid).unwrap_or_default(),
+            videos: Vec::new(),
+            safety_items,
+            unavailable_dates: Vec::new(),
+            contact_phone: contact_phone.clone(),
+            host_avatar: host_avatar.clone(),
+            host_username: None,
+        });
+    }
+
+    let resp = HttpResponse::Ok().json(out);
+    log::info!("get_host_listings latency_ms={}", started.elapsed().as_millis());
+    resp
 }
 
 #[derive(Debug, Serialize, Deserialize, sqlx::FromRow)]
@@ -209,6 +297,7 @@ pub struct ListingWithDetails {
     pub unavailable_dates: Vec<UnavailableDateRange>,
     pub contact_phone: Option<String>,
     pub host_avatar: Option<String>,
+    pub host_username: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, sqlx::FromRow)]
@@ -322,6 +411,8 @@ pub struct ListingFilters {
     pub min_price: Option<f64>,
     pub max_price: Option<f64>,
     pub guests: Option<i32>,
+    pub limit: Option<i64>,
+    pub offset: Option<i64>,
 }
 
 #[derive(Debug, Serialize, Deserialize, sqlx::FromRow)]
@@ -392,66 +483,58 @@ async fn get_listing_with_details(
         .fetch_one(pool)
         .await?;
 
-    // Get amenities
-    let amenities =
-        sqlx::query_as::<_, ListingAmenity>("SELECT * FROM listing_amenities WHERE listing_id = $1")
-            .bind(listing_id)
-            .fetch_all(pool)
-            .await?
-            .into_iter()
-            .map(|a| a.amenity_type)
-            .collect();
+    // Run sub-queries in parallel to minimize total latency
+    let amenities_fut = sqlx::query_as::<_, ListingAmenity>(
+        "SELECT * FROM listing_amenities WHERE listing_id = $1",
+    )
+    .bind(listing_id)
+    .fetch_all(pool);
 
-    // Get photos
-    let photos = sqlx::query_as::<_, ListingPhoto>(
+    let photos_fut = sqlx::query_as::<_, ListingPhoto>(
         "SELECT * FROM listing_photos WHERE listing_id = $1 ORDER BY display_order, id",
     )
     .bind(listing_id)
-    .fetch_all(pool)
-    .await?;
+    .fetch_all(pool);
 
-    // Get videos
-    let videos =
-        sqlx::query_as::<_, ListingVideo>("SELECT * FROM listing_videos WHERE listing_id = $1")
-            .bind(listing_id)
-            .fetch_all(pool)
-            .await?;
-
-    // Get unavailable dates from confirmed bookings
-    let mut unavailable_dates = sqlx::query_as::<_, UnavailableDateRange>(
-        "SELECT check_in, check_out FROM bookings WHERE listing_id = $1 AND status = 'confirmed' AND check_out >= CURRENT_DATE"
+    let videos_fut = sqlx::query_as::<_, ListingVideo>(
+        "SELECT * FROM listing_videos WHERE listing_id = $1",
     )
     .bind(listing_id)
-    .fetch_all(pool)
-    .await?;
+    .fetch_all(pool);
 
-    // Include host-blocked dates (calendar_pricing.is_available = false) as single-day ranges [date, date+1]
-    let blocked_dates = sqlx::query_as::<_, UnavailableDateRange>(
-        "SELECT date AS check_in, (date + INTERVAL '1 day') AS check_out FROM calendar_pricing WHERE listing_id = $1 AND is_available = FALSE AND date >= CURRENT_DATE"
+    let unavailable_fut = sqlx::query_as::<_, UnavailableDateRange>(
+        r#"
+        SELECT check_in, check_out
+        FROM bookings
+        WHERE listing_id = $1 AND status = 'confirmed' AND check_out >= CURRENT_DATE
+        UNION ALL
+        SELECT date AS check_in, (date + INTERVAL '1 day')::date AS check_out
+        FROM calendar_pricing
+        WHERE listing_id = $1 AND is_available = FALSE AND date >= CURRENT_DATE
+        "#,
     )
     .bind(listing_id)
-    .fetch_all(pool)
-    .await?;
+    .fetch_all(pool);
 
-    unavailable_dates.extend(blocked_dates);
-
-    // Get host contact phone (from user_profiles)
-    let contact_phone: Option<String> = sqlx::query_scalar(
-        "SELECT phone FROM user_profiles WHERE user_id = $1",
+    let profile_fut = sqlx::query(
+        "SELECT u.username as username, p.phone as phone, p.avatar as avatar FROM users u LEFT JOIN user_profiles p ON p.user_id = u.id WHERE u.id = $1",
     )
     .bind(listing.host_id)
-    .fetch_optional(pool)
-    .await?
-    .flatten();
+    .fetch_optional(pool);
 
-    // Get host avatar (from user_profiles)
-    let host_avatar: Option<String> = sqlx::query_scalar(
-        "SELECT avatar FROM user_profiles WHERE user_id = $1",
-    )
-    .bind(listing.host_id)
-    .fetch_optional(pool)
-    .await?
-    .flatten();
+    let (amenities_rows, photos, videos, unavailable_dates, profile_row) =
+        tokio::try_join!(amenities_fut, photos_fut, videos_fut, unavailable_fut, profile_fut)?;
+
+    let amenities: Vec<String> = amenities_rows.into_iter().map(|a| a.amenity_type).collect();
+    let (host_username, contact_phone, host_avatar): (Option<String>, Option<String>, Option<String>) = if let Some(row) = profile_row {
+        (
+            sqlx::Row::get(&row, "username"),
+            sqlx::Row::get(&row, "phone"),
+            sqlx::Row::get(&row, "avatar"),
+        )
+    } else {
+        (None, None, None)
+    };
 
     // Parse safety items
     let safety_items: Vec<String> = listing
@@ -469,54 +552,36 @@ async fn get_listing_with_details(
         unavailable_dates,
         contact_phone,
         host_avatar,
+        host_username,
     })
 }
 
-fn validate_listing_for_publish(listing: &ListingWithDetails) -> Result<(), String> {
-    // Title validation - relaxed to 5 characters
-    if listing.listing.title.is_none() || listing.listing.title.as_ref().unwrap().trim().len() < 5 {
-        let title_len = listing.listing.title.as_ref().map(|t| t.len()).unwrap_or(0);
+fn validate_listing_for_publish(listing: &Listing) -> Result<(), String> {
+    if listing.title.is_none() || listing.title.as_ref().unwrap().trim().len() < 5 {
+        let title_len = listing.title.as_ref().map(|t| t.len()).unwrap_or(0);
         log::warn!("Title validation failed: length = {}", title_len);
         return Err("Title must be at least 5 characters".to_string());
     }
 
-    // Description validation - relaxed to 20 characters
-    if listing.listing.description.is_none()
-        || listing.listing.description.as_ref().unwrap().trim().len() < 20
+    if listing.description.is_none()
+        || listing.description.as_ref().unwrap().trim().len() < 20
     {
-        let desc_len = listing
-            .listing
-            .description
-            .as_ref()
-            .map(|d| d.len())
-            .unwrap_or(0);
+        let desc_len = listing.description.as_ref().map(|d| d.len()).unwrap_or(0);
         log::warn!("Description validation failed: length = {}", desc_len);
         return Err("Description must be at least 20 characters".to_string());
     }
 
-    // Price validation
-    if listing.listing.price_per_night.is_none() || listing.listing.price_per_night.unwrap() <= 0.0
-    {
-        log::warn!(
-            "Price validation failed: {:?}",
-            listing.listing.price_per_night
-        );
+    if listing.price_per_night.is_none() || listing.price_per_night.unwrap() <= 0.0 {
+        log::warn!("Price validation failed: {:?}", listing.price_per_night);
         return Err("Price per night must be greater than 0".to_string());
     }
 
-    // Max guests validation
-    if listing.listing.max_guests.is_none() || listing.listing.max_guests.unwrap() < 1 {
-        log::warn!(
-            "Max guests validation failed: {:?}",
-            listing.listing.max_guests
-        );
+    if listing.max_guests.is_none() || listing.max_guests.unwrap() < 1 {
+        log::warn!("Max guests validation failed: {:?}", listing.max_guests);
         return Err("Max guests must be at least 1".to_string());
     }
 
-    log::info!(
-        "Listing validation passed for listing {}",
-        listing.listing.id
-    );
+    log::info!("Listing validation passed for listing {}", listing.id);
     Ok(())
 }
 
@@ -531,6 +596,7 @@ pub async fn create_listing(
     req: HttpRequest,
     body: web::Json<CreateListingRequest>,
 ) -> impl Responder {
+    let started = std::time::Instant::now();
     let user_id = match extract_user_id(&req) {
         Ok(id) => id,
         Err(response) => return response,
@@ -589,29 +655,26 @@ pub async fn create_listing(
     .execute(pool.get_ref())
     .await;
 
-    match result {
+    let resp = match result {
         Ok(_) => {
-            log::debug!("Listing created successfully, fetching details...");
-            match get_listing_with_details(pool.get_ref(), &listing_id).await {
-                Ok(listing) => {
-                    log::debug!("Listing details fetched successfully");
-                    HttpResponse::Ok().json(listing)
-                }
-                Err(e) => {
-                    log::error!("Failed to fetch created listing: {:?}", e);
-                    HttpResponse::InternalServerError().json(serde_json::json!({
-                        "error": format!("Failed to fetch created listing: {}", e)
-                    }))
-                }
-            }
+            log::debug!("Listing created successfully, returning minimal payload");
+            let r = HttpResponse::Ok().json(serde_json::json!({
+                "id": listing_id,
+                "status": "draft",
+                "host_id": user_id,
+            }));
+            r
         }
         Err(e) => {
             log::error!("Failed to create listing: {:?}", e);
-            HttpResponse::InternalServerError().json(serde_json::json!({
+            let r = HttpResponse::InternalServerError().json(serde_json::json!({
                 "error": format!("Failed to create listing: {}", e)
-            }))
+            }));
+            r
         }
-    }
+    };
+    log::info!("create_listing latency_ms={}", started.elapsed().as_millis());
+    resp
 }
 
 /// GET /api/listings/:id - Get listing details
@@ -638,6 +701,7 @@ pub async fn update_listing(
     path: web::Path<String>,
     body: web::Json<UpdateListingRequest>,
 ) -> impl Responder {
+    let started = std::time::Instant::now();
     let user_id = match extract_user_id(&req) {
         Ok(id) => id,
         Err(response) => return response,
@@ -756,17 +820,17 @@ pub async fn update_listing(
             query_builder.push(" WHERE id = ");
             query_builder.push_bind(&listing_id);
 
-            match query_builder.build().execute(pool.get_ref()).await {
-                Ok(_) => match get_listing_with_details(pool.get_ref(), &listing_id).await {
-                    Ok(listing) => HttpResponse::Ok().json(listing),
-                    Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
-                        "error": format!("Failed to fetch updated listing: {}", e)
-                    })),
-                },
+            let result = match query_builder.build().execute(pool.get_ref()).await {
+                Ok(_) => HttpResponse::Ok().json(serde_json::json!({
+                    "id": listing_id,
+                    "updated": true
+                })),
                 Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
                     "error": format!("Failed to update listing: {}", e)
                 })),
-            }
+            };
+            log::info!("update_listing latency_ms={}", started.elapsed().as_millis());
+            result
         }
         Ok(Some(_)) => HttpResponse::Forbidden().json(serde_json::json!({
             "error": "You don't have permission to update this listing"
@@ -827,36 +891,118 @@ pub async fn delete_listing(
     }
 }
 
-/// GET /api/listings/my-listings - Get host's listings
+/// GET /api/listings/my-listings - Get my listings (paginated, lightweight)
 #[get("/my-listings")]
-pub async fn get_my_listings(pool: web::Data<PgPool>, req: HttpRequest) -> impl Responder {
+pub async fn get_my_listings(
+    pool: web::Data<PgPool>,
+    req: HttpRequest,
+    query: web::Query<PageParams>,
+) -> impl Responder {
     let user_id = match extract_user_id(&req) {
         Ok(id) => id,
         Err(response) => return response,
     };
+    let started = std::time::Instant::now();
+    let mut qb: sqlx::QueryBuilder<sqlx::Postgres> = sqlx::QueryBuilder::new(
+        "SELECT * FROM listings WHERE host_id = ",
+    );
+    qb.push_bind(user_id);
+    qb.push(" ORDER BY created_at DESC");
 
-    let result = sqlx::query_as::<_, Listing>(
-        "SELECT * FROM listings WHERE host_id = $1 ORDER BY created_at DESC",
-    )
-    .bind(&user_id)
-    .fetch_all(pool.get_ref())
-    .await;
-
-    match result {
-        Ok(listings) => {
-            // Get details for each listing
-            let mut listings_with_details = Vec::new();
-            for listing in listings {
-                if let Ok(details) = get_listing_with_details(pool.get_ref(), &listing.id).await {
-                    listings_with_details.push(details);
-                }
-            }
-            HttpResponse::Ok().json(listings_with_details)
-        }
-        Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
-            "error": format!("Database error: {}", e)
-        })),
+    let mut limit = query.limit.unwrap_or(50);
+    if limit < 1 { limit = 1; }
+    if limit > 200 { limit = 200; }
+    let offset = query.offset.unwrap_or(0).max(0);
+    qb.push(" LIMIT ");
+    qb.push_bind(limit);
+    if offset > 0 {
+        qb.push(" OFFSET ");
+        qb.push_bind(offset);
     }
+
+    let listings = match qb.build_query_as::<Listing>().fetch_all(pool.get_ref()).await {
+        Ok(rows) => rows,
+        Err(e) => {
+            return HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": format!("Database error: {}", e)
+            }));
+        }
+    };
+
+    if listings.is_empty() {
+        return HttpResponse::Ok().json(Vec::<ListingWithDetails>::new());
+    }
+
+    // Batch top photos per listing
+    let ids: Vec<String> = listings.iter().map(|l| l.id.clone()).collect();
+    let photo_rows = match sqlx::query_as::<_, ListingPhoto>(
+        r#"
+        WITH ranked AS (
+            SELECT id, listing_id, url, caption, room_type, is_cover, display_order, uploaded_at,
+                   ROW_NUMBER() OVER (PARTITION BY listing_id ORDER BY is_cover DESC, display_order, id) AS rn
+            FROM listing_photos
+            WHERE listing_id = ANY($1)
+        )
+        SELECT id, listing_id, url, caption, room_type, is_cover, display_order, uploaded_at
+        FROM ranked
+        WHERE rn <= 4
+        ORDER BY listing_id, rn
+        "#,
+    )
+    .bind(&ids)
+    .fetch_all(pool.get_ref())
+    .await
+    {
+        Ok(rows) => rows,
+        Err(e) => {
+            return HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": format!("Failed to load photos: {}", e)
+            }));
+        }
+    };
+
+    let mut photos_map: HashMap<String, Vec<ListingPhoto>> = HashMap::new();
+    for p in photo_rows.into_iter() {
+        photos_map.entry(p.listing_id.clone()).or_default().push(p);
+    }
+
+    // Fetch host profile once
+    let profile_row = sqlx::query("SELECT phone, avatar FROM user_profiles WHERE user_id = $1")
+        .bind(user_id)
+        .fetch_optional(pool.get_ref())
+        .await
+        .ok()
+        .flatten();
+    let (contact_phone, host_avatar): (Option<String>, Option<String>) = if let Some(row) = profile_row {
+        (sqlx::Row::get(&row, "phone"), sqlx::Row::get(&row, "avatar"))
+    } else {
+        (None, None)
+    };
+
+    let mut out: Vec<ListingWithDetails> = Vec::with_capacity(listings.len());
+    for l in listings {
+        let sid = l.id.clone();
+        let safety_items: Vec<String> = l
+            .safety_devices
+            .as_ref()
+            .and_then(|s| serde_json::from_str(s).ok())
+            .unwrap_or_default();
+        out.push(ListingWithDetails {
+            listing: l,
+            amenities: Vec::new(),
+            photos: photos_map.remove(&sid).unwrap_or_default(),
+            videos: Vec::new(),
+            safety_items,
+            unavailable_dates: Vec::new(),
+            contact_phone: contact_phone.clone(),
+            host_avatar: host_avatar.clone(),
+            host_username: None,
+        });
+    }
+
+    let resp = HttpResponse::Ok().json(out);
+    log::info!("get_my_listings latency_ms={}", started.elapsed().as_millis());
+    resp
 }
 
 /// POST /api/listings/:id/publish - Publish listing
@@ -866,6 +1012,7 @@ pub async fn publish_listing(
     req: HttpRequest,
     path: web::Path<String>,
 ) -> impl Responder {
+    let started = std::time::Instant::now();
     let user_id = match extract_user_id(&req) {
         Ok(id) => id,
         Err(response) => return response,
@@ -883,61 +1030,52 @@ pub async fn publish_listing(
     match owner_check {
         Ok(Some(host_id)) if host_id == user_id => {
             log::info!("Ownership verified for listing {}", listing_id);
-            
-            // Get listing with details for validation
-            match get_listing_with_details(pool.get_ref(), &listing_id).await {
-                Ok(listing) => {
-                    log::info!("Fetched listing details for validation");
-                    
-                    // Validate listing
-                    if let Err(error) = validate_listing_for_publish(&listing) {
-                        log::warn!("Validation failed for listing {}: {}", listing_id, error);
-                        return HttpResponse::BadRequest().json(serde_json::json!({
-                            "error": error
-                        }));
-                    }
 
-                    log::info!("Validation passed, updating listing status");
-                    
-                    // Publish listing
-                    match sqlx::query(
-                        "UPDATE listings SET status = 'published', published_at = CURRENT_TIMESTAMP WHERE id = $1"
-                    )
-                    .bind(&listing_id)
-                    .execute(pool.get_ref())
-                    .await
-                    {
-                        Ok(_) => {
-                            log::info!("Successfully updated listing status to published");
-                            
-                            match get_listing_with_details(pool.get_ref(), &listing_id).await {
-                                Ok(updated_listing) => {
-                                    log::info!("Successfully fetched updated listing, returning response");
-                                    HttpResponse::Ok().json(updated_listing)
-                                },
-                                Err(e) => {
-                                    log::error!("Failed to fetch published listing: {:?}", e);
-                                    HttpResponse::InternalServerError().json(serde_json::json!({
-                                        "error": format!("Failed to fetch published listing: {}", e)
-                                    }))
-                                },
-                            }
-                        }
-                        Err(e) => {
-                            log::error!("Failed to update listing status: {:?}", e);
-                            HttpResponse::InternalServerError().json(serde_json::json!({
-                                "error": format!("Failed to publish listing: {}", e)
-                            }))
-                        },
-                    }
-                }
+            let listing_row = match sqlx::query_as::<_, Listing>("SELECT * FROM listings WHERE id = $1")
+                .bind(&listing_id)
+                .fetch_one(pool.get_ref())
+                .await
+            {
+                Ok(l) => l,
                 Err(e) => {
                     log::error!("Failed to fetch listing for validation: {:?}", e);
-                    HttpResponse::InternalServerError().json(serde_json::json!({
+                    return HttpResponse::InternalServerError().json(serde_json::json!({
                         "error": format!("Failed to fetch listing: {}", e)
-                    }))
+                    }));
                 }
+            };
+
+            if let Err(error) = validate_listing_for_publish(&listing_row) {
+                log::warn!("Validation failed for listing {}: {}", listing_id, error);
+                return HttpResponse::BadRequest().json(serde_json::json!({
+                    "error": error
+                }));
             }
+
+            let result = match sqlx::query(
+                "UPDATE listings SET status = 'published', published_at = CURRENT_TIMESTAMP WHERE id = $1"
+            )
+            .bind(&listing_id)
+            .execute(pool.get_ref())
+            .await
+            {
+                Ok(_) => {
+                    let r = HttpResponse::Ok().json(serde_json::json!({
+                        "id": listing_id,
+                        "status": "published"
+                    }));
+                    r
+                }
+                Err(e) => {
+                    log::error!("Failed to update listing status: {:?}", e);
+                    let r = HttpResponse::InternalServerError().json(serde_json::json!({
+                        "error": format!("Failed to publish listing: {}", e)
+                    }));
+                    r
+                }
+            };
+            log::info!("publish_listing latency_ms={}", started.elapsed().as_millis());
+            result
         }
         Ok(Some(_)) => {
             log::warn!("User {} does not own listing {}", user_id, listing_id);
@@ -1218,24 +1356,25 @@ pub async fn add_video(
     }
 }
 
-/// GET /api/listings - Get all published listings (for marketplace)
+/// GET /api/listings - Get published listings (paginated, lightweight)
 #[get("")]
 pub async fn get_all_listings(
     pool: web::Data<PgPool>,
     query: web::Query<ListingFilters>,
 ) -> impl Responder {
+    let started = std::time::Instant::now();
     let mut query_builder: sqlx::QueryBuilder<sqlx::Postgres> =
         sqlx::QueryBuilder::new("SELECT * FROM listings WHERE status = 'published'");
 
     if let Some(ref search) = query.search {
         let pattern = format!("%{}%", search);
-        query_builder.push(" AND (title LIKE ");
+        query_builder.push(" AND (title ILIKE ");
         query_builder.push_bind(pattern.clone());
-        query_builder.push(" OR description LIKE ");
+        query_builder.push(" OR description ILIKE ");
         query_builder.push_bind(pattern.clone());
-        query_builder.push(" OR city LIKE ");
+        query_builder.push(" OR city ILIKE ");
         query_builder.push_bind(pattern.clone());
-        query_builder.push(" OR country LIKE ");
+        query_builder.push(" OR country ILIKE ");
         query_builder.push_bind(pattern);
         query_builder.push(")");
     }
@@ -1247,11 +1386,11 @@ pub async fn get_all_listings(
 
     if let Some(ref location) = query.location {
         let pattern = format!("%{}%", location);
-        query_builder.push(" AND (city LIKE ");
+        query_builder.push(" AND (city ILIKE ");
         query_builder.push_bind(pattern.clone());
-        query_builder.push(" OR country LIKE ");
+        query_builder.push(" OR country ILIKE ");
         query_builder.push_bind(pattern.clone());
-        query_builder.push(" OR address LIKE ");
+        query_builder.push(" OR address ILIKE ");
         query_builder.push_bind(pattern);
         query_builder.push(")");
     }
@@ -1273,23 +1412,91 @@ pub async fn get_all_listings(
 
     query_builder.push(" ORDER BY created_at DESC");
 
-    let result = query_builder
+    // Pagination: default limit=20, offset=0, and clamp bounds
+    let mut limit = query.limit.unwrap_or(20);
+    if limit < 1 { limit = 1; }
+    if limit > 100 { limit = 100; }
+    let offset = query.offset.unwrap_or(0).max(0);
+
+    query_builder.push(" LIMIT ");
+    query_builder.push_bind(limit);
+    if offset > 0 {
+        query_builder.push(" OFFSET ");
+        query_builder.push_bind(offset);
+    }
+
+    let listings_res = query_builder
         .build_query_as::<Listing>()
         .fetch_all(pool.get_ref())
         .await;
 
-    match result {
-        Ok(listings) => {
-            let mut listings_with_details = Vec::new();
-            for listing in listings {
-                if let Ok(details) = get_listing_with_details(pool.get_ref(), &listing.id).await {
-                    listings_with_details.push(details);
-                }
-            }
-            HttpResponse::Ok().json(listings_with_details)
+    let listings = match listings_res {
+        Ok(rows) => rows,
+        Err(e) => {
+            return HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": format!("Database error: {}", e)
+            }));
         }
-        Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
-            "error": format!("Database error: {}", e)
-        })),
+    };
+
+    if listings.is_empty() {
+        return HttpResponse::Ok().json(Vec::<ListingWithDetails>::new());
     }
+
+    // Batch-load up to 4 photos per listing (cover first) to avoid N+1
+    let ids: Vec<String> = listings.iter().map(|l| l.id.clone()).collect();
+    let photo_rows = match sqlx::query_as::<_, ListingPhoto>(
+        r#"
+        WITH ranked AS (
+            SELECT id, listing_id, url, caption, room_type, is_cover, display_order, uploaded_at,
+                   ROW_NUMBER() OVER (PARTITION BY listing_id ORDER BY is_cover DESC, display_order, id) AS rn
+            FROM listing_photos
+            WHERE listing_id = ANY($1)
+        )
+        SELECT id, listing_id, url, caption, room_type, is_cover, display_order, uploaded_at
+        FROM ranked
+        WHERE rn <= 4
+        ORDER BY listing_id, rn
+        "#,
+    )
+    .bind(&ids)
+    .fetch_all(pool.get_ref())
+    .await
+    {
+        Ok(rows) => rows,
+        Err(e) => {
+            return HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": format!("Failed to load photos: {}", e)
+            }));
+        }
+    };
+
+    let mut photos_map: HashMap<String, Vec<ListingPhoto>> = HashMap::new();
+    for p in photo_rows.into_iter() {
+        photos_map.entry(p.listing_id.clone()).or_default().push(p);
+    }
+
+    let mut out: Vec<ListingWithDetails> = Vec::with_capacity(listings.len());
+    for listing in listings {
+        let listing_id_for_map = listing.id.clone();
+        let safety_items: Vec<String> = listing
+            .safety_devices
+            .as_ref()
+            .and_then(|s| serde_json::from_str(s).ok())
+            .unwrap_or_default();
+
+        out.push(ListingWithDetails {
+            listing,
+            amenities: Vec::new(),
+            photos: photos_map.remove(&listing_id_for_map).unwrap_or_default(),
+            videos: Vec::new(),
+            safety_items,
+            unavailable_dates: Vec::new(),
+            contact_phone: None,
+            host_avatar: None,
+            host_username: None,
+        });
+    }
+
+    HttpResponse::Ok().json(out)
 }

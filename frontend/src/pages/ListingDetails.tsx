@@ -1,7 +1,7 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { getListing, createBooking, getUserById, getListingReviews, addListingReview, ListingReview } from '@/api/client';
+import { getListing, createBooking, getListingReviews, addListingReview, ListingReview } from '@/api/client';
 import { Button } from '@/components/ui/button';
 import { Loader2, Share, Heart, Star, Minus, Plus, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { getImageUrl, formatPrice } from '@/lib/utils';
@@ -67,11 +67,6 @@ const ListingDetails: React.FC = () => {
         enabled: !!id,
     });
 
-    const hostQuery = useQuery({
-        queryKey: ['account-user', product?.listing?.host_id],
-        queryFn: () => getUserById(product?.listing?.host_id as number),
-        enabled: !!product?.listing?.host_id,
-    });
 
     const [checkInDate, setCheckInDate] = React.useState<Date | null>(null);
     const [checkOutDate, setCheckOutDate] = React.useState<Date | null>(null);
@@ -198,14 +193,8 @@ const ListingDetails: React.FC = () => {
     }
 
     const { listing, amenities } = product;
-    const profile = hostQuery.data?.profile;
-    const userAccount = hostQuery.data?.user;
-    const hostName =
-        (profile?.preferred_first_name && profile.preferred_first_name.trim()) ||
-        (profile?.legal_name && profile.legal_name.trim()) ||
-        (userAccount?.username || '').trim() ||
-        'Host';
-    const hostAvatar = profile?.avatar ?? localStorage.getItem('host_avatar') ?? undefined;
+    const hostName = (product.host_username || '').trim() || 'Host';
+    const hostAvatar = product.host_avatar ?? localStorage.getItem('host_avatar') ?? undefined;
     const totalGuests = adults + children;
     const isHost = Number(localStorage.getItem('userId')) === listing.host_id;
     const currentUserId = Number(localStorage.getItem('userId') || '') || null;

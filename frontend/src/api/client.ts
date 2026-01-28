@@ -81,6 +81,7 @@ export interface Product {
   };
   amenities: string[];
   host_avatar?: string | null;
+  host_username?: string | null;
   photos: {
     id: number;
     listing_id: string;
@@ -115,6 +116,8 @@ export interface ProductFilters {
   max_price?: string;
   guests?: number;
   date?: string;
+  limit?: number;
+  offset?: number;
 }
 
 export const getProducts = async (filters: ProductFilters): Promise<Product[]> => {
@@ -131,6 +134,8 @@ export const getProducts = async (filters: ProductFilters): Promise<Product[]> =
   if (params.max_price) queryParams.max_price = params.max_price;
   if (params.guests) queryParams.guests = params.guests;
   if (params.date) queryParams.date = params.date;
+  if (typeof params.limit === 'number') queryParams.limit = params.limit;
+  if (typeof params.offset === 'number') queryParams.offset = params.offset;
 
   const response = await apiClient.get("/listings", { params: queryParams });
   return response.data;

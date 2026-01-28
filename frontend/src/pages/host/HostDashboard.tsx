@@ -59,30 +59,34 @@ const HostDashboard: React.FC = () => {
     const initials = getInitials(username || 'User');
 
     useEffect(() => {
+        let active = true;
         const fetchListings = async () => {
             try {
-                const response = await apiClient.get('/listings/my-listings');
+                setLoading(true);
+                const response = await apiClient.get('/listings/my-listings', { params: { limit: 20 } });
+                if (!active) return;
                 setListings(response.data);
                 if (response.data.length > 0) {
                     setSelectedListing(response.data[0].listing.id);
                 }
             } catch (error) {
+                if (!active) return;
                 console.error('Failed to fetch listings:', error);
             } finally {
-                setLoading(false);
+                if (active) setLoading(false);
             }
         };
 
         // Wait for auth to resolve to avoid calling without a session
         if (!user) {
-            // If not logged in, show empty state quickly
-            if (loading === false) setLoading(false);
+            setListings([]);
+            setLoading(false);
             return;
         }
 
         fetchListings();
-        // Re-run when user changes (e.g., after login)
-    }, [user, loading]);
+        return () => { active = false; };
+    }, [user]);
 
     const handleCreateListing = () => {
         if (user) {

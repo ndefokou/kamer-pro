@@ -10,11 +10,11 @@ use sqlx::PgPool;
 pub struct CalendarPricing {
     pub id: i32,
     pub listing_id: String,
-    pub date: String,
+    pub date: chrono::NaiveDate,
     pub price: f64,
-    pub is_available: i32,
-    pub created_at: Option<String>,
-    pub updated_at: Option<String>,
+    pub is_available: bool,
+    pub created_at: Option<chrono::NaiveDateTime>,
+    pub updated_at: Option<chrono::NaiveDateTime>,
 }
 
 #[derive(Debug, Serialize, Deserialize, sqlx::FromRow)]
@@ -23,7 +23,7 @@ pub struct ListingSettings {
     pub listing_id: String,
     pub base_price: Option<f64>,
     pub weekend_price: Option<f64>,
-    pub smart_pricing_enabled: i32,
+    pub smart_pricing_enabled: bool,
     pub weekly_discount: f64,
     pub monthly_discount: f64,
     pub min_nights: i32,
@@ -32,8 +32,8 @@ pub struct ListingSettings {
     pub same_day_cutoff_time: String,
     pub preparation_time: String,
     pub availability_window: i32,
-    pub created_at: Option<String>,
-    pub updated_at: Option<String>,
+    pub created_at: Option<chrono::NaiveDateTime>,
+    pub updated_at: Option<chrono::NaiveDateTime>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -201,15 +201,7 @@ pub async fn update_calendar_dates(
     .flatten();
 
     let price = body.price.or(base_price).unwrap_or(0.0);
-    let is_available = if let Some(avail) = body.is_available {
-        if avail {
-            1
-        } else {
-            0
-        }
-    } else {
-        1
-    };
+    let is_available: bool = body.is_available.unwrap_or(true);
 
     // Update or insert pricing for each date
     for date in &body.dates {
@@ -344,7 +336,7 @@ pub async fn update_settings(
     }
     if let Some(smart_pricing) = body.smart_pricing_enabled {
         query_builder.push(", smart_pricing_enabled = ");
-        query_builder.push_bind(if smart_pricing { 1 } else { 0 });
+        query_builder.push_bind(smart_pricing);
     }
     if let Some(weekly_discount) = body.weekly_discount {
         query_builder.push(", weekly_discount = ");

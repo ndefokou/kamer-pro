@@ -1,19 +1,25 @@
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { getProducts, Product, getTowns, TownCount } from "@/api/client";
 import PropertyCard from "@/components/PropertyCard";
 import MbokoSearch from "@/components/Search";
 import HorizontalPropertySection from "@/components/HorizontalPropertySection";
 import { getImageUrl } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
 
 const Index = () => {
   const {
-    data: products,
+    data,
     isLoading,
     error,
-  } = useQuery<Product[]>({
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery<Product[], Error>({
     queryKey: ["products"],
-    queryFn: () => getProducts({}),
+    initialPageParam: 0,
+    queryFn: ({ pageParam }) => getProducts({ limit: 20, offset: (pageParam as number) || 0 }),
+    getNextPageParam: (lastPage, allPages) => (lastPage.length === 20 ? allPages.length * 20 : undefined),
   });
 
   const { data: towns } = useQuery<TownCount[]>({
@@ -31,9 +37,11 @@ const Index = () => {
     return <div>Error loading products</div>;
   }
 
-  const popularListings = products?.slice(0, 5) || [];
-  const nextMonthListings = products?.slice(5, 10) || [];
-  const nearbyListings = products?.slice(10, 15) || [];
+  const firstPage = (data?.pages?.[0] as Product[]) || [];
+  const allProducts = ((data?.pages?.flat() as Product[]) || []);
+  const popularListings = firstPage.slice(0, 5);
+  const nextMonthListings = firstPage.slice(5, 10);
+  const nearbyListings = firstPage.slice(10, 15);
 
   return (
     <div className="min-h-screen bg-background">
@@ -98,7 +106,7 @@ const Index = () => {
         {/* All Listings */}
         <section className="py-12">
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6">
-            {products?.map((product) => (
+            {allProducts.map((product) => (
               <PropertyCard
                 key={product.listing.id}
                 id={product.listing.id}
@@ -108,6 +116,13 @@ const Index = () => {
                 images={product.photos.map((photo) => ({ image_url: photo.url }))}
               />
             ))}
+          </div>
+          <div className="flex justify-center mt-6">
+            {hasNextPage && (
+              <Button onClick={() => fetchNextPage()} disabled={isFetchingNextPage} variant="outline">
+                {isFetchingNextPage ? "Loading..." : "Load more"}
+              </Button>
+            )}
           </div>
         </section>
       </div>

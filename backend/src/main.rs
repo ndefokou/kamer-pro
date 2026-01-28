@@ -1,9 +1,10 @@
 use actix_cors::Cors;
 use actix_files as fs;
-use actix_web::{web, App, HttpServer};
+use actix_web::{web, App, HttpServer, middleware::Compress};
 use dotenv::dotenv;
 use sqlx::postgres::PgPoolOptions;
 use std::env;
+use std::time::Duration;
 
 mod middleware;
 mod routes;
@@ -27,15 +28,30 @@ async fn main() -> std::io::Result<()> {
         println!("Created uploads directory");
     }
 
+    let max_conns: u32 = env::var("DATABASE_MAX_CONNECTIONS")
+        .ok()
+        .and_then(|v| v.parse::<u32>().ok())
+        .unwrap_or(1);
+
+    println!(
+        "Initializing database pool: max_connections={} (set DATABASE_MAX_CONNECTIONS to change)",
+        max_conns
+    );
+
     let pool = PgPoolOptions::new()
-        .max_connections(5)
+        .max_connections(max_conns)
+        .acquire_timeout(Duration::from_secs(10))
         .connect(&database_url)
         .await
         .expect("Failed to create pool.");
 
     // Run migrations
     println!("Running migrations...");
-    sqlx::migrate!("./migrations")
+    let mut migrator = sqlx::migrate::Migrator::new(std::path::Path::new("./migrations"))
+        .await
+        .expect("Failed to load migrations");
+    migrator.set_ignore_missing(true);
+    migrator
         .run(&pool)
         .await
         .expect("Failed to run migrations");
@@ -61,6 +77,7 @@ async fn main() -> std::io::Result<()> {
         let cors = Cors::permissive();
         App::new()
             .wrap(cors)
+            .wrap(Compress::default())
             .app_data(web::Data::new(pool.clone()))
             .app_data(web::Data::new(s3_storage.clone()))
             .service(
