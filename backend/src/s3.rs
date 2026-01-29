@@ -112,7 +112,6 @@ impl S3Storage {
             .ok_or_else(|| "Invalid file URL format".to_string())?;
 
         // API Endpoint: DELETE /storage/v1/object/{bucket}/{path}
-        // Note: DELETE typically takes only {bucket} in the path and the file path in JSON body
         // but Supabase API varies. Standard method is DELETE /storage/v1/object/{bucket} with ["path"] in body
         
         let url = format!(
