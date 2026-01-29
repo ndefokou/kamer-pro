@@ -441,7 +441,12 @@ export const declineBooking = async (bookingId: string, reason: string) => {
   return response.data;
 };
 
-export type BookingStatus = 'pending' | 'confirmed' | 'declined';
+export const cancelBooking = async (bookingId: string) => {
+  const response = await apiClient.post(`/bookings/${bookingId}/cancel`);
+  return response.data;
+};
+
+export type BookingStatus = 'pending' | 'confirmed' | 'declined' | 'cancelled';
 export interface BookingWithDetails {
   booking: {
     id: string;
