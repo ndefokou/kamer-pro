@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Upload, X, Star } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getImageUrl } from '@/lib/utils';
+import apiClient from '@/api/client';
 
 const PhotoUpload: React.FC = () => {
     const navigate = useNavigate();
@@ -31,14 +32,13 @@ const PhotoUpload: React.FC = () => {
         });
 
         try {
-            const response = await fetch('/api/upload/images', {
-                method: 'POST',
-                body: formData,
+            const response = await apiClient.post('/upload/images', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
             });
 
-            if (!response.ok) throw new Error('Upload failed');
-
-            const data = await response.json();
+            const data = response.data;
             const newPhotos = [...photos, ...data.urls];
             setPhotos(newPhotos);
 
