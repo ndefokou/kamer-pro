@@ -2,8 +2,16 @@ import axios from "axios";
 import { dbService } from "../services/dbService";
 import { networkService } from "../services/networkService";
 
+const getBaseUrl = () => {
+  const envUrl = import.meta.env.VITE_API_URL;
+  if (!envUrl) return "/api";
+  // Remove trailing slash if present to avoid double slashes
+  const cleanUrl = envUrl.replace(/\/$/, "");
+  return cleanUrl.endsWith("/api") ? cleanUrl : `${cleanUrl}/api`;
+};
+
 const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "/api",
+  baseURL: getBaseUrl(),
   withCredentials: true,
 });
 
