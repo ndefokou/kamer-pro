@@ -203,7 +203,7 @@ const Dashboard = () => {
         return (
             <div className="mb-12 group relative">
                 <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-2xl font-bold text-gray-900">{city && !isOther ? t('popularStaysIn', { city }) : title}</h2>
+                    <h2 className="text-2xl font-bold text-gray-900">{city && !isOther ? t('StaysIn', { city }) : title}</h2>
                     {city && (
                         <button
                             className="text-sm font-semibold hover:underline flex items-center gap-1"
@@ -288,7 +288,7 @@ const Dashboard = () => {
                             .map((g) => (
                                 <PropertySection
                                     key={g.name || Math.random()}
-                                    title={`Logements populaires · ${g.name}`}
+                                    title={`Logements  · ${g.name}`}
                                     properties={g.items}
                                     city={g.name}
                                 />
@@ -296,7 +296,7 @@ const Dashboard = () => {
                         {buea.length > 0 && (
                             <PropertySection
                                 key="buea-section"
-                                title={t('popularStaysIn', { city: 'Buea' })}
+                                title={t('StaysIn', { city: 'Buea' })}
                                 properties={buea}
                                 city="Buea"
                             />

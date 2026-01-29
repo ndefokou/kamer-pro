@@ -58,7 +58,7 @@
   "Stays in Yaoundé": "Logements à Yaoundé",
   "Stays in Kribi": "Logements à Kribi",
   "Other destinations": "Autres destinations",
-  "Popular stays": "Logements populaires",
+  " stays": "Logements ",
   "Available next month": "Disponibles le mois prochain",
   "Nearby stays": "Logements à proximité",
   "Guest favorite": "Coup de cœur voyageurs",
@@ -730,7 +730,7 @@
     }
   }
   ,
-  "popularStaysIn": "Logements populaires · {{city}}",
+  "StaysIn": "Logements  · {{city}}",
   "other Locations": "Autres destinations",
   "seeAll": "Voir tout"
 }

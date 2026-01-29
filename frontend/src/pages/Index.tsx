@@ -39,7 +39,7 @@ const Index = () => {
 
   const firstPage = (data?.pages?.[0] as Product[]) || [];
   const allProducts = ((data?.pages?.flat() as Product[]) || []);
-  const popularListings = firstPage.slice(0, 5);
+  const Listings = firstPage.slice(0, 5);
   const nextMonthListings = firstPage.slice(5, 10);
   const nearbyListings = firstPage.slice(10, 15);
 
@@ -63,8 +63,8 @@ const Index = () => {
           </HorizontalPropertySection>
         )}
 
-        <HorizontalPropertySection title="Popular stays">
-          {popularListings.map((product) => (
+        <HorizontalPropertySection title=" stays">
+          {Listings.map((product) => (
             <div key={product.listing.id} className="w-[200px] sm:w-[280px]">
               <PropertyCard
                 id={product.listing.id}

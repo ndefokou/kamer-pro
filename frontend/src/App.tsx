@@ -10,6 +10,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
 import { ProtectedRoute } from "./components/ProtectedRoute";
+import { PWAInstallPrompt } from "./components/PWAInstallPrompt";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -37,7 +38,7 @@ const router = createBrowserRouter(
       element: <ProtectedRoute />,
       children: [
         { index: true, lazy: async () => ({ Component: (await import("./pages/account/AccountSettings")).default }) },
-      ], 
+      ],
     },
     {
       path: "/admin",
@@ -87,6 +88,7 @@ const App = () => (
             <TooltipProvider>
               <Toaster />
               <Sonner />
+              <PWAInstallPrompt />
               <RouterProvider router={router} />
             </TooltipProvider>
           </HostProvider>

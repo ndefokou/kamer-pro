@@ -85,7 +85,7 @@ const Navbar = () => {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link to="/marketplace" className="flex items-center space-x-2">
-            <img src="/logo.png" alt="Le Mboko" className="h-6 w-6 object-contain" />
+            <img src="/pwa-192x192.png" alt="Le Mboko" className="h-8 w-8 object-contain rounded-lg" />
             <span className="text-xl font-bold hidden sm:inline">
               Le Mboko
             </span>
