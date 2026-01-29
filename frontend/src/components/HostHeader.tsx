@@ -41,7 +41,7 @@ const HostHeader: React.FC = () => {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 md:h-20 flex items-center justify-between">
                 <div className="flex items-center gap-12">
                     <div className="flex items-center gap-2 text-green-600 font-bold text-xl cursor-pointer" onClick={() => navigate('/')}>
-                        <img src="/pwa-192x192.png" alt="Le Mboko" className="h-10 w-10 object-contain rounded-lg" />
+                        <img src="/logo.png" alt="Le Mboko" className="h-10 w-10 object-contain rounded-lg" />
                         <span>Le Mboko</span>
                     </div>
                     <nav className="hidden md:flex gap-8 text-sm font-medium">

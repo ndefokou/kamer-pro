@@ -86,7 +86,7 @@ export const PWAInstallPrompt = () => {
                 <div className="flex items-center justify-center py-6">
                     <div className="relative">
                         <img
-                            src="/pwa-192x192.png"
+                            src="/logo.png"
                             alt="Le Mboko Icon"
                             className="w-24 h-24 rounded-2xl shadow-xl border-4 border-white"
                         />

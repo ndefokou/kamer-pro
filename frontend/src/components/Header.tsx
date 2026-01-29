@@ -72,7 +72,7 @@ const Header: React.FC = () => {
                     {/* Logo */}
                     <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate("/")}>
                         <img
-                            src="/pwa-192x192.png"
+                            src="/logo.png"
                             alt="Le Mboko"
                             width={40}
                             height={40}
