@@ -1,9 +1,19 @@
 import axios from "axios";
+import { dbService } from "../services/dbService";
+import { networkService } from "../services/networkService";
 
 const apiClient = axios.create({
   baseURL: import.meta.env.VITE_API_URL || "/api",
   withCredentials: true,
 });
+
+// Request deduplication map
+const pendingRequests = new Map<string, Promise<any>>();
+
+// Helper to create cache key
+const createCacheKey = (url: string, params?: any): string => {
+  return `${url}${params ? '?' + JSON.stringify(params) : ''}`;
+};
 
 apiClient.interceptors.response.use(
   (response) => response,
@@ -11,7 +21,7 @@ apiClient.interceptors.response.use(
     const isAuthPage = window.location.pathname.includes("/webauth-login");
 
     if (error.response && error.response.status === 401 && !isAuthPage && !error.config.url?.includes("/account/me")) {
-      
+
       // Clear any stale auth data
       localStorage.removeItem("token");
       localStorage.removeItem("username");
@@ -21,14 +31,124 @@ apiClient.interceptors.response.use(
       const current = `${window.location.pathname}${window.location.search}`;
       const redirect = encodeURIComponent(current || "/");
       window.location.href = `/webauth-login?redirect=${redirect}`;
-      
+
     } else if (error.response && error.response.status === 401 && isAuthPage) {
-        console.log("Session check failed on auth page, this is expected.");
+      console.log("Session check failed on auth page, this is expected.");
     }
 
     return Promise.reject(error);
   }
 );
+
+// Enhanced GET with caching
+const cachedGet = async <T = any>(url: string, config?: any): Promise<T> => {
+  const cacheKey = createCacheKey(url, config?.params);
+
+  // Check for pending request (deduplication)
+  if (pendingRequests.has(cacheKey)) {
+    return pendingRequests.get(cacheKey);
+  }
+
+  const requestPromise = (async () => {
+    try {
+      // Try network first if online and good connection
+      if (navigator.onLine && !networkService.isSlowConnection()) {
+        const response = await apiClient.get(url, config);
+
+        // Cache the response
+        await cacheResponse(url, response.data, config?.params);
+
+        return response.data;
+      }
+
+      // For slow connections or offline, try cache first
+      const cached = await getCachedResponse(url, config?.params);
+      if (cached) {
+        // Fetch in background to update cache
+        apiClient.get(url, config)
+          .then(response => cacheResponse(url, response.data, config?.params))
+          .catch(() => { }); // Silently fail background update
+
+        return cached;
+      }
+
+      // No cache, try network
+      const response = await apiClient.get(url, config);
+      await cacheResponse(url, response.data, config?.params);
+      return response.data;
+
+    } catch (error) {
+      // Network failed, try cache as fallback
+      const cached = await getCachedResponse(url, config?.params);
+      if (cached) {
+        console.log('Using cached data due to network error:', url);
+        return cached;
+      }
+      throw error;
+    } finally {
+      pendingRequests.delete(cacheKey);
+    }
+  })();
+
+  pendingRequests.set(cacheKey, requestPromise);
+  return requestPromise;
+};
+
+// Cache response based on URL
+const cacheResponse = async (url: string, data: any, params?: any): Promise<void> => {
+  try {
+    if (url.includes('/listings/') && !url.includes('/reviews') && !url.includes('/my-listings')) {
+      // Single listing
+      const id = url.split('/listings/')[1].split('/')[0];
+      await dbService.cacheListing(id, data);
+    } else if (url === '/listings' || url.includes('/listings/host/')) {
+      // Multiple listings
+      if (Array.isArray(data)) {
+        await dbService.cacheListings(data);
+      }
+    } else if (url.includes('/account/user/')) {
+      // User data
+      const id = parseInt(url.split('/account/user/')[1]);
+      await dbService.cacheUser(id, data);
+    } else if (url.includes('/reviews')) {
+      // Reviews
+      const listingId = url.split('/listings/')[1].split('/reviews')[0];
+      await dbService.cacheReviews(listingId, data);
+    } else if (url.includes('/bookings')) {
+      // Bookings
+      if (Array.isArray(data)) {
+        await dbService.cacheBookings(data);
+      }
+    }
+  } catch (error) {
+    console.error('Failed to cache response:', error);
+  }
+};
+
+// Get cached response based on URL
+const getCachedResponse = async (url: string, params?: any): Promise<any | null> => {
+  try {
+    if (url.includes('/listings/') && !url.includes('/reviews') && !url.includes('/my-listings')) {
+      // Single listing
+      const id = url.split('/listings/')[1].split('/')[0];
+      return await dbService.getCachedListing(id);
+    } else if (url === '/listings' || url.includes('/listings/host/')) {
+      // Multiple listings
+      return await dbService.getAllCachedListings();
+    } else if (url.includes('/account/user/')) {
+      // User data
+      const id = parseInt(url.split('/account/user/')[1]);
+      return await dbService.getCachedUser(id);
+    } else if (url.includes('/reviews')) {
+      // Reviews
+      const listingId = url.split('/listings/')[1].split('/reviews')[0];
+      return await dbService.getCachedReviews(listingId);
+    }
+  } catch (error) {
+    console.error('Failed to get cached response:', error);
+  }
+  return null;
+};
 
 export const getRoles = async () => {
   const response = await apiClient.get("/roles");
@@ -125,6 +245,12 @@ export const getProducts = async (filters: ProductFilters): Promise<Product[]> =
   if (params.min_price === "") delete params.min_price;
   if (params.max_price === "") delete params.max_price;
 
+  // Adjust page size based on network quality
+  const networkInfo = networkService.getCurrentInfo();
+  if (!params.limit) {
+    params.limit = networkService.getRecommendedPageSize();
+  }
+
   // Map frontend filters to backend query params
   const queryParams: Record<string, string | number> = {};
   if (params.search) queryParams.search = params.search;
@@ -137,8 +263,7 @@ export const getProducts = async (filters: ProductFilters): Promise<Product[]> =
   if (typeof params.limit === 'number') queryParams.limit = params.limit;
   if (typeof params.offset === 'number') queryParams.offset = params.offset;
 
-  const response = await apiClient.get("/listings", { params: queryParams });
-  return response.data;
+  return await cachedGet<Product[]>("/listings", { params: queryParams });
 };
 
 export const getTowns = async (): Promise<TownCount[]> => {
@@ -165,8 +290,7 @@ export const getMyProducts = async () => {
 };
 
 export const getListing = async (id: string): Promise<Product> => {
-  const response = await apiClient.get(`/listings/${id}`);
-  return response.data;
+  return await cachedGet<Product>(`/listings/${id}`);
 };
 
 export const deleteListing = async (id: string) => {
@@ -187,8 +311,7 @@ export interface ListingReview {
 }
 
 export const getListingReviews = async (listingId: string): Promise<ListingReview[]> => {
-  const response = await apiClient.get(`/listings/${listingId}/reviews`);
-  return response.data;
+  return await cachedGet<ListingReview[]>(`/listings/${listingId}/reviews`);
 };
 
 export const addListingReview = async (
@@ -219,8 +342,7 @@ export interface AccountResponse {
 }
 
 export const getUserById = async (id: number): Promise<AccountResponse> => {
-  const response = await apiClient.get(`/account/user/${id}`);
-  return response.data;
+  return await cachedGet<AccountResponse>(`/account/user/${id}`);
 };
 
 export const getHostListings = async (hostId: number): Promise<Product[]> => {
@@ -334,8 +456,7 @@ export interface BookingWithDetails {
 }
 
 export const getMyBookings = async (): Promise<BookingWithDetails[]> => {
-  const response = await apiClient.get('/bookings/my');
-  return response.data;
+  return await cachedGet<BookingWithDetails[]>('/bookings/my');
 };
 
 // Report API

@@ -124,6 +124,8 @@ const PhotoGallery: React.FC<PhotoGalleryProps> = ({ isOpen, onClose, photos, in
                             <img
                                 src={getImageUrl(photo.url)}
                                 alt={`Thumbnail ${idx + 1}`}
+                                loading="lazy"
+                                decoding="async"
                                 className="h-full w-full object-cover"
                             />
                         </button>
@@ -171,6 +173,8 @@ const PhotoGallery: React.FC<PhotoGalleryProps> = ({ isOpen, onClose, photos, in
                             <img
                                 src={getImageUrl(photo.url)}
                                 alt={`Photo ${index + 1}`}
+                                loading="lazy"
+                                decoding="async"
                                 className="w-full rounded-lg hover:opacity-95 transition-opacity"
                             />
                             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors rounded-lg" />

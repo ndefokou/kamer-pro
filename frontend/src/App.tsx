@@ -11,7 +11,16 @@ import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 60000,
+      gcTime: 300000,
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
+  },
+});
 
 const router = createBrowserRouter(
   [

@@ -1,7 +1,9 @@
+use crate::routes::listings::ListingWithDetails;
 use actix_cors::Cors;
 use actix_files as fs;
-use actix_web::{web, App, HttpServer, middleware::Compress};
+use actix_web::{middleware::Compress, web, App, HttpServer};
 use dotenv::dotenv;
+use moka::future::Cache;
 use sqlx::postgres::PgPoolOptions;
 use std::env;
 use std::time::Duration;
@@ -31,7 +33,7 @@ async fn main() -> std::io::Result<()> {
     let max_conns: u32 = env::var("DATABASE_MAX_CONNECTIONS")
         .ok()
         .and_then(|v| v.parse::<u32>().ok())
-        .unwrap_or(1);
+        .unwrap_or(10);
 
     println!(
         "Initializing database pool: max_connections={} (set DATABASE_MAX_CONNECTIONS to change)",
@@ -51,10 +53,7 @@ async fn main() -> std::io::Result<()> {
         .await
         .expect("Failed to load migrations");
     migrator.set_ignore_missing(true);
-    migrator
-        .run(&pool)
-        .await
-        .expect("Failed to run migrations");
+    migrator.run(&pool).await.expect("Failed to run migrations");
     println!("Migrations completed successfully.");
 
     // Initialize S3 storage
@@ -73,6 +72,13 @@ async fn main() -> std::io::Result<()> {
 
     let uploads_dir_clone = uploads_dir.clone();
 
+    // Initialize listing cache (key: query string, value: results)
+    // Capacity: 100 unique queries, TTL: 5 minutes
+    let listing_cache: Cache<String, Vec<ListingWithDetails>> = Cache::builder()
+        .max_capacity(100)
+        .time_to_live(Duration::from_secs(300))
+        .build();
+
     HttpServer::new(move || {
         let cors = Cors::permissive();
         App::new()
@@ -80,6 +86,7 @@ async fn main() -> std::io::Result<()> {
             .wrap(Compress::default())
             .app_data(web::Data::new(pool.clone()))
             .app_data(web::Data::new(s3_storage.clone()))
+            .app_data(web::Data::new(listing_cache.clone()))
             .service(
                 web::scope("/api")
                     .service(

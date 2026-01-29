@@ -12,11 +12,14 @@ export const getImageUrl = (imagePath: string) => {
   if (imagePath.startsWith("http")) {
     return imagePath;
   }
-  const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:8082";
+  const base = (import.meta.env.VITE_BACKEND_URL as string | undefined)
+    || (import.meta.env.VITE_API_URL as string | undefined)
+    || "/api";
   const imagePathClean = imagePath.startsWith("/")
     ? imagePath.substring(1)
     : imagePath;
-  return `${backendUrl}/${imagePathClean}`;
+  const sep = base.endsWith("/") ? "" : "/";
+  return `${base}${sep}${imagePathClean}`;
 };
 
 export const formatPrice = (price: number) => {

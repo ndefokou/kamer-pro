@@ -418,6 +418,9 @@ const SearchResults = () => {
                                         <img
                                             src={getImageUrl(product.photos[0]?.url) || "https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=400&h=400&fit=crop"}
                                             alt={product.listing.title}
+                                            loading="lazy"
+                                            decoding="async"
+                                            sizes="192px"
                                             className="w-full h-32 object-cover rounded-lg mb-2"
                                         />
                                         <h3 className="font-semibold text-sm truncate">{product.listing.title}</h3>

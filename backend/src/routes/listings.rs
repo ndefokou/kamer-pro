@@ -1,20 +1,22 @@
 use actix_web::{delete, get, post, put, web, HttpRequest, HttpResponse, Responder};
+use moka::future::Cache;
 use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
-use uuid::Uuid;
 use std::collections::HashMap;
+use uuid::Uuid;
 
 // ============================================================================
 // Data Structures
 // ============================================================================
 
-#[derive(Debug, Serialize, Deserialize, sqlx::FromRow)]
+#[derive(Debug, Serialize, Deserialize, sqlx::FromRow, Clone)]
 pub struct Listing {
     pub id: String,
     pub host_id: i32,
     pub status: String,
     pub property_type: Option<String>,
     pub title: Option<String>,
+    #[sqlx(default)]
     pub description: Option<String>,
     pub address: Option<String>,
     pub city: Option<String>,
@@ -31,13 +33,18 @@ pub struct Listing {
     pub instant_book: Option<bool>,
     pub min_nights: Option<i32>,
     pub max_nights: Option<i32>,
+    #[sqlx(default)]
     pub safety_devices: Option<String>,
+    #[sqlx(default)]
     pub house_rules: Option<String>,
     pub created_at: Option<chrono::NaiveDateTime>,
     pub updated_at: Option<chrono::NaiveDateTime>,
     pub published_at: Option<chrono::NaiveDateTime>,
+    #[sqlx(default)]
     pub cancellation_policy: Option<String>,
+    #[sqlx(default)]
     pub getting_around: Option<String>,
+    #[sqlx(default)]
     pub scenic_views: Option<String>,
 }
 
@@ -179,15 +186,18 @@ pub async fn get_host_listings(
     let started = std::time::Instant::now();
     let host_id = path.into_inner();
 
-    let mut qb: sqlx::QueryBuilder<sqlx::Postgres> = sqlx::QueryBuilder::new(
-        "SELECT * FROM listings WHERE status = 'published' AND host_id = ",
-    );
+    let mut qb: sqlx::QueryBuilder<sqlx::Postgres> =
+        sqlx::QueryBuilder::new("SELECT * FROM listings WHERE status = 'published' AND host_id = ");
     qb.push_bind(host_id);
     qb.push(" ORDER BY created_at DESC");
 
     let mut limit = query.limit.unwrap_or(20);
-    if limit < 1 { limit = 1; }
-    if limit > 100 { limit = 100; }
+    if limit < 1 {
+        limit = 1;
+    }
+    if limit > 100 {
+        limit = 100;
+    }
     let offset = query.offset.unwrap_or(0).max(0);
     qb.push(" LIMIT ");
     qb.push_bind(limit);
@@ -196,7 +206,11 @@ pub async fn get_host_listings(
         qb.push_bind(offset);
     }
 
-    let listings = match qb.build_query_as::<Listing>().fetch_all(pool.get_ref()).await {
+    let listings = match qb
+        .build_query_as::<Listing>()
+        .fetch_all(pool.get_ref())
+        .await
+    {
         Ok(rows) => rows,
         Err(e) => {
             return HttpResponse::InternalServerError().json(serde_json::json!({
@@ -249,11 +263,15 @@ pub async fn get_host_listings(
         .await
         .ok()
         .flatten();
-    let (contact_phone, host_avatar): (Option<String>, Option<String>) = if let Some(row) = profile_row {
-        (sqlx::Row::get(&row, "phone"), sqlx::Row::get(&row, "avatar"))
-    } else {
-        (None, None)
-    };
+    let (contact_phone, host_avatar): (Option<String>, Option<String>) =
+        if let Some(row) = profile_row {
+            (
+                sqlx::Row::get(&row, "phone"),
+                sqlx::Row::get(&row, "avatar"),
+            )
+        } else {
+            (None, None)
+        };
 
     let mut out: Vec<ListingWithDetails> = Vec::with_capacity(listings.len());
     for l in listings {
@@ -277,17 +295,20 @@ pub async fn get_host_listings(
     }
 
     let resp = HttpResponse::Ok().json(out);
-    log::info!("get_host_listings latency_ms={}", started.elapsed().as_millis());
+    log::info!(
+        "get_host_listings latency_ms={}",
+        started.elapsed().as_millis()
+    );
     resp
 }
 
-#[derive(Debug, Serialize, Deserialize, sqlx::FromRow)]
+#[derive(Debug, Serialize, Deserialize, sqlx::FromRow, Clone)]
 pub struct UnavailableDateRange {
     pub check_in: chrono::NaiveDate,
     pub check_out: chrono::NaiveDate,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ListingWithDetails {
     pub listing: Listing,
     pub amenities: Vec<String>,
@@ -300,7 +321,7 @@ pub struct ListingWithDetails {
     pub host_username: Option<String>,
 }
 
-#[derive(Debug, Serialize, Deserialize, sqlx::FromRow)]
+#[derive(Debug, Serialize, Deserialize, sqlx::FromRow, Clone)]
 pub struct ListingPhoto {
     pub id: i32,
     pub listing_id: String,
@@ -312,7 +333,7 @@ pub struct ListingPhoto {
     pub uploaded_at: Option<chrono::NaiveDateTime>,
 }
 
-#[derive(Debug, Serialize, Deserialize, sqlx::FromRow)]
+#[derive(Debug, Serialize, Deserialize, sqlx::FromRow, Clone)]
 pub struct ListingVideo {
     pub id: i32,
     pub listing_id: String,
@@ -403,7 +424,7 @@ pub struct AddVideoRequest {
     pub url: String,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct ListingFilters {
     pub search: Option<String>,
     pub category: Option<String>,
@@ -496,11 +517,10 @@ async fn get_listing_with_details(
     .bind(listing_id)
     .fetch_all(pool);
 
-    let videos_fut = sqlx::query_as::<_, ListingVideo>(
-        "SELECT * FROM listing_videos WHERE listing_id = $1",
-    )
-    .bind(listing_id)
-    .fetch_all(pool);
+    let videos_fut =
+        sqlx::query_as::<_, ListingVideo>("SELECT * FROM listing_videos WHERE listing_id = $1")
+            .bind(listing_id)
+            .fetch_all(pool);
 
     let unavailable_fut = sqlx::query_as::<_, UnavailableDateRange>(
         r#"
@@ -522,11 +542,20 @@ async fn get_listing_with_details(
     .bind(listing.host_id)
     .fetch_optional(pool);
 
-    let (amenities_rows, photos, videos, unavailable_dates, profile_row) =
-        tokio::try_join!(amenities_fut, photos_fut, videos_fut, unavailable_fut, profile_fut)?;
+    let (amenities_rows, photos, videos, unavailable_dates, profile_row) = tokio::try_join!(
+        amenities_fut,
+        photos_fut,
+        videos_fut,
+        unavailable_fut,
+        profile_fut
+    )?;
 
     let amenities: Vec<String> = amenities_rows.into_iter().map(|a| a.amenity_type).collect();
-    let (host_username, contact_phone, host_avatar): (Option<String>, Option<String>, Option<String>) = if let Some(row) = profile_row {
+    let (host_username, contact_phone, host_avatar): (
+        Option<String>,
+        Option<String>,
+        Option<String>,
+    ) = if let Some(row) = profile_row {
         (
             sqlx::Row::get(&row, "username"),
             sqlx::Row::get(&row, "phone"),
@@ -563,9 +592,7 @@ fn validate_listing_for_publish(listing: &Listing) -> Result<(), String> {
         return Err("Title must be at least 5 characters".to_string());
     }
 
-    if listing.description.is_none()
-        || listing.description.as_ref().unwrap().trim().len() < 20
-    {
+    if listing.description.is_none() || listing.description.as_ref().unwrap().trim().len() < 20 {
         let desc_len = listing.description.as_ref().map(|d| d.len()).unwrap_or(0);
         log::warn!("Description validation failed: length = {}", desc_len);
         return Err("Description must be at least 20 characters".to_string());
@@ -673,7 +700,10 @@ pub async fn create_listing(
             r
         }
     };
-    log::info!("create_listing latency_ms={}", started.elapsed().as_millis());
+    log::info!(
+        "create_listing latency_ms={}",
+        started.elapsed().as_millis()
+    );
     resp
 }
 
@@ -829,7 +859,10 @@ pub async fn update_listing(
                     "error": format!("Failed to update listing: {}", e)
                 })),
             };
-            log::info!("update_listing latency_ms={}", started.elapsed().as_millis());
+            log::info!(
+                "update_listing latency_ms={}",
+                started.elapsed().as_millis()
+            );
             result
         }
         Ok(Some(_)) => HttpResponse::Forbidden().json(serde_json::json!({
@@ -903,15 +936,18 @@ pub async fn get_my_listings(
         Err(response) => return response,
     };
     let started = std::time::Instant::now();
-    let mut qb: sqlx::QueryBuilder<sqlx::Postgres> = sqlx::QueryBuilder::new(
-        "SELECT * FROM listings WHERE host_id = ",
-    );
+    let mut qb: sqlx::QueryBuilder<sqlx::Postgres> =
+        sqlx::QueryBuilder::new("SELECT * FROM listings WHERE host_id = ");
     qb.push_bind(user_id);
     qb.push(" ORDER BY created_at DESC");
 
     let mut limit = query.limit.unwrap_or(50);
-    if limit < 1 { limit = 1; }
-    if limit > 200 { limit = 200; }
+    if limit < 1 {
+        limit = 1;
+    }
+    if limit > 200 {
+        limit = 200;
+    }
     let offset = query.offset.unwrap_or(0).max(0);
     qb.push(" LIMIT ");
     qb.push_bind(limit);
@@ -920,7 +956,11 @@ pub async fn get_my_listings(
         qb.push_bind(offset);
     }
 
-    let listings = match qb.build_query_as::<Listing>().fetch_all(pool.get_ref()).await {
+    let listings = match qb
+        .build_query_as::<Listing>()
+        .fetch_all(pool.get_ref())
+        .await
+    {
         Ok(rows) => rows,
         Err(e) => {
             return HttpResponse::InternalServerError().json(serde_json::json!({
@@ -973,11 +1013,15 @@ pub async fn get_my_listings(
         .await
         .ok()
         .flatten();
-    let (contact_phone, host_avatar): (Option<String>, Option<String>) = if let Some(row) = profile_row {
-        (sqlx::Row::get(&row, "phone"), sqlx::Row::get(&row, "avatar"))
-    } else {
-        (None, None)
-    };
+    let (contact_phone, host_avatar): (Option<String>, Option<String>) =
+        if let Some(row) = profile_row {
+            (
+                sqlx::Row::get(&row, "phone"),
+                sqlx::Row::get(&row, "avatar"),
+            )
+        } else {
+            (None, None)
+        };
 
     let mut out: Vec<ListingWithDetails> = Vec::with_capacity(listings.len());
     for l in listings {
@@ -1001,7 +1045,10 @@ pub async fn get_my_listings(
     }
 
     let resp = HttpResponse::Ok().json(out);
-    log::info!("get_my_listings latency_ms={}", started.elapsed().as_millis());
+    log::info!(
+        "get_my_listings latency_ms={}",
+        started.elapsed().as_millis()
+    );
     resp
 }
 
@@ -1021,81 +1068,84 @@ pub async fn publish_listing(
     let listing_id = path.into_inner();
     log::info!("Publishing listing {} for user {}", listing_id, user_id);
 
-    // Verify ownership
-    let owner_check = sqlx::query_scalar::<_, i32>("SELECT host_id FROM listings WHERE id = $1")
-        .bind(&listing_id)
-        .fetch_optional(pool.get_ref())
-        .await;
-
-    match owner_check {
-        Ok(Some(host_id)) if host_id == user_id => {
-            log::info!("Ownership verified for listing {}", listing_id);
-
-            let listing_row = match sqlx::query_as::<_, Listing>("SELECT * FROM listings WHERE id = $1")
+    // OPTIMIZATION: Combine ownership check and listing fetch into single query
+    let listing_row =
+        match sqlx::query_as::<_, Listing>("SELECT * FROM listings WHERE id = $1 AND host_id = $2")
+            .bind(&listing_id)
+            .bind(user_id)
+            .fetch_optional(pool.get_ref())
+            .await
+        {
+            Ok(Some(l)) => {
+                log::info!("Ownership verified for listing {}", listing_id);
+                l
+            }
+            Ok(None) => {
+                // Check if listing exists but user doesn't own it
+                let exists = sqlx::query_scalar::<_, bool>(
+                    "SELECT EXISTS(SELECT 1 FROM listings WHERE id = $1)",
+                )
                 .bind(&listing_id)
                 .fetch_one(pool.get_ref())
                 .await
-            {
-                Ok(l) => l,
-                Err(e) => {
-                    log::error!("Failed to fetch listing for validation: {:?}", e);
-                    return HttpResponse::InternalServerError().json(serde_json::json!({
-                        "error": format!("Failed to fetch listing: {}", e)
+                .unwrap_or(false);
+
+                if exists {
+                    log::warn!("User {} does not own listing {}", user_id, listing_id);
+                    return HttpResponse::Forbidden().json(serde_json::json!({
+                        "error": "You don't have permission to publish this listing"
+                    }));
+                } else {
+                    log::warn!("Listing {} not found", listing_id);
+                    return HttpResponse::NotFound().json(serde_json::json!({
+                        "error": "Listing not found"
                     }));
                 }
-            };
-
-            if let Err(error) = validate_listing_for_publish(&listing_row) {
-                log::warn!("Validation failed for listing {}: {}", listing_id, error);
-                return HttpResponse::BadRequest().json(serde_json::json!({
-                    "error": error
+            }
+            Err(e) => {
+                log::error!("Database error fetching listing: {:?}", e);
+                return HttpResponse::InternalServerError().json(serde_json::json!({
+                    "error": format!("Database error: {}", e)
                 }));
             }
+        };
 
-            let result = match sqlx::query(
-                "UPDATE listings SET status = 'published', published_at = CURRENT_TIMESTAMP WHERE id = $1"
-            )
-            .bind(&listing_id)
-            .execute(pool.get_ref())
-            .await
-            {
-                Ok(_) => {
-                    let r = HttpResponse::Ok().json(serde_json::json!({
-                        "id": listing_id,
-                        "status": "published"
-                    }));
-                    r
-                }
-                Err(e) => {
-                    log::error!("Failed to update listing status: {:?}", e);
-                    let r = HttpResponse::InternalServerError().json(serde_json::json!({
-                        "error": format!("Failed to publish listing: {}", e)
-                    }));
-                    r
-                }
-            };
-            log::info!("publish_listing latency_ms={}", started.elapsed().as_millis());
-            result
-        }
-        Ok(Some(_)) => {
-            log::warn!("User {} does not own listing {}", user_id, listing_id);
-            HttpResponse::Forbidden().json(serde_json::json!({
-                "error": "You don't have permission to publish this listing"
-            }))
-        },
-        Ok(None) => {
-            log::warn!("Listing {} not found", listing_id);
-            HttpResponse::NotFound().json(serde_json::json!({
-                "error": "Listing not found"
-            }))
-        },
-        Err(e) => {
-            log::error!("Database error checking ownership: {:?}", e);
-            HttpResponse::InternalServerError().json(serde_json::json!({
-                "error": format!("Database error: {}", e)
-            }))
-        },
+    // Validate listing before publishing
+    if let Err(error) = validate_listing_for_publish(&listing_row) {
+        log::warn!("Validation failed for listing {}: {}", listing_id, error);
+        return HttpResponse::BadRequest().json(serde_json::json!({
+            "error": error
+        }));
     }
+
+    // Update status to published
+    let result = match sqlx::query(
+        "UPDATE listings SET status = 'published', published_at = CURRENT_TIMESTAMP WHERE id = $1",
+    )
+    .bind(&listing_id)
+    .execute(pool.get_ref())
+    .await
+    {
+        Ok(_) => {
+            log::info!("Successfully published listing {}", listing_id);
+            HttpResponse::Ok().json(serde_json::json!({
+                "id": listing_id,
+                "status": "published"
+            }))
+        }
+        Err(e) => {
+            log::error!("Failed to update listing status: {:?}", e);
+            HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": format!("Failed to publish listing: {}", e)
+            }))
+        }
+    };
+
+    log::info!(
+        "publish_listing latency_ms={}",
+        started.elapsed().as_millis()
+    );
+    result
 }
 
 /// POST /api/listings/:id/unpublish - Unpublish listing
@@ -1105,46 +1155,66 @@ pub async fn unpublish_listing(
     req: HttpRequest,
     path: web::Path<String>,
 ) -> impl Responder {
+    let started = std::time::Instant::now();
     let user_id = match extract_user_id(&req) {
         Ok(id) => id,
         Err(response) => return response,
     };
 
     let listing_id = path.into_inner();
+    log::info!("Unpublishing listing {} for user {}", listing_id, user_id);
 
-    // Verify ownership
-    let owner_check = sqlx::query_scalar::<_, i32>("SELECT host_id FROM listings WHERE id = $1")
-        .bind(&listing_id)
-        .fetch_optional(pool.get_ref())
-        .await;
+    // OPTIMIZATION: Single query to check ownership and update
+    let result =
+        sqlx::query("UPDATE listings SET status = 'unpublished' WHERE id = $1 AND host_id = $2")
+            .bind(&listing_id)
+            .bind(user_id)
+            .execute(pool.get_ref())
+            .await;
 
-    match owner_check {
-        Ok(Some(host_id)) if host_id == user_id => {
-            match sqlx::query("UPDATE listings SET status = 'unpublished' WHERE id = $1")
+    match result {
+        Ok(result) => {
+            if result.rows_affected() > 0 {
+                log::info!("Successfully unpublished listing {}", listing_id);
+                let resp = HttpResponse::Ok().json(serde_json::json!({
+                    "id": listing_id,
+                    "status": "unpublished"
+                }));
+                log::info!(
+                    "unpublish_listing latency_ms={}",
+                    started.elapsed().as_millis()
+                );
+                resp
+            } else {
+                // Either listing doesn't exist or user doesn't own it
+                // Check which one it is for better error message
+                let exists = sqlx::query_scalar::<_, bool>(
+                    "SELECT EXISTS(SELECT 1 FROM listings WHERE id = $1)",
+                )
                 .bind(&listing_id)
-                .execute(pool.get_ref())
+                .fetch_one(pool.get_ref())
                 .await
-            {
-                Ok(_) => match get_listing_with_details(pool.get_ref(), &listing_id).await {
-                    Ok(listing) => HttpResponse::Ok().json(listing),
-                    Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
-                        "error": format!("Failed to fetch unpublished listing: {}", e)
-                    })),
-                },
-                Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
-                    "error": format!("Failed to unpublish listing: {}", e)
-                })),
+                .unwrap_or(false);
+
+                if exists {
+                    log::warn!("User {} does not own listing {}", user_id, listing_id);
+                    HttpResponse::Forbidden().json(serde_json::json!({
+                        "error": "You don't have permission to unpublish this listing"
+                    }))
+                } else {
+                    log::warn!("Listing {} not found", listing_id);
+                    HttpResponse::NotFound().json(serde_json::json!({
+                        "error": "Listing not found"
+                    }))
+                }
             }
         }
-        Ok(Some(_)) => HttpResponse::Forbidden().json(serde_json::json!({
-            "error": "You don't have permission to unpublish this listing"
-        })),
-        Ok(None) => HttpResponse::NotFound().json(serde_json::json!({
-            "error": "Listing not found"
-        })),
-        Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
-            "error": format!("Database error: {}", e)
-        })),
+        Err(e) => {
+            log::error!("Failed to unpublish listing: {:?}", e);
+            HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": format!("Database error: {}", e)
+            }))
+        }
     }
 }
 
@@ -1360,11 +1430,25 @@ pub async fn add_video(
 #[get("")]
 pub async fn get_all_listings(
     pool: web::Data<PgPool>,
+    listing_cache: web::Data<Cache<String, Vec<ListingWithDetails>>>,
     query: web::Query<ListingFilters>,
 ) -> impl Responder {
     let started = std::time::Instant::now();
+
+    // Try to get from cache
+    let cache_key = match serde_json::to_string(&*query) {
+        Ok(s) => format!("listings:{}", s),
+        Err(_) => "listings:default".to_string(),
+    };
+
+    if let Some(cached) = listing_cache.get(&cache_key).await {
+        log::info!("Cache hit for {}", cache_key);
+        return HttpResponse::Ok().json(cached);
+    }
+
+    // Select specific columns to avoid fetching heavy text fields
     let mut query_builder: sqlx::QueryBuilder<sqlx::Postgres> =
-        sqlx::QueryBuilder::new("SELECT * FROM listings WHERE status = 'published'");
+        sqlx::QueryBuilder::new("SELECT id, host_id, status, property_type, title, address, city, country, latitude, longitude, price_per_night, currency, cleaning_fee, max_guests, bedrooms, beds, bathrooms, instant_book, min_nights, max_nights, created_at, updated_at, published_at FROM listings WHERE status = 'published'");
 
     if let Some(ref search) = query.search {
         let pattern = format!("%{}%", search);
@@ -1414,8 +1498,12 @@ pub async fn get_all_listings(
 
     // Pagination: default limit=20, offset=0, and clamp bounds
     let mut limit = query.limit.unwrap_or(20);
-    if limit < 1 { limit = 1; }
-    if limit > 100 { limit = 100; }
+    if limit < 1 {
+        limit = 1;
+    }
+    if limit > 100 {
+        limit = 100;
+    }
     let offset = query.offset.unwrap_or(0).max(0);
 
     query_builder.push(" LIMIT ");
@@ -1498,5 +1586,12 @@ pub async fn get_all_listings(
         });
     }
 
+    // Save to cache
+    listing_cache.insert(cache_key.clone(), out.clone()).await;
+
+    log::info!(
+        "get_all_listings latency_ms={} (cache miss)",
+        started.elapsed().as_millis()
+    );
     HttpResponse::Ok().json(out)
 }

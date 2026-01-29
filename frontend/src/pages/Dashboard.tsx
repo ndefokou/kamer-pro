@@ -134,6 +134,9 @@ const Dashboard = () => {
                 <img
                     src={getImageUrl(product.photos[0]?.url) || "https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=400&h=400&fit=crop"}
                     alt={product.listing.title || "Property image"}
+                    loading="lazy"
+                    decoding="async"
+                    sizes="(min-width: 1024px) 280px, (min-width: 640px) 240px, 180px"
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     onClick={() => navigate(`/product/${product.listing.id}`)}
                 />

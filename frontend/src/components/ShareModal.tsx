@@ -30,7 +30,7 @@ const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, listing }) => 
 
     const handleEmailShare = () => {
         const subject = `Check out this place: ${listing.title || 'Amazing Place'}`;
-        const body = `I found this amazing place on Kamer Pro and thought you'd love it:\n\n${listing.title || 'Amazing Place'}\n${currentUrl}`;
+        const body = `I found this amazing place on Le Mboko and thought you'd love it:\n\n${listing.title || 'Amazing Place'}\n${currentUrl}`;
         window.open(`mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`);
     };
 
