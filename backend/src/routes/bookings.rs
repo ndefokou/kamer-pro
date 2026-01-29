@@ -184,16 +184,23 @@ pub async fn create_booking(
     let id = uuid::Uuid::new_v4().to_string();
 
     // Fetch listing price, instant_book, host_id and max_guests
-    let listing_info: Option<(f64, i32, i32, i32)> =
-        sqlx::query_as(
-            "SELECT COALESCE(price_per_night, 0), COALESCE(instant_book, 0), host_id, COALESCE(max_guests, 0) FROM listings WHERE id = $1"
-        )
-            .bind(&booking_data.listing_id)
-            .fetch_optional(pool.get_ref())
-            .await
-            .unwrap_or(None);
+    let listing_info_result = sqlx::query_as::<_, (f64, bool, i32, i32)>(
+        "SELECT COALESCE(price_per_night, 0), COALESCE(instant_book, FALSE), host_id, COALESCE(max_guests, 0) FROM listings WHERE id = $1"
+    )
+    .bind(&booking_data.listing_id)
+    .fetch_optional(pool.get_ref())
+    .await;
 
-    let (price_per_night, instant_book, host_id, max_guests) = listing_info.unwrap_or((0.0, 0, -1, 0));
+    let (price_per_night, instant_book, host_id, max_guests) = match listing_info_result {
+        Ok(Some(info)) => info,
+        Ok(None) => {
+            return HttpResponse::NotFound().json(serde_json::json!({ "error": "Listing not found" }));
+        }
+        Err(e) => {
+            log::error!("Failed to fetch listing info: {:?}", e);
+            return HttpResponse::InternalServerError().json(serde_json::json!({ "error": "Database error" }));
+        }
+    };
 
     // Forbid booking own listing
     if host_id == user_id {
@@ -282,7 +289,7 @@ pub async fn create_booking(
             .json(serde_json::json!({ "error": "Selected dates are unavailable" }));
     }
 
-    let status = if instant_book == 1 {
+    let status = if instant_book {
         "confirmed"
     } else {
         "pending"
@@ -643,6 +650,126 @@ pub async fn get_upcoming_bookings(
             HttpResponse::InternalServerError().json(serde_json::json!({
                 "error": format!("Database error: {}", e)
             }))
+        }
+    }
+}
+
+/// POST /api/bookings/{id}/cancel - Cancel a booking
+#[post("/{id}/cancel")]
+pub async fn cancel_booking(
+    pool: web::Data<PgPool>,
+    req: HttpRequest,
+    path: web::Path<String>,
+) -> impl Responder {
+    let user_id = match extract_user_id(&req) {
+        Ok(id) => id,
+        Err(response) => return response,
+    };
+    let booking_id = path.into_inner();
+
+    // Verify user is the guest of the booking
+    let booking_info: Option<(i32, String, String)> = sqlx::query_as(
+        r#"
+        SELECT guest_id, listing_id, status
+        FROM bookings
+        WHERE id = $1
+        "#,
+    )
+    .bind(&booking_id)
+    .fetch_optional(pool.get_ref())
+    .await
+    .unwrap_or(None);
+
+    let (guest_id, listing_id, status) = match booking_info {
+        Some(info) => info,
+        None => {
+            return HttpResponse::NotFound().json(serde_json::json!({
+                "error": "Booking not found"
+            }));
+        }
+    };
+
+    if guest_id != user_id {
+        return HttpResponse::Forbidden().json(serde_json::json!({
+            "error": "You do not have permission to cancel this booking"
+        }));
+    }
+
+    if status == "cancelled" || status == "declined" {
+         return HttpResponse::BadRequest().json(serde_json::json!({
+            "error": "Booking is already cancelled or declined"
+        }));
+    }
+
+    let result = sqlx::query("UPDATE bookings SET status = 'cancelled' WHERE id = $1")
+        .bind(&booking_id)
+        .execute(pool.get_ref())
+        .await;
+
+    match result {
+        Ok(_) => {
+             // Get host_id
+             let host_id: i32 = sqlx::query_scalar("SELECT host_id FROM listings WHERE id = $1")
+                .bind(&listing_id)
+                .fetch_one(pool.get_ref())
+                .await
+                .unwrap_or(0);
+
+             if host_id != 0 {
+                // Find or create conversation
+                let conversation_id = match sqlx::query_scalar::<_, String>(
+                    "SELECT id FROM conversations WHERE listing_id = $1 AND guest_id = $2 AND host_id = $3"
+                )
+                .bind(&listing_id)
+                .bind(user_id) // guest is user_id
+                .bind(host_id)
+                .fetch_optional(pool.get_ref())
+                .await
+                .unwrap_or(None) 
+                {
+                    Some(id) => id,
+                    None => {
+                        let new_id = uuid::Uuid::new_v4().to_string();
+                        let _ = sqlx::query(
+                            "INSERT INTO conversations (id, listing_id, guest_id, host_id) VALUES ($1, $2, $3, $4)"
+                        )
+                        .bind(&new_id)
+                        .bind(&listing_id)
+                        .bind(user_id)
+                        .bind(host_id)
+                        .execute(pool.get_ref())
+                        .await;
+                        new_id
+                    }
+                };
+
+                // Send cancel message
+                let message_content = "Booking cancelled by guest.";
+                let message_id = uuid::Uuid::new_v4().to_string();
+                
+                let _ = sqlx::query(
+                    "INSERT INTO messages (id, conversation_id, sender_id, content) VALUES ($1, $2, $3, $4)"
+                )
+                .bind(&message_id)
+                .bind(&conversation_id)
+                .bind(user_id)
+                .bind(message_content)
+                .execute(pool.get_ref())
+                .await;
+
+                // Update conversation timestamp
+                let _ = sqlx::query("UPDATE conversations SET updated_at = CURRENT_TIMESTAMP WHERE id = $1")
+                    .bind(&conversation_id)
+                    .execute(pool.get_ref())
+                    .await;
+             }
+
+            HttpResponse::Ok().json(serde_json::json!({ "status": "cancelled" }))
+        },
+        Err(e) => {
+            log::error!("Failed to cancel booking: {:?}", e);
+            HttpResponse::InternalServerError()
+                .json(serde_json::json!({ "error": "Failed to cancel booking" }))
         }
     }
 }

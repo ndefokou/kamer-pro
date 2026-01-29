@@ -161,7 +161,8 @@ async fn main() -> std::io::Result<()> {
                             .service(routes::bookings::get_upcoming_bookings)
                             .service(routes::bookings::get_my_bookings)
                             .service(routes::bookings::approve_booking)
-                            .service(routes::bookings::decline_booking),
+                            .service(routes::bookings::decline_booking)
+                            .service(routes::bookings::cancel_booking),
                     )
                     .service(
                         web::scope("/calendar")
