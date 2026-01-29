@@ -200,7 +200,7 @@ const Navbar = () => {
               </Link>
             )}
             <Button
-              variant="ghost"
+              variant="ghost"  
               size="icon"
               className="text-primary-foreground hover:bg-primary-foreground/10"
               onClick={toggleLanguage}
