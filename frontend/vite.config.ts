@@ -37,22 +37,93 @@ export default defineConfig(({ mode }) => ({
       devOptions: {
         enabled: true,
       },
-      includeAssets: ["favicon.ico", "apple-touch-icon.png", "masked-icon.svg"],
-      manifest: {
-        name: "Kamer Pro",
-        short_name: "Kamer Pro",
-        description: "A professional marketplace for all your needs",
-        theme_color: "#ffffff",
-        icons: [
+      includeAssets: ["favicon.ico", "apple-touch-icon.png", "masked-icon.svg", "screenshot-desktop.png", "screenshot-mobile.png"],
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,webp,jpg,jpeg}'],
+        runtimeCaching: [
           {
-            src: "pwa-192x192.png",
-            sizes: "192x192",
-            type: "image/png",
+            // Cache API responses with network-first strategy
+            urlPattern: /^https?:\/\/.*\/api\/.*/i,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'api-cache',
+              expiration: {
+                maxEntries: 100,
+                maxAgeSeconds: 60 * 30, // 30 minutes
+              },
+              networkTimeoutSeconds: 10,
+              cacheableResponse: {
+                statuses: [0, 200],
+              },
+            },
           },
           {
-            src: "pwa-512x512.png",
-            sizes: "512x512",
+            // Cache images with cache-first strategy
+            urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp)$/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'image-cache',
+              expiration: {
+                maxEntries: 200,
+                maxAgeSeconds: 60 * 60 * 24 * 7, // 7 days
+              },
+              cacheableResponse: {
+                statuses: [0, 200],
+              },
+            },
+          },
+          {
+            // Cache fonts
+            urlPattern: /\.(?:woff|woff2|ttf|eot)$/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'font-cache',
+              expiration: {
+                maxEntries: 20,
+                maxAgeSeconds: 60 * 60 * 24 * 365, // 1 year
+              },
+            },
+          },
+        ],
+        navigateFallback: '/index.html',
+        navigateFallbackDenylist: [/^\/api/],
+      },
+      manifest: {
+        name: "leMboko",
+        short_name: "leMboko",
+        description: "Connect with buyers and sellers in Yaoundé, Cameroon. Browse products, list items, and discover local deals on Le Mboko marketplace.",
+        theme_color: "#ffffff",
+        background_color: "#ffffff",
+        display: "standalone",
+        start_url: "/",
+        icons: [
+          {
+            src: "logo.png",
+            sizes: "1024x1024",
             type: "image/png",
+            purpose: "any",
+          },
+          {
+            src: "logo.png",
+            sizes: "1024x1024",
+            type: "image/png",
+            purpose: "maskable",
+          },
+        ],
+        screenshots: [
+          {
+            src: "screenshot-desktop.png",
+            sizes: "1024x1024",
+            type: "image/png",
+            form_factor: "wide",
+            label: "Desktop view of leMboko",
+          },
+          {
+            src: "screenshot-mobile.png",
+            sizes: "1024x1024",
+            type: "image/png",
+            form_factor: "narrow",
+            label: "Mobile view of leMboko",
           },
         ],
       },

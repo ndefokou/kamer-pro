@@ -180,6 +180,27 @@ pub async fn create_conversation(
     }
 }
 
+#[derive(Debug, sqlx::FromRow)]
+struct ConversationRow {
+    id: String,
+    listing_id: String,
+    guest_id: i32,
+    host_id: i32,
+    created_at: chrono::NaiveDateTime,
+    updated_at: chrono::NaiveDateTime,
+
+    last_message_id: Option<String>,
+    last_message_conversation_id: Option<String>,
+    last_message_sender_id: Option<i32>,
+    last_message_content: Option<String>,
+    last_message_read_at: Option<chrono::NaiveDateTime>,
+    last_message_created_at: Option<chrono::NaiveDateTime>,
+
+    other_username: Option<String>,
+    listing_title: Option<String>,
+    listing_image: Option<String>,
+}
+
 /// GET /api/messages/conversations - Get all conversations for user
 #[get("/conversations")]
 pub async fn get_conversations(pool: web::Data<PgPool>, req: HttpRequest) -> impl Responder {
@@ -188,77 +209,88 @@ pub async fn get_conversations(pool: web::Data<PgPool>, req: HttpRequest) -> imp
         Err(response) => return response,
     };
 
-    // Fetch conversations where user is guest or host
-    let conversations = sqlx::query_as::<_, Conversation>(
-        "SELECT * FROM conversations WHERE guest_id = $1 OR host_id = $2 ORDER BY updated_at DESC",
-    )
-    .bind(user_id)
-    .bind(user_id)
-    .fetch_all(pool.get_ref())
-    .await;
+    let query = r#"
+        SELECT 
+            c.id, c.listing_id, c.guest_id, c.host_id, c.created_at, c.updated_at,
+            m.id as last_message_id, 
+            m.conversation_id as last_message_conversation_id,
+            m.sender_id as last_message_sender_id,
+            m.content as last_message_content, 
+            m.read_at as last_message_read_at,
+            m.created_at as last_message_created_at,
+            u.username as other_username,
+            l.title as listing_title,
+            (SELECT url FROM listing_photos lp WHERE lp.listing_id = l.id AND lp.is_cover = TRUE LIMIT 1) as listing_image
+        FROM conversations c
+        LEFT JOIN LATERAL (
+            SELECT * FROM messages WHERE conversation_id = c.id ORDER BY created_at DESC LIMIT 1
+        ) m ON true
+        LEFT JOIN users u ON u.id = CASE WHEN c.guest_id = $1 THEN c.host_id ELSE c.guest_id END
+        LEFT JOIN listings l ON l.id = c.listing_id
+        WHERE c.guest_id = $1 OR c.host_id = $1
+        ORDER BY c.updated_at DESC
+    "#;
 
-    match conversations {
-        Ok(convs) => {
-            let mut result = Vec::new();
-            for conv in convs {
-                // Get last message
-                let last_message = sqlx::query_as::<_, Message>(
-                    "SELECT * FROM messages WHERE conversation_id = $1 ORDER BY created_at DESC LIMIT 1"
-                )
-                .bind(&conv.id)
-                .fetch_optional(pool.get_ref())
-                .await
-                .unwrap_or(None);
-
-                // Get other user details
-                let other_user_id = if conv.guest_id == user_id {
-                    conv.host_id
-                } else {
-                    conv.guest_id
-                };
-                let other_user = sqlx::query_as::<_, (String, Option<String>)>(
-                    // Assuming username and avatar columns
-                    "SELECT username, NULL as avatar FROM users WHERE id = $1", // Placeholder for avatar if not in DB
-                )
-                .bind(other_user_id)
-                .fetch_optional(pool.get_ref())
-                .await
-                .unwrap_or(None);
-
-                let other_user_summary = UserSummary {
-                    id: other_user_id,
-                    name: other_user
-                        .map(|u| u.0)
-                        .unwrap_or_else(|| "Unknown User".to_string()),
-                    avatar: None, // TODO: Add avatar to users table or fetch from profile
-                };
-
-                // Get listing details
-                let listing = sqlx::query_as::<_, (String, Option<String>)>( // title, cover photo
-                    "SELECT title, (SELECT url FROM listing_photos WHERE listing_id = listings.id AND is_cover = TRUE LIMIT 1) as image FROM listings WHERE id = $1"
-                )
-                .bind(&conv.listing_id)
-                .fetch_optional(pool.get_ref())
-                .await
-                .unwrap_or(None);
-
-                result.push(ConversationWithDetails {
-                    conversation: conv,
-                    last_message,
-                    other_user: other_user_summary,
-                    listing_title: listing.as_ref().map(|l| l.0.clone()).unwrap_or_default(),
-                    listing_image: listing.and_then(|l| l.1),
-                });
-            }
-            HttpResponse::Ok().json(result)
-        }
+    let rows = match sqlx::query_as::<_, ConversationRow>(query)
+        .bind(user_id)
+        .fetch_all(pool.get_ref())
+        .await
+    {
+        Ok(rows) => rows,
         Err(e) => {
             log::error!("Failed to fetch conversations: {:?}", e);
-            HttpResponse::InternalServerError().json(serde_json::json!({
+            return HttpResponse::InternalServerError().json(serde_json::json!({
                 "error": "Failed to fetch conversations"
-            }))
+            }));
         }
-    }
+    };
+
+    let result: Vec<ConversationWithDetails> = rows
+        .into_iter()
+        .map(|row| {
+            let other_user_id = if row.guest_id == user_id {
+                row.host_id
+            } else {
+                row.guest_id
+            };
+
+            let last_message = if let Some(id) = row.last_message_id {
+                Some(Message {
+                    id,
+                    conversation_id: row.last_message_conversation_id.unwrap_or_default(),
+                    sender_id: row.last_message_sender_id.unwrap_or_default(),
+                    content: row.last_message_content.unwrap_or_default(),
+                    read_at: row.last_message_read_at,
+                    created_at: row.last_message_created_at.unwrap_or_default(),
+                })
+            } else {
+                None
+            };
+
+            ConversationWithDetails {
+                conversation: Conversation {
+                    id: row.id,
+                    listing_id: row.listing_id,
+                    guest_id: row.guest_id,
+                    host_id: row.host_id,
+                    created_at: row.created_at,
+                    updated_at: row.updated_at,
+                },
+                last_message,
+                other_user: UserSummary {
+                    id: other_user_id,
+                    name: row
+                        .other_username
+                        .unwrap_or_else(|| "Unknown User".to_string()),
+                    avatar: None, // Avatar not yet implemented in users table
+                },
+                listing_title: row.listing_title.unwrap_or_default(),
+                listing_image: row.listing_image,
+            }
+        })
+        .collect();
+
+    HttpResponse::Ok().json(result)
 }
 
 /// GET /api/messages/conversations/{id} - Get messages for a conversation

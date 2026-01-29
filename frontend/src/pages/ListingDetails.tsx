@@ -521,6 +521,7 @@ const ListingDetails: React.FC = () => {
                                 <img
                                     src={getImageUrl(sortedPhotos[0].url)}
                                     alt={listing.title}
+                                    decoding="async"
                                     className="w-full h-[300px] sm:h-[400px] md:h-[500px] object-cover cursor-pointer hover:scale-105 transition-transform duration-700"
                                     onClick={() => {
                                         setInitialPhotoIndex(0);
@@ -541,6 +542,8 @@ const ListingDetails: React.FC = () => {
                                             <img
                                                 src={getImageUrl(photo.url)}
                                                 alt={`Photo ${idx + 1}`}
+                                                loading="lazy"
+                                                decoding="async"
                                                 className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
                                             />
                                         </div>
@@ -558,6 +561,7 @@ const ListingDetails: React.FC = () => {
                                         <img
                                             src={getImageUrl(sortedPhotos[0].url)}
                                             alt={listing.title}
+                                            decoding="async"
                                             className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
                                         />
                                     </div>
@@ -574,6 +578,8 @@ const ListingDetails: React.FC = () => {
                                                 <img
                                                     src={getImageUrl(photo.url)}
                                                     alt={`Photo ${idx + 2}`}
+                                                    loading="lazy"
+                                                    decoding="async"
                                                     className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
                                                 />
                                             </div>

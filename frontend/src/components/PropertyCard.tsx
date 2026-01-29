@@ -64,6 +64,9 @@ const PropertyCard = ({
                         <img
                             src={getImageUrl(images[currentImageIndex]?.image_url)}
                             alt={name}
+                            loading="lazy"
+                            decoding="async"
+                            sizes="(min-width: 1024px) 280px, (min-width: 640px) 240px, 180px"
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
                         />
                     ) : (

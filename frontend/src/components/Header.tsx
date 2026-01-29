@@ -71,7 +71,15 @@ const Header: React.FC = () => {
                 <div className="flex items-center justify-between h-16 md:h-20">
                     {/* Logo */}
                     <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate("/")}>
-                        <img src="/logo.png" alt="Le Mboko" className="h-8 w-8 object-contain" />
+                        <img
+                          src="/logo.png"
+                          alt="Le Mboko"
+                          width={32}
+                          height={32}
+                          loading="eager"
+                          decoding="async"
+                          className="h-8 w-8 object-contain"
+                        />
                         <span className="text-xl font-bold text-primary">Le Mboko</span>
                     </div>
 
