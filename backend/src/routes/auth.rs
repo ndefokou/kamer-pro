@@ -153,7 +153,8 @@ pub async fn registration_complete(
             let cookie = Cookie::build("session", token)
                 .path("/")
                 .http_only(true)
-                .same_site(SameSite::Lax)
+                .same_site(SameSite::None)
+                .secure(true)
                 .max_age(CookieDuration::days(30))
                 .finish();
 
@@ -225,7 +226,8 @@ pub async fn authentication_complete(
             let cookie = Cookie::build("session", token.clone())
                 .path("/")
                 .http_only(true)
-                .same_site(SameSite::Lax)
+                .same_site(SameSite::None)
+                .secure(true)
                 .max_age(CookieDuration::days(30))
                 .finish();
 
@@ -312,7 +314,8 @@ pub async fn simple_register(
             let cookie = Cookie::build("session", token.clone())
                 .path("/")
                 .http_only(true)
-                .same_site(SameSite::Lax)
+                .same_site(SameSite::None)
+                .secure(true)
                 .max_age(CookieDuration::days(30))
                 .finish();
 
@@ -390,7 +393,8 @@ pub async fn simple_login(
                 let cookie = Cookie::build("session", token.clone())
                     .path("/")
                     .http_only(true)
-                    .same_site(SameSite::Lax)
+                    .same_site(SameSite::None)
+                    .secure(true)
                     .max_age(CookieDuration::days(30))
                     .finish();
 
@@ -430,7 +434,8 @@ pub async fn logout(req: HttpRequest, pool: web::Data<PgPool>) -> impl Responder
     let removal = Cookie::build("session", "")
         .path("/")
         .http_only(true)
-        .same_site(SameSite::Lax)
+        .same_site(SameSite::None)
+        .secure(true)
         .max_age(CookieDuration::seconds(0))
         .finish();
     HttpResponse::Ok().cookie(removal).json(serde_json::json!({

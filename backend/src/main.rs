@@ -80,7 +80,11 @@ async fn main() -> std::io::Result<()> {
         .build();
 
     HttpServer::new(move || {
-        let cors = Cors::permissive();
+        let cors = Cors::default()
+            .allow_any_method()
+            .allow_any_header()
+            .allowed_origin_fn(|_, _| true)
+            .supports_credentials();
         App::new()
             .wrap(cors)
             .wrap(Compress::default())
