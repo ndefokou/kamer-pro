@@ -103,8 +103,6 @@ impl S3Storage {
 
     /// Delete a file from Supabase Storage
     pub async fn delete_file(&self, file_url: &str) -> Result<(), String> {
-        // Extract path from URL
-        // URL format: .../storage/v1/object/public/{bucket}/{path}
         let search_str = format!("/storage/v1/object/public/{}/", self.bucket);
         let path = file_url
             .split(&search_str)
