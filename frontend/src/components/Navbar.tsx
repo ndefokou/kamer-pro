@@ -195,7 +195,7 @@ const Navbar = () => {
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
-              <Link to={`/webauth-login?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`}>
+              <Link to="/webauth-login">
                 <Button variant="secondary">{t("login")}</Button>
               </Link>
             )}
@@ -332,7 +332,7 @@ const Navbar = () => {
                     <Button
                       variant="secondary"
                       className="w-full"
-                      onClick={() => handleNavigation(`/webauth-login?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`)}
+                      onClick={() => handleNavigation("/webauth-login")}
                     >
                       {t("login")}
                     </Button>

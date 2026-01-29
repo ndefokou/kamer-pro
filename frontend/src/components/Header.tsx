@@ -57,7 +57,7 @@ const Header: React.FC = () => {
                         <div className="text-xs text-gray-500">Become a host and earn extra income easily.</div>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => navigate(`/webauth-login?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`)} className="cursor-pointer">
+                    <DropdownMenuItem onClick={() => navigate('/webauth-login')} className="cursor-pointer">
                         {t("Log in or sign up")}
                     </DropdownMenuItem>
                 </>

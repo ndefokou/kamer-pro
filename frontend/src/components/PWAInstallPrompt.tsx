@@ -73,14 +73,14 @@ export const PWAInstallPrompt = () => {
 
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
-            <DialogContent className="sm:max-w-md">
+            <DialogContent className="sm:max-w-md top-4 translate-y-0 data-[state=open]:slide-in-from-top-0">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
                         <Download className="w-5 h-5 text-green-600" />
-                        Install Le Mboko
+                        leMboko
                     </DialogTitle>
                     <DialogDescription>
-                        Install our app on your device for a better experience, offline access, and faster performance.
+                        Connect with host in cameroun having guest house and book your own
                     </DialogDescription>
                 </DialogHeader>
                 <div className="flex items-center justify-center py-6">
@@ -110,7 +110,7 @@ export const PWAInstallPrompt = () => {
                         onClick={handleInstall}
                         className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white order-1 sm:order-2"
                     >
-                        Install Now
+                        Installer
                     </Button>
                 </DialogFooter>
             </DialogContent>
