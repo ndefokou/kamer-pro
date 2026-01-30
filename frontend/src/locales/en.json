@@ -110,6 +110,18 @@
   "delete": "Delete",
   "loading": "Loading...",
   "product not found": "Product not found",
+  "Success": "Success",
+  "Already reviewed": "Already reviewed",
+  "You can only review this listing once.": "You can only review this listing once.",
+  "Login required": "Login required",
+  "Please log in to write a review.": "Please log in to write a review.",
+  "Failed to submit review": "Failed to submit review",
+  "Please try again later.": "Please try again later.",
+  "Thank you for your feedback!": "Thank you for your feedback!",
+  "guestAccess": "Guest access",
+  "guestInteraction": "Guest interaction",
+  "otherNotes": "Other notes",
+  "propertyDetails": "Property details",
   "choose your role": "Choose Your Role",
   "how would you like to use MboaMaison": "How would you like to use Le Mboko?",
   "buyer": "Buyer",
@@ -607,7 +619,6 @@
   "property name": "Property Name",
   "enter your property nameceholder": "e.g. Modern Apartment in the City Center",
   "enter the property description": "Provide a detailed description of your property...",
-  "propertyDetails": "Property Details",
   "property status": "Property Status",
   "select a category": "Select a category",
   "select a condition": "Select a condition",
@@ -662,17 +673,73 @@
     "actions": {
       "goHome": "Go Home",
       "reserve": "Reserve",
-      "close": "Close"
+      "close": "Close",
+      "share": "Share",
+      "save": "Save",
+      "showAllPhotos": "Show all photos",
+      "clearDates": "Clear dates",
+      "writeReview": "Write a Review",
+      "messageHost": "Message Host",
+      "reportHost": "Report this host"
     },
     "details": {
-      "clearDates": "Clear dates",
+      "about": "About this place",
+      "offers": "What this place offers",
+      "showAllAmenities": "Show all {{count}} amenities",
+      "nightsInCity": "{{count}} nights in {{city}}",
+      "selectCheckIn": "Select check-in date",
+      "addDatesPricing": "Add your travel dates for exact pricing",
+      "location": "Where you'll be",
+      "exactLocation": "Exact location provided after booking",
+      "gettingAround": "Getting around",
+      "scenicViews": "Scenic views",
+      "thingsToKnow": "Things to know",
+      "houseRules": "House rules",
       "safetyProperty": "Safety & property",
+      "cancellationPolicy": "Cancellation policy",
       "flexibleCancellation": "Flexible cancellation policy",
-      "selectDates": "Select dates"
+      "noPhotos": "No photos available",
+      "guestFavorite": "Guest favorite",
+      "new": "New",
+      "maxGuests": "{{count}} guests maximum",
+      "unitCount": {
+        "guests": "{{count}} guests",
+        "bedrooms": "{{count}} bedrooms",
+        "beds": "{{count}} beds",
+        "baths": "{{count}} baths"
+      },
+      "houseRulesProps": {
+        "smokingAllowed": "Smoking, vaping, e-cigarettes allowed",
+        "quietHoursEnforced": "Quiet hours enforced",
+        "quietHoursNotEnforced": "Quiet hours not enforced",
+        "photographyAllowed": "Commercial photography and filming allowed",
+        "photographyNotAllowed": "No commercial photography or filming"
+      }
+    },
+    "booking": {
+      "checkIn": "Check-in",
+      "checkout": "Checkout",
+      "addDate": "Add date",
+      "guests": "Guests",
+      "guestCount": "{{count}} guest",
+      "guestCount_other": "{{count}} guests",
+      "noCharge": "You won't be charged yet",
+      "selectDates": "Select dates",
+      "adults": "Adults"
     },
     "reviews": {
       "noReviewsYet": "No reviews yet",
-      "writeReview": "Write a Review"
+      "rating": "Rating",
+      "count": "{{count}} reviews",
+      "count_one": "1 review",
+      "categories": {
+        "cleanliness": "Cleanliness",
+        "accuracy": "Accuracy",
+        "checkin": "Check-in",
+        "communication": "Communication",
+        "location": "Location",
+        "value": "Value"
+      }
     },
     "host": {
       "meet": "Meet your Host",
