@@ -22,20 +22,18 @@ async fn main() -> std::io::Result<()> {
     let mut database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
 
     // For PGBouncer in transaction mode (common on Render/Supabase Pooler),
-    // we must disable prepared statements.
+    // we must disable named prepared statements.
+    // 1. prepare_threshold=0: tells SQLx to use unnamed prepared statements
+    // 2. statement_cache_capacity=0: tells SQLx not to cache statements
+
     if !database_url.contains("prepare_threshold") {
-        if database_url.contains('?') {
-            database_url.push_str("&prepare_threshold=0");
-        } else {
-            database_url.push_str("?prepare_threshold=0");
-        }
+        let separator = if database_url.contains('?') { "&" } else { "?" };
+        database_url.push_str(&format!("{}prepare_threshold=0", separator));
     }
+
     if !database_url.contains("statement_cache_capacity") {
-        if database_url.contains('?') {
-            database_url.push_str("&statement_cache_capacity=0");
-        } else {
-            database_url.push_str("?statement_cache_capacity=0");
-        }
+        let separator = if database_url.contains('?') { "&" } else { "?" };
+        database_url.push_str(&format!("{}statement_cache_capacity=0", separator));
     }
 
     // Create the uploads directory if it doesn't exist
