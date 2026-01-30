@@ -62,6 +62,11 @@ async fn main() -> std::io::Result<()> {
         .expect("Failed to parse DATABASE_URL")
         .statement_cache_capacity(0);
 
+    println!("Database connection properties: statement_cache_capacity=0, prepare_threshold=0");
+
+    // Some versions of SQLx 0.7 need this in addition to statement_cache_capacity(0)
+    // to strictly avoid named prepared statements.
+
     let pool = PgPoolOptions::new()
         .max_connections(max_conns)
         .acquire_timeout(Duration::from_secs(10))
