@@ -8,6 +8,7 @@ import { Home as HomeIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getProducts, Product, getTowns, TownCount } from "@/api/client";
 import { getImageUrl, formatPrice } from "@/lib/utils";
+import OptimizedImage from "@/components/OptimizedImage";
 import { useTranslation } from "react-i18next";
 import {
     DropdownMenuItem,
@@ -415,12 +416,9 @@ const SearchResults = () => {
                             <Marker key={id} position={[lat, lon]}>
                                 <Popup>
                                     <div className="w-48">
-                                        <img
+                                        <OptimizedImage
                                             src={getImageUrl(product.photos[0]?.url) || "https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=400&h=400&fit=crop"}
                                             alt={product.listing.title}
-                                            loading="lazy"
-                                            decoding="async"
-                                            sizes="192px"
                                             className="w-full h-32 object-cover rounded-lg mb-2"
                                         />
                                         <h3 className="font-semibold text-sm truncate">{product.listing.title}</h3>

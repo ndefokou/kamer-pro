@@ -5,6 +5,7 @@ import { getListing, createBooking, getListingReviews, addListingReview, Listing
 import { Button } from '@/components/ui/button';
 import { Loader2, Share, Heart, Star, Minus, Plus, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { getImageUrl, formatPrice } from '@/lib/utils';
+import OptimizedImage from '@/components/OptimizedImage';
 import { AMENITY_DETAILS } from '@/data/amenities';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -518,15 +519,15 @@ const ListingDetails: React.FC = () => {
                     {sortedPhotos.length > 0 ? (
                         <div className="relative group">
                             {sortedPhotos.length === 1 ? (
-                                <img
+                                <OptimizedImage
                                     src={getImageUrl(sortedPhotos[0].url)}
                                     alt={listing.title}
-                                    decoding="async"
                                     className="w-full h-[300px] sm:h-[400px] md:h-[500px] object-cover cursor-pointer hover:scale-105 transition-transform duration-700"
                                     onClick={() => {
                                         setInitialPhotoIndex(0);
                                         setIsPhotoGalleryOpen(true);
                                     }}
+                                    priority={true}
                                 />
                             ) : sortedPhotos.length <= 4 ? (
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -539,12 +540,11 @@ const ListingDetails: React.FC = () => {
                                                 setIsPhotoGalleryOpen(true);
                                             }}
                                         >
-                                            <img
+                                            <OptimizedImage
                                                 src={getImageUrl(photo.url)}
                                                 alt={`Photo ${idx + 1}`}
-                                                loading="lazy"
-                                                decoding="async"
                                                 className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
+                                                quality={idx === 0 ? 'high' : 'medium'}
                                             />
                                         </div>
                                     ))}
@@ -558,11 +558,12 @@ const ListingDetails: React.FC = () => {
                                             setIsPhotoGalleryOpen(true);
                                         }}
                                     >
-                                        <img
+                                        <OptimizedImage
                                             src={getImageUrl(sortedPhotos[0].url)}
                                             alt={listing.title}
-                                            decoding="async"
                                             className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
+                                            quality="high"
+                                            priority={true}
                                         />
                                     </div>
                                     <div className="hidden md:grid md:col-span-2 md:grid-cols-2 md:grid-rows-2 gap-2 h-full">
@@ -575,12 +576,11 @@ const ListingDetails: React.FC = () => {
                                                     setIsPhotoGalleryOpen(true);
                                                 }}
                                             >
-                                                <img
+                                                <OptimizedImage
                                                     src={getImageUrl(photo.url)}
                                                     alt={`Photo ${idx + 2}`}
-                                                    loading="lazy"
-                                                    decoding="async"
                                                     className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
+                                                    quality="medium"
                                                 />
                                             </div>
                                         ))}

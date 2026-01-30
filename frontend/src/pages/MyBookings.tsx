@@ -5,6 +5,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { getImageUrl, formatPrice } from "@/lib/utils";
+import OptimizedImage from "@/components/OptimizedImage";
 
 const StatusBadge = ({ status }: { status: BookingWithDetails["booking"]["status"] }) => {
   const color = status === "confirmed" ? "bg-green-100 text-green-700" : status === "pending" ? "bg-yellow-100 text-yellow-700" : "bg-red-100 text-red-700";
@@ -48,12 +49,12 @@ export default function MyBookings() {
               {data.map((b) => (
                 <div key={b.booking.id} className="border rounded-xl p-4 flex flex-col sm:flex-row gap-4 items-start sm:items-center bg-white">
                   <div className="flex gap-4 w-full sm:w-auto flex-1">
-                    <img
+                    <OptimizedImage
                       src={b.listing_photo ? getImageUrl(b.listing_photo) : "/bathroom-placeholder.jpg"}
-                      onError={(e) => { (e.currentTarget as HTMLImageElement).src = "/bathroom-placeholder.jpg"; }}
                       alt="Listing"
                       className="w-24 h-24 object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
                       onClick={() => (window.location.href = `/product/${b.booking.listing_id}`)}
+                      onError={() => { /* Handled by OptimizedImage internal fallback */ }}
                     />
                     <div
                       className="flex-1 cursor-pointer"

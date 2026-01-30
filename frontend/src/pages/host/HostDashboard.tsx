@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Plus, Grid3x3, Menu, Mail, Home, Globe, HelpCircle, Settings, BookOpen, Users, UserPlus, LogOut, Trash } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getImageUrl } from '@/lib/utils';
+import OptimizedImage from '@/components/OptimizedImage';
 
 import { useAuth } from '@/contexts/AuthContext';
 import { useHost } from '@/contexts/HostContext';
@@ -211,7 +212,7 @@ const HostDashboard: React.FC = () => {
                                     <div className="flex items-center gap-4">
                                         <div className="h-24 w-24 rounded-xl overflow-hidden flex-shrink-0 bg-gray-100 shadow-inner">
                                             {item.photos?.[0]?.url ? (
-                                                <img
+                                                <OptimizedImage
                                                     src={getImageUrl(item.photos[0].url)}
                                                     alt={item.listing.title}
                                                     className="h-full w-full object-cover"
@@ -293,7 +294,7 @@ const HostDashboard: React.FC = () => {
                                                     <div className="flex items-center gap-4">
                                                         <div className="h-16 w-20 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100">
                                                             {item.photos?.[0]?.url ? (
-                                                                <img
+                                                                <OptimizedImage
                                                                     src={getImageUrl(item.photos[0].url)}
                                                                     alt={item.listing.title}
                                                                     className="h-full w-full object-cover"

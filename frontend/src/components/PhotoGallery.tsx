@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, ChevronLeft, ChevronRight, Share, Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { getImageUrl } from '@/lib/utils';
+import OptimizedImage from './OptimizedImage';
 
 interface Photo {
     id: number;
@@ -23,10 +24,6 @@ const PhotoGallery: React.FC<PhotoGalleryProps> = ({ isOpen, onClose, photos, in
     useEffect(() => {
         if (isOpen) {
             document.body.style.overflow = 'hidden';
-            // If an initial index is provided (and it's not 0 or we want to jump straight to lightbox),
-            // we could handle that here. For now, let's default to grid unless specified.
-            // But the user request implies clicking "Show all photos" goes to grid, 
-            // and clicking a specific photo might go to lightbox.
             // Let's stick to the plan: "Show all photos" -> Grid.
         } else {
             document.body.style.overflow = 'unset';
@@ -98,10 +95,12 @@ const PhotoGallery: React.FC<PhotoGalleryProps> = ({ isOpen, onClose, photos, in
                         <ChevronLeft className="h-8 w-8" />
                     </button>
 
-                    <img
+                    <OptimizedImage
                         src={getImageUrl(photos[currentIndex].url)}
                         alt={`Photo ${currentIndex + 1}`}
                         className="w-full h-full object-contain"
+                        quality="high"
+                        priority={true}
                     />
 
                     <button
@@ -121,12 +120,11 @@ const PhotoGallery: React.FC<PhotoGalleryProps> = ({ isOpen, onClose, photos, in
                             className={`relative h-14 w-20 flex-shrink-0 rounded-md overflow-hidden transition-opacity ${idx === currentIndex ? 'ring-2 ring-white opacity-100' : 'opacity-50 hover:opacity-75'
                                 }`}
                         >
-                            <img
+                            <OptimizedImage
                                 src={getImageUrl(photo.url)}
                                 alt={`Thumbnail ${idx + 1}`}
-                                loading="lazy"
-                                decoding="async"
                                 className="h-full w-full object-cover"
+                                quality="low"
                             />
                         </button>
                     ))}
@@ -170,12 +168,11 @@ const PhotoGallery: React.FC<PhotoGalleryProps> = ({ isOpen, onClose, photos, in
                             className="break-inside-avoid cursor-pointer group relative"
                             onClick={() => handlePhotoClick(index)}
                         >
-                            <img
+                            <OptimizedImage
                                 src={getImageUrl(photo.url)}
                                 alt={`Photo ${index + 1}`}
-                                loading="lazy"
-                                decoding="async"
                                 className="w-full rounded-lg hover:opacity-95 transition-opacity"
+                                quality="medium"
                             />
                             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors rounded-lg" />
                         </div>

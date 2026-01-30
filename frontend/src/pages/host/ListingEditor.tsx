@@ -4,6 +4,7 @@ import apiClient from '@/api/client';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, Plus, Minus, Settings, Home, MapPin, Users, Key, BookOpen, Shield, FileText, Link as LinkIcon, Camera, Eye, X, Grid3x3, Mail } from 'lucide-react';
 import { getImageUrl, formatPrice } from '@/lib/utils';
+import OptimizedImage from '@/components/OptimizedImage';
 import { AMENITY_DETAILS } from '@/data/amenities';
 import AddAmenitiesPanel from '@/components/host/AddAmenitiesPanel';
 import HouseRulesSection, { HouseRules, DEFAULT_HOUSE_RULES } from '@/components/host/HouseRulesSection';
@@ -406,7 +407,7 @@ const ListingEditor: React.FC = () => {
                                             <div className={`w-24 h-24 rounded-xl overflow-hidden mb-2 border-2 transition-all ${photoView === item.id ? 'border-black ring-1 ring-black' : 'border-transparent group-hover:scale-105'
                                                 }`}>
                                                 {item.image ? (
-                                                    <img src={item.image} alt={item.label} className="w-full h-full object-cover" />
+                                                    <OptimizedImage src={item.image} alt={item.label} className="w-full h-full object-cover" />
                                                 ) : (
                                                     <div className="w-full h-full bg-gray-100 flex items-center justify-center">
                                                         <Camera className="h-8 w-8 text-gray-400" />
@@ -489,7 +490,7 @@ const ListingEditor: React.FC = () => {
                                                     className="aspect-[4/3] rounded-xl overflow-hidden bg-gray-100 relative group cursor-pointer"
                                                     onClick={() => openLightbox(photo.url)}
                                                 >
-                                                    <img src={getImageUrl(photo.url)} alt={photo.caption} className="w-full h-full object-cover" />
+                                                    <OptimizedImage src={getImageUrl(photo.url)} alt={photo.caption} className="w-full h-full object-cover" />
                                                 </div>
                                             ))}
                                             {listing.photos.length === 0 && (
@@ -536,7 +537,7 @@ const ListingEditor: React.FC = () => {
                                                     className="aspect-[4/3] rounded-xl overflow-hidden bg-gray-100 relative group cursor-pointer"
                                                     onClick={() => openLightbox(photo.url)}
                                                 >
-                                                    <img src={getImageUrl(photo.url)} alt={photo.caption} className="w-full h-full object-cover" />
+                                                    <OptimizedImage src={getImageUrl(photo.url)} alt={photo.caption} className="w-full h-full object-cover" />
                                                 </div>
                                             ))}
                                             {/* Placeholders for empty states if no photos */}

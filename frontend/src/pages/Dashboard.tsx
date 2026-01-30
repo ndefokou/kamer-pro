@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { getProducts, Product } from "@/api/client";
 import MbokoSearch from "@/components/Search";
 import { getImageUrl } from "@/lib/utils";
+import OptimizedImage from "@/components/OptimizedImage";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -33,10 +34,10 @@ const Dashboard = () => {
     const normalizeCity = (s?: string) => (s || "").trim().toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '');
     const preferredOrder = useMemo(() => ["yaounde", "douala", "kribi"], []);
     const knownCities = useMemo(() => ({
-        yaounde: { display: 'Yaounde', lat: 3.8480, lon: 11.5021, synonyms: ['bastos','biyem','nkolbisson','melen','odza','nkolmesseng','nkoabang','ekounou','essos','madagascar'] },
-        douala: { display: 'Douala', lat: 4.0511, lon: 9.7679, synonyms: ['akwa','bonapriso','bonanjo','deido','makepe','ndogbong','logbaba','bepanda','bonamoussadi'] },
-        kribi:   { display: 'Kribi',   lat: 2.9400, lon: 9.9100, synonyms: ['mpalla','londji','ebambe','lolabe'] },
-        buea:    { display: 'Buea',    lat: 4.1527, lon: 9.2410, synonyms: ['molyko','muea','mile 17','bongo square','great soppo','small soppo','bokwango'] },
+        yaounde: { display: 'Yaounde', lat: 3.8480, lon: 11.5021, synonyms: ['bastos', 'biyem', 'nkolbisson', 'melen', 'odza', 'nkolmesseng', 'nkoabang', 'ekounou', 'essos', 'madagascar'] },
+        douala: { display: 'Douala', lat: 4.0511, lon: 9.7679, synonyms: ['akwa', 'bonapriso', 'bonanjo', 'deido', 'makepe', 'ndogbong', 'logbaba', 'bepanda', 'bonamoussadi'] },
+        kribi: { display: 'Kribi', lat: 2.9400, lon: 9.9100, synonyms: ['mpalla', 'londji', 'ebambe', 'lolabe'] },
+        buea: { display: 'Buea', lat: 4.1527, lon: 9.2410, synonyms: ['molyko', 'muea', 'mile 17', 'bongo square', 'great soppo', 'small soppo', 'bokwango'] },
     }) as const, []);
 
     const distanceKm = (lat1: number, lon1: number, lat2: number, lon2: number) => {
@@ -44,8 +45,8 @@ const Dashboard = () => {
         const R = 6371;
         const dLat = toRad(lat2 - lat1);
         const dLon = toRad(lon2 - lon1);
-        const a = Math.sin(dLat/2)**2 + Math.cos(toRad(lat1))*Math.cos(toRad(lat2))*Math.sin(dLon/2)**2;
-        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
         return R * c;
     };
 
@@ -131,12 +132,9 @@ const Dashboard = () => {
     const PropertyCard = ({ product, index }: { product: Product; index: number }) => (
         <div className="flex-shrink-0 w-[180px] sm:w-[240px] md:w-[280px] cursor-pointer group">
             <div className="relative aspect-[4/3] sm:aspect-square rounded-xl overflow-hidden mb-2">
-                <img
+                <OptimizedImage
                     src={getImageUrl(product.photos[0]?.url) || "https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=400&h=400&fit=crop"}
                     alt={product.listing.title || "Property image"}
-                    loading="lazy"
-                    decoding="async"
-                    sizes="(min-width: 1024px) 280px, (min-width: 640px) 240px, 180px"
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     onClick={() => navigate(`/product/${product.listing.id}`)}
                 />

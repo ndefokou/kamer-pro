@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Upload, X, Star } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getImageUrl } from '@/lib/utils';
+import OptimizedImage from '@/components/OptimizedImage';
 import apiClient from '@/api/client';
 
 const PhotoUpload: React.FC = () => {
@@ -134,7 +135,7 @@ const PhotoUpload: React.FC = () => {
                                         }`}
                                     onClick={() => setSelectedPhoto(photo)}
                                 >
-                                    <img
+                                    <OptimizedImage
                                         src={getImageUrl(photo)}
                                         alt={`Photo ${index + 1}`}
                                         className="w-full h-full object-cover"
@@ -176,7 +177,7 @@ const PhotoUpload: React.FC = () => {
                         >
                             <X className="h-6 w-6" />
                         </button>
-                        <img
+                        <OptimizedImage
                             src={getImageUrl(selectedPhoto)}
                             alt="Full size view"
                             className="w-full h-full object-contain"

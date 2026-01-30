@@ -8,6 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Loader2, Send, Search, MoreVertical, ChevronLeft } from 'lucide-react';
 import { format } from 'date-fns';
 import { getImageUrl } from '@/lib/utils';
+import OptimizedImage from '@/components/OptimizedImage';
 import Header from '@/components/Header';
 import HostHeader from '@/components/HostHeader';
 import { useTranslation } from 'react-i18next';
@@ -173,7 +174,7 @@ const Messages: React.FC = () => {
                                         </div>
                                         <div className="flex items-center gap-2">
                                             {selectedConversation.listing_image && (
-                                                <img
+                                                <OptimizedImage
                                                     src={getImageUrl(selectedConversation.listing_image)}
                                                     alt="Listing"
                                                     className="h-10 w-10 rounded object-cover hidden sm:block"

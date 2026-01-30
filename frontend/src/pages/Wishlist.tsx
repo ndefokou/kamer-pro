@@ -3,6 +3,7 @@ import { useWishlist } from '@/hooks/useWishlist';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { getImageUrl, formatPrice } from '@/lib/utils';
+import OptimizedImage from '@/components/OptimizedImage';
 import { Heart } from 'lucide-react';
 import Header from '@/components/Header';
 
@@ -36,7 +37,7 @@ const Wishlist: React.FC = () => {
                             <div key={item.id} className="group relative">
                                 <Link to={`/product/${item.id}`}>
                                     <div className="aspect-square w-full overflow-hidden rounded-lg bg-gray-200">
-                                        <img
+                                        <OptimizedImage
                                             src={getImageUrl(item.images[0]?.image_url)}
                                             alt={item.name}
                                             className="h-full w-full object-cover object-center group-hover:opacity-75 transition-opacity"

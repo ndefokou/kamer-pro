@@ -34,6 +34,7 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
+import OptimizedImage from "./OptimizedImage";
 
 interface Review {
   id: number;
@@ -258,11 +259,10 @@ export const ProductReviews = ({
         {[1, 2, 3, 4, 5].map((star) => (
           <Star
             key={star}
-            className={`h-5 w-5 cursor-pointer transition-colors ${
-              star <= value
+            className={`h-5 w-5 cursor-pointer transition-colors ${star <= value
                 ? "fill-[#FFD700] text-[#FFD700]"
                 : "text-white"
-            }`}
+              }`}
             onMouseEnter={() => onHover?.(star)}
             onMouseLeave={() => onHover?.(0)}
             onClick={() => onClick?.(star)}
@@ -383,8 +383,7 @@ export const ProductReviews = ({
                 {previews.length > 0 && (
                   <div className="grid grid-cols-3 gap-2 mt-4">
                     {previews.map((preview, idx) => (
-                      <img
-                        key={idx}
+                      <OptimizedImage
                         src={preview}
                         alt={`Preview ${idx + 1}`}
                         className="w-full h-24 object-cover rounded"
@@ -450,7 +449,7 @@ export const ProductReviews = ({
                       <CarouselContent>
                         {review.images.map((image, idx) => (
                           <CarouselItem key={idx} className="basis-1/3">
-                            <img
+                            <OptimizedImage
                               src={image}
                               alt={`Review image ${idx + 1}`}
                               className="w-full h-24 object-cover rounded"

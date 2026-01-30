@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useWishlist } from "@/hooks/useWishlist";
 import { useToast } from "@/hooks/use-toast";
 import { getImageUrl, formatPrice } from "@/lib/utils";
+import OptimizedImage from "./OptimizedImage";
 
 interface PropertyCardProps {
     id: string;
@@ -61,12 +62,9 @@ const PropertyCard = ({
                 {/* Image Container */}
                 <div className="relative aspect-[20/19] sm:aspect-square rounded-xl overflow-hidden bg-muted mb-3">
                     {images && images.length > 0 ? (
-                        <img
+                        <OptimizedImage
                             src={getImageUrl(images[currentImageIndex]?.image_url)}
                             alt={name}
-                            loading="lazy"
-                            decoding="async"
-                            sizes="(min-width: 1024px) 280px, (min-width: 640px) 240px, 180px"
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
                         />
                     ) : (

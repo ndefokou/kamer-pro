@@ -3,6 +3,7 @@ import { X, Upload, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import apiClient from '@/api/client';
 import { getImageUrl } from '@/lib/utils';
+import OptimizedImage from '@/components/OptimizedImage';
 
 interface PhotoUploadModalProps {
     isOpen: boolean;
@@ -248,7 +249,7 @@ const PhotoUploadModal: React.FC<PhotoUploadModalProps> = ({
                                 className={`aspect-square rounded-lg overflow-hidden border-4 transition-all ${isSelected ? 'border-blue-500' : 'border-transparent'
                                     }`}
                             >
-                                <img
+                                <OptimizedImage
                                     src={getImageUrl(photo.url)}
                                     alt={photo.caption}
                                     className="w-full h-full object-cover"

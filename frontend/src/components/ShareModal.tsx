@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Copy, Mail, MessageSquare, Facebook, Twitter, Code, MessageCircle } from 'lucide-react';
 import { getImageUrl } from '@/lib/utils';
+import OptimizedImage from './OptimizedImage';
 import { toast } from "sonner";
 
 interface ShareModalProps {
@@ -82,7 +83,7 @@ const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, listing }) => 
                     {/* Listing Preview */}
                     <div className="flex gap-4 mb-8">
                         <div className="h-24 w-24 rounded-xl overflow-hidden flex-shrink-0">
-                            <img
+                            <OptimizedImage
                                 src={getImageUrl(coverPhoto?.url)}
                                 alt={listing.title}
                                 className="h-full w-full object-cover"

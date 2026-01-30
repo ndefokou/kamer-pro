@@ -12,6 +12,7 @@ interface OptimizedImageProps {
     quality?: 'low' | 'medium' | 'high';
     onLoad?: () => void;
     onError?: () => void;
+    onClick?: React.MouseEventHandler<HTMLImageElement>;
 }
 
 export const OptimizedImage: React.FC<OptimizedImageProps> = ({
@@ -24,6 +25,7 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
     quality,
     onLoad,
     onError,
+    onClick,
 }) => {
     const [imageSrc, setImageSrc] = useState<string>('');
     const [isLoading, setIsLoading] = useState(true);
@@ -199,6 +201,7 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
                 height={height}
                 loading={priority ? 'eager' : 'lazy'}
                 style={!imageSrc ? placeholderStyle : undefined}
+                onClick={onClick}
                 onError={() => {
                     setHasError(true);
                     setIsLoading(false);

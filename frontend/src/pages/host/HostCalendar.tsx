@@ -7,6 +7,7 @@ import { Menu, ChevronDown, X, Check, Calendar as CalendarIcon, Grid3x3, Mail, H
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { getImageUrl } from '@/lib/utils';
+import OptimizedImage from '@/components/OptimizedImage';
 import CalendarGrid from '@/components/host/CalendarGrid';
 import PriceSettingsModal from '@/components/host/PriceSettingsModal';
 import AvailabilitySettingsModal from '../../components/host/AvailabilitySettingsModal';
@@ -382,7 +383,7 @@ const HostCalendar: React.FC = () => {
                                     >
                                         <div className="h-40 bg-gray-100">
                                             {item.photos?.[0]?.url ? (
-                                                <img src={getImageUrl(item.photos[0].url)} alt={item.listing.title || 'Listing'} className="w-full h-full object-cover" />
+                                                <OptimizedImage src={getImageUrl(item.photos[0].url)} alt={item.listing.title || 'Listing'} className="w-full h-full object-cover" />
                                             ) : (
                                                 <div className="w-full h-full flex items-center justify-center text-gray-400">
                                                     <Home className="h-8 w-8" />
@@ -401,251 +402,251 @@ const HostCalendar: React.FC = () => {
                         )}
                     </div>
                 ) : (
-                <div className="flex flex-col lg:flex-row gap-8">
-                    {/* Calendar Section */}
-                    <div className="flex-1">
-                        {/* Month & Year Selector */}
-                        <div className="flex items-center justify-between mb-8">
-                            <div className="flex items-center gap-4">
-                                <div className="relative group">
-                                    <select
-                                        value={currentMonth.getFullYear()}
-                                        onChange={(e) => handleYearChange(Number(e.target.value))}
-                                        className="text-3xl font-bold bg-transparent border-none cursor-pointer pr-8 focus:outline-none appearance-none hover:text-gray-600 transition-colors"
-                                    >
-                                        {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() + i).map(year => (
-                                            <option key={year} value={year}>{year}</option>
-                                        ))}
-                                    </select>
-                                    <ChevronDown className="h-6 w-6 text-gray-400 absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none group-hover:text-gray-600 transition-colors" />
+                    <div className="flex flex-col lg:flex-row gap-8">
+                        {/* Calendar Section */}
+                        <div className="flex-1">
+                            {/* Month & Year Selector */}
+                            <div className="flex items-center justify-between mb-8">
+                                <div className="flex items-center gap-4">
+                                    <div className="relative group">
+                                        <select
+                                            value={currentMonth.getFullYear()}
+                                            onChange={(e) => handleYearChange(Number(e.target.value))}
+                                            className="text-3xl font-bold bg-transparent border-none cursor-pointer pr-8 focus:outline-none appearance-none hover:text-gray-600 transition-colors"
+                                        >
+                                            {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() + i).map(year => (
+                                                <option key={year} value={year}>{year}</option>
+                                            ))}
+                                        </select>
+                                        <ChevronDown className="h-6 w-6 text-gray-400 absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none group-hover:text-gray-600 transition-colors" />
+                                    </div>
+                                    <div className="relative group">
+                                        <select
+                                            value={currentMonth.getMonth()}
+                                            onChange={(e) => handleMonthChange(Number(e.target.value))}
+                                            className="text-3xl font-bold bg-transparent border-none cursor-pointer pr-8 focus:outline-none appearance-none hover:text-gray-600 transition-colors"
+                                        >
+                                            {Array.from({ length: 12 }, (_, i) => i).map(monthIndex => (
+                                                <option key={monthIndex} value={monthIndex}>
+                                                    {new Date(0, monthIndex).toLocaleString('default', { month: 'long' })}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        <ChevronDown className="h-6 w-6 text-gray-400 absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none group-hover:text-gray-600 transition-colors" />
+                                    </div>
                                 </div>
-                                <div className="relative group">
-                                    <select
-                                        value={currentMonth.getMonth()}
-                                        onChange={(e) => handleMonthChange(Number(e.target.value))}
-                                        className="text-3xl font-bold bg-transparent border-none cursor-pointer pr-8 focus:outline-none appearance-none hover:text-gray-600 transition-colors"
+                                <div>
+                                    <Button
+                                        variant="outline"
+                                        className="rounded-full border-gray-300"
+                                        onClick={() => navigate('/host/calendar')}
                                     >
-                                        {Array.from({ length: 12 }, (_, i) => i).map(monthIndex => (
-                                            <option key={monthIndex} value={monthIndex}>
-                                                {new Date(0, monthIndex).toLocaleString('default', { month: 'long' })}
-                                            </option>
-                                        ))}
-                                    </select>
-                                    <ChevronDown className="h-6 w-6 text-gray-400 absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none group-hover:text-gray-600 transition-colors" />
+                                        {t('host.calendar.changeListing', 'Change listing')}
+                                    </Button>
                                 </div>
                             </div>
-                            <div>
-                                <Button
-                                    variant="outline"
-                                    className="rounded-full border-gray-300"
-                                    onClick={() => navigate('/host/calendar')}
-                                >
-                                    {t('host.calendar.changeListing', 'Change listing')}
-                                </Button>
-                            </div>
-                        </div>
 
-                        {/* Calendar Grids */
-                        }
-                        {loading ? (
-                            <div className="text-center py-12 text-gray-500">{t('host.calendar.loading', 'Loading calendar...')}</div>
-                        ) : (
-                            <div className="space-y-12">
-                                {getMonthsToDisplay().map((month, index) => {
-                                    const monthId = `month-${month.getFullYear()}-${month.getMonth()}`;
-                                    return (
-                                        <div key={monthId} id={monthId}>
-                                            <CalendarGrid
-                                                month={month}
-                                                pricingData={pricingData}
-                                                selectedDates={selectedDates}
-                                                onDateSelect={handleDateSelect}
-                                                basePrice={settings?.base_price || listingPrice}
-                                            />
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        )}
-                    </div>
-                    {/* Sidebar Panel */}
-                    <div className="lg:w-80 w-full">
-                        <div className="lg:sticky lg:top-24 space-y-4 lg:h-[calc(100vh-8rem)] lg:overflow-y-auto no-scrollbar">
-                            {selectedDates.length > 0 ? (
-                                <>
-                                    {/* Selected Date Panel */}
-                                    {!showCustomSettings ? (
-                                        <div className="bg-gray-900 text-white rounded-2xl p-4 space-y-4">
-                                            <div className="flex items-center justify-between">
-                                                <div className="flex items-center gap-2">
+                            {/* Calendar Grids */
+                            }
+                            {loading ? (
+                                <div className="text-center py-12 text-gray-500">{t('host.calendar.loading', 'Loading calendar...')}</div>
+                            ) : (
+                                <div className="space-y-12">
+                                    {getMonthsToDisplay().map((month, index) => {
+                                        const monthId = `month-${month.getFullYear()}-${month.getMonth()}`;
+                                        return (
+                                            <div key={monthId} id={monthId}>
+                                                <CalendarGrid
+                                                    month={month}
+                                                    pricingData={pricingData}
+                                                    selectedDates={selectedDates}
+                                                    onDateSelect={handleDateSelect}
+                                                    basePrice={settings?.base_price || listingPrice}
+                                                />
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </div>
+                        {/* Sidebar Panel */}
+                        <div className="lg:w-80 w-full">
+                            <div className="lg:sticky lg:top-24 space-y-4 lg:h-[calc(100vh-8rem)] lg:overflow-y-auto no-scrollbar">
+                                {selectedDates.length > 0 ? (
+                                    <>
+                                        {/* Selected Date Panel */}
+                                        {!showCustomSettings ? (
+                                            <div className="bg-gray-900 text-white rounded-2xl p-4 space-y-4">
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-sm font-medium">
+                                                            {selectedDates.length === 1
+                                                                ? new Date(selectedDates[0]).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                                                                : `${selectedDates.length} dates`
+                                                            }
+                                                        </span>
+                                                    </div>
+                                                    <button
+                                                        onClick={() => setSelectedDates([])}
+                                                        className="p-1 hover:bg-gray-800 rounded-full"
+                                                    >
+                                                        <X className="h-5 w-5" />
+                                                    </button>
+                                                </div>
+
+                                                <div className="flex items-center justify-between py-2">
+                                                    <span className="text-sm font-medium">{t('host.calendar.available', 'Available')}</span>
+                                                    <button
+                                                        onClick={handleAvailabilityToggle}
+                                                        className={`w-12 h-6 rounded-full transition-colors ${isAvailable ? 'bg-green-500' : 'bg-red-500'}`}
+                                                        aria-pressed={isAvailable}
+                                                        aria-label={isAvailable ? t('host.calendar.available', 'Available') : t('host.calendar.unavailable', 'Unavailable')}
+                                                    >
+                                                        <div className={`w-5 h-5 rounded-full bg-white shadow-sm transition-transform ${isAvailable ? 'translate-x-6' : 'translate-x-0.5'}`} />
+                                                    </button>
+                                                </div>
+
+                                                <div>
+                                                    <p className="text-xs text-gray-400 mb-2">{t('host.calendar.price', 'Price')}</p>
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-2xl font-semibold">$</span>
+                                                        <input
+                                                            type="number"
+                                                            value={editingPrice}
+                                                            onChange={(e) => setEditingPrice(Number(e.target.value))}
+                                                            onBlur={() => handlePriceUpdate(editingPrice)}
+                                                            className="text-2xl font-semibold bg-transparent border-none text-white w-24 focus:outline-none focus:ring-0"
+                                                        />
+                                                    </div>
+                                                </div>
+
+                                                <button
+                                                    onClick={() => setShowCustomSettings(true)}
+                                                    className="w-full bg-gray-800 hover:bg-gray-700 rounded-lg px-4 py-3 transition-colors text-left"
+                                                >
+                                                    <span className="text-sm font-medium">{t('host.calendar.customSettings', 'Custom settings')}</span>
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <div className="bg-gray-900 text-white rounded-2xl p-4 space-y-4">
+                                                <div className="flex items-center justify-between mb-2">
                                                     <span className="text-sm font-medium">
                                                         {selectedDates.length === 1
                                                             ? new Date(selectedDates[0]).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
                                                             : `${selectedDates.length} dates`
                                                         }
                                                     </span>
+                                                    <button
+                                                        onClick={() => setShowCustomSettings(false)}
+                                                        className="p-1 hover:bg-gray-800 rounded-full"
+                                                    >
+                                                        <X className="h-5 w-5" />
+                                                    </button>
                                                 </div>
-                                                <button
-                                                    onClick={() => setSelectedDates([])}
-                                                    className="p-1 hover:bg-gray-800 rounded-full"
-                                                >
-                                                    <X className="h-5 w-5" />
-                                                </button>
-                                            </div>
 
-                                            <div className="flex items-center justify-between py-2">
-                                                <span className="text-sm font-medium">{t('host.calendar.available', 'Available')}</span>
-                                                <button
-                                                    onClick={handleAvailabilityToggle}
-                                                    className={`w-12 h-6 rounded-full transition-colors ${isAvailable ? 'bg-green-500' : 'bg-red-500'}`}
-                                                    aria-pressed={isAvailable}
-                                                    aria-label={isAvailable ? t('host.calendar.available', 'Available') : t('host.calendar.unavailable', 'Unavailable')}
-                                                >
-                                                    <div className={`w-5 h-5 rounded-full bg-white shadow-sm transition-transform ${isAvailable ? 'translate-x-6' : 'translate-x-0.5'}`} />
-                                                </button>
-                                            </div>
+                                                <div className="text-sm font-medium mb-4">{t('host.calendar.customSettings', 'Custom settings')}</div>
 
-                                            <div>
-                                                <p className="text-xs text-gray-400 mb-2">{t('host.calendar.price', 'Price')}</p>
-                                                <div className="flex items-center gap-2">
-                                                    <span className="text-2xl font-semibold">$</span>
-                                                    <input
-                                                        type="number"
-                                                        value={editingPrice}
-                                                        onChange={(e) => setEditingPrice(Number(e.target.value))}
-                                                        onBlur={() => handlePriceUpdate(editingPrice)}
-                                                        className="text-2xl font-semibold bg-transparent border-none text-white w-24 focus:outline-none focus:ring-0"
-                                                    />
-                                                </div>
-                                            </div>
-
-                                            <button
-                                                onClick={() => setShowCustomSettings(true)}
-                                                className="w-full bg-gray-800 hover:bg-gray-700 rounded-lg px-4 py-3 transition-colors text-left"
-                                            >
-                                                <span className="text-sm font-medium">{t('host.calendar.customSettings', 'Custom settings')}</span>
-                                            </button>
-                                        </div>
-                                    ) : (
-                                        <div className="bg-gray-900 text-white rounded-2xl p-4 space-y-4">
-                                            <div className="flex items-center justify-between mb-2">
-                                                <span className="text-sm font-medium">
-                                                    {selectedDates.length === 1
-                                                        ? new Date(selectedDates[0]).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-                                                        : `${selectedDates.length} dates`
-                                                    }
-                                                </span>
-                                                <button
-                                                    onClick={() => setShowCustomSettings(false)}
-                                                    className="p-1 hover:bg-gray-800 rounded-full"
-                                                >
-                                                    <X className="h-5 w-5" />
-                                                </button>
-                                            </div>
-
-                                            <div className="text-sm font-medium mb-4">{t('host.calendar.customSettings', 'Custom settings')}</div>
-
-                                            <div className="bg-gray-800 rounded-lg px-4 py-3">
-                                                <div className="flex items-center justify-between">
-                                                    <span className="text-sm font-medium">{t('host.calendar.minNights', 'Minimum nights')}</span>
-                                                    <div className="flex items-center gap-3">
-                                                        <button
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                setCustomMinNights(customMinNights > 1 ? customMinNights - 1 : 1);
-                                                            }}
-                                                            className="w-8 h-8 rounded-full border border-gray-600 hover:border-white transition-colors flex items-center justify-center"
-                                                            disabled={customMinNights <= 1}
-                                                        >
-                                                            <span className="text-lg">−</span>
-                                                        </button>
-                                                        <span className="text-base font-medium w-8 text-center">{customMinNights}</span>
-                                                        <button
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                setCustomMinNights(customMinNights + 1);
-                                                            }}
-                                                            className="w-8 h-8 rounded-full border border-gray-600 hover:border-white transition-colors flex items-center justify-center"
-                                                        >
-                                                            <span className="text-lg">+</span>
-                                                        </button>
+                                                <div className="bg-gray-800 rounded-lg px-4 py-3">
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="text-sm font-medium">{t('host.calendar.minNights', 'Minimum nights')}</span>
+                                                        <div className="flex items-center gap-3">
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    setCustomMinNights(customMinNights > 1 ? customMinNights - 1 : 1);
+                                                                }}
+                                                                className="w-8 h-8 rounded-full border border-gray-600 hover:border-white transition-colors flex items-center justify-center"
+                                                                disabled={customMinNights <= 1}
+                                                            >
+                                                                <span className="text-lg">−</span>
+                                                            </button>
+                                                            <span className="text-base font-medium w-8 text-center">{customMinNights}</span>
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    setCustomMinNights(customMinNights + 1);
+                                                                }}
+                                                                className="w-8 h-8 rounded-full border border-gray-600 hover:border-white transition-colors flex items-center justify-center"
+                                                            >
+                                                                <span className="text-lg">+</span>
+                                                            </button>
+                                                        </div>
                                                     </div>
                                                 </div>
+
+                                                <button
+                                                    onClick={handleSaveCustomSettings}
+                                                    className="w-full bg-white text-gray-900 hover:bg-gray-100 rounded-lg px-4 py-3 transition-colors font-medium"
+                                                >
+                                                    {t('common.done', 'Done')}
+                                                </button>
                                             </div>
+                                        )}
+                                    </>
+                                ) : (
+                                    <>
+                                        {sidebarView === 'price' && settings ? (
+                                            <div className="bg-white rounded-xl border border-gray-200 h-full overflow-hidden">
+                                                <PriceSettingsModal
+                                                    settings={settings}
+                                                    onClose={() => setSidebarView('default')}
+                                                    onSave={async (updatedSettings) => {
+                                                        await apiClient.put(`/calendar/${listingId}/settings`, updatedSettings);
+                                                        await fetchSettings();
+                                                        setSidebarView('default');
+                                                    }}
+                                                />
+                                            </div>
+                                        ) : sidebarView === 'availability' && settings ? (
+                                            <div className="bg-white rounded-xl border border-gray-200 h-full overflow-hidden">
+                                                <AvailabilitySettingsModal
+                                                    settings={settings}
+                                                    onClose={() => setSidebarView('default')}
+                                                    onSave={async (updatedSettings) => {
+                                                        await apiClient.put(`/calendar/${listingId}/settings`, updatedSettings);
+                                                        await fetchSettings();
+                                                        setSidebarView('default');
+                                                    }}
+                                                />
+                                            </div>
+                                        ) : (
+                                            /* Default Settings Panel */
+                                            <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-3">
+                                                <button
+                                                    onClick={() => setSidebarView('price')}
+                                                    className="w-full flex items-center justify-between hover:bg-gray-50 rounded-lg p-3 transition-colors"
+                                                >
+                                                    <div className="text-left">
+                                                        <p className="font-medium text-gray-900">{t('host.calendar.priceSettings', 'Price settings')}</p>
+                                                        <p className="text-sm text-gray-600">${settings?.base_price || listingPrice} {t('host.editor.perNight', 'per night')}</p>
+                                                        {settings?.weekend_price && (
+                                                            <p className="text-sm text-gray-600">${settings.weekend_price} {t('host.calendar.weekendPrice', 'weekend price')}</p>
+                                                        )}
+                                                        {settings?.weekly_discount && settings.weekly_discount > 0 && (
+                                                            <p className="text-sm text-gray-600">{settings.weekly_discount}% {t('host.calendar.weeklyDiscount', 'weekly discount')}</p>
+                                                        )}
+                                                    </div>
+                                                    <ChevronDown className="h-5 w-5 text-gray-400 -rotate-90" />
+                                                </button>
 
-                                            <button
-                                                onClick={handleSaveCustomSettings}
-                                                className="w-full bg-white text-gray-900 hover:bg-gray-100 rounded-lg px-4 py-3 transition-colors font-medium"
-                                            >
-                                                {t('common.done', 'Done')}
-                                            </button>
-                                        </div>
-                                    )}
-                                </>
-                            ) : (
-                                <>
-                                    {sidebarView === 'price' && settings ? (
-                                        <div className="bg-white rounded-xl border border-gray-200 h-full overflow-hidden">
-                                            <PriceSettingsModal
-                                                settings={settings}
-                                                onClose={() => setSidebarView('default')}
-                                                onSave={async (updatedSettings) => {
-                                                    await apiClient.put(`/calendar/${listingId}/settings`, updatedSettings);
-                                                    await fetchSettings();
-                                                    setSidebarView('default');
-                                                }}
-                                            />
-                                        </div>
-                                    ) : sidebarView === 'availability' && settings ? (
-                                        <div className="bg-white rounded-xl border border-gray-200 h-full overflow-hidden">
-                                            <AvailabilitySettingsModal
-                                                settings={settings}
-                                                onClose={() => setSidebarView('default')}
-                                                onSave={async (updatedSettings) => {
-                                                    await apiClient.put(`/calendar/${listingId}/settings`, updatedSettings);
-                                                    await fetchSettings();
-                                                    setSidebarView('default');
-                                                }}
-                                            />
-                                        </div>
-                                    ) : (
-                                        /* Default Settings Panel */
-                                        <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-3">
-                                            <button
-                                                onClick={() => setSidebarView('price')}
-                                                className="w-full flex items-center justify-between hover:bg-gray-50 rounded-lg p-3 transition-colors"
-                                            >
-                                                <div className="text-left">
-                                                    <p className="font-medium text-gray-900">{t('host.calendar.priceSettings', 'Price settings')}</p>
-                                                    <p className="text-sm text-gray-600">${settings?.base_price || listingPrice} {t('host.editor.perNight', 'per night')}</p>
-                                                    {settings?.weekend_price && (
-                                                        <p className="text-sm text-gray-600">${settings.weekend_price} {t('host.calendar.weekendPrice', 'weekend price')}</p>
-                                                    )}
-                                                    {settings?.weekly_discount && settings.weekly_discount > 0 && (
-                                                        <p className="text-sm text-gray-600">{settings.weekly_discount}% {t('host.calendar.weeklyDiscount', 'weekly discount')}</p>
-                                                    )}
-                                                </div>
-                                                <ChevronDown className="h-5 w-5 text-gray-400 -rotate-90" />
-                                            </button>
-
-                                            <button
-                                                onClick={() => setSidebarView('availability')}
-                                                className="w-full flex items-center justify-between hover:bg-gray-50 rounded-lg p-3 transition-colors"
-                                            >
-                                                <div className="text-left">
-                                                    <p className="font-medium text-gray-900">{t('host.calendar.availabilitySettings', 'Availability settings')}</p>
-                                                    <p className="text-sm text-gray-600">{settings?.min_nights || 1} - {settings?.max_nights || 365} {t('host.calendar.nightStays', 'night stays')}</p>
-                                                    <p className="text-sm text-gray-600">{t('host.calendar.sameDayNotice', 'Same-day advance notice')}</p>
-                                                </div>
-                                                <ChevronDown className="h-5 w-5 text-gray-400 -rotate-90" />
-                                            </button>
-                                        </div>
-                                    )}
-                                </>
-                            )}
+                                                <button
+                                                    onClick={() => setSidebarView('availability')}
+                                                    className="w-full flex items-center justify-between hover:bg-gray-50 rounded-lg p-3 transition-colors"
+                                                >
+                                                    <div className="text-left">
+                                                        <p className="font-medium text-gray-900">{t('host.calendar.availabilitySettings', 'Availability settings')}</p>
+                                                        <p className="text-sm text-gray-600">{settings?.min_nights || 1} - {settings?.max_nights || 365} {t('host.calendar.nightStays', 'night stays')}</p>
+                                                        <p className="text-sm text-gray-600">{t('host.calendar.sameDayNotice', 'Same-day advance notice')}</p>
+                                                    </div>
+                                                    <ChevronDown className="h-5 w-5 text-gray-400 -rotate-90" />
+                                                </button>
+                                            </div>
+                                        )}
+                                    </>
+                                )}
+                            </div>
                         </div>
                     </div>
-                </div>
                 )}
             </main>
 

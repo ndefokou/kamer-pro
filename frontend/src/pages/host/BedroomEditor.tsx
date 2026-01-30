@@ -4,6 +4,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { ChevronLeft, X, Trash2 } from 'lucide-react';
 import apiClient from '@/api/client';
 import { getImageUrl } from '@/lib/utils';
+import OptimizedImage from '@/components/OptimizedImage';
 
 interface BedroomPhoto {
     id: string;
@@ -160,7 +161,7 @@ const BedroomEditor: React.FC = () => {
                         {/* Existing photos */}
                         {bedroomPhotos.map((photo) => (
                             <div key={photo.id} className="relative aspect-square rounded-lg overflow-hidden border border-gray-200">
-                                <img
+                                <OptimizedImage
                                     src={getImageUrl(photo.url)}
                                     alt={photo.caption}
                                     className="w-full h-full object-cover"
@@ -171,7 +172,7 @@ const BedroomEditor: React.FC = () => {
                         {/* Pending photos */}
                         {pendingPhotos.map((photo, index) => (
                             <div key={`pending-${index}`} className="relative aspect-square rounded-lg overflow-hidden border-2 border-green-500">
-                                <img
+                                <OptimizedImage
                                     src={photo.preview}
                                     alt={t('common.pendingUpload', 'Pending upload') as string}
                                     className="w-full h-full object-cover"
@@ -274,7 +275,7 @@ const BedroomEditor: React.FC = () => {
                             disabled={uploading}
                             className="px-6 py-3 bg-black text-white rounded-lg font-medium hover:bg-gray-800 transition-colors disabled:opacity-50"
                         >
-                            {uploading ? t('common.saving', 'Saving...') : t('common.savePhotosCount', 'Save {{count}} {{unit}}', { count: pendingPhotos.length, unit: pendingPhotos.length !== 1 ? t('host.photos.photosPlural','photos') : t('host.photos.photoSingular','photo') })}
+                            {uploading ? t('common.saving', 'Saving...') : t('common.savePhotosCount', 'Save {{count}} {{unit}}', { count: pendingPhotos.length, unit: pendingPhotos.length !== 1 ? t('host.photos.photosPlural', 'photos') : t('host.photos.photoSingular', 'photo') })}
                         </button>
                     </div>
                 )}

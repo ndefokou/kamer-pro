@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { X, Share, Heart, Star, Users, Home, MapPin, Wifi, Calendar, ChevronLeft, ChevronRight, Minus, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { getImageUrl, formatPrice } from '@/lib/utils';
+import OptimizedImage from '@/components/OptimizedImage';
 import { AMENITY_DETAILS } from '@/data/amenities';
 import { SAFETY_CONSIDERATIONS, SAFETY_DEVICES } from '@/data/guestSafety';
 import { HouseRules, DEFAULT_HOUSE_RULES } from './HouseRulesSection';
@@ -330,7 +331,7 @@ const ListingPreview: React.FC<ListingPreviewProps> = ({ listing, isOpen, onClos
                     {listing.photos.length > 0 ? (
                         <div className="relative">
                             {listing.photos.length === 1 ? (
-                                <img
+                                <OptimizedImage
                                     src={getImageUrl(listing.photos[0].url)}
                                     alt={listing.photos[0].caption || listing.title}
                                     className="w-full h-[500px] object-cover"
@@ -338,7 +339,7 @@ const ListingPreview: React.FC<ListingPreviewProps> = ({ listing, isOpen, onClos
                             ) : listing.photos.length <= 4 ? (
                                 <div className="grid grid-cols-2 gap-2">
                                     {listing.photos.slice(0, 4).map((photo, idx) => (
-                                        <img
+                                        <OptimizedImage
                                             key={photo.id}
                                             src={getImageUrl(photo.url)}
                                             alt={photo.caption || `Photo ${idx + 1}`}
@@ -349,14 +350,14 @@ const ListingPreview: React.FC<ListingPreviewProps> = ({ listing, isOpen, onClos
                             ) : (
                                 <div className="grid grid-cols-4 gap-2">
                                     <div className="col-span-2 row-span-2">
-                                        <img
+                                        <OptimizedImage
                                             src={getImageUrl(listing.photos[0].url)}
                                             alt={listing.photos[0].caption}
                                             className="w-full h-full object-cover"
                                         />
                                     </div>
                                     {listing.photos.slice(1, 5).map((photo, idx) => (
-                                        <img
+                                        <OptimizedImage
                                             key={photo.id}
                                             src={getImageUrl(photo.url)}
                                             alt={photo.caption || `Photo ${idx + 2}`}
