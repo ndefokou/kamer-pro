@@ -59,7 +59,23 @@ const cachedGet = async <T = any>(url: string, config?: any): Promise<T> => {
 
   const requestPromise = (async () => {
     try {
-      // Try cache first for near-instant UI (Stale-While-Revalidate pattern)
+      // 1. Ultra-fast Synchronous Cache (LocalStorage) for Critical Paths
+      if (url === '/listings' && (!config?.params?.offset || config.params.offset === 0)) {
+        const criticalData = localStorage.getItem('critical_listings');
+        if (criticalData) {
+          try {
+            const parsed = JSON.parse(criticalData);
+            // Fetch update in background
+            apiClient.get(url, config).then(res => {
+              localStorage.setItem('critical_listings', JSON.stringify(res.data));
+              cacheResponse(url, res.data, config?.params);
+            }).catch(() => { });
+            return parsed;
+          } catch (e) { }
+        }
+      }
+
+      // 2. Try IndexedDB cache second (Stale-While-Revalidate pattern)
       const cached = await getCachedResponse(url, config?.params);
 
       if (cached) {
@@ -104,6 +120,10 @@ const cacheResponse = async (url: string, data: any, params?: any): Promise<void
       // Multiple listings
       if (Array.isArray(data)) {
         await dbService.cacheListings(data);
+        // Save first page of general listings to localStorage for ultra-fast initial paint
+        if (url === '/listings' && (!params?.offset || params.offset === 0)) {
+          localStorage.setItem('critical_listings', JSON.stringify(data.slice(0, 10)));
+        }
       }
     } else if (url.includes('/account/user/')) {
       // User data

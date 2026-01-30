@@ -71,15 +71,22 @@ const Header: React.FC = () => {
                 <div className="flex items-center justify-between h-16 md:h-20">
                     {/* Logo */}
                     <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate("/")}>
-                        <img
-                            src="/logo.png"
-                            alt="Le Mboko"
-                            width={40}
-                            height={40}
-                            loading="eager"
-                            decoding="async"
-                            className="h-10 w-10 object-contain rounded-lg"
-                        />
+                        <div className="relative h-10 w-10">
+                            <img
+                                src="/logo.png"
+                                alt="Le Mboko"
+                                width={40}
+                                height={40}
+                                loading="lazy"
+                                decoding="async"
+                                className="h-10 w-10 object-contain rounded-lg transition-opacity duration-300"
+                                onLoad={(e) => (e.currentTarget.style.opacity = '1')}
+                                style={{ opacity: 0 }}
+                            />
+                            <div className="absolute inset-0 bg-primary text-white flex items-center justify-center rounded-lg font-bold text-xl select-none pointer-events-none" style={{ zIndex: -1 }}>
+                                M
+                            </div>
+                        </div>
                         <span className="text-xl font-bold text-primary">Le Mboko</span>
                     </div>
 

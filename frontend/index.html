@@ -11,11 +11,30 @@
   <link rel="icon" type="image/png" href="/logo.png" />
   <link rel="shortcut icon" type="image/png" href="/logo.png" />
   <link rel="apple-touch-icon" href="/logo.png" />
+  <style>
+    /* Critical Fonts and Reset */
+    :root {
+      --primary: #0D9488;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background: #ffffff;
+    }
+
+    @font-face {
+      font-family: 'system-sans';
+      src: local("-apple-system"), local("BlinkMacSystemFont"), local("Segoe UI"), local("Roboto");
+      font-display: swap;
+    }
+  </style>
   <link rel="mask-icon" href="/masked-icon.svg" color="#FFFFFF" />
   <meta name="theme-color" content="#ffffff" />
   <link rel="preconnect" href="http://127.0.0.1:8082" />
   <link rel="dns-prefetch" href="http://127.0.0.1:8082" />
   <link rel="preconnect" href="https://unpkg.com" />
+  <link rel="modulepreload" href="/src/main.tsx" />
   <link rel="manifest" href="/manifest.webmanifest" />
 </head>
 
@@ -148,7 +167,6 @@
             <div class="dot"></div>
             <div class="dot"></div>
           </div>
-          <p class="splash-tagline">You can find home every where in Cameroon here</p>
         </div>
       </div>
     </div>

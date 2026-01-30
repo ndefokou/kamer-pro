@@ -20,6 +20,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import Footer from "@/components/Footer";
 import Header from "@/components/Header";
 import { useWishlist } from "@/hooks/useWishlist";
+import { networkService } from "@/services/networkService";
 
 const Dashboard = () => {
     const { t } = useTranslation();
@@ -29,7 +30,7 @@ const Dashboard = () => {
 
     const { data: properties, isLoading, error } = useQuery<Product[]>({
         queryKey: ["products"],
-        queryFn: () => getProducts({ limit: 40 }),
+        queryFn: () => getProducts({ limit: networkService.getRecommendedPageSize() + 10 }),
     });
 
     const normalizeCity = (s?: string) => (s || "").trim().toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '');
