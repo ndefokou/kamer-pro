@@ -1,107 +1,90 @@
-# Kamer-Pro E-Commerce Platform
+# Kamer-Pro: Premium Property Booking Platform
 
-Kamer-Pro is a modern, full-stack e-commerce platform designed to provide a seamless and feature-rich online companyping experience. The project is built with a powerful and scalable architecture, featuring a React frontend and a high-performance Rust backend.
+Kamer-Pro is a modern, high-performance full-stack property booking and management platform (similar to Airbnb). It provides a seamless experience for both guests looking for accommodations and hosts managing their properties. Built with a focus on speed, security, and user experience, it leverages a powerful Rust backend and a dynamic React frontend.
 
-## Key Features
+## 🌟 Key Features
 
-- **Product Management**: Effortlessly create, update, and manage propertys.
-- **User Authentication**: Secure user registration and login with JWT-based authentication.
-- **Product Reviews and Ratings**: Allow users to leave reviews and ratings for products.
-- **companyping Cart**: A fully functional companyping cart for a smooth checkout process.
-- **Wishlist**: Users can save their favorite products to a wishlist for future purchase.
-- **Seller Dashboard**: A dedicated dashboard for sellers to manage their products and view sales analytics.
-- **Internationalization**: Support for multiple languages to cater to a global audience.
+### For Guests
+- **Smart Search**: Find properties by location, town, and specific criteria.
+- **Detailed Listings**: High-quality photo galleries, amenity lists, and verified reviews.
+- **Seamless Booking**: Real-time availability checking and easy reservation requests.
+- **Wishlist & Favorites**: Save your favorite properties for future trips.
+- **Direct Messaging**: Built-in chat system to communicate with hosts.
+- **Multi-language Support**: Fully localized in English and French.
 
-## Technologies Used
+### For Hosts
+- **Professional Dashboard**: Track performance, manage reservations, and view analytics.
+- **Listing Editor**: Step-by-step tools to create and manage property details, pricing, and amenities.
+- **Availability Calendar**: Manage dates, block periods, and sync availability.
+- **Media Management**: Integrated photo and video upload system with S3 storage.
+- **Reservation Management**: Easily approve or decline booking requests with custom message templates.
+
+### Security & Tech
+- **Modern Auth**: Secure JWT-based authentication and WebAuthn support for passwordless login.
+- **High Performance**: Rust backend for fast API responses and efficient resource usage.
+- **Responsive Design**: Optimized for all devices using Tailwind CSS and Shadcn UI.
+
+## 🛠️ Technologies Used
 
 ### Frontend
-
 - **Framework**: [React](https://reactjs.org/) with [TypeScript](https://www.typescriptlang.org/)
 - **Build Tool**: [Vite](https://vitejs.dev/)
-- **Styling**: [Tailwind CSS](https://tailwindcss.com/) with [Shadcn UI](https://ui.shadcn.com/)
-- **Routing**: [React Router](https://reactrouter.com/)
-- **State Management**: [React Query](https://tanstack.com/query/v4)
-- **Form Handling**: [React Hook Form](https://react-hook-form.com/) with [Zod](https://zod.dev/) for validation
-- **API Communication**: [Axios](https://axios-http.com/)
+- **Styling**: [Tailwind CSS](https://tailwindcss.com/) & [Shadcn UI](https://ui.shadcn.com/)
+- **State Management**: [React Query](https://tanstack.com/query)
+- **Icons**: [Lucide React](https://lucide.dev/)
 - **Internationalization**: [i18next](https://www.i18next.com/)
 
 ### Backend
-
-- **Framework**: [Actix Web](https://actix.rs/)
 - **Language**: [Rust](https://www.rust-lang.org/)
-- **Database**: [SQLite](https://www.sqlite.org/index.html) with [SQLx](https://github.com/launchbadge/sqlx)
-- **Authentication**: [JSON Web Tokens (JWT)](https://jwt.io/) and [bcrypt](https://github.com/pyca/bcrypt/) for password hashing
-- **File Uploads**: Handled with `actix-multipart`
-- **CORS**: Managed with `actix-cors`
+- **Framework**: [Actix Web](https://actix.rs/)
+- **Database**: [PostgreSQL](https://www.postgresql.org/) with [SQLx](https://github.com/launchbadge/sqlx)
+- **Caching**: [Moka](https://github.com/moka-rs/moka)
+- **Storage**: AWS S3 (or compatible) for media uploads
+- **Authentication**: JWT & WebAuthn
 
-## Getting Started
-
-To get the project up and running on your local machine, follow these steps.
+## 🚀 Getting Started
 
 ### Prerequisites
-
-- [Node.js](https://nodejs.org/en/) (v18 or higher)
-- [Rust](https://www.rust-lang.org/tools/install) (latest stable version)
-- [SQLite](https://www.sqlite.org/download.html)
+- [Node.js](https://nodejs.org/) (v18+)
+- [Rust](https://www.rust-lang.org/tools/install) (latest stable)
+- [PostgreSQL](https://www.postgresql.org/)
 
 ### Installation
 
-1.  **Clone the repository**:
+1. **Clone the repository**:
+   ```bash
+   git clone https://github.com/your-username/kamer-pro.git
+   cd kamer-pro
+   ```
 
-    ```bash
-    git clone https://github.com/your-username/kamer-pro.git
-    cd kamer-pro
-    ```
+2. **Backend Setup**:
+   ```bash
+   cd backend
+   # Copy .env.example and fill in your DATABASE_URL and S3 credentials
+   cp .env.example .env
+   cargo run
+   ```
 
-2.  **Set up the backend**:
+3. **Frontend Setup**:
+   ```bash
+   cd frontend
+   npm install
+   npm run dev
+   ```
 
-    ```bash
-    cd backend
-    cargo build
-    cargo run
-    ```
-
-3.  **Set up the frontend**:
-    ```bash
-    cd ../frontend
-    npm install
-    npm run dev
-    ```
-
-## Available Scripts
-
-### Frontend
-
-- `npm run dev`: Starts the development server.
-- `npm run build`: Builds the application for production.
-- `npm run lint`: Lints the codebase for errors.
-- `npm run preview`: Previews the production build locally.
-
-### Backend
-
-- `cargo run`: Compiles and runs the backend server.
-- `cargo build`: Compiles the backend code.
-- `cargo test`: Runs the backend tests.
-
-## Project Structure
-
+## 📁 Project Structure
 ```
 .
-├── backend/         # Rust backend source code
-│   ├── src/
-│   ├── Cargo.toml
+├── backend/         # Rust Actix Web backend
+│   ├── src/         # API routes, middleware, and logic
+│   ├── migrations/  # Database migrations
 │   └── ...
-├── frontend/        # React frontend source code
-│   ├── src/
-│   ├── package.json
+├── frontend/        # React TypeScript frontend
+│   ├── src/         # Components, pages, and hooks
+│   ├── public/      # Static assets
 │   └── ...
 └── README.md
 ```
 
-## Contributing
-
-Contributions are welcome! Please feel free to open an issue or submit a pull request.
-
-## License
-
-This project is licensed under the MIT License. See the `LICENSE` file for more details.
+## 📄 License
+This project is licensed under the MIT License.

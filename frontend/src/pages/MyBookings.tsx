@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import SEO from "@/components/SEO";
 import { getImageUrl, formatPrice } from "@/lib/utils";
 import OptimizedImage from "@/components/OptimizedImage";
+import MobileNav from "@/components/MobileNav";
 
 const StatusBadge = ({ status }: { status: BookingWithDetails["booking"]["status"] }) => {
   const color = status === "confirmed" ? "bg-green-100 text-green-700" : status === "pending" ? "bg-yellow-100 text-yellow-700" : "bg-red-100 text-red-700";
@@ -38,7 +39,7 @@ export default function MyBookings() {
   };
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white pb-20 md:pb-0">
       <SEO
         title="My Reservations"
         description={`View and manage your ${data?.length || 0} reservations on Le Mboko.`}
@@ -107,6 +108,7 @@ export default function MyBookings() {
         )}
       </main>
       <Footer />
+      <MobileNav />
     </div>
   );
 }

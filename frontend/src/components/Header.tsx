@@ -1,7 +1,7 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Home as HomeIcon, Menu, User } from 'lucide-react';
+import { Home as HomeIcon, Menu, User, ChevronLeft } from 'lucide-react';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import {
     DropdownMenu,
@@ -11,16 +11,20 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/contexts/AuthContext";
+import { Button } from "@/components/ui/button";
 
 const Header: React.FC = () => {
     const { t } = useTranslation();
     const navigate = useNavigate();
+    const location = useLocation();
     const { user, logout } = useAuth();
 
     const handleLogout = async () => {
         await logout();
         navigate('/');
     };
+
+    const isHomePage = location.pathname === '/';
 
     const UserMenuContent = () => (
         <>
@@ -29,7 +33,7 @@ const Header: React.FC = () => {
                     <DropdownMenuItem className="font-semibold" onClick={() => navigate('/messages')}>
                         {t("Messages")}
                     </DropdownMenuItem>
-                    <DropdownMenuItem className="font-semibold">
+                    <DropdownMenuItem className="font-semibold hidden md:flex">
                         {t("Notifications")}
                     </DropdownMenuItem>
                     <DropdownMenuItem className="font-semibold" onClick={() => navigate('/bookings')}>
@@ -38,7 +42,7 @@ const Header: React.FC = () => {
                     <DropdownMenuItem className="font-semibold" onClick={() => navigate('/wishlist')}>
                         {t("Favorites")}
                     </DropdownMenuItem>
-                    <DropdownMenuSeparator />
+                    <DropdownMenuSeparator className="hidden md:block" />
                     <DropdownMenuItem onClick={() => navigate('/host/dashboard')}>
                         {t("Manage my listing")}
                     </DropdownMenuItem>
@@ -52,11 +56,11 @@ const Header: React.FC = () => {
                 </>
             ) : (
                 <>
-                    <DropdownMenuItem onClick={() => navigate('/webauth-login?tab=register&redirect=/host/dashboard')} className="flex flex-col items-start gap-1 cursor-pointer">
+                    <DropdownMenuItem onClick={() => navigate('/webauth-login?tab=register&redirect=/host/dashboard')} className="md:flex flex-col items-start gap-1 cursor-pointer hidden">
                         <div className="font-semibold">{t("Become a host")}</div>
                         <div className="text-xs text-gray-500">Become a host and earn extra income easily.</div>
                     </DropdownMenuItem>
-                    <DropdownMenuSeparator />
+                    <DropdownMenuSeparator className="hidden md:block" />
                     <DropdownMenuItem onClick={() => navigate('/webauth-login')} className="cursor-pointer">
                         {t("Log in or sign up")}
                     </DropdownMenuItem>
@@ -68,68 +72,77 @@ const Header: React.FC = () => {
     return (
         <header className="border-b border-gray-200 sticky top-0 z-50 bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60 pt-safe">
             <div className="container mx-auto px-4 sm:px-6">
-                <div className="flex items-center justify-between h-16 md:h-20">
-                    {/* Logo */}
-                    <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate("/")}>
-                        <div className="relative h-10 w-10">
-                            <img
-                                src="/logo.png"
-                                alt="Le Mboko"
-                                width={40}
-                                height={40}
-                                loading="lazy"
-                                decoding="async"
-                                className="h-10 w-10 object-contain rounded-lg transition-opacity duration-300"
-                                onLoad={(e) => (e.currentTarget.style.opacity = '1')}
-                                style={{ opacity: 0 }}
-                            />
-                            <div className="absolute inset-0 bg-primary text-white flex items-center justify-center rounded-lg font-bold text-xl select-none pointer-events-none" style={{ zIndex: -1 }}>
-                                M
+                <div className="flex items-center justify-between h-16 md:h-20 gap-4">
+                    {/* Left Section: Back and Logo */}
+                    <div className="flex items-center gap-2 md:gap-4 overflow-hidden">
+                        {!isHomePage && (
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => navigate(-1)}
+                                className="rounded-full shrink-0 h-10 w-10"
+                                aria-label="Go back"
+                            >
+                                <ChevronLeft className="h-6 w-6" />
+                            </Button>
+                        )}
+
+                        <div className="flex items-center gap-2 cursor-pointer overflow-hidden" onClick={() => navigate("/")}>
+                            <div className="relative h-10 w-10 shrink-0">
+                                <img
+                                    src="/logo.png"
+                                    alt="Le Mboko"
+                                    width={40}
+                                    height={40}
+                                    loading="lazy"
+                                    decoding="async"
+                                    className="h-10 w-10 object-contain rounded-lg transition-opacity duration-300"
+                                    onLoad={(e) => (e.currentTarget.style.opacity = '1')}
+                                    style={{ opacity: 0 }}
+                                />
+                                <div className="absolute inset-0 bg-primary text-white flex items-center justify-center rounded-lg font-bold text-xl select-none pointer-events-none" style={{ zIndex: -1 }}>
+                                    M
+                                </div>
                             </div>
+                            <span className="text-xl font-bold text-primary truncate hidden sm:inline">Le Mboko</span>
                         </div>
-                        <span className="text-xl font-bold text-primary">Le Mboko</span>
                     </div>
 
-                    {/* Navigation Tabs */}
-                    <div className="hidden md:flex items-center gap-8">
+                    {/* Navigation Tabs (Centered visually on larger screens) */}
+                    <div className="hidden lg:flex items-center gap-8 flex-1 justify-center">
                         <button className="flex items-center gap-2 px-4 py-3 rounded-full hover:bg-gray-100 transition-colors" onClick={() => navigate('/')}>
-                            <HomeIcon className="h-5 w-5" />
+                            <HomeIcon className="h-5 w-5 text-primary" />
                             <span className="font-medium">{t("Stays")}</span>
                         </button>
                     </div>
 
                     {/* Right Menu */}
-                    <div className="hidden md:flex items-center gap-4">
+                    <div className="flex items-center gap-2 md:gap-4 shrink-0">
                         <button
-                            className="text-sm font-semibold hover:bg-gray-100 px-4 py-3 rounded-full transition-colors"
+                            className="text-sm font-semibold hover:bg-gray-100 px-2 sm:px-4 py-3 rounded-full transition-colors whitespace-nowrap"
                             onClick={() => navigate(user ? '/host/dashboard' : '/webauth-login?tab=register&redirect=/host/dashboard')}
                         >
                             {t("Become a host")}
                         </button>
-                        <LanguageSwitcher />
+
+                        <div className="flex items-center">
+                            <LanguageSwitcher />
+                        </div>
+
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                                <div className="flex items-center gap-3 border border-gray-300 rounded-full px-3 py-2 hover:shadow-md transition-shadow cursor-pointer">
+                                <div className="flex items-center gap-3 border border-gray-300 rounded-full px-3 py-2 hover:shadow-md transition-shadow cursor-pointer bg-white">
                                     <Menu className="h-4 w-4" />
-                                    <div className="bg-gray-700 rounded-full p-1.5">
+                                    <div className="bg-gray-700 rounded-full p-1.5 shrink-0">
                                         <User className="h-4 w-4 text-white" />
                                     </div>
                                 </div>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="w-64">
+
                                 <UserMenuContent />
                             </DropdownMenuContent>
                         </DropdownMenu>
-                    </div>
-
-                    <div className="md:hidden flex items-center gap-2">
-                        <LanguageSwitcher />
-                        <button
-                            className="text-xs font-semibold hover:bg-gray-100 px-3 py-2 rounded-full transition-colors"
-                            onClick={() => navigate(user ? '/host/dashboard' : '/webauth-login?tab=register&redirect=/host/dashboard')}
-                        >
-                            {t("Become a host")}
-                        </button>
                     </div>
                 </div>
             </div>

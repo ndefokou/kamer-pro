@@ -2,7 +2,7 @@ import { useState, useRef, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
-import { Heart, Star, Home as HomeIcon, Globe, Menu, User } from "lucide-react";
+import { Heart, Star, Home as HomeIcon, Globe, Menu, User, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getProducts, Product } from "@/api/client";
 import MbokoSearch from "@/components/Search";
@@ -19,6 +19,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import Footer from "@/components/Footer";
 import Header from "@/components/Header";
+import MobileNav from "@/components/MobileNav";
 import { useWishlist } from "@/hooks/useWishlist";
 import { networkService } from "@/services/networkService";
 
@@ -149,7 +150,7 @@ const Dashboard = () => {
                 >
                     <Heart
                         className={`h-6 w-6 ${isInWishlist(product.listing.id)
-                            ? 'fill-[#FF385C] text-[#FF385C]'
+                            ? 'fill-green-600 text-green-600'
                             : 'fill-black/50 text-white stroke-white stroke-2'
                             }`}
                     />
@@ -320,53 +321,7 @@ const Dashboard = () => {
             {/* Footer */}
             <Footer />
 
-            {/* Mobile Bottom Nav */}
-            <nav className="md:hidden fixed bottom-0 inset-x-0 z-50 bg-white/90 backdrop-blur-lg border-t border-gray-200 pb-safe transition-all duration-300">
-                <div className="max-w-md mx-auto px-6">
-                    <ul className="grid grid-cols-5 h-16">
-                        <li className="flex items-center justify-center">
-                            <button onClick={() => navigate('/')} className="flex flex-col items-center gap-1 group w-full h-full justify-center">
-                                <div className="p-1.5 rounded-full group-active:scale-95 transition-transform group-hover:bg-gray-100">
-                                    <HomeIcon className="h-6 w-6 text-gray-600 group-hover:text-primary transition-colors" />
-                                </div>
-                                <span className="text-[10px] font-medium text-gray-600 group-hover:text-primary transition-colors">{t("Explore")}</span>
-                            </button>
-                        </li>
-                        <li className="flex items-center justify-center">
-                            <button onClick={() => navigate('/wishlist')} className="flex flex-col items-center gap-1 group w-full h-full justify-center">
-                                <div className="p-1.5 rounded-full group-active:scale-95 transition-transform group-hover:bg-gray-100">
-                                    <Heart className="h-6 w-6 text-gray-600 group-hover:text-primary transition-colors" />
-                                </div>
-                                <span className="text-[10px] font-medium text-gray-600 group-hover:text-primary transition-colors">{t("Favorites")}</span>
-                            </button>
-                        </li>
-                        <li className="flex items-center justify-center">
-                            <button onClick={() => navigate('/bookings')} className="flex flex-col items-center gap-1 group w-full h-full justify-center">
-                                <div className="p-1.5 rounded-full group-active:scale-95 transition-transform group-hover:bg-gray-100">
-                                    <svg className="h-6 w-6 text-gray-600 group-hover:text-primary transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-                                </div>
-                                <span className="text-[10px] font-medium text-gray-600 group-hover:text-primary transition-colors">{t("Reservations")}</span>
-                            </button>
-                        </li>
-                        <li className="flex items-center justify-center">
-                            <button onClick={() => navigate('/messages')} className="flex flex-col items-center gap-1 group w-full h-full justify-center">
-                                <div className="p-1.5 rounded-full group-active:scale-95 transition-transform group-hover:bg-gray-100">
-                                    <svg className="h-6 w-6 text-gray-600 group-hover:text-primary transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-                                </div>
-                                <span className="text-[10px] font-medium text-gray-600 group-hover:text-primary transition-colors">{t("Messages")}</span>
-                            </button>
-                        </li>
-                        <li className="flex items-center justify-center">
-                            <button onClick={() => navigate('/account')} className="flex flex-col items-center gap-1 group w-full h-full justify-center">
-                                <div className="p-1.5 rounded-full group-active:scale-95 transition-transform group-hover:bg-gray-100">
-                                    <User className="h-6 w-6 text-gray-600 group-hover:text-primary transition-colors" />
-                                </div>
-                                <span className="text-[10px] font-medium text-gray-600 group-hover:text-primary transition-colors">{t("Profile")}</span>
-                            </button>
-                        </li>
-                    </ul>
-                </div>
-            </nav>
+            <MobileNav />
         </div>
     );
 };

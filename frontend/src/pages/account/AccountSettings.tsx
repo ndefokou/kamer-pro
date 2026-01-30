@@ -5,8 +5,12 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { ChevronLeft } from "lucide-react";
 import type { AccountProfile, AccountMeResponse, UpdateAccountData } from "@/services/accountService";
 import { getAccountMe, updateAccount } from "@/services/accountService";
+import Header from "@/components/Header";
+import SEO from "@/components/SEO";
+import MobileNav from "@/components/MobileNav";
 
 const SectionTitle = ({ children }: { children: React.ReactNode }) => (
   <h2 className="text-xl font-semibold text-gray-900 mb-4">{children}</h2>
@@ -185,8 +189,10 @@ const AccountSettings = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white">
-      <div className="max-w-6xl mx-auto px-6 py-6">
+    <div className="min-h-screen bg-white pb-20 md:pb-0">
+      <SEO title="Account Settings" description="Manage your personal information and preferences." />
+      <Header />
+      <div className="max-w-6xl mx-auto px-6 py-6 pt-10 md:pt-20">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Sidebar */}
           <aside className="md:col-span-1 space-y-2">
@@ -206,9 +212,20 @@ const AccountSettings = () => {
 
           {/* Content */}
           <main className="md:col-span-3">
-            <div className="flex items-center justify-between mb-6">
-              <h1 className="text-2xl font-semibold">Personal information</h1>
-              <Button variant="outline" onClick={() => navigate(-1)}>Done</Button>
+            <div className="flex items-center gap-2 mb-6">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => navigate(-1)}
+                className="rounded-full shrink-0"
+                aria-label="Go back"
+              >
+                <ChevronLeft className="h-6 w-6" />
+              </Button>
+              <div className="flex items-center justify-between flex-1">
+                <h1 className="text-2xl font-semibold">Personal information</h1>
+                <Button variant="outline" onClick={() => navigate(-1)}>Done</Button>
+              </div>
             </div>
 
             <div id="personal-section" className="bg-white border border-gray-200 rounded-xl p-4">
@@ -335,6 +352,7 @@ const AccountSettings = () => {
           </main>
         </div>
       </div>
+      <MobileNav />
     </div>
   );
 };

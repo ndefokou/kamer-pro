@@ -3,7 +3,8 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { WebAuthService } from "@/services/webAuthService";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, ChevronLeft } from "lucide-react";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 const webAuth = new WebAuthService();
 
@@ -124,7 +125,19 @@ const WebAuthLogin = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white flex items-center justify-center px-4 py-10">
+    <div className="min-h-screen bg-white flex items-center justify-center px-4 py-10 relative">
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={() => navigate(-1)}
+        className="absolute top-6 left-6 rounded-full hover:bg-gray-100"
+        aria-label="Go back"
+      >
+        <ChevronLeft className="h-6 w-6" />
+      </Button>
+      <div className="absolute top-6 right-6">
+        <LanguageSwitcher />
+      </div>
       <div className="w-full max-w-md">
         <div className="mb-6 text-center">
           <h1 className="text-2xl font-semibold">Welcome</h1>

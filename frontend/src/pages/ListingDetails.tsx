@@ -486,7 +486,7 @@ const ListingDetails: React.FC = () => {
                             Share
                         </Button>
                         <Button variant="outline" size="sm" className="gap-2" onClick={handleToggleWishlist}>
-                            <Heart className={`h-4 w-4 ${isWishlisted ? 'fill-red-500 text-red-500' : ''}`} />
+                            <Heart className={`h-4 w-4 ${isWishlisted ? 'fill-green-600 text-green-600' : ''}`} />
                             Save
                         </Button>
                     </div>
@@ -927,7 +927,7 @@ const ListingDetails: React.FC = () => {
                             )}
 
                             <Button
-                                className="w-full bg-[#FF385C] hover:bg-[#D9324E] text-white font-semibold py-6 text-lg"
+                                className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-6 text-lg"
                                 onClick={handleReserve}
                                 disabled={isHost || !checkInDate || !checkOutDate}
                             >
@@ -1166,7 +1166,7 @@ const ListingDetails: React.FC = () => {
                         </span>
                     </div>
                     <Button
-                        className="bg-[#FF385C] hover:bg-[#D9324E] text-white font-semibold px-8"
+                        className="bg-green-600 hover:bg-green-700 text-white font-semibold px-8"
                         onClick={() => (checkInDate && checkOutDate ? handleReserve() : openMobileDatePicker())}
                     >
                         {checkInDate && checkOutDate ? 'Reserve' : 'Select dates'}

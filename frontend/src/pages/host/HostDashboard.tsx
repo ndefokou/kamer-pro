@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import apiClient, { deleteListing as deleteListingApi } from '@/api/client';
 import { Button } from '@/components/ui/button';
-import { Plus, Grid3x3, Menu, Mail, Home, Globe, HelpCircle, Settings, BookOpen, Users, UserPlus, LogOut, Trash } from 'lucide-react';
+import { Plus, Grid3x3, Menu, Mail, Home, Globe, HelpCircle, Settings, BookOpen, Users, UserPlus, LogOut, Trash, Calendar } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getImageUrl } from '@/lib/utils';
 import OptimizedImage from '@/components/OptimizedImage';
@@ -184,7 +184,7 @@ const HostDashboard: React.FC = () => {
                         <p className="text-gray-500 mb-8 max-w-sm mx-auto">{t('host.dashboard.noListingsHelp', 'Create your first listing to start hosting and earning income.')}</p>
                         <Button
                             onClick={handleCreateListing}
-                            className="bg-[#FF385C] hover:bg-[#E31C5F] text-white rounded-full px-8 py-6 text-lg font-semibold shadow-lg hover:shadow-xl transition-all"
+                            className="bg-green-600 hover:bg-green-700 text-white rounded-full px-8 py-6 text-lg font-semibold shadow-lg hover:shadow-xl transition-all"
                         >
                             {t('host.dashboard.createListing', 'Create Listing')}
                         </Button>
@@ -363,9 +363,17 @@ const HostDashboard: React.FC = () => {
                         <li className="flex items-center justify-center">
                             <a href="/host/reservations" className="flex flex-col items-center gap-1 group w-full h-full justify-center">
                                 <div className="p-1.5 rounded-full group-active:scale-95 transition-transform group-hover:bg-gray-100">
-                                    <Home className="h-6 w-6 text-gray-500 group-hover:text-gray-900 transition-colors" />
+                                    <BookOpen className="h-6 w-6 text-gray-500 group-hover:text-gray-900 transition-colors" />
                                 </div>
                                 <span className="text-[10px] font-medium text-gray-500 group-hover:text-gray-900 transition-colors">{t('nav.reservations', 'reservations')}</span>
+                            </a>
+                        </li>
+                        <li className="flex items-center justify-center">
+                            <a href="/host/calendar" className="flex flex-col items-center gap-1 group w-full h-full justify-center">
+                                <div className="p-1.5 rounded-full group-active:scale-95 transition-transform group-hover:bg-gray-100">
+                                    <Calendar className="h-6 w-6 text-gray-500 group-hover:text-gray-900 transition-colors" />
+                                </div>
+                                <span className="text-[10px] font-medium text-gray-500 group-hover:text-gray-900 transition-colors">{t('nav.calendar', 'Calendar')}</span>
                             </a>
                         </li>
 

@@ -47,6 +47,27 @@ const BedroomEditor: React.FC = () => {
         }
     };
 
+    const handleDeleteExistingPhoto = async (photoId: string) => {
+        if (!confirm(t('host.editor.confirmDeletePhoto', 'Are you sure you want to delete this photo?'))) return;
+
+        try {
+            const listingResponse = await apiClient.get(`/listings/${id}`);
+            const allPhotos = listingResponse.data.photos || [];
+            const filteredPhotos = allPhotos.filter((p: any) => String(p.id) !== String(photoId));
+            const syncData = filteredPhotos.map((p: any, idx: number) => ({
+                url: p.url,
+                caption: p.caption,
+                room_type: p.room_type,
+                is_cover: p.is_cover === 1,
+                display_order: idx
+            }));
+            await apiClient.post(`/listings/${id}/photos`, { photos: syncData });
+            setBedroomPhotos(prev => prev.filter(p => String(p.id) !== String(photoId)));
+        } catch (error) {
+            console.error('Failed to delete photo:', error);
+        }
+    };
+
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = e.target.files;
         if (!files || files.length === 0) return;
@@ -160,12 +181,21 @@ const BedroomEditor: React.FC = () => {
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
                         {/* Existing photos */}
                         {bedroomPhotos.map((photo) => (
-                            <div key={photo.id} className="relative aspect-square rounded-lg overflow-hidden border border-gray-200">
+                            <div key={photo.id} className="relative aspect-square rounded-lg overflow-hidden border border-gray-200 group">
                                 <OptimizedImage
                                     src={getImageUrl(photo.url)}
                                     alt={photo.caption}
                                     className="w-full h-full object-cover"
                                 />
+                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-start justify-end p-2">
+                                    <button
+                                        onClick={() => handleDeleteExistingPhoto(photo.id)}
+                                        className="p-1.5 bg-white rounded-full text-red-600 hover:bg-gray-100 shadow-sm"
+                                        title={t('common.delete', 'Delete')}
+                                    >
+                                        <Trash2 className="h-4 w-4" />
+                                    </button>
+                                </div>
                             </div>
                         ))}
 

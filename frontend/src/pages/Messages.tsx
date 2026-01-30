@@ -13,6 +13,7 @@ import Header from '@/components/Header';
 import HostHeader from '@/components/HostHeader';
 import SEO from '@/components/SEO';
 import { useTranslation } from 'react-i18next';
+import MobileNav from '@/components/MobileNav';
 
 const Messages: React.FC = () => {
     const { t } = useTranslation();
@@ -252,6 +253,7 @@ const Messages: React.FC = () => {
                     </div>
                 </div>
             </div>
+            <MobileNav />
         </div>
     );
 };

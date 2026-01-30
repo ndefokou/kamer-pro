@@ -7,6 +7,7 @@ import OptimizedImage from '@/components/OptimizedImage';
 import { Heart } from 'lucide-react';
 import Header from '@/components/Header';
 import SEO from '@/components/SEO';
+import MobileNav from '@/components/MobileNav';
 
 const Wishlist: React.FC = () => {
     const { wishlistItems, removeFromWishlistByProduct, isLoading, refreshWishlist } = useWishlist();
@@ -27,7 +28,7 @@ const Wishlist: React.FC = () => {
                 description={`View your ${wishlistItems.length} saved listings on Le Mboko.`}
             />
             <Header />
-            <div className="container mx-auto px-4 py-8">
+            <div className="container mx-auto px-4 py-8 pb-20 md:pb-8">
                 <h1 className="text-3xl font-bold mb-8">My Wishlist</h1>
                 {wishlistItems.length === 0 ? (
                     <div className="text-center py-16">
@@ -57,13 +58,14 @@ const Wishlist: React.FC = () => {
                                     className="absolute top-2 right-2"
                                     onClick={() => removeFromWishlistByProduct(item.id)}
                                 >
-                                    <Heart className="h-6 w-6 fill-red-500 text-red-500" />
+                                    <Heart className="h-6 w-6 fill-green-600 text-green-600" />
                                 </Button>
                             </div>
                         ))}
                     </div>
                 )}
             </div>
+            <MobileNav />
         </>
     );
 };

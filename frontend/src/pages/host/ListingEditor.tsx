@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import apiClient from '@/api/client';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight, Plus, Minus, Settings, Home, MapPin, Users, Key, BookOpen, Shield, FileText, Link as LinkIcon, Camera, Eye, X, Grid3x3, Mail } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Minus, Settings, Home, MapPin, Users, Key, BookOpen, Shield, FileText, Link as LinkIcon, Camera, Eye, X, Grid3x3, Mail, Trash2, Star } from 'lucide-react';
 import { getImageUrl, formatPrice } from '@/lib/utils';
 import OptimizedImage from '@/components/OptimizedImage';
 import { AMENITY_DETAILS } from '@/data/amenities';
@@ -156,6 +156,81 @@ const ListingEditor: React.FC = () => {
     const [showGeneralLocation, setShowGeneralLocation] = useState(true);
     const [isMobileSection, setIsMobileSection] = useState(false);
     const [isPublishing, setIsPublishing] = useState(false);
+    const [editingCaptionId, setEditingCaptionId] = useState<string | null>(null);
+    const [tempCaption, setTempCaption] = useState('');
+
+    const handleDeletePhoto = async (photoId: string) => {
+        if (!listing || !id) return;
+        if (!confirm(t('host.editor.confirmDeletePhoto', 'Are you sure you want to delete this photo?'))) return;
+
+        try {
+            const updatedPhotos = listing.photos.filter(p => p.id !== photoId);
+            const syncData = updatedPhotos.map((p, idx) => ({
+                url: p.url,
+                caption: p.caption,
+                room_type: (p as any).room_type || null,
+                is_cover: (p as any).is_cover === 1 || (p as any).is_cover === true,
+                display_order: idx
+            }));
+
+            await apiClient.post(`/listings/${id}/photos`, { photos: syncData });
+            setListing({ ...listing, photos: updatedPhotos });
+            toast({ title: t('common.deleted', 'Deleted'), description: t('host.editor.photoDeleted', 'Photo has been deleted.') });
+        } catch (error) {
+            console.error('Failed to delete photo:', error);
+            toast({ title: t('common.error', 'Error'), description: t('host.editor.deletePhotoFailed', 'Failed to delete photo'), variant: 'destructive' });
+        }
+    };
+
+    const handleSetCover = async (photoId: string) => {
+        if (!listing || !id) return;
+
+        try {
+            const updatedPhotos = listing.photos.map(p => ({
+                ...p,
+                is_cover: p.id === photoId ? 1 : 0
+            }));
+            const syncData = updatedPhotos.map((p, idx) => ({
+                url: p.url,
+                caption: p.caption,
+                room_type: (p as any).room_type || null,
+                is_cover: p.id === photoId,
+                display_order: idx
+            }));
+
+            await apiClient.post(`/listings/${id}/photos`, { photos: syncData });
+            setListing({ ...listing, photos: updatedPhotos as any });
+            toast({ title: t('common.updated', 'Updated'), description: t('host.editor.coverPhotoUpdated', 'Cover photo has been updated.') });
+        } catch (error) {
+            console.error('Failed to set cover photo:', error);
+            toast({ title: t('common.error', 'Error'), description: t('host.editor.setCoverFailed', 'Failed to update cover photo'), variant: 'destructive' });
+        }
+    };
+
+    const handleUpdateCaption = async () => {
+        if (!listing || !id || !editingCaptionId) return;
+
+        try {
+            const updatedPhotos = listing.photos.map(p =>
+                p.id === editingCaptionId ? { ...p, caption: tempCaption } : p
+            );
+            const syncData = updatedPhotos.map((p, idx) => ({
+                url: p.url,
+                caption: p.caption,
+                room_type: (p as any).room_type || null,
+                is_cover: (p as any).is_cover === 1 || (p as any).is_cover === true,
+                display_order: idx
+            }));
+
+            await apiClient.post(`/listings/${id}/photos`, { photos: syncData });
+            setListing({ ...listing, photos: updatedPhotos });
+            setEditingCaptionId(null);
+            toast({ title: t('common.saved', 'Saved'), description: t('host.editor.captionSaved', 'Caption has been saved.') });
+        } catch (error) {
+            console.error('Failed to update caption:', error);
+            toast({ title: t('common.error', 'Error'), description: t('host.editor.saveCaptionFailed', 'Failed to save caption'), variant: 'destructive' });
+        }
+    };
 
 
 
@@ -483,19 +558,89 @@ const ListingEditor: React.FC = () => {
                                             {t('host.editor.photoTourHelp', 'Manage photos and add details. Guests will only see your tour if every room has a photo.')}
                                         </p>
 
-                                        <div className="grid grid-cols-3 gap-4">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                                             {listing.photos.map((photo) => (
                                                 <div
                                                     key={photo.id}
-                                                    className="aspect-[4/3] rounded-xl overflow-hidden bg-gray-100 relative group cursor-pointer"
-                                                    onClick={() => openLightbox(photo.url)}
+                                                    className="flex flex-col gap-2"
                                                 >
-                                                    <OptimizedImage src={getImageUrl(photo.url)} alt={photo.caption} className="w-full h-full object-cover" />
+                                                    <div
+                                                        className="aspect-[4/3] rounded-xl overflow-hidden bg-gray-100 relative group cursor-pointer"
+                                                        onClick={() => openLightbox(photo.url)}
+                                                    >
+                                                        <OptimizedImage src={getImageUrl(photo.url)} alt={photo.caption} className="w-full h-full object-cover" />
+                                                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-3">
+                                                            <div className="flex justify-end gap-2">
+                                                                <button
+                                                                    onClick={(e) => { e.stopPropagation(); handleDeletePhoto(photo.id); }}
+                                                                    className="p-2 bg-white rounded-full text-red-600 hover:bg-gray-100 shadow-sm"
+                                                                    title={t('common.delete', 'Delete')}
+                                                                >
+                                                                    <Trash2 className="h-4 w-4" />
+                                                                </button>
+                                                            </div>
+                                                            <div className="flex justify-center">
+                                                                <Button
+                                                                    variant="secondary"
+                                                                    size="sm"
+                                                                    className="rounded-full bg-white text-black hover:bg-gray-100"
+                                                                    onClick={(e) => { e.stopPropagation(); handleSetCover(photo.id); }}
+                                                                >
+                                                                    <Star className={`h-4 w-4 mr-1 ${((photo as any).is_cover === 1 || (photo as any).is_cover === true) ? 'fill-yellow-400 text-yellow-400' : ''}`} />
+                                                                    {((photo as any).is_cover === 1 || (photo as any).is_cover === true) ? t('host.editor.cover', 'Cover') : t('host.editor.setAsCover', 'Set as cover')}
+                                                                </Button>
+                                                            </div>
+                                                        </div>
+                                                        {((photo as any).is_cover === 1 || (photo as any).is_cover === true) && (
+                                                            <div className="absolute top-3 left-3 bg-white text-black px-2 py-1 rounded text-xs font-semibold shadow-sm">
+                                                                {t('host.editor.cover', 'Cover')}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    <div className="flex items-center justify-between gap-2 px-1">
+                                                        {editingCaptionId === photo.id ? (
+                                                            <div className="flex-1 flex gap-2">
+                                                                <input
+                                                                    type="text"
+                                                                    value={tempCaption}
+                                                                    onChange={(e) => setTempCaption(e.target.value)}
+                                                                    className="flex-1 text-sm border-b border-black focus:outline-none"
+                                                                    autoFocus
+                                                                    onKeyDown={(e) => {
+                                                                        if (e.key === 'Enter') handleUpdateCaption();
+                                                                        if (e.key === 'Escape') setEditingCaptionId(null);
+                                                                    }}
+                                                                />
+                                                                <button onClick={handleUpdateCaption} className="text-xs font-semibold underline">{t('common.save', 'Save')}</button>
+                                                            </div>
+                                                        ) : (
+                                                            <>
+                                                                <p className="text-sm text-gray-600 truncate flex-1">{photo.caption || t('host.editor.addCaption', 'Add a caption')}</p>
+                                                                <button
+                                                                    onClick={() => {
+                                                                        setEditingCaptionId(photo.id);
+                                                                        setTempCaption(photo.caption || '');
+                                                                    }}
+                                                                    className="text-xs font-semibold underline shrink-0"
+                                                                >
+                                                                    {t('common.edit', 'Edit')}
+                                                                </button>
+                                                            </>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             ))}
                                             {listing.photos.length === 0 && (
-                                                <div className="col-span-3 text-center py-12 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200">
+                                                <div className="col-span-full text-center py-12 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200">
                                                     <p className="text-gray-500">{t('host.editor.noPhotosYet', 'No photos uploaded yet')}</p>
+                                                    <Button
+                                                        variant="outline"
+                                                        className="mt-4 rounded-full"
+                                                        onClick={() => fileInputRef.current?.click()}
+                                                    >
+                                                        <Plus className="h-4 w-4 mr-2" />
+                                                        {t('host.editor.addPhotos', 'Add photos')}
+                                                    </Button>
                                                 </div>
                                             )}
                                         </div>
@@ -530,19 +675,79 @@ const ListingEditor: React.FC = () => {
                                                 : t('host.editor.addRoomPhotosHelp', 'Add photos to this room to complete your photo tour.')}
                                         </p>
 
-                                        <div className="grid grid-cols-3 gap-4">
-                                            {photoView === 'additional' && listing.photos.map((photo) => (
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                                            {listing.photos.map((photo) => (
                                                 <div
                                                     key={photo.id}
-                                                    className="aspect-[4/3] rounded-xl overflow-hidden bg-gray-100 relative group cursor-pointer"
-                                                    onClick={() => openLightbox(photo.url)}
+                                                    className="flex flex-col gap-2"
                                                 >
-                                                    <OptimizedImage src={getImageUrl(photo.url)} alt={photo.caption} className="w-full h-full object-cover" />
+                                                    <div
+                                                        className="aspect-[4/3] rounded-xl overflow-hidden bg-gray-100 relative group cursor-pointer"
+                                                        onClick={() => openLightbox(photo.url)}
+                                                    >
+                                                        <OptimizedImage src={getImageUrl(photo.url)} alt={photo.caption} className="w-full h-full object-cover" />
+                                                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-3">
+                                                            <div className="flex justify-end gap-2">
+                                                                <button
+                                                                    onClick={(e) => { e.stopPropagation(); handleDeletePhoto(photo.id); }}
+                                                                    className="p-2 bg-white rounded-full text-red-600 hover:bg-gray-100 shadow-sm"
+                                                                >
+                                                                    <Trash2 className="h-4 w-4" />
+                                                                </button>
+                                                            </div>
+                                                            <div className="flex justify-center">
+                                                                <Button
+                                                                    variant="secondary"
+                                                                    size="sm"
+                                                                    className="rounded-full bg-white text-black hover:bg-gray-100"
+                                                                    onClick={(e) => { e.stopPropagation(); handleSetCover(photo.id); }}
+                                                                >
+                                                                    <Star className={`h-4 w-4 mr-1 ${((photo as any).is_cover === 1 || (photo as any).is_cover === true) ? 'fill-yellow-400 text-yellow-400' : ''}`} />
+                                                                    {((photo as any).is_cover === 1 || (photo as any).is_cover === true) ? t('host.editor.cover', 'Cover') : t('host.editor.setAsCover', 'Set as cover')}
+                                                                </Button>
+                                                            </div>
+                                                        </div>
+                                                        {((photo as any).is_cover === 1 || (photo as any).is_cover === true) && (
+                                                            <div className="absolute top-3 left-3 bg-white text-black px-2 py-1 rounded text-xs font-semibold shadow-sm">
+                                                                {t('host.editor.cover', 'Cover')}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    <div className="flex items-center justify-between gap-2 px-1">
+                                                        {editingCaptionId === photo.id ? (
+                                                            <div className="flex-1 flex gap-2">
+                                                                <input
+                                                                    type="text"
+                                                                    value={tempCaption}
+                                                                    onChange={(e) => setTempCaption(e.target.value)}
+                                                                    className="flex-1 text-sm border-b border-black focus:outline-none"
+                                                                    autoFocus
+                                                                    onKeyDown={(e) => {
+                                                                        if (e.key === 'Enter') handleUpdateCaption();
+                                                                        if (e.key === 'Escape') setEditingCaptionId(null);
+                                                                    }}
+                                                                />
+                                                                <button onClick={handleUpdateCaption} className="text-xs font-semibold underline">{t('common.save', 'Save')}</button>
+                                                            </div>
+                                                        ) : (
+                                                            <>
+                                                                <p className="text-sm text-gray-600 truncate flex-1">{photo.caption || t('host.editor.addCaption', 'Add a caption')}</p>
+                                                                <button
+                                                                    onClick={() => {
+                                                                        setEditingCaptionId(photo.id);
+                                                                        setTempCaption(photo.caption || '');
+                                                                    }}
+                                                                    className="text-xs font-semibold underline shrink-0"
+                                                                >
+                                                                    {t('common.edit', 'Edit')}
+                                                                </button>
+                                                            </>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             ))}
-                                            {/* Placeholders for empty states if no photos */}
-                                            {photoView === 'additional' && listing.photos.length === 0 && (
-                                                <div className="col-span-3 text-center py-12 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200">
+                                            {listing.photos.length === 0 && (
+                                                <div className="col-span-full text-center py-12 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200">
                                                     <p className="text-gray-500">{t('host.editor.noPhotosYet', 'No photos uploaded yet')}</p>
                                                 </div>
                                             )}

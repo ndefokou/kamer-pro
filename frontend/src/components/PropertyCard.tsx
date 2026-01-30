@@ -92,7 +92,7 @@ const PropertyCard = ({
                     >
                         <Heart
                             className={`h-6 w-6 transition-colors ${inWishlist
-                                ? "fill-[#FF385C] text-[#FF385C]"
+                                ? "fill-green-600 text-green-600"
                                 : "fill-black/50 text-white stroke-[2px]"
                                 }`}
                         />

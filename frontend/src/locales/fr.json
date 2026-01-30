@@ -34,6 +34,8 @@
   "Become a host": "Devenir hôte",
   "Trips": "Voyages",
   "Favorites": "Favoris",
+  "Reservations": "Réservations",
+  "Calendar": "Calendrier",
   "Manage my listing": "Gérer mon annonce",
   "Account": "Compte",
   "Log out": "Déconnexion",
@@ -77,7 +79,10 @@
   "nav": {
     "reservations": "Réservations",
     "listings": "Annonces",
-    "messages": "Messages"
+    "messages": "Messages",
+    "favorites": "Favoris",
+    "calendar": "Calendrier",
+    "profile": "Profil"
   },
   "account": {
     "settings": "Paramètres du compte"

@@ -3,7 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useHost } from '@/contexts/HostContext';
 import { Button } from '@/components/ui/button';
-import { Home, Building2, Hotel, Castle } from 'lucide-react';
+import { Home, Building2, Hotel, Castle, ChevronLeft } from 'lucide-react';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
 
 const propertyTypes = [
     { id: 'apartment', label: 'Apartment', icon: Building2, description: 'A place within a multi-unit building' },
@@ -36,7 +37,21 @@ const Intro: React.FC = () => {
     };
 
     return (
-        <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4 relative">
+            <div className="absolute top-6 left-6 flex items-center gap-4">
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => navigate('/')}
+                    className="rounded-full"
+                    aria-label="Go home"
+                >
+                    <ChevronLeft className="h-6 w-6" />
+                </Button>
+            </div>
+            <div className="absolute top-6 right-6">
+                <LanguageSwitcher />
+            </div>
             <div className="max-w-3xl w-full">
                 <div className="text-center mb-12">
                     <h1 className="text-4xl md:text-5xl font-bold mb-4">

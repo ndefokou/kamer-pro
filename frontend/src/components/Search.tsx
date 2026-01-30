@@ -232,7 +232,7 @@ const MbokoSearch = () => {
                                             onSelect={setDate}
                                             numberOfMonths={isMobile ? 1 : 2}
                                             className={`border-0 ${isMobile ? 'scale-[0.86] origin-top-left transform-gpu' : ''}`}
-        
+
                                             disabled={{ before: new Date(new Date().setHours(0, 0, 0, 0)) }}
                                             locale={fr}
                                             formatters={{
@@ -248,14 +248,14 @@ const MbokoSearch = () => {
                                             }}
                                         />
                                         <div className="flex flex-wrap gap-2 mt-3">
-                                            {[0,1,2,3].map((tol) => (
+                                            {[0, 1, 2, 3].map((tol) => (
                                                 <button
                                                     key={tol}
                                                     type="button"
-                                                    onClick={() => setDateTolerance(tol as 0|1|2|3)}
+                                                    onClick={() => setDateTolerance(tol as 0 | 1 | 2 | 3)}
                                                     className={`px-2.5 py-1 rounded-full border text-xs ${dateTolerance === tol ? 'border-black bg-gray-50' : 'border-gray-300 hover:border-black'}`}
                                                 >
-                                                    {tol === 0 ? 'Dates exactes' : `± ${tol} jour${tol>1?'s':''}`}
+                                                    {tol === 0 ? 'Dates exactes' : `± ${tol} jour${tol > 1 ? 's' : ''}`}
                                                 </button>
                                             ))}
                                         </div>
@@ -389,7 +389,7 @@ const MbokoSearch = () => {
                                 ) : (
                                     <Button
                                         type="button"
-                                        className="bg-[#FF385C] hover:bg-[#D9324E] text-white"
+                                        className="bg-green-600 hover:bg-green-700 text-white"
                                         onClick={() => { setOpenWhen(false); runSearch(); }}
                                     >
                                         Rechercher

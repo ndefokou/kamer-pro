@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Menu, Settings, Plus, LogOut } from 'lucide-react';
+import { Menu, Settings, Plus, LogOut, ChevronLeft } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { useAuth } from '@/contexts/AuthContext';
@@ -36,13 +36,28 @@ const HostHeader: React.FC = () => {
         return location.pathname === path;
     };
 
+    const isDashboard = location.pathname === '/host/dashboard';
+
     return (
         <header className="border-b bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60 sticky top-0 z-50 pt-safe">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 md:h-20 flex items-center justify-between">
                 <div className="flex items-center gap-12">
-                    <div className="flex items-center gap-2 text-green-600 font-bold text-xl cursor-pointer" onClick={() => navigate('/')}>
-                        <img src="/logo.png" alt="Le Mboko" className="h-10 w-10 object-contain rounded-lg" />
-                        <span>Le Mboko</span>
+                    <div className="flex items-center gap-2">
+                        {!isDashboard && (
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => navigate(-1)}
+                                className="rounded-full"
+                                aria-label="Go back"
+                            >
+                                <ChevronLeft className="h-6 w-6" />
+                            </Button>
+                        )}
+                        <div className="flex items-center gap-2 text-primary font-bold text-xl cursor-pointer" onClick={() => navigate('/')}>
+                            <img src="/logo.png" alt="Le Mboko" className="h-10 w-10 object-contain rounded-lg" />
+                            <span className="hidden sm:inline">Le Mboko</span>
+                        </div>
                     </div>
                     <nav className="hidden md:flex gap-8 text-sm font-medium">
                         <a

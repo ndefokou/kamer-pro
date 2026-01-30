@@ -3,7 +3,10 @@
   "nav": {
     "reservations": "Reservations",
     "listings": "Listings",
-    "messages": "Messages"
+    "messages": "Messages",
+    "favorites": "Favorites",
+    "calendar": "Calendar",
+    "profile": "Profile"
   },
   "common": {
     "back": "Back",
@@ -39,6 +42,11 @@
   "user": "User",
   "discover products": "Explore",
   "Explore": "Explore",
+  "Favorites": "Favorites",
+  "Reservations": "Reservations",
+  "Calendar": "Calendar",
+  "Messages": "Messages",
+  "Profile": "Profile",
   "Loading stays...": "Loading stays...",
   "Search": "Search",
   "category": "Property category",

@@ -304,7 +304,7 @@ function App() {
     // Warm up cache on app load
     const warmCache = async () => {
       try {
-        // Fetch popular listings in background
+        // Fetch  listings in background
         const listings = await getProducts({ limit: 20 });
         console.log('Cache warmed with', listings.length, 'listings');
       } catch (error) {
