@@ -59,20 +59,11 @@ const cachedGet = async <T = any>(url: string, config?: any): Promise<T> => {
 
   const requestPromise = (async () => {
     try {
-      // Try network first if online and good connection
-      if (navigator.onLine && !networkService.isSlowConnection()) {
-        const response = await apiClient.get(url, config);
-
-        // Cache the response
-        await cacheResponse(url, response.data, config?.params);
-
-        return response.data;
-      }
-
-      // For slow connections or offline, try cache first
+      // Try cache first for near-instant UI (Stale-While-Revalidate pattern)
       const cached = await getCachedResponse(url, config?.params);
+
       if (cached) {
-        // Fetch in background to update cache
+        // Fetch in background to update cache without blocking the UI
         apiClient.get(url, config)
           .then(response => cacheResponse(url, response.data, config?.params))
           .catch(() => { }); // Silently fail background update
@@ -80,7 +71,7 @@ const cachedGet = async <T = any>(url: string, config?: any): Promise<T> => {
         return cached;
       }
 
-      // No cache, try network
+      // If no cache, fetch from network
       const response = await apiClient.get(url, config);
       await cacheResponse(url, response.data, config?.params);
       return response.data;

@@ -37,9 +37,11 @@ export default defineConfig(({ mode }) => ({
       devOptions: {
         enabled: true,
       },
-      includeAssets: ["favicon.ico", "apple-touch-icon.png", "masked-icon.svg", "screenshot-desktop.png", "screenshot-mobile.png"],
+      includeAssets: ["logo.png", "favicon.ico", "apple-touch-icon.png", "masked-icon.svg", "screenshot-desktop.png", "screenshot-mobile.png"],
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,webp,jpg,jpeg}'],
+        skipWaiting: true,
+        clientsClaim: true,
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,webp,jpg,jpeg,webmanifest}'],
         runtimeCaching: [
           {
             // Cache API responses with network-first strategy

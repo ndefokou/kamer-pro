@@ -29,7 +29,7 @@ const Dashboard = () => {
 
     const { data: properties, isLoading, error } = useQuery<Product[]>({
         queryKey: ["products"],
-        queryFn: () => getProducts({}),
+        queryFn: () => getProducts({ limit: 40 }),
     });
 
     const normalizeCity = (s?: string) => (s || "").trim().toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '');

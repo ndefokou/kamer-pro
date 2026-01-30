@@ -1,3 +1,4 @@
+import { Suspense, lazy } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -7,8 +8,8 @@ import { WishlistProvider } from "@/contexts/WishlistContext";
 import { MessagingProvider } from "@/contexts/MessagingContext";
 import { HostProvider } from "@/contexts/HostContext";
 import { AuthProvider } from "@/contexts/AuthContext";
-import Dashboard from "./pages/Dashboard";
-import NotFound from "./pages/NotFound";
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const NotFound = lazy(() => import("./pages/NotFound"));
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { PWAInstallPrompt } from "./components/PWAInstallPrompt";
 
@@ -25,7 +26,7 @@ const queryClient = new QueryClient({
 
 const router = createBrowserRouter(
   [
-    { path: "/", Component: Dashboard },
+    { path: "/", element: <Suspense fallback={<div />}><Dashboard /></Suspense> },
     { path: "/marketplace", lazy: async () => ({ Component: (await import("./pages/SearchResults")).default }) },
     { path: "/hosts/:id", lazy: async () => ({ Component: (await import("./pages/HostProfile")).default }) },
     { path: "/product/:id", lazy: async () => ({ Component: (await import("./pages/ListingDetails")).default }) },
@@ -59,17 +60,18 @@ const router = createBrowserRouter(
         { path: "photos", lazy: async () => ({ Component: (await import("./pages/host/PhotoUpload")).default }) },
         { path: "pricing", lazy: async () => ({ Component: (await import("./pages/host/Pricing")).default }) },
         { path: "safety", lazy: async () => ({ Component: (await import("./pages/host/SafetyDetails")).default }) },
-        { path: "booking-settings", lazy: async () => ({ Component: (await import("./pages/host/BookingSettings")).default }) },
+        { path: "booking-settings/:id", lazy: async () => ({ Component: (await import("./pages/host/BookingSettings")).default }) },
         { path: "preview", lazy: async () => ({ Component: (await import("./pages/host/Preview")).default }) },
         { path: "dashboard", lazy: async () => ({ Component: (await import("./pages/host/HostDashboard")).default }) },
         { path: "reservations", lazy: async () => ({ Component: (await import("./pages/host/Reservations")).default }) },
         { path: "calendar", lazy: async () => ({ Component: (await import("./pages/host/HostCalendar")).default }) },
-        { path: "editor/:id/bedroom", lazy: async () => ({ Component: (await import("./pages/host/BedroomEditor")).default }) },
-        { path: "editor/:id/bathroom", lazy: async () => ({ Component: (await import("./pages/host/BathroomEditor")).default }) },
-        { path: "editor/:id", lazy: async () => ({ Component: (await import("./pages/host/ListingEditor")).default }) },
+        { path: "listings", lazy: async () => ({ Component: (await import("./pages/host/Reservations")).default }) },
+        { path: "listing-editor/:id", lazy: async () => ({ Component: (await import("./pages/host/ListingEditor")).default }) },
+        { path: "bedroom-editor/:id", lazy: async () => ({ Component: (await import("./pages/host/BedroomEditor")).default }) },
+        { path: "bathroom-editor/:id", lazy: async () => ({ Component: (await import("./pages/host/BathroomEditor")).default }) },
       ],
     },
-    { path: "*", Component: NotFound },
+    { path: "*", element: <Suspense fallback={<div />}><NotFound /></Suspense> },
   ],
   {
     // @ts-ignore
