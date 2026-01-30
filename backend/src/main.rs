@@ -4,8 +4,9 @@ use actix_files as fs;
 use actix_web::{middleware::Compress, web, App, HttpServer};
 use dotenv::dotenv;
 use moka::future::Cache;
-use sqlx::postgres::PgPoolOptions;
+use sqlx::postgres::{PgConnectOptions, PgPoolOptions};
 use std::env;
+use std::str::FromStr;
 use std::time::Duration;
 
 mod middleware;
@@ -40,10 +41,14 @@ async fn main() -> std::io::Result<()> {
         max_conns
     );
 
+    let connection_options = PgConnectOptions::from_str(&database_url)
+        .expect("Failed to parse DATABASE_URL")
+        .statement_cache_capacity(0);
+
     let pool = PgPoolOptions::new()
         .max_connections(max_conns)
         .acquire_timeout(Duration::from_secs(10))
-        .connect(&database_url)
+        .connect_with(connection_options)
         .await
         .expect("Failed to create pool.");
 
