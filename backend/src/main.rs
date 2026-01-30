@@ -19,7 +19,24 @@ async fn main() -> std::io::Result<()> {
     env_logger::init();
     println!("Logger initialized. Starting server...");
 
-    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+    let mut database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+
+    // For PGBouncer in transaction mode (common on Render/Supabase Pooler),
+    // we must disable prepared statements.
+    if !database_url.contains("prepare_threshold") {
+        if database_url.contains('?') {
+            database_url.push_str("&prepare_threshold=0");
+        } else {
+            database_url.push_str("?prepare_threshold=0");
+        }
+    }
+    if !database_url.contains("statement_cache_capacity") {
+        if database_url.contains('?') {
+            database_url.push_str("&statement_cache_capacity=0");
+        } else {
+            database_url.push_str("?statement_cache_capacity=0");
+        }
+    }
 
     // Create the uploads directory if it doesn't exist
     let uploads_dir = std::path::Path::new("public").join("uploads");
