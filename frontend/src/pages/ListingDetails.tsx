@@ -443,6 +443,7 @@ const ListingDetails: React.FC = () => {
                 ['guestAccess', t('guestAccess')],
                 ['guestInteraction', t('guestInteraction')],
                 ['otherNotes', t('otherNotes')],
+                ['otherDetails', t('otherDetails')],
             ];
             aboutSections = pairs
                 .map(([key, title]) => ({ title, text: typeof desc[key] === 'string' ? desc[key].trim() : '' }))

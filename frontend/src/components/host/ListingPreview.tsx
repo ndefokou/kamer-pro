@@ -403,13 +403,51 @@ const ListingPreview: React.FC<ListingPreviewProps> = ({ listing, isOpen, onClos
                         </div>
 
                         {/* Description */}
-                        {listing.description && (
-                            <div className="pb-8 border-b border-gray-200">
-                                <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
-                                    {listing.description}
-                                </p>
-                            </div>
-                        )}
+                        {(() => {
+                            if (!listing.description) return null;
+
+                            let aboutSections: { title: string; text: string }[] = [];
+                            let aboutPlain: string | null = listing.description;
+
+                            try {
+                                if (listing.description.trim().startsWith('{')) {
+                                    const desc = JSON.parse(listing.description);
+                                    const pairs: Array<[string, string]> = [
+                                        ['listingDescription', t('listing.details.about')],
+                                        ['propertyDetails', t('propertyDetails')],
+                                        ['guestAccess', t('guestAccess')],
+                                        ['guestInteraction', t('guestInteraction')],
+                                        ['otherNotes', t('otherNotes')],
+                                        ['otherDetails', t('otherDetails')],
+                                    ];
+                                    aboutSections = pairs
+                                        .map(([key, title]) => ({ title, text: typeof desc[key] === 'string' ? desc[key].trim() : '' }))
+                                        .filter(s => s.text);
+                                    if (aboutSections.length > 0) aboutPlain = null;
+                                }
+                            } catch (e) {
+                                aboutPlain = listing.description;
+                            }
+
+                            return (
+                                <div className="pb-8 border-b border-gray-200">
+                                    {aboutSections.length > 0 ? (
+                                        <div className="space-y-6">
+                                            {aboutSections.map((s, i) => (
+                                                <div key={i}>
+                                                    <h4 className="font-semibold mb-2">{s.title}</h4>
+                                                    <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">{s.text}</p>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
+                                            {aboutPlain}
+                                        </p>
+                                    )}
+                                </div>
+                            );
+                        })()}
 
                         {/* Amenities */}
                         {listing.amenities && listing.amenities.length > 0 && (

@@ -164,7 +164,12 @@ const getCachedResponse = async (url: string, params?: any): Promise<any | null>
     if (url.includes('/listings/') && !url.includes('/reviews') && !url.includes('/my-listings')) {
       // Single listing
       const id = url.split('/listings/')[1].split('/')[0];
-      return await dbService.getCachedListing(id);
+      const cached = await dbService.getCachedListing(id);
+      // Only return if it's a "full" listing (has description or safety_items or something marketplace lacks)
+      if (cached && cached.listing && (cached.listing.description || cached.listing.safety_devices)) {
+        return cached;
+      }
+      return null;
     } else if (url === '/listings' || url.includes('/listings/host/') || url === '/listings/my-listings') {
       // Multiple listings
       return await dbService.getAllCachedListings();
