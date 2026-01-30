@@ -25,10 +25,6 @@ const SplashScreen: React.FC = () => {
                         <div className="h-1.5 w-1.5 rounded-full bg-primary animate-bounce" />
                     </div>
                 </div>
-
-                <p className="text-gray-400 text-sm font-medium absolute -bottom-16 whitespace-nowrap">
-                    You can find home every where in Cameroon here
-                </p>
             </div>
         </div>
     );
