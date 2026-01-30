@@ -59,7 +59,12 @@ async fn main() -> std::io::Result<()> {
     );
 
     let connection_options = PgConnectOptions::from_str(&database_url)
-        .expect("Failed to parse DATABASE_URL")
+        .map_err(|e| {
+            eprintln!("CRITICAL ERROR: Failed to parse DATABASE_URL. This usually means there are special characters (like @ or $) in the password that need to be percent-encoded.");
+            eprintln!("Parse error: {}", e);
+            e
+        })
+        .expect("Malformed DATABASE_URL")
         .statement_cache_capacity(0);
 
     println!("Database connection properties: statement_cache_capacity=0, prepare_threshold=0");
