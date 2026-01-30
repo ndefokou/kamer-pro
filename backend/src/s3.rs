@@ -15,16 +15,16 @@ impl S3Storage {
     pub async fn new() -> Result<Self, String> {
         let bucket = env::var("SUPABASE_BUCKET")
             .map_err(|_| "SUPABASE_BUCKET environment variable not set")?;
-        
+
         // roject URL (e.g. https://xyz.supabase.co)
         let mut project_url = env::var("SUPABASE_PUBLIC_URL")
             .map_err(|_| "SUPABASE_PUBLIC_URL environment variable not set")?;
-            
+
         // Clean up URL: remove /storage/v1... suffix if present to get base project URL
         if let Some(idx) = project_url.find("/storage/v1") {
             project_url = project_url[..idx].to_string();
         }
-        
+
         // Remove trailing slash
         if project_url.ends_with('/') {
             project_url.pop();
@@ -35,7 +35,9 @@ impl S3Storage {
         let service_key = env::var("S3_SECRET_KEY")
             .or_else(|_| env::var("S3_ACCESS_KEY"))
             .or_else(|_| env::var("SUPABASE_SERVICE_KEY"))
-            .map_err(|_| "No service key found (checked S3_SECRET_KEY, S3_ACCESS_KEY, SUPABASE_SERVICE_KEY)")?;
+            .map_err(|_| {
+                "No service key found (checked S3_SECRET_KEY, S3_ACCESS_KEY, SUPABASE_SERVICE_KEY)"
+            })?;
 
         let client = Client::new();
 
@@ -59,22 +61,21 @@ impl S3Storage {
             .extension()
             .and_then(|ext| ext.to_str())
             .unwrap_or("jpg");
-        
+
         let unique_filename = format!("{}.{}", Uuid::new_v4(), extension);
         let path = format!("uploads/{}", unique_filename);
 
         // Supabase Storage API Endpoint
         // POST /storage/v1/object/{bucket}/{path}
         let url = format!(
-            "{}/storage/v1/object/{}/{}", 
-            self.project_url, 
-            self.bucket, 
-            path
+            "{}/storage/v1/object/{}/{}",
+            self.project_url, self.bucket, path
         );
 
         println!("Uploading to: {}", url);
 
-        let response = self.client
+        let response = self
+            .client
             .post(&url)
             .header("Authorization", format!("Bearer {}", self.service_key))
             .header("Content-Type", content_type)
@@ -93,15 +94,14 @@ impl S3Storage {
         // Public URL format: {project_url}/storage/v1/object/public/{bucket}/{path}
         let public_url = format!(
             "{}/storage/v1/object/public/{}/{}",
-            self.project_url,
-            self.bucket,
-            path
+            self.project_url, self.bucket, path
         );
-        
+
         Ok(public_url)
     }
 
     /// Delete a file from Supabase Storage
+    #[allow(dead_code)]
     pub async fn delete_file(&self, file_url: &str) -> Result<(), String> {
         let search_str = format!("/storage/v1/object/public/{}/", self.bucket);
         let path = file_url
@@ -111,14 +111,11 @@ impl S3Storage {
 
         // API Endpoint: DELETE /storage/v1/object/{bucket}/{path}
         // but Supabase API varies. Standard method is DELETE /storage/v1/object/{bucket} with ["path"] in body
-        
-        let url = format!(
-            "{}/storage/v1/object/{}", 
-            self.project_url, 
-            self.bucket
-        );
 
-        let response = self.client
+        let url = format!("{}/storage/v1/object/{}", self.project_url, self.bucket);
+
+        let response = self
+            .client
             .delete(&url)
             .header("Authorization", format!("Bearer {}", self.service_key))
             .json(&serde_json::json!({ "prefixes": [path] }))
