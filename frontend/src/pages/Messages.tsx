@@ -11,6 +11,7 @@ import { getImageUrl } from '@/lib/utils';
 import OptimizedImage from '@/components/OptimizedImage';
 import Header from '@/components/Header';
 import HostHeader from '@/components/HostHeader';
+import SEO from '@/components/SEO';
 import { useTranslation } from 'react-i18next';
 
 const Messages: React.FC = () => {
@@ -88,6 +89,10 @@ const Messages: React.FC = () => {
 
     return (
         <div className="min-h-screen bg-gray-50">
+            <SEO
+                title={t('messages.title', 'Messages')}
+                description="Manage your communications with hosts and guests on Le Mboko."
+            />
             {isHostView ? <HostHeader /> : <Header />}
             <div className="pt-8 pb-10">
                 <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-[calc(100vh-140px)]">

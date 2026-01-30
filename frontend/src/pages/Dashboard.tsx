@@ -8,6 +8,7 @@ import { getProducts, Product } from "@/api/client";
 import MbokoSearch from "@/components/Search";
 import { getImageUrl } from "@/lib/utils";
 import OptimizedImage from "@/components/OptimizedImage";
+import SEO from "@/components/SEO";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -252,6 +253,10 @@ const Dashboard = () => {
 
     return (
         <div className="min-h-screen bg-white pb-20 md:pb-0">
+            <SEO
+                title={t("Explore")}
+                description="Discover the best stays and products across Cameroon. Filter by price, location, and property type to find your perfect match."
+            />
             {/* Header */}
             <Header />
 

@@ -109,7 +109,7 @@ const cacheResponse = async (url: string, data: any, params?: any): Promise<void
       // Single listing
       const id = url.split('/listings/')[1].split('/')[0];
       await dbService.cacheListing(id, data);
-    } else if (url === '/listings' || url.includes('/listings/host/')) {
+    } else if (url === '/listings' || url.includes('/listings/host/') || url === '/listings/my-listings') {
       // Multiple listings
       if (Array.isArray(data)) {
         await dbService.cacheListings(data);
@@ -127,6 +127,20 @@ const cacheResponse = async (url: string, data: any, params?: any): Promise<void
       if (Array.isArray(data)) {
         await dbService.cacheBookings(data);
       }
+    } else if (url === '/listings/towns') {
+      // Towns
+      if (Array.isArray(data)) {
+        await dbService.cacheTowns(data);
+      }
+    } else if (url === '/messages/conversations') {
+      // Conversations
+      if (Array.isArray(data)) {
+        await dbService.cacheConversations(data);
+      }
+    } else if (url.includes('/messages/conversations/')) {
+      // Single conversation/messages
+      const id = url.split('/messages/conversations/')[1];
+      await dbService.cacheConversation(id, data);
     }
   } catch (error) {
     console.error('Failed to cache response:', error);
@@ -140,7 +154,7 @@ const getCachedResponse = async (url: string, params?: any): Promise<any | null>
       // Single listing
       const id = url.split('/listings/')[1].split('/')[0];
       return await dbService.getCachedListing(id);
-    } else if (url === '/listings' || url.includes('/listings/host/')) {
+    } else if (url === '/listings' || url.includes('/listings/host/') || url === '/listings/my-listings') {
       // Multiple listings
       return await dbService.getAllCachedListings();
     } else if (url.includes('/account/user/')) {
@@ -151,6 +165,13 @@ const getCachedResponse = async (url: string, params?: any): Promise<any | null>
       // Reviews
       const listingId = url.split('/listings/')[1].split('/reviews')[0];
       return await dbService.getCachedReviews(listingId);
+    } else if (url === '/listings/towns') {
+      return await dbService.getCachedTowns();
+    } else if (url === '/messages/conversations') {
+      return await dbService.getCachedConversations();
+    } else if (url.includes('/messages/conversations/')) {
+      const id = url.split('/messages/conversations/')[1];
+      return await dbService.getCachedConversation(id);
     }
   } catch (error) {
     console.error('Failed to get cached response:', error);
@@ -275,8 +296,7 @@ export const getProducts = async (filters: ProductFilters): Promise<Product[]> =
 };
 
 export const getTowns = async (): Promise<TownCount[]> => {
-  const response = await apiClient.get("/listings/towns");
-  return response.data;
+  return await cachedGet<TownCount[]>("/listings/towns");
 };
 
 export interface CreateProductData {
@@ -293,8 +313,7 @@ export const createProduct = async (productData: CreateProductData): Promise<Pro
 };
 
 export const getMyProducts = async () => {
-  const response = await apiClient.get("/listings/my-listings");
-  return response.data;
+  return await cachedGet<Product[]>("/listings/my-listings");
 };
 
 export const getListing = async (id: string): Promise<Product> => {
@@ -354,8 +373,7 @@ export const getUserById = async (id: number): Promise<AccountResponse> => {
 };
 
 export const getHostListings = async (hostId: number): Promise<Product[]> => {
-  const response = await apiClient.get(`/listings/host/${hostId}`);
-  return response.data;
+  return await cachedGet<Product[]>(`/listings/host/${hostId}`);
 };
 
 // Messaging API
@@ -397,13 +415,11 @@ export const createConversation = async (listingId: string, hostId: number, mess
 };
 
 export const getConversations = async (): Promise<Conversation[]> => {
-  const response = await apiClient.get("/messages/conversations");
-  return response.data;
+  return await cachedGet<Conversation[]>("/messages/conversations");
 };
 
 export const getMessages = async (conversationId: string): Promise<Message[]> => {
-  const response = await apiClient.get(`/messages/conversations/${conversationId}`);
-  return response.data;
+  return await cachedGet<Message[]>(`/messages/conversations/${conversationId}`);
 };
 
 export const sendMessage = async (conversationId: string, content: string) => {

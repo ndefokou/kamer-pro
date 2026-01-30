@@ -20,6 +20,7 @@ import Header from "@/components/Header";
 import HorizontalPropertySection from "@/components/HorizontalPropertySection";
 import PropertyCard from "@/components/PropertyCard";
 import NearbyPOI from "@/components/NearbyPOI";
+import SEO from "@/components/SEO";
 
 // Fix Leaflet default icon issue
 import icon from "leaflet/dist/images/marker-icon.png";
@@ -325,6 +326,10 @@ const SearchResults = () => {
 
     return (
         <div className="min-h-screen bg-white flex flex-col">
+            <SEO
+                title={location ? `${t("Search")}: ${location}` : t("Search")}
+                description={`Browse ${filteredProperties.length} available stays ${location ? `in ${location}` : "across Cameroon"}. Find the best prices and locations.`}
+            />
             {/* Header */}
             <Header />
 

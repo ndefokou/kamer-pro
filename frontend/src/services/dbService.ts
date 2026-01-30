@@ -57,6 +57,24 @@ interface AppDB extends DBSchema {
             ttl: number;
         };
     };
+    towns: {
+        key: string;
+        value: {
+            id: string; // use 'all' as key
+            data: any[];
+            timestamp: number;
+            ttl: number;
+        };
+    };
+    conversations: {
+        key: string;
+        value: {
+            id: string;
+            data: any;
+            timestamp: number;
+            ttl: number;
+        };
+    };
 }
 
 const DB_NAME = 'kamer-pro-db';
@@ -70,6 +88,8 @@ const TTL = {
     BOOKINGS: 1000 * 60 * 15, // 15 minutes
     REVIEWS: 1000 * 60 * 60, // 1 hour
     IMAGES: 1000 * 60 * 60 * 24, // 24 hours
+    TOWNS: 1000 * 60 * 60 * 12, // 12 hours
+    CONVERSATIONS: 1000 * 60 * 5, // 5 minutes
 };
 
 class DatabaseService {
@@ -109,6 +129,16 @@ class DatabaseService {
                 // Images store
                 if (!db.objectStoreNames.contains('images')) {
                     db.createObjectStore('images', { keyPath: 'url' });
+                }
+
+                // Towns store
+                if (!db.objectStoreNames.contains('towns')) {
+                    db.createObjectStore('towns', { keyPath: 'id' });
+                }
+
+                // Conversations store
+                if (!db.objectStoreNames.contains('conversations')) {
+                    db.createObjectStore('conversations', { keyPath: 'id' });
                 }
             },
         });
@@ -312,6 +342,54 @@ class DatabaseService {
         }
 
         return cached.blob;
+    }
+
+    // Towns operations
+    async cacheTowns(data: any[], ttl: number = TTL.TOWNS): Promise<void> {
+        const db = await this.ensureDB();
+        await db.put('towns', {
+            id: 'all',
+            data,
+            timestamp: Date.now(),
+            ttl,
+        });
+    }
+
+    async getCachedTowns(): Promise<any[] | null> {
+        const db = await this.ensureDB();
+        const cached = await db.get('towns', 'all');
+
+        if (!cached) return null;
+        if (this.isExpired(cached.timestamp, cached.ttl)) {
+            await db.delete('towns', 'all');
+            return null;
+        }
+
+        return cached.data;
+    }
+
+    // Conversation list operations
+    async cacheConversations(data: any[], ttl: number = TTL.CONVERSATIONS): Promise<void> {
+        const db = await this.ensureDB();
+        await db.put('conversations', {
+            id: 'list',
+            data,
+            timestamp: Date.now(),
+            ttl,
+        });
+    }
+
+    async getCachedConversations(): Promise<any[] | null> {
+        const db = await this.ensureDB();
+        const cached = await db.get('conversations', 'list');
+
+        if (!cached) return null;
+        if (this.isExpired(cached.timestamp, cached.ttl)) {
+            await db.delete('conversations', 'list');
+            return null;
+        }
+
+        return cached.data;
     }
 
     // Cleanup operations

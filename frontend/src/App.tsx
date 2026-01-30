@@ -85,23 +85,27 @@ const router = createBrowserRouter(
   },
 );
 
+import { HelmetProvider } from "react-helmet-async";
+
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <WishlistProvider>
-        <MessagingProvider>
-          <HostProvider>
-            <TooltipProvider>
-              <Toaster />
-              <Sonner />
-              <PWAInstallPrompt />
-              <RouterProvider router={router} />
-            </TooltipProvider>
-          </HostProvider>
-        </MessagingProvider>
-      </WishlistProvider>
-    </AuthProvider>
-  </QueryClientProvider>
+  <HelmetProvider>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <WishlistProvider>
+          <MessagingProvider>
+            <HostProvider>
+              <TooltipProvider>
+                <Toaster />
+                <Sonner />
+                <PWAInstallPrompt />
+                <RouterProvider router={router} />
+              </TooltipProvider>
+            </HostProvider>
+          </MessagingProvider>
+        </WishlistProvider>
+      </AuthProvider>
+    </QueryClientProvider>
+  </HelmetProvider>
 );
 
 export default App;

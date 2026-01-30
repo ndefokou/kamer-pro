@@ -6,6 +6,7 @@ import { getImageUrl, formatPrice } from '@/lib/utils';
 import OptimizedImage from '@/components/OptimizedImage';
 import { Heart } from 'lucide-react';
 import Header from '@/components/Header';
+import SEO from '@/components/SEO';
 
 const Wishlist: React.FC = () => {
     const { wishlistItems, removeFromWishlistByProduct, isLoading, refreshWishlist } = useWishlist();
@@ -21,6 +22,10 @@ const Wishlist: React.FC = () => {
 
     return (
         <>
+            <SEO
+                title="My Wishlist"
+                description={`View your ${wishlistItems.length} saved listings on Le Mboko.`}
+            />
             <Header />
             <div className="container mx-auto px-4 py-8">
                 <h1 className="text-3xl font-bold mb-8">My Wishlist</h1>

@@ -37,8 +37,10 @@
   "menu": "Menu",
   "navigate through the application": "Navigate through the application",
   "user": "User",
-  "discover products": "Find a Home",
-  "search": "Search...",
+  "discover products": "Explore",
+  "Explore": "Explore",
+  "Loading stays...": "Loading stays...",
+  "Search": "Search",
   "category": "Property category",
   "location": "Location",
   "condition": "Status",
@@ -652,8 +654,7 @@
       "messageCta": "Message Host",
       "reportCta": "Report this host"
     }
-  }
-  ,
+  },
   "StaysIn": " stays · {{city}}",
   "seeAll": "See all",
   "other Locations": "Other locations"

@@ -29,6 +29,7 @@ import ShareModal from '@/components/ShareModal';
 import MessageHostModal from '@/components/MessageHostModal';
 import ReportHostModal from '@/components/ReportHostModal';
 import PhotoGallery from '@/components/PhotoGallery';
+import SEO from '@/components/SEO';
 import { useToast } from '@/hooks/use-toast';
 import { useWishlist } from '@/hooks/useWishlist';
 import { useTranslation } from 'react-i18next';
@@ -455,6 +456,12 @@ const ListingDetails: React.FC = () => {
 
     return (
         <div className="min-h-screen bg-background pb-20">
+            <SEO
+                title={listing.title || "Listing Details"}
+                description={listing.description?.substring(0, 160) || "View details for this stay on Le Mboko."}
+                image={sortedPhotos[0] ? getImageUrl(sortedPhotos[0].url) : undefined}
+                type="article"
+            />
             {/* Site Header */}
             <Header />
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

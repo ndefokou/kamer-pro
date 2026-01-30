@@ -6,6 +6,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import PropertyCard from "@/components/PropertyCard";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import SEO from "@/components/SEO";
 
 const HostProfile = () => {
   const { id } = useParams<{ id: string }>();
@@ -39,6 +40,11 @@ const HostProfile = () => {
 
   return (
     <div className="min-h-screen bg-white">
+      <SEO
+        title={`${hostName}'s Profile`}
+        description={`View ${listingsQuery.data?.length || 0} listings from ${hostName} on Le Mboko. Connect and book directly.`}
+        image={avatar || undefined}
+      />
       <Header />
       <main className="container mx-auto px-4 sm:px-6 py-8">
         <button className="text-sm text-gray-600 mb-6 hover:underline" onClick={() => navigate(-1)}>

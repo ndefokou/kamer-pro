@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
+import SEO from "@/components/SEO";
 import { getImageUrl, formatPrice } from "@/lib/utils";
 import OptimizedImage from "@/components/OptimizedImage";
 
@@ -38,6 +39,10 @@ export default function MyBookings() {
 
   return (
     <div className="min-h-screen bg-white">
+      <SEO
+        title="My Reservations"
+        description={`View and manage your ${data?.length || 0} reservations on Le Mboko.`}
+      />
       <Header />
       <main className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
         <h1 className="text-2xl font-bold mb-6">My reservations</h1>

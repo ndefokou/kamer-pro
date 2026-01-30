@@ -8,9 +8,11 @@ import { Suspense } from "react";
 
 console.log("Application entry point (main.tsx) is running.");
 
+import SplashScreen from "@/components/SplashScreen";
+
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <Suspense fallback="loading">
+    <Suspense fallback={<SplashScreen />}>
       <App />
     </Suspense>
     <Toaster />
