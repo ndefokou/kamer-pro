@@ -168,7 +168,7 @@ const Dashboard = () => {
                 </p>
                 <div className="flex items-baseline gap-1 pt-0.5">
                     <span className="font-semibold text-gray-900 text-[13px] sm:text-[15px]">{product.listing.price_per_night?.toLocaleString()} FCFA</span>
-                    <span className="text-xs sm:text-sm text-gray-600">par nuit</span>
+                    <span className="text-xs sm:text-sm text-gray-600">{t('per night')}</span>
                 </div>
             </div>
         </div>
@@ -293,7 +293,7 @@ const Dashboard = () => {
                             .map((g) => (
                                 <PropertySection
                                     key={g.name || Math.random()}
-                                    title={`Logements  · ${g.name}`}
+                                    title={t('StaysIn', { city: g.name })}
                                     properties={g.items}
                                     city={g.name}
                                 />

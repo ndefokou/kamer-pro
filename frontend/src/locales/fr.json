@@ -23,7 +23,24 @@
     "savePhotosCount": "Enregistrer {{count}} {{unit}}",
     "total": "Total",
     "share": "Partager",
-    "seeAll": "Voir tout"
+    "seeAll": "Voir tout",
+    "search": "Rechercher",
+    "suggestions": "Suggestions",
+    "nearby": "À proximité",
+    "close": "Fermer",
+    "clearAll": "Tout effacer",
+    "next": "Suivant",
+    "dates": "Dates",
+    "flexible": "Flexible",
+    "exactDates": "Dates exactes",
+    "who": "Qui ?",
+    "when": "Quand ?",
+    "startSearch": "Commencer ma recherche",
+    "adults": "Adultes",
+    "children": "Enfants",
+    "infants": "Bébés",
+    "pets": "Animaux domestiques",
+    "howLong": "Combien de temps souhaitez-vous rester ?"
   },
   "search destinations": "Rechercher des destinations",
   "when": "Quand",
@@ -737,7 +754,7 @@
       "reportCta": "Signaler cet hôte"
     }
   },
-  "StaysIn": "Logements  · {{city}}",
+  "StaysIn": "Séjours à {{city}}",
   "other Locations": "Autres destinations",
   "seeAll": "Voir tout"
 }

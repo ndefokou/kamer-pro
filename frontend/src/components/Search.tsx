@@ -97,7 +97,7 @@ const MbokoSearch = () => {
                 <div className="flex items-center gap-3 bg-white rounded-full shadow-md border border-gray-200 p-3" onClick={() => setOpenWhere(true)}>
                     <Search className="h-5 w-5 text-gray-500 ml-2" />
                     <div className="flex-1">
-                        <span className="text-sm font-semibold text-gray-500">Commencer ma recherche</span>
+                        <span className="text-sm font-semibold text-gray-500">{t('common.startSearch')}</span>
                     </div>
                 </div>
             </div>
@@ -122,7 +122,7 @@ const MbokoSearch = () => {
                     </PopoverTrigger>
                     <PopoverContent className="w-[350px] p-0 rounded-3xl overflow-hidden shadow-xl border-0 mt-4" align="start">
                         <div className="p-4">
-                            <h3 className="text-xs font-bold text-gray-500 mb-4 px-2 uppercase tracking-wider">Suggestions</h3>
+                            <h3 className="text-xs font-bold text-gray-500 mb-4 px-2 uppercase tracking-wider">{t('common.suggestions')}</h3>
                             <div className="space-y-1">
                                 {suggestions.map((item) => (
                                     <div
@@ -176,11 +176,11 @@ const MbokoSearch = () => {
                             {/* Top category tabs (visual only) */}
                             <div className="flex items-center justify-between mb-3">
                                 <div className="flex items-center gap-4">
-                                    <button className="text-sm font-semibold text-gray-900">Logements</button>
+                                    <button className="text-sm font-semibold text-gray-900">{t('Stays')}</button>
                                 </div>
                                 <button
                                     type="button"
-                                    aria-label="Fermer"
+                                    aria-label={t('common.close')}
                                     className="h-8 w-8 rounded-full border border-gray-200 grid place-items-center hover:bg-gray-50"
                                     onClick={() => setOpenWhen(false)}
                                 >
@@ -202,24 +202,24 @@ const MbokoSearch = () => {
                                     onClick={() => setPlaceTab('nearby')}
                                     type="button"
                                 >
-                                    À proximité
+                                    {t('common.nearby')}
                                 </button>
                             </div>
 
-                            <h3 className="text-lg font-semibold mb-3">Quand ?</h3>
+                            <h3 className="text-lg font-semibold mb-3">{t('common.when')}</h3>
 
                             <div className="flex justify-center mb-6 bg-gray-100 p-1 rounded-full w-fit mx-auto">
                                 <button
                                     onClick={() => setActiveTab("dates")}
                                     className={`px-4 py-1.5 text-sm font-semibold rounded-full transition-all ${activeTab === "dates" ? "bg-white shadow-sm text-gray-900" : "text-gray-600 hover:bg-gray-200"}`}
                                 >
-                                    Dates
+                                    {t('common.dates')}
                                 </button>
                                 <button
                                     onClick={() => setActiveTab("flexible")}
                                     className={`px-4 py-1.5 text-sm font-semibold rounded-full transition-all ${activeTab === "flexible" ? "bg-white shadow-sm text-gray-900" : "text-gray-600 hover:bg-gray-200"}`}
                                 >
-                                    Flexible
+                                    {t('common.flexible')}
                                 </button>
                             </div>
 
@@ -255,7 +255,7 @@ const MbokoSearch = () => {
                                                     onClick={() => setDateTolerance(tol as 0 | 1 | 2 | 3)}
                                                     className={`px-2.5 py-1 rounded-full border text-xs ${dateTolerance === tol ? 'border-black bg-gray-50' : 'border-gray-300 hover:border-black'}`}
                                                 >
-                                                    {tol === 0 ? 'Dates exactes' : `± ${tol} jour${tol > 1 ? 's' : ''}`}
+                                                    {tol === 0 ? t('common.exactDates') : `± ${tol} jour${tol > 1 ? 's' : ''}`}
                                                 </button>
                                             ))}
                                         </div>
@@ -270,20 +270,20 @@ const MbokoSearch = () => {
                                         className="flex items-center justify-between px-5 py-3 border-b border-gray-200 cursor-pointer"
                                         onClick={() => setWhenStep('dates')}
                                     >
-                                        <span className="text-sm text-gray-700">Quand</span>
+                                        <span className="text-sm text-gray-700">{t('common.when').replace('?', '')}</span>
                                         <span className="text-sm font-medium text-gray-900">
                                             {date?.from
                                                 ? `${format(date.from, 'd MMM', { locale: fr })}${date?.to ? ` - ${format(date.to as Date, 'd MMM', { locale: fr })}` : ''}`
                                                 : 'Ajouter des dates'}
                                         </span>
                                     </div>
-                                    <h3 className="text-lg font-semibold px-5 py-4">Qui ?</h3>
+                                    <h3 className="text-lg font-semibold px-5 py-4">{t('common.who')}</h3>
                                     <div className="divide-y divide-gray-200">
                                         {[
-                                            { type: "adults", label: "Adultes", sub: "13 ans et plus" },
-                                            { type: "children", label: "Enfants", sub: "De 2 à 12 ans" },
-                                            { type: "infants", label: "Bébés", sub: "- de 2 ans" },
-                                            { type: "pets", label: "Animaux domestiques", sub: "Vous voyagez avec un animal d'assistance ?" },
+                                            { type: "adults", label: t("common.adults"), sub: t("Age 13+") },
+                                            { type: "children", label: t("common.children"), sub: t("Ages 2-12") },
+                                            { type: "infants", label: t("common.infants"), sub: t("Under 2") },
+                                            { type: "pets", label: t("common.pets"), sub: t("Traveling with a service animal?") },
                                         ].map((item) => (
                                             <div key={item.type} className="flex items-center justify-between px-5 py-5">
                                                 <div className="pr-6">
@@ -355,7 +355,7 @@ const MbokoSearch = () => {
 
                             {activeTab === "flexible" && (
                                 <div className="text-center">
-                                    <h3 className="text-lg font-semibold mb-4">How long would you like to stay?</h3>
+                                    <h3 className="text-lg font-semibold mb-4">{t('common.howLong')}</h3>
                                     <div className="flex justify-center gap-3">
                                         {FLEXIBLE_OPTIONS.map((option) => (
                                             <button
@@ -377,14 +377,14 @@ const MbokoSearch = () => {
                                     className="text-sm underline"
                                     onClick={() => { setDate(undefined); setFlexibleMonths([]); setFlexibleDuration("weekend"); setWhenStep('dates'); setGuests({ adults: 0, children: 0, infants: 0, pets: 0 }); }}
                                 >
-                                    Tout effacer
+                                    {t('common.clearAll')}
                                 </button>
                                 {whenStep === 'dates' ? (
                                     <Button
                                         type="button"
                                         onClick={() => setWhenStep('guests')}
                                     >
-                                        Suivant
+                                        {t('common.next')}
                                     </Button>
                                 ) : (
                                     <Button
@@ -392,7 +392,7 @@ const MbokoSearch = () => {
                                         className="bg-green-600 hover:bg-green-700 text-white"
                                         onClick={() => { setOpenWhen(false); runSearch(); }}
                                     >
-                                        Rechercher
+                                        {t('common.search')}
                                     </Button>
                                 )}
                             </div>

@@ -4,6 +4,7 @@ import { Heart, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useWishlist } from "@/hooks/useWishlist";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
 import { getImageUrl, formatPrice } from "@/lib/utils";
 import OptimizedImage from "./OptimizedImage";
 
@@ -29,6 +30,7 @@ const PropertyCard = ({
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const { isInWishlist, addToWishlist, removeFromWishlistByProduct } = useWishlist();
     const { toast } = useToast();
+    const { t } = useTranslation();
     const inWishlist = isInWishlist(id);
 
     const handleWishlistToggle = async (e: React.MouseEvent) => {
@@ -69,7 +71,7 @@ const PropertyCard = ({
                         />
                     ) : (
                         <div className="w-full h-full flex items-center justify-center bg-muted text-muted-foreground">
-                            <span className="text-sm">No image</span>
+                            <span className="text-sm">{t('host.editor.noPhotosYet')}</span>
                         </div>
                     )}
 
@@ -78,7 +80,7 @@ const PropertyCard = ({
                         <div className="absolute top-3 left-3 z-10">
                             <span className="px-3 py-1 text-xs font-bold bg-white/90 backdrop-blur-sm text-foreground rounded-full shadow-sm flex items-center gap-1">
                                 <Star className="h-3 w-3 fill-current" />
-                                Guest favorite
+                                {t('Guest favorite')}
                             </span>
                         </div>
                     )}
@@ -143,7 +145,7 @@ const PropertyCard = ({
                         <span className="font-semibold text-[15px] text-foreground">
                             {formatPrice(price)}
                         </span>
-                        <span className="text-sm text-muted-foreground">/ night</span>
+                        <span className="text-sm text-muted-foreground">/ {t('per night')}</span>
                     </div>
                 </div>
             </div>

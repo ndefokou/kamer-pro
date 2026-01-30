@@ -1,4 +1,7 @@
 {
+  "Stays": "Stays",
+  "Become a host": "Become a host",
+  "per night": "per night",
   "marketplace": "Find a Home",
   "nav": {
     "reservations": "Reservations",
@@ -31,7 +34,24 @@
     "savePhotosCount": "Save {{count}} {{unit}}",
     "total": "Total",
     "share": "Share",
-    "seeAll": "See all"
+    "seeAll": "See all",
+    "search": "Search",
+    "suggestions": "Suggestions",
+    "nearby": "Nearby",
+    "close": "Close",
+    "clearAll": "Clear all",
+    "next": "Next",
+    "dates": "Dates",
+    "flexible": "Flexible",
+    "exactDates": "Exact dates",
+    "who": "Who?",
+    "when": "When?",
+    "startSearch": "Start my search",
+    "adults": "Adults",
+    "children": "Children",
+    "infants": "Infants",
+    "pets": "Pets",
+    "howLong": "How long would you like to stay?"
   },
   "logout": "Logout",
   "login": "Login",
@@ -47,6 +67,10 @@
   "Calendar": "Calendar",
   "Messages": "Messages",
   "Profile": "Profile",
+  "Traveling with a service animal?": "Traveling with a service animal?",
+  "Age 13+": "Age 13+",
+  "Ages 2-12": "Ages 2-12",
+  "Guest favorite": "Guest favorite",
   "Loading stays...": "Loading stays...",
   "Search": "Search",
   "category": "Property category",
@@ -663,7 +687,7 @@
       "reportCta": "Report this host"
     }
   },
-  "StaysIn": " stays · {{city}}",
+  "StaysIn": "Stays in {{city}}",
   "seeAll": "See all",
   "other Locations": "Other locations"
 }

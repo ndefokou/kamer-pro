@@ -85,7 +85,7 @@ const ListingDetails: React.FC = () => {
     const [isMessageModalOpen, setIsMessageModalOpen] = React.useState(false);
     const [isReportModalOpen, setIsReportModalOpen] = React.useState(false);
     const [isPhotoGalleryOpen, setIsPhotoGalleryOpen] = React.useState(false);
-    const { i18n } = useTranslation();
+    const { t, i18n } = useTranslation();
     const locale = i18n.language?.startsWith('fr') ? 'fr-FR' : 'en-US';
 
     const [initialPhotoIndex, setInitialPhotoIndex] = React.useState(0);
@@ -833,7 +833,7 @@ const ListingDetails: React.FC = () => {
                                     <span className="text-2xl font-bold">
                                         {formatPrice(listing.price_per_night || 0)}
                                     </span>
-                                    <span className="text-muted-foreground"> / night</span>
+                                    <span className="text-muted-foreground"> / {t('per night')}</span>
                                 </div>
                             </div>
 
@@ -1156,12 +1156,12 @@ const ListingDetails: React.FC = () => {
                             <span className="font-bold text-lg">
                                 {formatPrice(listing.price_per_night || 0)}
                             </span>
-                            <span className="text-sm text-muted-foreground">/ night</span>
+                            <span className="text-sm text-muted-foreground">/ {t('per night')}</span>
                         </div>
                         <span className="text-xs font-medium underline cursor-pointer" onClick={openMobileDatePicker}>
                             {checkInDate && checkOutDate ?
                                 `${format(checkInDate, 'MMM d')} - ${format(checkOutDate, 'MMM d')}` :
-                                'Add dates'
+                                t('preview.addDate')
                             }
                         </span>
                     </div>

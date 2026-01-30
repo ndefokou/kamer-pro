@@ -20,9 +20,8 @@ const TranslatedText: React.FC<Props> = ({ text, as = 'span', className, langOve
     const run = async () => {
       const original = text || '';
       if (!original) { setValue(''); return; }
-      const target = lang === 'fr' ? 'fr' : 'en';
+      const target = lang;
       try {
-        if (target === 'en') { setValue(original); return; }
         const out = await translateText(original, target);
         if (!cancelled) setValue(out || original);
       } catch {
