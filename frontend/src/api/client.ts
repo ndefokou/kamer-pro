@@ -22,6 +22,8 @@ const pendingRequests = new Map<string, Promise<any>>();
 // Cache update listeners
 type CacheListener = (url: string, data: any) => void;
 const cacheListeners = new Set<CacheListener>();
+const lastBackgroundFetch = new Map<string, number>();
+const BG_FETCH_COOLDOWN = 60000; // 1 minute
 
 export const subscribeToCache = (listener: CacheListener) => {
   cacheListeners.add(listener);
@@ -97,12 +99,16 @@ const cachedGet = async <T = any>(url: string, config?: any): Promise<T> => {
         if (criticalData) {
           try {
             const parsed = JSON.parse(criticalData);
-            // Fetch update in background
-            apiClient.get(url, config).then(res => {
-              localStorage.setItem('critical_listings', JSON.stringify(res.data));
-              cacheResponse(url, res.data, config?.params);
-            }).catch(() => { });
-            return parsed;
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              // Fetch update in background
+              apiClient.get(url, config).then(res => {
+                if (res.data && res.data.length > 0) {
+                  localStorage.setItem('critical_listings', JSON.stringify(res.data.slice(0, 10)));
+                }
+                cacheResponse(url, res.data, config?.params);
+              }).catch(() => { });
+              return parsed;
+            }
           } catch (e) { }
         }
       }
@@ -110,14 +116,25 @@ const cachedGet = async <T = any>(url: string, config?: any): Promise<T> => {
       // 2. Try IndexedDB cache second (Stale-While-Revalidate pattern)
       const cached = await getCachedResponse(url, config?.params);
 
-      if (cached) {
+      if (cached && (!Array.isArray(cached) || cached.length > 0)) {
         // Fetch in background to update cache without blocking the UI
-        apiClient.get(url, config)
-          .then(response => {
-            cacheResponse(url, response.data, config?.params);
-            notifyCacheUpdate(url, response.data);
-          })
-          .catch(() => { }); // Silently fail background update
+        // Only if we haven't fetched in the last minute
+        const lastFetch = lastBackgroundFetch.get(cacheKey) || 0;
+        if (Date.now() - lastFetch > BG_FETCH_COOLDOWN) {
+          lastBackgroundFetch.set(cacheKey, Date.now());
+          apiClient.get(url, config)
+            .then(response => {
+              cacheResponse(url, response.data, config?.params);
+              notifyCacheUpdate(url, response.data);
+
+              // Invalidate queries to refresh UI with fresh data
+              queryClient.invalidateQueries();
+            })
+            .catch(() => {
+              // Reset cooldown on error to allow retry
+              lastBackgroundFetch.delete(cacheKey);
+            });
+        }
 
         return cached;
       }
@@ -156,7 +173,7 @@ const cacheResponse = async (url: string, data: any, params?: any): Promise<void
       if (Array.isArray(data)) {
         await dbService.cacheListings(data);
         // Save first page of general listings to localStorage for ultra-fast initial paint
-        if (url === '/listings' && (!params?.offset || params.offset === 0)) {
+        if (url === '/listings' && (!params?.offset || params.offset === 0) && data.length > 0) {
           localStorage.setItem('critical_listings', JSON.stringify(data.slice(0, 10)));
         }
       }

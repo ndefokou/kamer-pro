@@ -197,14 +197,16 @@ class DatabaseService {
         ]);
     }
 
-    async getAllCachedListings(): Promise<any[]> {
+    async getAllCachedListings(): Promise<any[] | null> {
         const db = await this.ensureDB();
         const all = await db.getAll('listings');
         const now = Date.now();
 
-        return all
+        const results = all
             .filter(item => !this.isExpired(item.timestamp, item.ttl))
             .map(item => item.data);
+
+        return results.length === 0 ? null : results;
     }
 
     // User operations
