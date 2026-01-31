@@ -757,5 +757,39 @@
   },
   "StaysIn": "Stays in {{city}}",
   "seeAll": "See all",
-  "other Locations": "Other locations"
+  "other Locations": "Other locations",
+  "footer": {
+    "sections": {
+      "assistance": {
+        "title": "Assistance",
+        "helpCenter": "Help Center",
+        "airCover": "AirCover",
+        "safety": "Safety"
+      },
+      "community": {
+        "title": "Community",
+        "mbokoOrg": "Mboko.org",
+        "features": "Features"
+      },
+      "hosting": {
+        "title": "Hosting",
+        "tryHosting": "Try Hosting",
+        "airCoverHost": "AirCover for Hosts",
+        "resources": "Resources"
+      },
+      "about": {
+        "title": "About",
+        "newsroom": "Newsroom",
+        "careers": "Careers",
+        "investors": "Investors"
+      }
+    },
+    "bottom": {
+      "copyright": "© 2026 Le Mboko, Inc.",
+      "privacy": "Privacy",
+      "terms": "Terms",
+      "sitemap": "Sitemap",
+      "language": "English (US)"
+    }
+  }
 }

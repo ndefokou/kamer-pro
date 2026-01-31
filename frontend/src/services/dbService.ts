@@ -423,10 +423,34 @@ class DatabaseService {
 
     async clearAllCache(): Promise<void> {
         const db = await this.ensureDB();
-        const stores = ['listings', 'users', 'messages', 'bookings', 'reviews', 'images'] as const;
+        const stores = ['listings', 'users', 'messages', 'bookings', 'reviews', 'images', 'towns', 'conversations'] as const;
 
         for (const storeName of stores) {
             await db.clear(storeName);
+        }
+        localStorage.removeItem('critical_listings');
+    }
+
+    async clearStore(storeName: any): Promise<void> {
+        const db = await this.ensureDB();
+        const names = Array.from(db.objectStoreNames) as string[];
+        if (names.includes(storeName as string)) {
+            await (db.clear as any)(storeName);
+        }
+    }
+
+    async clearCacheByPattern(pattern: string): Promise<void> {
+        if (pattern === 'listings') {
+            await this.clearStore('listings');
+            await this.clearStore('towns');
+            localStorage.removeItem('critical_listings');
+        } else if (pattern === 'bookings') {
+            await this.clearStore('bookings');
+        } else if (pattern === 'messages') {
+            await this.clearStore('messages');
+            await this.clearStore('conversations');
+        } else if (pattern === 'users') {
+            await this.clearStore('users');
         }
     }
 

@@ -171,6 +171,7 @@
         "pricing": "Tarification",
         "availability": "Disponibilité",
         "nightStaysRange": "Séjours de 1 à 365 nuits",
+        "nightStaysRangeWithCount": "Séjours de {{min}} à {{max}} nuits",
         "numberOfGuests": "Nombre de voyageurs",
         "amenities": "Équipements",
         "addDetails": "Ajouter des détails",
@@ -228,7 +229,7 @@
       },
       "availability": {
         "help": "Ces paramètres s'appliquent à toutes les nuits, sauf si vous les personnalisez par date.",
-        "tripLength": "Durée du voyage",
+        "tripLength": "Durée du séjour",
         "minNights": "Nuits minimum",
         "maxNights": "Nuits maximum",
         "advanceNotice": "Préavis",
@@ -430,7 +431,9 @@
       "declineHelp": "Veuillez indiquer un motif. Ce message sera envoyé au voyageur.",
       "declinePlaceholder": "ex. Les dates ne sont plus disponibles...",
       "declining": "Refus en cours...",
-      "declineCta": "Refuser la réservation"
+      "declineCta": "Refuser la réservation",
+      "whatsappGreeting": "Bonjour {{name}}, j'ai une question concernant votre réservation.",
+      "declineWhatsapp": "Réservation refusée : {{reason}}"
     },
     "preview": {
       "untitled": "Annonce sans titre",
@@ -738,6 +741,7 @@
       "reportHost": "Signaler cet hôte"
     },
     "details": {
+      "photos": "Photos",
       "about": "À propos de ce logement",
       "offers": "Ce que propose ce logement",
       "showAllAmenities": "Afficher les {{count}} équipements",
@@ -811,5 +815,39 @@
   },
   "StaysIn": "Séjours à {{city}}",
   "other Locations": "Autres destinations",
-  "seeAll": "Voir tout"
+  "seeAll": "Voir tout",
+  "footer": {
+    "sections": {
+      "assistance": {
+        "title": "Assistance",
+        "helpCenter": "Centre d'aide",
+        "airCover": "AirCover",
+        "safety": "Sécurité"
+      },
+      "community": {
+        "title": "Communauté",
+        "mbokoOrg": "Mboko.org",
+        "features": "Fonctionnalités"
+      },
+      "hosting": {
+        "title": "Accueil",
+        "tryHosting": "Essayer l'accueil",
+        "airCoverHost": "AirCover pour les hôtes",
+        "resources": "Ressources"
+      },
+      "about": {
+        "title": "Le Mboko",
+        "newsroom": "Newsroom",
+        "careers": "Carrières",
+        "investors": "Investisseurs"
+      }
+    },
+    "bottom": {
+      "copyright": "© 2026 Le Mboko, Inc.",
+      "privacy": "Confidentialité",
+      "terms": "Conditions",
+      "sitemap": "Plan du site",
+      "language": "Français (FR)"
+    }
+  }
 }

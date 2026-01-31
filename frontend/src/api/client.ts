@@ -1,6 +1,7 @@
 import axios from "axios";
 import { dbService } from "../services/dbService";
 import { networkService } from "../services/networkService";
+import { queryClient } from "../App";
 
 const getBaseUrl = () => {
   const envUrl = import.meta.env.VITE_API_URL;
@@ -18,13 +19,44 @@ const apiClient = axios.create({
 // Request deduplication map
 const pendingRequests = new Map<string, Promise<any>>();
 
+// Cache update listeners
+type CacheListener = (url: string, data: any) => void;
+const cacheListeners = new Set<CacheListener>();
+
+export const subscribeToCache = (listener: CacheListener) => {
+  cacheListeners.add(listener);
+  return () => cacheListeners.delete(listener);
+};
+
+const notifyCacheUpdate = (url: string, data: any) => {
+  cacheListeners.forEach(listener => listener(url, data));
+};
+
 // Helper to create cache key
 const createCacheKey = (url: string, params?: any): string => {
   return `${url}${params ? '?' + JSON.stringify(params) : ''}`;
 };
 
 apiClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // Global Cache Invalidation for Mutations
+    const { method, url } = response.config;
+    if (method && ['post', 'put', 'delete'].includes(method.toLowerCase()) && url) {
+      if (url.includes('/listings')) {
+        dbService.clearCacheByPattern('listings');
+      } else if (url.includes('/bookings')) {
+        dbService.clearCacheByPattern('bookings');
+      } else if (url.includes('/messages')) {
+        dbService.clearCacheByPattern('messages');
+      } else if (url.includes('/account/user')) {
+        dbService.clearCacheByPattern('users');
+      }
+
+      // Automatically invalidate react-query queries
+      queryClient.invalidateQueries();
+    }
+    return response;
+  },
   (error) => {
     const isAuthPage = window.location.pathname.includes("/webauth-login");
 
@@ -81,7 +113,10 @@ const cachedGet = async <T = any>(url: string, config?: any): Promise<T> => {
       if (cached) {
         // Fetch in background to update cache without blocking the UI
         apiClient.get(url, config)
-          .then(response => cacheResponse(url, response.data, config?.params))
+          .then(response => {
+            cacheResponse(url, response.data, config?.params);
+            notifyCacheUpdate(url, response.data);
+          })
           .catch(() => { }); // Silently fail background update
 
         return cached;

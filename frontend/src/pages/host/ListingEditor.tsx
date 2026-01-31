@@ -293,7 +293,7 @@ const ListingEditor: React.FC = () => {
             })()
         },
         { id: 'pricing', label: t('host.editor.sidebar.pricing', 'Pricing'), icon: null, description: `${formatPrice(listing.price_per_night)} ${t('host.editor.perNight', 'per night')}` },
-        { id: 'availability', label: t('host.editor.sidebar.availability', 'Availability'), icon: null, description: t('host.editor.sidebar.nightStaysRange', '1 – 365 night stays') },
+        { id: 'availability', label: t('host.editor.sidebar.availability', 'Availability'), icon: null, description: settings?.min_nights ? t('host.editor.sidebar.nightStaysRangeWithCount', '{{min}} – {{max}} night stays', { min: settings.min_nights, max: settings.max_nights || 365 }) : t('host.editor.sidebar.addDetails', 'Add details') },
         { id: 'number_of_guests', label: t('host.editor.sidebar.numberOfGuests', 'Number of guests'), icon: Users, description: `${listing.max_guests} ${t('common.guests', 'guests')}` },
         {
             id: 'amenities', label: t('host.editor.sidebar.amenities', 'Amenities'), icon: Plus, description: listing.amenities && listing.amenities.length > 0
@@ -839,10 +839,10 @@ const ListingEditor: React.FC = () => {
                                                 <label className="block text-sm text-gray-600 mb-2">{t('host.editor.availability.minNights', 'Minimum nights')}</label>
                                                 <input
                                                     type="number"
-                                                    value={settings.min_nights}
-                                                    onChange={(e) => setSettings({ ...settings, min_nights: Number(e.target.value) })}
+                                                    value={settings.min_nights || ''}
+                                                    onChange={(e) => setSettings({ ...settings, min_nights: e.target.value === '' ? undefined : Number(e.target.value) })}
                                                     className="text-3xl font-semibold border-none bg-transparent p-0 w-20 focus:outline-none focus:ring-0"
-                                                    min={1}
+                                                    placeholder="1"
                                                 />
                                             </div>
 
@@ -850,10 +850,10 @@ const ListingEditor: React.FC = () => {
                                                 <label className="block text-sm text-gray-600 mb-2">{t('host.editor.availability.maxNights', 'Maximum nights')}</label>
                                                 <input
                                                     type="number"
-                                                    value={settings.max_nights}
-                                                    onChange={(e) => setSettings({ ...settings, max_nights: Number(e.target.value) })}
+                                                    value={settings.max_nights || ''}
+                                                    onChange={(e) => setSettings({ ...settings, max_nights: e.target.value === '' ? undefined : Number(e.target.value) })}
                                                     className="text-3xl font-semibold border-none bg-transparent p-0 w-24 focus:outline-none focus:ring-0"
-                                                    min={1}
+                                                    placeholder="365"
                                                 />
                                             </div>
                                         </div>

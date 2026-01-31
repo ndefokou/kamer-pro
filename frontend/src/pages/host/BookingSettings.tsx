@@ -14,22 +14,22 @@ const BookingSettings: React.FC = () => {
     const { draft, updateDraft, nextStep, previousStep } = useHost();
 
     const [instantBook, setInstantBook] = useState(draft.instantBook || false);
-    const [minNights, setMinNights] = useState(draft.minNights || 1);
-    const [maxNights, setMaxNights] = useState(draft.maxNights || 30);
-    const [maxGuests, setMaxGuests] = useState(draft.maxGuests || 1);
-    const [bedrooms, setBedrooms] = useState(draft.bedrooms || 1);
-    const [beds, setBeds] = useState(draft.beds || 1);
-    const [bathrooms, setBathrooms] = useState(draft.bathrooms || 1);
+    const [minNights, setMinNights] = useState<number | string>(draft.minNights || '');
+    const [maxNights, setMaxNights] = useState<number | string>(draft.maxNights || '');
+    const [maxGuests, setMaxGuests] = useState<number | string>(draft.maxGuests || '');
+    const [bedrooms, setBedrooms] = useState<number | string>(draft.bedrooms || '');
+    const [beds, setBeds] = useState<number | string>(draft.beds || '');
+    const [bathrooms, setBathrooms] = useState<number | string>(draft.bathrooms || '');
 
     const handleContinue = () => {
         updateDraft({
             instantBook,
-            minNights,
-            maxNights,
-            maxGuests,
-            bedrooms,
-            beds,
-            bathrooms,
+            minNights: minNights === '' ? undefined : Number(minNights),
+            maxNights: maxNights === '' ? undefined : Number(maxNights),
+            maxGuests: maxGuests === '' ? undefined : Number(maxGuests),
+            bedrooms: bedrooms === '' ? undefined : Number(bedrooms),
+            beds: beds === '' ? undefined : Number(beds),
+            bathrooms: bathrooms === '' ? undefined : Number(bathrooms),
         });
         nextStep();
         navigate('/host/pricing');
@@ -38,12 +38,12 @@ const BookingSettings: React.FC = () => {
     const handleBack = () => {
         updateDraft({
             instantBook,
-            minNights,
-            maxNights,
-            maxGuests,
-            bedrooms,
-            beds,
-            bathrooms,
+            minNights: minNights === '' ? undefined : Number(minNights),
+            maxNights: maxNights === '' ? undefined : Number(maxNights),
+            maxGuests: maxGuests === '' ? undefined : Number(maxGuests),
+            bedrooms: bedrooms === '' ? undefined : Number(bedrooms),
+            beds: beds === '' ? undefined : Number(beds),
+            bathrooms: bathrooms === '' ? undefined : Number(bathrooms),
         });
         previousStep();
         navigate('/host/description');
@@ -108,8 +108,9 @@ const BookingSettings: React.FC = () => {
                                 type="number"
                                 min={1}
                                 value={minNights}
-                                onChange={(e) => setMinNights(parseInt(e.target.value) || 1)}
+                                onChange={(e) => setMinNights(e.target.value)}
                                 className="mt-2"
+                                placeholder="1"
                             />
                         </div>
                         <div>
@@ -117,10 +118,11 @@ const BookingSettings: React.FC = () => {
                             <Input
                                 id="maxNights"
                                 type="number"
-                                min={minNights}
+                                min={1}
                                 value={maxNights}
-                                onChange={(e) => setMaxNights(parseInt(e.target.value) || 30)}
+                                onChange={(e) => setMaxNights(e.target.value)}
                                 className="mt-2"
+                                placeholder="365"
                             />
                         </div>
                     </div>
@@ -138,8 +140,9 @@ const BookingSettings: React.FC = () => {
                                 min={1}
                                 max={16}
                                 value={maxGuests}
-                                onChange={(e) => setMaxGuests(parseInt(e.target.value) || 1)}
+                                onChange={(e) => setMaxGuests(e.target.value)}
                                 className="mt-2"
+                                placeholder="1"
                             />
                         </div>
                         <div className="grid grid-cols-3 gap-4">
@@ -150,8 +153,9 @@ const BookingSettings: React.FC = () => {
                                     type="number"
                                     min={0}
                                     value={bedrooms}
-                                    onChange={(e) => setBedrooms(parseInt(e.target.value) || 0)}
+                                    onChange={(e) => setBedrooms(e.target.value)}
                                     className="mt-2"
+                                    placeholder="1"
                                 />
                             </div>
                             <div>
@@ -161,8 +165,9 @@ const BookingSettings: React.FC = () => {
                                     type="number"
                                     min={1}
                                     value={beds}
-                                    onChange={(e) => setBeds(parseInt(e.target.value) || 1)}
+                                    onChange={(e) => setBeds(e.target.value)}
                                     className="mt-2"
+                                    placeholder="1"
                                 />
                             </div>
                             <div>
@@ -170,11 +175,12 @@ const BookingSettings: React.FC = () => {
                                 <Input
                                     id="bathrooms"
                                     type="number"
-                                    min={0.5}
+                                    min={0}
                                     step={0.5}
                                     value={bathrooms}
-                                    onChange={(e) => setBathrooms(parseFloat(e.target.value) || 1)}
+                                    onChange={(e) => setBathrooms(e.target.value)}
                                     className="mt-2"
+                                    placeholder="1"
                                 />
                             </div>
                         </div>

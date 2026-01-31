@@ -2,7 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import apiClient, { approveBooking, declineBooking } from '@/api/client';
 import { Button } from '@/components/ui/button';
-import { Menu, Mail, Calendar, Grid3x3, Home, Globe, HelpCircle, Settings, BookOpen, Users, UserPlus, LogOut, Plus, CheckCircle } from 'lucide-react';
+import { Menu, Mail, Calendar, Grid3x3, Home, Globe, HelpCircle, Settings, BookOpen, Users, UserPlus, LogOut, Plus, CheckCircle, MessageSquare } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { openWhatsApp } from '@/lib/whatsapp';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getImageUrl } from '@/lib/utils';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
@@ -37,6 +39,7 @@ type TabType = 'today' | 'upcoming';
 
 const Reservations: React.FC = () => {
     const navigate = useNavigate();
+    const { toast } = useToast();
     const { t } = useTranslation();
     const [activeTab, setActiveTab] = useState<TabType>('today');
     const [todayBookings, setTodayBookings] = useState<BookingWithDetails[]>([]);
@@ -59,18 +62,17 @@ const Reservations: React.FC = () => {
         return (parts[0][0] + parts[1][0]).toUpperCase();
     };
 
-    const openWhatsApp = (rawPhone?: string | null, text?: string) => {
-        if (!rawPhone) return;
-        let cleaned = rawPhone.replace(/[-\s()]/g, '');
-        if (!cleaned.startsWith('+')) cleaned = `+237${cleaned}`;
-        const url = `https://wa.me/${encodeURIComponent(cleaned)}${text ? `?text=${encodeURIComponent(text)}` : ''}`;
-        window.open(url, '_blank');
-    };
-
     const handleMessageGuest = async (guestId: number) => {
         try {
             const res = await getUserById(guestId);
-            openWhatsApp(res.profile?.phone || null, `Hello ${res.user.username}, I have a question about your reservation.`);
+            const success = openWhatsApp(res.profile?.phone || null, t('host.reservations.whatsappGreeting', { name: res.user.username }));
+            if (!success) {
+                toast({
+                    title: t('common.error'),
+                    description: "Guest's phone number is missing.",
+                    variant: "destructive"
+                });
+            }
         } catch (e) {
             console.error('Failed to fetch guest phone', e);
         }
@@ -130,7 +132,7 @@ const Reservations: React.FC = () => {
             if (b) {
                 try {
                     const res = await getUserById(b.booking.guest_id);
-                    openWhatsApp(res.profile?.phone || null, `Booking declined: ${declineReason}`);
+                    openWhatsApp(res.profile?.phone || null, t('host.reservations.declineWhatsapp', { reason: declineReason }));
                 } catch (e) {
                     console.error('Failed to send WhatsApp notification', e);
                 }
@@ -234,7 +236,10 @@ const Reservations: React.FC = () => {
                                                 </div>
                                             </div>
                                             <div className="flex items-center gap-3">
-                                                <Button variant="outline" className="rounded-full px-4" onClick={() => handleMessageGuest(booking.booking.guest_id)}>{t('common.message', 'Message')}</Button>
+                                                <Button variant="outline" className="rounded-full px-4 flex items-center gap-2" onClick={() => handleMessageGuest(booking.booking.guest_id)}>
+                                                    <MessageSquare className="h-4 w-4" />
+                                                    {t('common.message', 'Message')}
+                                                </Button>
                                                 {booking.booking.status === 'pending' && (
                                                     <>
                                                         <Button

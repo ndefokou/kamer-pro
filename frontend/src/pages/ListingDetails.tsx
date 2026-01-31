@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Loader2, Share, Heart, Star, Minus, Plus, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { getImageUrl, formatPrice } from '@/lib/utils';
 import OptimizedImage from '@/components/OptimizedImage';
+import { openWhatsApp } from '@/lib/whatsapp';
 import { AMENITY_DETAILS } from '@/data/amenities';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -415,11 +416,10 @@ const ListingDetails: React.FC = () => {
     };
 
     const handleMessageHost = () => {
-        if (product?.contact_phone) {
-            const cleanedPhone = product.contact_phone.replace(/\D/g, '');
-            const whatsappUrl = `https://wa.me/${cleanedPhone}`;
-            window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
-        } else {
+        const phone = product?.contact_phone;
+        const success = openWhatsApp(phone, t('listing.actions.whatsappGreeting', { name: hostName }));
+
+        if (!success) {
             setIsMessageModalOpen(true);
         }
     };
@@ -603,7 +603,7 @@ const ListingDetails: React.FC = () => {
                                 }}
                             >
                                 <span className="hidden sm:inline">{t('listing.actions.showAllPhotos')}</span>
-                                <span className="sm:hidden">{t('listing.editor.photos')}</span>
+                                <span className="sm:hidden">{t('listing.details.photos')}</span>
                             </button>
                         </div>
                     ) : (

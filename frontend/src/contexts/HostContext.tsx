@@ -63,7 +63,7 @@ export interface ListingDraft {
 
     // Step 5: Booking settings
     instantBook: boolean;
-    minNights: number;
+    minNights?: number;
     maxNights?: number;
     maxGuests?: number;
     bedrooms?: number;
@@ -118,7 +118,6 @@ const defaultDraft: ListingDraft = {
     title: '',
     description: '',
     instantBook: false,
-    minNights: 1,
     currency: 'XAF',
     safetyDevices: [],
     houseRules: '',
