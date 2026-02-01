@@ -948,7 +948,9 @@
       "guestCount_other": "{{count}} voyageurs",
       "noCharge": "Aucun montant ne vous sera débité pour le moment",
       "selectDates": "Sélectionner des dates",
-      "adults": "Adultes"
+      "adults": "Adultes",
+      "serviceFee": "Frais de service",
+      "total": "Total"
     },
     "reviews": {
       "noReviewsYet": "Aucun avis pour le moment",

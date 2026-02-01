@@ -1187,16 +1187,25 @@ const ListingDetails: React.FC = () => {
             <div className="fixed bottom-0 inset-x-0 z-50 bg-white border-t border-gray-200 p-4 md:hidden pb-safe">
                 <div className="flex items-center justify-between max-w-7xl mx-auto">
                     <div className="flex flex-col">
-                        <div className="flex items-baseline gap-1">
-                            <span className="font-bold text-lg">
-                                {formatPrice(listing.price_per_night || 0)}
-                            </span>
-                            <span className="text-sm text-muted-foreground">/ {t('per night')}</span>
-                        </div>
-                        <span className="text-xs font-medium underline cursor-pointer" onClick={openMobileDatePicker}>
+                        {checkInDate && checkOutDate ? (
+                            <div className="flex items-baseline gap-1">
+                                <span className="font-bold text-lg">
+                                    {formatPrice(totalPrice)}
+                                </span>
+                                <span className="text-sm text-muted-foreground">{t('listing.booking.total')}</span>
+                            </div>
+                        ) : (
+                            <div className="flex items-baseline gap-1">
+                                <span className="font-bold text-lg">
+                                    {formatPrice(listing.price_per_night || 0)}
+                                </span>
+                                <span className="text-sm text-muted-foreground">/ {t('per night')}</span>
+                            </div>
+                        )}
+                        <span className="text-xs font-medium underline cursor-pointer" onClick={() => setShowDatePickerMobile(true)}>
                             {checkInDate && checkOutDate ?
                                 `${format(checkInDate, 'MMM d', { locale: localeSelection })} - ${format(checkOutDate, 'MMM d', { locale: localeSelection })}` :
-                                t('preview.addDate')
+                                t('listing.booking.addDate')
                             }
                         </span>
                     </div>

@@ -23,11 +23,106 @@ import MobileNav from "@/components/MobileNav";
 import { useWishlist } from "@/hooks/useWishlist";
 import { networkService } from "@/services/networkService";
 
+import PropertyCard from "@/components/PropertyCard";
+
+// PropertySection component defined outside to prevent re-renders
+const PropertySection = ({ title, properties, city }: { title: string; properties: Product[]; city?: string }) => {
+    const { t } = useTranslation();
+    const navigate = useNavigate();
+    const scrollContainerRef = useRef<HTMLDivElement>(null);
+    const [showLeftArrow, setShowLeftArrow] = useState(false);
+    const [showRightArrow, setShowRightArrow] = useState(true);
+
+    const handleScroll = () => {
+        if (scrollContainerRef.current) {
+            const { scrollLeft, scrollWidth, clientWidth } = scrollContainerRef.current;
+            setShowLeftArrow(scrollLeft > 0);
+            setShowRightArrow(scrollLeft < scrollWidth - clientWidth - 10);
+        }
+    };
+
+    const scroll = (direction: 'left' | 'right') => {
+        if (scrollContainerRef.current) {
+            const scrollAmount = scrollContainerRef.current.clientWidth * 0.8;
+            scrollContainerRef.current.scrollBy({
+                left: direction === 'left' ? -scrollAmount : scrollAmount,
+                behavior: 'smooth'
+            });
+        }
+    };
+
+    const normalizeCity = (s?: string) => (s || "").trim().toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '');
+
+    if (!properties || properties.length === 0) return null;
+
+    const isOther = !!city && normalizeCity(city) === 'other';
+
+    return (
+        <div className="mb-4 group relative">
+            <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold text-gray-900">{city && !isOther ? t('StaysIn', { city }) : title}</h2>
+                {city && (
+                    <button
+                        className="text-sm font-semibold hover:underline flex items-center gap-1"
+                        onClick={() => navigate(`/marketplace?search=${encodeURIComponent(isOther ? 'other' : city)}`)}
+                        aria-label={isOther ? t('otherLocations') : `See all stays in ${city}`}
+                    >
+                        {t('seeAll')} <span aria-hidden>›</span>
+                    </button>
+                )}
+            </div>
+
+            <div className="relative">
+                {/* Left Arrow */}
+                {showLeftArrow && (
+                    <button
+                        onClick={() => scroll('left')}
+                        className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 z-10 w-8 h-8 bg-white rounded-full shadow-md border border-gray-200 flex items-center justify-center hover:scale-105 transition-transform"
+                        aria-label="Previous"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" aria-hidden="true" role="presentation" focusable="false" style={{ display: 'block', fill: 'none', height: '12px', width: '12px', stroke: 'currentcolor', strokeWidth: 5.33333, overflow: 'visible' }}><path fill="none" d="M20 28 8.7 16.7a1 1 0 0 1 0-1.4L20 4"></path></svg>
+                    </button>
+                )}
+
+                <div
+                    ref={scrollContainerRef}
+                    onScroll={handleScroll}
+                    className="flex gap-4 md:gap-6 overflow-x-auto pb-3 snap-x snap-mandatory scroll-smooth [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']"
+                >
+                    {properties.filter(Boolean).map((product, index) => (
+                        <div key={product.listing.id} className="flex-shrink-0 w-[180px] sm:w-[240px] md:w-[280px]">
+                            <PropertyCard
+                                id={product.listing.id}
+                                name={product.listing.title}
+                                location={product.listing.city}
+                                price={product.listing.price_per_night || 0}
+                                images={product.photos?.map(p => ({ image_url: p.url })) || []}
+                                isGuestFavorite={false} // Add logic if available
+                            />
+                        </div>
+                    ))}
+                </div>
+
+                {/* Right Arrow */}
+                {showRightArrow && (
+                    <button
+                        onClick={() => scroll('right')}
+                        className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 z-10 w-8 h-8 bg-white rounded-full shadow-md border border-gray-200 flex items-center justify-center hover:scale-105 transition-transform"
+                        aria-label="Next"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" aria-hidden="true" role="presentation" focusable="false" style={{ display: 'block', fill: 'none', height: '12px', width: '12px', stroke: 'currentcolor', strokeWidth: 5.33333, overflow: 'visible' }}><path fill="none" d="m12 4 11.3 11.3a1 1 0 0 1 0 1.4L12 28"></path></svg>
+                    </button>
+                )}
+            </div>
+        </div>
+    );
+};
+
 const Dashboard = () => {
     const { t } = useTranslation();
     const navigate = useNavigate();
     const { user, logout } = useAuth();
-    const { addToWishlist, removeFromWishlistByProduct, isInWishlist } = useWishlist();
+    // Removed useWishlist hook since PropertyCard handles it internally
 
     const { data: properties, isLoading, error } = useQuery<Product[]>({
         queryKey: ["products"],
@@ -119,145 +214,7 @@ const Dashboard = () => {
         return { grouped: groups, other: [...nonPreferred, ...otherItemsNoKey], buea: bueaItems };
     }, [properties, preferredOrder, inferCity]);
 
-    const toggleFavorite = (id: string) => {
-        if (isInWishlist(id)) {
-            removeFromWishlistByProduct(id);
-        } else {
-            addToWishlist(id);
-        }
-    };
-
-    const handleLogout = async () => {
-        await logout();
-        navigate('/');
-    };
-
-
-
-    const PropertyCard = ({ product, index }: { product: Product; index: number }) => {
-        if (!product?.listing) return null;
-
-        return (
-            <div className="flex-shrink-0 w-[180px] sm:w-[240px] md:w-[280px] cursor-pointer group">
-                <div className="relative aspect-[4/3] sm:aspect-square rounded-xl overflow-hidden mb-2">
-                    <OptimizedImage
-                        src={getImageUrl(product.photos?.[0]?.url) || "https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=400&h=400&fit=crop"}
-                        alt={product.listing.title || "Property image"}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        onClick={() => navigate(`/product/${product.listing.id}`)}
-                    />
-                    <button
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            toggleFavorite(product.listing.id);
-                        }}
-                        className="absolute top-3 right-3 p-2 rounded-full hover:scale-110 transition-transform"
-                    >
-                        <Heart
-                            className={`h-6 w-6 ${isInWishlist(product.listing.id)
-                                ? 'fill-green-600 text-green-600'
-                                : 'fill-black/50 text-white stroke-white stroke-2'
-                                }`}
-                        />
-                    </button>
-                    <div className="absolute top-3 left-3 bg-white px-3 py-1 rounded-full text-xs font-semibold">
-                        {t('Guest favorite')}
-                    </div>
-                </div>
-                <div className="space-y-1">
-                    <div className="flex items-start justify-between">
-                        <h3 className="font-semibold text-gray-900 truncate flex-1 text-[13px] sm:text-sm">{product.listing.title}</h3>
-                    </div>
-                    <p className="text-xs sm:text-sm text-gray-700">
-                        {(product.listing.property_type || 'Appartement')} · {product.listing.city}
-                    </p>
-                    <div className="flex items-baseline gap-1 pt-0.5">
-                        <span className="font-semibold text-gray-900 text-[13px] sm:text-[15px]">{product.listing.price_per_night?.toLocaleString()} FCFA</span>
-                        <span className="text-xs sm:text-sm text-gray-600">{t('per night')}</span>
-                    </div>
-                </div>
-            </div>
-        );
-    };
-
-    const PropertySection = ({ title, properties, city }: { title: string; properties: Product[]; city?: string }) => {
-        const scrollContainerRef = useRef<HTMLDivElement>(null);
-        const [showLeftArrow, setShowLeftArrow] = useState(false);
-        const [showRightArrow, setShowRightArrow] = useState(true);
-
-        const handleScroll = () => {
-            if (scrollContainerRef.current) {
-                const { scrollLeft, scrollWidth, clientWidth } = scrollContainerRef.current;
-                setShowLeftArrow(scrollLeft > 0);
-                setShowRightArrow(scrollLeft < scrollWidth - clientWidth - 10);
-            }
-        };
-
-        const scroll = (direction: 'left' | 'right') => {
-            if (scrollContainerRef.current) {
-                const scrollAmount = scrollContainerRef.current.clientWidth * 0.8;
-                scrollContainerRef.current.scrollBy({
-                    left: direction === 'left' ? -scrollAmount : scrollAmount,
-                    behavior: 'smooth'
-                });
-            }
-        };
-
-        if (!properties || properties.length === 0) return null;
-
-        const isOther = !!city && normalizeCity(city) === 'other';
-
-        return (
-            <div className="mb-0 group relative">
-                <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-2xl font-bold text-gray-900">{city && !isOther ? t('StaysIn', { city }) : title}</h2>
-                    {city && (
-                        <button
-                            className="text-sm font-semibold hover:underline flex items-center gap-1"
-                            onClick={() => navigate(`/marketplace?search=${encodeURIComponent(isOther ? 'other' : city)}`)}
-                            aria-label={isOther ? t('otherLocations') : `See all stays in ${city}`}
-                        >
-                            {t('seeAll')} <span aria-hidden>›</span>
-                        </button>
-                    )}
-                </div>
-
-                <div className="relative">
-                    {/* Left Arrow */}
-                    {showLeftArrow && (
-                        <button
-                            onClick={() => scroll('left')}
-                            className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 z-10 w-8 h-8 bg-white rounded-full shadow-md border border-gray-200 flex items-center justify-center hover:scale-105 transition-transform"
-                            aria-label="Previous"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" aria-hidden="true" role="presentation" focusable="false" style={{ display: 'block', fill: 'none', height: '12px', width: '12px', stroke: 'currentcolor', strokeWidth: 5.33333, overflow: 'visible' }}><path fill="none" d="M20 28 8.7 16.7a1 1 0 0 1 0-1.4L20 4"></path></svg>
-                        </button>
-                    )}
-
-                    <div
-                        ref={scrollContainerRef}
-                        onScroll={handleScroll}
-                        className="flex gap-4 md:gap-6 overflow-x-auto pb-3 snap-x snap-mandatory scroll-smooth [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']"
-                    >
-                        {properties.filter(Boolean).map((product, index) => (
-                            <PropertyCard key={product.listing.id} product={product} index={index} />
-                        ))}
-                    </div>
-
-                    {/* Right Arrow */}
-                    {showRightArrow && (
-                        <button
-                            onClick={() => scroll('right')}
-                            className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 z-10 w-8 h-8 bg-white rounded-full shadow-md border border-gray-200 flex items-center justify-center hover:scale-105 transition-transform"
-                            aria-label="Next"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" aria-hidden="true" role="presentation" focusable="false" style={{ display: 'block', fill: 'none', height: '12px', width: '12px', stroke: 'currentcolor', strokeWidth: 5.33333, overflow: 'visible' }}><path fill="none" d="m12 4 11.3 11.3a1 1 0 0 1 0 1.4L12 28"></path></svg>
-                        </button>
-                    )}
-                </div>
-            </div>
-        );
-    };
+    // toggleFavorite and handleLogout removed as they are handled elsewhere or not used in rendering
 
     return (
         <div className="min-h-screen bg-white pb-20 md:pb-0">
