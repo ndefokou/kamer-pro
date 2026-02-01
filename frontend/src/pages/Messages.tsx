@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Loader2, Send, Search, MoreVertical, ChevronLeft } from 'lucide-react';
 import { format } from 'date-fns';
+import { fr, enUS } from 'date-fns/locale';
 import { getImageUrl } from '@/lib/utils';
 import OptimizedImage from '@/components/OptimizedImage';
 import Header from '@/components/Header';
@@ -16,7 +17,8 @@ import { useTranslation } from 'react-i18next';
 import MobileNav from '@/components/MobileNav';
 
 const Messages: React.FC = () => {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
+    const localeSelection = i18n.language === 'fr' ? fr : enUS;
     const [searchParams, setSearchParams] = useSearchParams();
     const conversationIdParam = searchParams.get('conversationId');
     const isHostView = searchParams.get('view') === 'host';
@@ -133,7 +135,7 @@ const Messages: React.FC = () => {
                                                         <h3 className="font-semibold truncate">{conv.other_user.name}</h3>
                                                         {conv.last_message && (
                                                             <span className="text-xs text-gray-500 whitespace-nowrap ml-2">
-                                                                {format(new Date(conv.last_message.created_at), 'MMM d')}
+                                                                {format(new Date(conv.last_message.created_at), 'MMM d', { locale: localeSelection })}
                                                             </span>
                                                         )}
                                                     </div>
@@ -214,7 +216,7 @@ const Messages: React.FC = () => {
                                                         >
                                                             <p className="text-sm">{msg.content}</p>
                                                             <div className={`text-[10px] mt-1 ${isMe ? 'text-gray-400' : 'text-gray-500'}`}>
-                                                                {format(new Date(msg.created_at), 'h:mm a')}
+                                                                {format(new Date(msg.created_at), 'h:mm a', { locale: localeSelection })}
                                                             </div>
                                                         </div>
                                                     </div>

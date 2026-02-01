@@ -26,7 +26,7 @@ export const MessagingProvider: React.FC<{ children: React.ReactNode }> = ({
     if (!token) return;
 
     try {
-      const response = await apiClient.get("/messages");
+      const response = await apiClient.get("/messages/conversations");
       setConversations(response.data);
     } catch (error) {
       console.error("Failed to fetch conversations:", error);
@@ -87,10 +87,10 @@ export const MessagingProvider: React.FC<{ children: React.ReactNode }> = ({
     try {
       const conv = conversations.find((c) => c.id === conversationId);
       setCurrentConversation(conv || null);
-      
-      const response = await apiClient.get(`/messages/${conversationId}/messages`);
+
+      const response = await apiClient.get(`/messages/conversations/${conversationId}`);
       setMessages(response.data);
-      
+
       // Refresh conversations to update unread count
       await fetchConversations();
       await refreshUnreadCount();
@@ -113,16 +113,15 @@ export const MessagingProvider: React.FC<{ children: React.ReactNode }> = ({
   ) => {
     setIsLoading(true);
     try {
-      await apiClient.post("/messages/send", {
+      await apiClient.post("/messages", {
         conversation_id: conversationId,
         content,
-        message_type: messageType,
       });
-      
+
       // Refresh messages
-      const response = await apiClient.get(`/messages/${conversationId}/messages`);
+      const response = await apiClient.get(`/messages/conversations/${conversationId}`);
       setMessages(response.data);
-      
+
       // Refresh conversations to update last message
       await fetchConversations();
     } catch (error) {
@@ -157,14 +156,14 @@ export const MessagingProvider: React.FC<{ children: React.ReactNode }> = ({
       await apiClient.post("/messages/send-image", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-      
+
       // Refresh messages
-      const response = await apiClient.get(`/messages/${conversationId}/messages`);
+      const response = await apiClient.get(`/messages/conversations/${conversationId}`);
       setMessages(response.data);
-      
+
       // Refresh conversations
       await fetchConversations();
-      
+
       toast({
         title: "Success",
         description: "Image sent successfully",
@@ -187,15 +186,19 @@ export const MessagingProvider: React.FC<{ children: React.ReactNode }> = ({
   const deleteConversation = useCallback(async (conversationId: number) => {
     setIsLoading(true);
     try {
-      await apiClient.delete(`/messages/${conversationId}`);
-      await fetchConversations();
+      // TODO: Backend doesn't support deleting conversations yet
+      // await apiClient.delete(`/messages/conversations/${conversationId}`);
+
+      // For now, just remove from local state
+      setConversations(prev => prev.filter(c => c.id !== conversationId));
+
       if (currentConversation?.id === conversationId) {
         setCurrentConversation(null);
         setMessages([]);
       }
       toast({
         title: "Success",
-        description: "Conversation deleted",
+        description: "Conversation removed from view",
       });
     } catch (error) {
       let errorMessage = "Failed to delete conversation";
@@ -210,7 +213,7 @@ export const MessagingProvider: React.FC<{ children: React.ReactNode }> = ({
     } finally {
       setIsLoading(false);
     }
-  }, [currentConversation, fetchConversations, toast]);
+  }, [currentConversation, toast]);
 
   const createConversation = useCallback(
     async (sellerId: number, productId: number) => {

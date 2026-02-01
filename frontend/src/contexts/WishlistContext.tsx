@@ -18,6 +18,7 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const refreshingRef = useRef(false);
+  const pendingOperations = useRef<Set<string>>(new Set());
   const { user, loading: authLoading } = useAuth();
 
   const refreshWishlist = useCallback(async () => {
@@ -57,16 +58,45 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({
   }, []);
 
   const addToWishlist = async (productId: string | number) => {
-    setIsLoading(true);
+    const pid = String(productId);
+    const operationKey = `add-${pid}`;
+
+    // Prevent duplicate simultaneous requests
+    if (pendingOperations.current.has(operationKey)) {
+      return;
+    }
+
+    pendingOperations.current.add(operationKey);
+
     try {
-      const pid = String(productId);
+      // Optimistic update - add to wishlist immediately
+      setWishlistCount(prev => prev + 1);
+
+      // Add placeholder item to wishlistItems so isInWishlist returns true immediately
+      setWishlistItems(prev => [...prev, {
+        id: pid,
+        name: "",
+        price: 0,
+        location: "",
+        category: "",
+        images: [],
+        wishlist_id: -1, // Temporary ID
+        description: "",
+        contact_phone: null,
+        contact_email: null,
+      }]);
+
       await apiClient.post("/wishlist", { product_id: pid });
-      await refreshWishlist();
+
       toast({
         title: "Success",
         description: "Item added to wishlist",
       });
     } catch (error: unknown) {
+      // Revert optimistic update on error
+      setWishlistCount(prev => Math.max(0, prev - 1));
+      setWishlistItems(prev => prev.filter(item => item.id !== pid));
+
       let message = "Failed to add item to wishlist";
       if (isAxiosError(error)) {
         if (error.response?.data?.message) {
@@ -74,7 +104,7 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({
         }
         // If already exists, refresh to show it
         if (error.response?.status === 409 || message.includes("already in wishlist")) {
-          await refreshWishlist();
+          refreshWishlist();
         }
       }
 
@@ -91,20 +121,26 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({
         });
       }
     } finally {
-      setIsLoading(false);
+      pendingOperations.current.delete(operationKey);
     }
   };
 
   const removeFromWishlist = async (id: number) => {
-    setIsLoading(true);
     try {
+      // Optimistic update - remove from wishlist immediately
+      setWishlistItems(prev => prev.filter(item => item.wishlist_id !== id));
+      setWishlistCount(prev => Math.max(0, prev - 1));
+
       await apiClient.delete(`/wishlist/${id}`);
-      await refreshWishlist();
+
       toast({
         title: "Success",
         description: "Item removed from wishlist",
       });
     } catch (error: unknown) {
+      // Revert optimistic update on error by refreshing
+      refreshWishlist();
+
       let description = "Failed to remove item";
       if (isAxiosError(error) && error.response?.data?.message) {
         description = error.response.data.message;
@@ -114,21 +150,35 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({
         description,
         variant: "destructive",
       });
-    } finally {
-      setIsLoading(false);
     }
   };
 
   const removeFromWishlistByProduct = async (productId: string | number) => {
-    setIsLoading(true);
+    const pid = String(productId);
+    const operationKey = `remove-${pid}`;
+
+    // Prevent duplicate simultaneous requests
+    if (pendingOperations.current.has(operationKey)) {
+      return;
+    }
+
+    pendingOperations.current.add(operationKey);
+
     try {
-      await apiClient.delete(`/wishlist/product/${String(productId)}`);
-      await refreshWishlist();
+      // Optimistic update - remove from wishlist immediately
+      setWishlistItems(prev => prev.filter(item => item.id !== pid));
+      setWishlistCount(prev => Math.max(0, prev - 1));
+
+      await apiClient.delete(`/wishlist/product/${pid}`);
+
       toast({
         title: "Success",
         description: "Item removed from wishlist",
       });
     } catch (error: unknown) {
+      // Revert optimistic update on error by refreshing
+      refreshWishlist();
+
       let description = "Failed to remove item";
       if (isAxiosError(error) && error.response?.data?.message) {
         description = error.response.data.message;
@@ -139,7 +189,7 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({
         variant: "destructive",
       });
     } finally {
-      setIsLoading(false);
+      pendingOperations.current.delete(operationKey);
     }
   };
 

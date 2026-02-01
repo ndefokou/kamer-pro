@@ -33,7 +33,7 @@ const router = createBrowserRouter(
     { path: "/product/:id", lazy: async () => ({ Component: (await import("./pages/ListingDetails")).default }) },
     { path: "/messages", lazy: async () => ({ Component: (await import("./pages/Messages")).default }) },
     { path: "/bookings", element: <ProtectedRoute />, children: [{ index: true, lazy: async () => ({ Component: (await import("./pages/MyBookings")).default }) }] },
-    { path: "/webauth-login", lazy: async () => ({ Component: (await import("./pages/WebAuthLogin")).default }) },
+    { path: "/login", lazy: async () => ({ Component: (await import("./pages/Login")).default }) },
     { path: "/wishlist", lazy: async () => ({ Component: (await import("./pages/Wishlist")).default }) },
     { path: "/calendar", lazy: async () => ({ Component: (await import("./pages/Calendar")).default }) },
     {

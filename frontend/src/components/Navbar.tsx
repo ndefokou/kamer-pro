@@ -195,12 +195,12 @@ const Navbar = () => {
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
-              <Link to="/webauth-login">
+              <Link to="/login">
                 <Button variant="secondary">{t("login")}</Button>
               </Link>
             )}
             <Button
-              variant="ghost"  
+              variant="ghost"
               size="icon"
               className="text-primary-foreground hover:bg-primary-foreground/10"
               onClick={toggleLanguage}
@@ -332,7 +332,7 @@ const Navbar = () => {
                     <Button
                       variant="secondary"
                       className="w-full"
-                      onClick={() => handleNavigation("/webauth-login")}
+                      onClick={() => handleNavigation("/login")}
                     >
                       {t("login")}
                     </Button>

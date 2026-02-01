@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Marker, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
+import { useTranslation } from "react-i18next";
 
 type Poi = {
   id: string;
@@ -12,6 +13,7 @@ type Poi = {
 };
 
 const NearbyPOI = () => {
+  const { t } = useTranslation();
   const map = useMap();
   const [pois, setPois] = useState<Poi[]>([]);
   const timer = useRef<number | null>(null);
@@ -113,7 +115,7 @@ out center 200;`;
           }
           setPois(out);
         })
-        .catch(() => {});
+        .catch(() => { });
     };
 
     const onMove = () => {
@@ -135,8 +137,8 @@ out center 200;`;
         <Marker key={p.id} position={[p.lat, p.lon]} icon={makeIcon(p.emoji)}>
           <Popup>
             <div className="space-y-1">
-              <div className="font-semibold text-sm">{p.name || p.type}</div>
-              <div className="text-xs text-gray-600">{p.type}</div>
+              <div className="font-semibold text-sm">{p.name || t(`poi.${p.type}`, { defaultValue: p.type })}</div>
+              <div className="text-xs text-gray-600">{t(`poi.${p.type}`, { defaultValue: p.type })}</div>
             </div>
           </Popup>
         </Marker>

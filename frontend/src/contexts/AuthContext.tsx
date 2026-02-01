@@ -34,11 +34,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       } else {
         setUser(null);
         localStorage.removeItem('userId');
+        localStorage.removeItem('token');
       }
     } catch (error) {
       // If 401 or other error, user is not logged in
       setUser(null);
       localStorage.removeItem('userId');
+      localStorage.removeItem('token');
     } finally {
       setLoading(false);
     }
@@ -62,7 +64,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       console.error('Logout failed', error);
     } finally {
       setUser(null);
+      localStorage.removeItem('token');
       localStorage.removeItem('userId');
+      localStorage.removeItem('username');
       // Optional: Redirect to home or login page if needed, 
       // but usually the component calling logout handles navigation
     }

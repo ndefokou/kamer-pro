@@ -20,6 +20,7 @@ import Header from '@/components/Header';
 import { DayPicker, DateRange } from 'react-day-picker';
 import 'react-day-picker/dist/style.css';
 import { addMonths, format } from 'date-fns';
+import { fr, enUS } from 'date-fns/locale';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
@@ -87,6 +88,7 @@ const ListingDetails: React.FC = () => {
     const [isReportModalOpen, setIsReportModalOpen] = React.useState(false);
     const [isPhotoGalleryOpen, setIsPhotoGalleryOpen] = React.useState(false);
     const { t, i18n } = useTranslation();
+    const localeSelection = i18n.language === 'fr' ? fr : enUS;
     const locale = i18n.language?.startsWith('fr') ? 'fr-FR' : 'en-US';
 
     const [initialPhotoIndex, setInitialPhotoIndex] = React.useState(0);
@@ -158,7 +160,7 @@ const ListingDetails: React.FC = () => {
             if (status === 401) {
                 toast({ title: t('Login required'), description: t('Please log in to write a review.'), variant: 'destructive' });
                 const current = `${window.location.pathname}${window.location.search}`;
-                window.location.href = `/webauth-login?redirect=${encodeURIComponent(current || '/')}`;
+                window.location.href = `/login?redirect=${encodeURIComponent(current || '/')}`;
                 return;
             }
             toast({ title: t('Failed to submit review'), description: t('Please try again later.'), variant: 'destructive' });
@@ -204,6 +206,14 @@ const ListingDetails: React.FC = () => {
 
     const isWishlisted = isInWishlist(listing.id);
     const hasReviewed = !!currentUserId && reviews.some(r => r.guestId === currentUserId);
+
+    // Calculate booking price
+    const numberOfNights = checkInDate && checkOutDate
+        ? Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24))
+        : 0;
+    const subtotal = numberOfNights * (listing.price_per_night || 0);
+    const serviceFee = 0; // Can be updated later if needed
+    const totalPrice = subtotal + serviceFee;
 
     const handleToggleWishlist = () => {
         if (!id) return;
@@ -290,8 +300,8 @@ const ListingDetails: React.FC = () => {
         const daysInMonth = getDaysInMonth(currentMonth);
         const firstDay = getFirstDayOfMonth(currentMonth);
         const days = [];
-        const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-        const dayNames = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+        const monthNames = t('common.months', { returnObjects: true }) as string[];
+        const dayNames = t('common.daysMin', { returnObjects: true }) as string[];
 
         // Empty cells for days before month starts
         for (let i = 0; i < firstDay; i++) {
@@ -379,7 +389,7 @@ const ListingDetails: React.FC = () => {
                 description: 'Please log in to reserve a listing.',
                 variant: 'destructive'
             });
-            window.location.href = `/webauth-login?redirect=${encodeURIComponent(current || '/')}`;
+            window.location.href = `/login?redirect=${encodeURIComponent(current || '/')}`;
             return;
         }
 
@@ -458,8 +468,8 @@ const ListingDetails: React.FC = () => {
     return (
         <div className="min-h-screen bg-background pb-20">
             <SEO
-                title={listing.title || "Listing Details"}
-                description={listing.description?.substring(0, 160) || "View details for this stay on Le Mboko."}
+                title={listing.title || t('listing.details.untitled')}
+                description={listing.description?.substring(0, 160) || t('listing.details.seoDescription')}
                 image={sortedPhotos[0] ? getImageUrl(sortedPhotos[0].url) : undefined}
                 type="article"
             />
@@ -653,7 +663,7 @@ const ListingDetails: React.FC = () => {
                                     return (
                                         <div key={amenityKey} className="flex items-center gap-3">
                                             <Icon className="h-6 w-6 text-gray-700" />
-                                            <span className="text-gray-900">{amenity.label}</span>
+                                            <span className="text-gray-900">{t(`amenities.${amenityKey}`)}</span>
                                         </div>
                                     );
                                 })}
@@ -674,7 +684,7 @@ const ListingDetails: React.FC = () => {
                             </h3>
                             <p className="text-muted-foreground mb-6">
                                 {checkInDate && checkOutDate
-                                    ? `${format(checkInDate, 'MMM d, yyyy')} - ${format(checkOutDate, 'MMM d, yyyy')}`
+                                    ? `${format(checkInDate, 'MMM d, yyyy', { locale: localeSelection })} - ${format(checkOutDate, 'MMM d, yyyy', { locale: localeSelection })}`
                                     : t('listing.details.addDatesPricing')}
                             </p>
                             <div className="hidden md:block">
@@ -701,6 +711,7 @@ const ListingDetails: React.FC = () => {
                                         range_start: { backgroundColor: '#222222', color: 'white' },
                                         range_end: { backgroundColor: '#222222', color: 'white' }
                                     }}
+                                    locale={localeSelection}
                                     className="border-0"
                                 />
                             </div>
@@ -727,6 +738,7 @@ const ListingDetails: React.FC = () => {
                                         range_start: { backgroundColor: '#222222', color: 'white' },
                                         range_end: { backgroundColor: '#222222', color: 'white' }
                                     }}
+                                    locale={localeSelection}
                                 />
                             </div>
                             <div className="flex justify-end mt-4">
@@ -763,7 +775,7 @@ const ListingDetails: React.FC = () => {
                                                 variant: 'destructive'
                                             });
                                             const current = `${window.location.pathname}${window.location.search}`;
-                                            window.location.href = `/webauth-login?redirect=${encodeURIComponent(current || '/')}`;
+                                            window.location.href = `/login?redirect=${encodeURIComponent(current || '/')}`;
                                             return;
                                         }
                                         if (hasReviewed) {
@@ -924,6 +936,28 @@ const ListingDetails: React.FC = () => {
                                         </button>
                                     </div>
                                     {renderCalendar()}
+                                </div>
+                            )}
+
+                            {/* Price Breakdown */}
+                            {checkInDate && checkOutDate && numberOfNights > 0 && (
+                                <div className="mb-4 pb-4 border-b space-y-3">
+                                    <div className="flex justify-between text-sm">
+                                        <span className="text-muted-foreground">
+                                            {formatPrice(listing.price_per_night || 0)} × {numberOfNights} {numberOfNights === 1 ? t('night') : t('nights')}
+                                        </span>
+                                        <span className="font-medium">{formatPrice(subtotal)}</span>
+                                    </div>
+                                    {serviceFee > 0 && (
+                                        <div className="flex justify-between text-sm">
+                                            <span className="text-muted-foreground">{t('listing.booking.serviceFee')}</span>
+                                            <span className="font-medium">{formatPrice(serviceFee)}</span>
+                                        </div>
+                                    )}
+                                    <div className="flex justify-between text-base font-bold pt-3 border-t">
+                                        <span>{t('listing.booking.total')}</span>
+                                        <span>{formatPrice(totalPrice)}</span>
+                                    </div>
                                 </div>
                             )}
 
@@ -1161,7 +1195,7 @@ const ListingDetails: React.FC = () => {
                         </div>
                         <span className="text-xs font-medium underline cursor-pointer" onClick={openMobileDatePicker}>
                             {checkInDate && checkOutDate ?
-                                `${format(checkInDate, 'MMM d')} - ${format(checkOutDate, 'MMM d')}` :
+                                `${format(checkInDate, 'MMM d', { locale: localeSelection })} - ${format(checkOutDate, 'MMM d', { locale: localeSelection })}` :
                                 t('preview.addDate')
                             }
                         </span>
@@ -1225,6 +1259,7 @@ const ListingDetails: React.FC = () => {
                                 range_start: { backgroundColor: '#222222', color: 'white' },
                                 range_end: { backgroundColor: '#222222', color: 'white' }
                             }}
+                            locale={localeSelection}
                             className="border-0"
                         />
                     </div>

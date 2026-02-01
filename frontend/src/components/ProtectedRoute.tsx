@@ -14,5 +14,5 @@ export const ProtectedRoute = () => {
       </div>
     );
   }
-  return user ? <Outlet /> : <Navigate to={`/webauth-login?redirect=${redirect}`} replace />;
+  return user ? <Outlet /> : <Navigate to={`/login?redirect=${redirect}`} replace />;
 };

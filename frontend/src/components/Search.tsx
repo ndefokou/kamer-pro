@@ -10,14 +10,15 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover";
 import { format } from "date-fns";
-import { fr } from "date-fns/locale";
+import { fr, enUS } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { DateRange } from "react-day-picker";
 type FlexibleDuration = 'weekend' | 'week' | 'month';
 const FLEXIBLE_OPTIONS = ['weekend', 'week', 'month'] as const;
 
 const MbokoSearch = () => {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
+    const locale = i18n.language === 'fr' ? fr : enUS;
     const navigate = useNavigate();
     const [where, setWhere] = useState("");
     const [date, setDate] = useState<DateRange | undefined>(undefined);
@@ -160,11 +161,16 @@ const MbokoSearch = () => {
                             <div className="text-sm text-gray-900 font-medium truncate">
                                 {activeTab === "dates" && date?.from ? (
                                     <>
-                                        {format(date.from, "MMM dd")}
-                                        {date.to ? ` - ${format(date.to, "MMM dd")}` : ""}
+                                        {format(date.from, "MMM dd", { locale })}
+                                        {date.to ? ` - ${format(date.to, "MMM dd", { locale })}` : ""}
                                     </>
                                 ) : activeTab === "flexible" ? (
-                                    `${flexibleDuration} in ${flexibleMonths.length > 0 ? flexibleMonths.length + " months" : "anytime"}`
+                                    t('common.flexibleOptions.summary', {
+                                        duration: t(`common.flexibleOptions.duration.${flexibleDuration}`),
+                                        months: flexibleMonths.length > 0
+                                            ? t('common.flexibleOptions.months', { count: flexibleMonths.length })
+                                            : t('common.flexibleOptions.anytime')
+                                    })
                                 ) : (
                                     <span className="text-gray-400 font-normal">{t("add dates")}</span>
                                 )}
@@ -234,9 +240,9 @@ const MbokoSearch = () => {
                                             className={`border-0 ${isMobile ? 'scale-[0.86] origin-top-left transform-gpu' : ''}`}
 
                                             disabled={{ before: new Date(new Date().setHours(0, 0, 0, 0)) }}
-                                            locale={fr}
+                                            locale={locale}
                                             formatters={{
-                                                formatWeekdayName: (day) => format(day, 'EEEEE', { locale: fr }).toUpperCase(),
+                                                formatWeekdayName: (day) => format(day, 'EEEEE', { locale }).toUpperCase(),
                                             }}
                                             classNames={{
                                                 caption_label: "text-base font-semibold capitalize",
@@ -273,8 +279,8 @@ const MbokoSearch = () => {
                                         <span className="text-sm text-gray-700">{t('common.when').replace('?', '')}</span>
                                         <span className="text-sm font-medium text-gray-900">
                                             {date?.from
-                                                ? `${format(date.from, 'd MMM', { locale: fr })}${date?.to ? ` - ${format(date.to as Date, 'd MMM', { locale: fr })}` : ''}`
-                                                : 'Ajouter des dates'}
+                                                ? `${format(date.from, 'd MMM', { locale })}${date?.to ? ` - ${format(date.to as Date, 'd MMM', { locale })}` : ''}`
+                                                : t('add dates')}
                                         </span>
                                     </div>
                                     <h3 className="text-lg font-semibold px-5 py-4">{t('common.who')}</h3>
@@ -329,10 +335,7 @@ const MbokoSearch = () => {
                             {activeTab === "months" && (
                                 <div className="text-center">
                                     <div className="grid grid-cols-6 gap-4 px-2">
-                                        {[
-                                            "January", "February", "March", "April", "May", "June",
-                                            "July", "August", "September", "October", "November", "December"
-                                        ].map((month) => (
+                                        {(t('common.months', { returnObjects: true }) as string[]).map((month) => (
                                             <div
                                                 key={month}
                                                 onClick={() => {
@@ -363,7 +366,7 @@ const MbokoSearch = () => {
                                                 onClick={() => setFlexibleDuration(option)}
                                                 className={`px-6 py-2 rounded-full border text-sm font-medium transition-colors ${flexibleDuration === option ? "border-black bg-gray-50" : "border-gray-300 hover:border-black"}`}
                                             >
-                                                {option.charAt(0).toUpperCase() + option.slice(1)}
+                                                {t(`common.flexibleOptions.duration.${option}`)}
                                             </button>
                                         ))}
                                     </div>

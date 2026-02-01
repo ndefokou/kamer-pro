@@ -94,7 +94,7 @@ const HostDashboard: React.FC = () => {
             resetDraft();
             navigate('/host/intro');
         } else {
-            navigate('/webauth-login?redirect=/host/intro');
+            navigate('/login?redirect=/host/intro');
         }
     };
 

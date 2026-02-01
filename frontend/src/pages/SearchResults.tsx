@@ -47,6 +47,76 @@ const FitMapBounds = ({ bounds, singlePoint }: { bounds?: L.LatLngBoundsExpressi
     return null;
 };
 
+const normalizeCity = (s?: string) => (s || "").trim().toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '');
+const preferredOrder = ["yaounde", "douala", "kribi"];
+const knownCities = {
+    yaounde: { display: 'Yaounde', lat: 3.8480, lon: 11.5021, synonyms: ['bastos', 'biyem', 'nkolbisson', 'melen', 'odza', 'nkolmesseng', 'nkoabang', 'ekounou', 'essos', 'madagascar'] },
+    douala: { display: 'Douala', lat: 4.0511, lon: 9.7679, synonyms: ['akwa', 'bonapriso', 'bonanjo', 'deido', 'makepe', 'ndogbong', 'logbaba', 'bepanda', 'bonamoussadi'] },
+    kribi: { display: 'Kribi', lat: 2.9400, lon: 9.9100, synonyms: ['mpalla', 'londji', 'ebambe', 'lolabe'] },
+    buea: { display: 'Buea', lat: 4.1527, lon: 9.2410, synonyms: ['molyko', 'muea', 'mile 17', 'bongo square', 'great soppo', 'small soppo', 'bokwango', 'limbe', 'tiko', 'kumba'] },
+    bamenda: { display: 'Bamenda', lat: 5.9631, lon: 10.1591, synonyms: ['mankon', 'bambili', 'nkambé', 'kumbo'] },
+    bafoussam: { display: 'Bafoussam', lat: 5.4769, lon: 10.4170, synonyms: ['dschang', 'bandjoun', 'foumban'] },
+    ngaoundere: { display: 'Ngaoundere', lat: 7.3263, lon: 13.5847, synonyms: ['adamawa', 'tibati', 'meiganga'] },
+    garoua: { display: 'Garoua', lat: 9.3000, lon: 13.4000, synonyms: [] },
+    maroua: { display: 'Maroua', lat: 10.5956, lon: 14.3247, synonyms: ['far north'] },
+    bertoua: { display: 'Bertoua', lat: 4.5833, lon: 13.6833, synonyms: [] },
+    ebolowa: { display: 'Ebolowa', lat: 2.9000, lon: 11.1500, synonyms: ['south'] },
+} as const;
+
+const regions = {
+    'centre': ['yaounde'],
+    'littoral': ['douala', 'nkongsamba', 'edea'],
+    'south': ['kribi', 'ebolowa'],
+    'southwest': ['buea', 'limbe', 'tiko', 'kumba'],
+    'northwest': ['bamenda', 'kumbo', 'ndop'],
+    'west': ['bafoussam', 'dschang', 'bandjoun'],
+    'adamawa': ['ngaoundere', 'tibati', 'meiganga'],
+    'north': ['garoua'],
+    'far north': ['maroua', 'kousseri'],
+    'east': ['bertoua', 'batouri'],
+} as const;
+
+const distanceKm = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+    const toRad = (d: number) => d * Math.PI / 180;
+    const R = 6371;
+    const dLat = toRad(lat2 - lat1);
+    const dLon = toRad(lon2 - lon1);
+    const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+};
+
+const inferCity = (p: Product): string => {
+    const text = [p.listing.city, p.listing.address, p.listing.title].filter(Boolean).join(' ');
+    const norm = normalizeCity(text);
+    if (norm) {
+        for (const key of preferredOrder) {
+            if (norm.includes(key)) return knownCities[key as keyof typeof knownCities].display;
+            const syns = knownCities[key as keyof typeof knownCities].synonyms;
+            if (syns.some(s => norm.includes(s))) return knownCities[key as keyof typeof knownCities].display;
+        }
+        for (const key of (Object.keys(knownCities) as Array<keyof typeof knownCities>)) {
+            if ((preferredOrder as readonly string[]).includes(key as string)) continue;
+            if (norm.includes(key)) return knownCities[key].display;
+            const syns = knownCities[key].synonyms;
+            if (syns.some(s => norm.includes(s))) return knownCities[key].display;
+        }
+    }
+    if (p.listing.latitude && p.listing.longitude) {
+        const { latitude, longitude } = p.listing;
+        let best: { key: keyof typeof knownCities; dist: number } | null = null;
+        (Object.keys(knownCities) as Array<keyof typeof knownCities>).forEach((key) => {
+            const city = knownCities[key];
+            const d = distanceKm(latitude!, longitude!, city.lat, city.lon);
+            if (!best || d < best.dist) best = { key, dist: d };
+        });
+        if (best && best.dist <= 80) {
+            return knownCities[best.key].display;
+        }
+    }
+    return '';
+};
+
 const SearchResults = () => {
     const { t } = useTranslation();
     const navigate = useNavigate();
@@ -69,13 +139,28 @@ const SearchResults = () => {
     } = useInfiniteQuery<Product[], Error>({
         queryKey: ["products", location, guests],
         initialPageParam: 0,
-        queryFn: ({ pageParam }) => getProducts({
-            search: location || undefined,
-            guests: guests > 0 ? guests : undefined,
-            limit: 20,
-            offset: (pageParam as number) || 0,
-        }),
-        getNextPageParam: (lastPage, allPages) => (lastPage.length === 20 ? allPages.length * 20 : undefined),
+        queryFn: ({ pageParam }) => {
+            const isManaged = (Object.keys(knownCities) as Array<keyof typeof knownCities>).includes(normalizeCity(location) as any) ||
+                (Object.keys(regions) as Array<keyof typeof regions>).includes(normalizeCity(location) as any) ||
+                normalizeCity(location) === 'other' ||
+                normalizeCity(location) === 'buea';
+
+            return getProducts({
+                search: (location && !isManaged) ? location : undefined,
+                guests: guests > 0 ? guests : undefined,
+                limit: isManaged ? 100 : 20, // Fetch more for managed to ensure inference finds them
+                offset: (pageParam as number) || 0,
+            });
+        },
+        getNextPageParam: (lastPage, allPages) => {
+            const locNorm = normalizeCity(location);
+            const isManaged = (Object.keys(knownCities) as Array<keyof typeof knownCities>).includes(locNorm as any) ||
+                (Object.keys(regions) as Array<keyof typeof regions>).includes(locNorm as any) ||
+                locNorm === 'other' ||
+                locNorm === 'buea';
+            const limit = isManaged ? 100 : 20;
+            return lastPage.length === limit ? allPages.length * limit : undefined;
+        },
     });
 
     const { data: towns } = useQuery<TownCount[]>({
@@ -83,78 +168,6 @@ const SearchResults = () => {
         queryFn: getTowns,
     });
 
-    // City inference (same behavior as home page)
-    const normalizeCity = (s?: string) => (s || "").trim().toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '');
-    const preferredOrder = useMemo(() => ["yaounde", "douala", "kribi"], []);
-    const knownCities = useMemo(() => ({
-        yaounde: { display: 'Yaounde', lat: 3.8480, lon: 11.5021, synonyms: ['bastos', 'biyem', 'nkolbisson', 'melen', 'odza', 'nkolmesseng', 'nkoabang', 'ekounou', 'essos', 'madagascar'] },
-        douala: { display: 'Douala', lat: 4.0511, lon: 9.7679, synonyms: ['akwa', 'bonapriso', 'bonanjo', 'deido', 'makepe', 'ndogbong', 'logbaba', 'bepanda', 'bonamoussadi'] },
-        kribi: { display: 'Kribi', lat: 2.9400, lon: 9.9100, synonyms: ['mpalla', 'londji', 'ebambe', 'lolabe'] },
-        buea: { display: 'Buea', lat: 4.1527, lon: 9.2410, synonyms: ['molyko', 'muea', 'mile 17', 'bongo square', 'great soppo', 'small soppo', 'bokwango', 'limbe', 'tiko', 'kumba'] },
-        bamenda: { display: 'Bamenda', lat: 5.9631, lon: 10.1591, synonyms: ['mankon', 'bambili', 'nkambé', 'kumbo'] },
-        bafoussam: { display: 'Bafoussam', lat: 5.4769, lon: 10.4170, synonyms: ['dschang', 'bandjoun', 'foumban'] },
-        ngaoundere: { display: 'Ngaoundere', lat: 7.3263, lon: 13.5847, synonyms: ['adamawa', 'tibati', 'meiganga'] },
-        garoua: { display: 'Garoua', lat: 9.3000, lon: 13.4000, synonyms: [] },
-        maroua: { display: 'Maroua', lat: 10.5956, lon: 14.3247, synonyms: ['far north'] },
-        bertoua: { display: 'Bertoua', lat: 4.5833, lon: 13.6833, synonyms: [] },
-        ebolowa: { display: 'Ebolowa', lat: 2.9000, lon: 11.1500, synonyms: ['south'] },
-    }) as const, []);
-
-    // Regions to their main cities for filtering when search is a region name
-    const regions = useMemo(() => ({
-        'centre': ['yaounde'],
-        'littoral': ['douala', 'nkongsamba', 'edea'],
-        'south': ['kribi', 'ebolowa'],
-        'southwest': ['buea', 'limbe', 'tiko', 'kumba'],
-        'northwest': ['bamenda', 'kumbo', 'ndop'],
-        'west': ['bafoussam', 'dschang', 'bandjoun'],
-        'adamawa': ['ngaoundere', 'tibati', 'meiganga'],
-        'north': ['garoua'],
-        'far north': ['maroua', 'kousseri'],
-        'east': ['bertoua', 'batouri'],
-    }) as const, []);
-
-    const distanceKm = (lat1: number, lon1: number, lat2: number, lon2: number) => {
-        const toRad = (d: number) => d * Math.PI / 180;
-        const R = 6371;
-        const dLat = toRad(lat2 - lat1);
-        const dLon = toRad(lon2 - lon1);
-        const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
-        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-        return R * c;
-    };
-
-    const inferCity = useCallback((p: Product): string => {
-        const text = [p.listing.city, p.listing.address, p.listing.title].filter(Boolean).join(' ');
-        const norm = normalizeCity(text);
-        if (norm) {
-            for (const key of preferredOrder) {
-                if (norm.includes(key)) return knownCities[key as keyof typeof knownCities].display;
-                const syns = knownCities[key as keyof typeof knownCities].synonyms;
-                if (syns.some(s => norm.includes(s))) return knownCities[key as keyof typeof knownCities].display;
-            }
-            // Check other known cities (e.g., Buea) by text/synonyms
-            for (const key of (Object.keys(knownCities) as Array<keyof typeof knownCities>)) {
-                if ((preferredOrder as readonly string[]).includes(key as string)) continue;
-                if (norm.includes(key)) return knownCities[key].display;
-                const syns = knownCities[key].synonyms;
-                if (syns.some(s => norm.includes(s))) return knownCities[key].display;
-            }
-        }
-        if (p.listing.latitude && p.listing.longitude) {
-            const { latitude, longitude } = p.listing;
-            let best: { key: keyof typeof knownCities; dist: number } | null = null;
-            (Object.keys(knownCities) as Array<keyof typeof knownCities>).forEach((key) => {
-                const city = knownCities[key];
-                const d = distanceKm(latitude!, longitude!, city.lat, city.lon);
-                if (!best || d < best.dist) best = { key, dist: d };
-            });
-            if (best && best.dist <= 120) {
-                return knownCities[best.key].display;
-            }
-        }
-        return '';
-    }, [preferredOrder, knownCities]);
 
     const filteredProperties = useMemo(() => {
         const properties = ((data?.pages?.flat() as Product[]) || []);
@@ -162,11 +175,12 @@ const SearchResults = () => {
         return properties.filter((p) => {
             // Filter by location (accent-insensitive + inference)
             if (locNorm) {
+                if (!p?.listing) return false;
                 if (locNorm === 'other') {
                     const inferredKey = normalizeCity(inferCity(p));
                     const explicitKey = normalizeCity(p.listing.city || "");
                     const key = inferredKey || explicitKey;
-                    if (key && preferredOrder.includes(key)) {
+                    if (key && (preferredOrder.includes(key) || key === 'buea')) {
                         return false;
                     }
                 } else if ((Object.keys(regions) as Array<keyof typeof regions>).includes(locNorm as keyof typeof regions)) {
@@ -175,14 +189,21 @@ const SearchResults = () => {
                     const inferredNorm = normalizeCity(inferCity(p));
                     const key = cityNorm || inferredNorm;
                     if (!key || !allowed.includes(key)) return false;
+                } else if (locNorm === 'buea') {
+                    // Specific check for Buea to match Dashboard behavior
+                    const inferredNorm = normalizeCity(inferCity(p));
+                    const cityNorm = normalizeCity(p.listing.city || "");
+                    if (inferredNorm !== 'buea' && cityNorm !== 'buea') return false;
                 } else {
                     const cityNorm = normalizeCity(p.listing.city || "");
                     const addrNorm = normalizeCity(p.listing.address || "");
+                    const titleNorm = normalizeCity(p.listing.title || "");
                     const inferredNorm = normalizeCity(inferCity(p));
                     const matches =
                         cityNorm.includes(locNorm) ||
                         addrNorm.includes(locNorm) ||
-                        inferredNorm.includes(locNorm);
+                        titleNorm.includes(locNorm) ||
+                        inferredNorm === locNorm;
                     if (!matches) return false;
                 }
             }
@@ -202,14 +223,29 @@ const SearchResults = () => {
     const groupedByCity = useMemo(() => {
         const map = new Map<string, { name: string; items: Product[] }>();
         for (const p of filteredProperties) {
+            if (!p?.listing) continue;
             let name = (p.listing.city || '').trim();
             if (!name) name = inferCity(p);
+
+            const locNorm = normalizeCity(location);
             const key = normalizeCity(name);
-            if (!key) continue;
-            const entry = map.get(key) || { name, items: [] };
-            if (!entry.name && name) entry.name = name;
+
+            // If we are searching for a specific known city and this listing matched it,
+            // ensure it's grouped under that city even if its own city field is empty/unclear.
+            let finalKey = key;
+            let displayName = name;
+
+            if (!key && locNorm && locNorm !== 'other') {
+                finalKey = locNorm;
+                // Find display name from knownCities or regions
+                displayName = knownCities[locNorm as keyof typeof knownCities]?.display || location;
+            }
+
+            if (!finalKey) continue;
+            const entry = map.get(finalKey) || { name: displayName, items: [] };
+            if (!entry.name && displayName) entry.name = displayName;
             entry.items.push(p);
-            map.set(key, entry);
+            map.set(finalKey, entry);
         }
 
         // Sort: Yaounde, Douala, Kribi, then by item count desc
@@ -228,6 +264,7 @@ const SearchResults = () => {
     const mapPoints = useMemo(() => {
         const raw: { id: string; lat: number; lon: number; product: Product }[] = [];
         for (const p of filteredProperties) {
+            if (!p?.listing) continue;
             if (typeof p.listing.latitude === 'number' && typeof p.listing.longitude === 'number') {
                 raw.push({ id: p.listing.id, lat: p.listing.latitude, lon: p.listing.longitude, product: p });
                 continue;
@@ -269,18 +306,28 @@ const SearchResults = () => {
         return spread;
     }, [filteredProperties, inferCity, knownCities]);
 
+    const fallbackCenter = useMemo(() => {
+        const locNorm = normalizeCity(location);
+        if (locNorm && knownCities[locNorm as keyof typeof knownCities]) {
+            const city = knownCities[locNorm as keyof typeof knownCities];
+            return [city.lat, city.lon] as [number, number];
+        }
+        return null;
+    }, [location, knownCities]);
+
     // Compute bounds to fit all markers
     const mapBounds = useMemo(() => {
         const pts = mapPoints.map((p) => [p.lat, p.lon] as [number, number]);
+        if (pts.length === 0 && fallbackCenter) return undefined;
         return pts.length ? L.latLngBounds(pts) : undefined;
-    }, [mapPoints]);
+    }, [mapPoints, fallbackCenter]);
 
     const singlePoint = useMemo(() => {
         if (mapPoints.length === 1) {
             return [mapPoints[0].lat, mapPoints[0].lon] as [number, number];
         }
-        return null;
-    }, [mapPoints]);
+        return fallbackCenter;
+    }, [mapPoints, fallbackCenter]);
 
     const toggleFavorite = (id: string) => {
         if (isInWishlist(id)) {
@@ -312,11 +359,11 @@ const SearchResults = () => {
                 </>
             ) : (
                 <>
-                    <DropdownMenuItem onClick={() => navigate('/webauth-login?tab=register&redirect=/host/dashboard')} className="font-semibold">
+                    <DropdownMenuItem onClick={() => navigate('/login?tab=register&redirect=/host/dashboard')} className="font-semibold">
                         {t("Become a host")}
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => navigate('/webauth-login')}>
+                    <DropdownMenuItem onClick={() => navigate('/login')}>
                         {t("Log in or sign up")}
                     </DropdownMenuItem>
                 </>
@@ -327,8 +374,11 @@ const SearchResults = () => {
     return (
         <div className="min-h-screen bg-white flex flex-col">
             <SEO
-                title={location ? `${t("Search")}: ${location}` : t("Search")}
-                description={`Browse ${filteredProperties.length} available stays ${location ? `in ${location}` : "across Cameroon"}. Find the best prices and locations.`}
+                title={location ? `${t("Search")}: ${location}` : t("search.search")}
+                description={t("search.browse_available", {
+                    count: filteredProperties.length,
+                    location: location ? `${t("search.in")} ${location}` : t("search.across_cameroon")
+                })}
             />
             {/* Header */}
             <Header />
@@ -339,10 +389,14 @@ const SearchResults = () => {
                 <div className="w-full md:w-[60%] lg:w-[55%] xl:w-[50%] overflow-y-auto p-6">
                     <div className="mb-4">
                         <p className="text-sm text-gray-500">
-                            {filteredProperties.length} {filteredProperties.length === 1 ? "stay" : "stays"}
-                            {location ? ` in ${location}` : ""}
+                            {filteredProperties.length === 1
+                                ? t("search.stay_count", { count: 1 })
+                                : t("search.stays_count", { count: filteredProperties.length })}
+                            {location ? ` ${t("search.in")} ${location}` : ""}
                         </p>
-                        <h1 className="text-2xl font-bold mt-1">Stays in {location || "Cameroon"}</h1>
+                        <h1 className="text-2xl font-bold mt-1">
+                            {t("search.stays_in", { location: location || t("search.cameroon") })}
+                        </h1>
                     </div>
 
                     {towns && towns.length > 0 && (
@@ -367,13 +421,13 @@ const SearchResults = () => {
                                     <HomeIcon className="h-4 w-4 text-primary/50" />
                                 </div>
                             </div>
-                            <p className="text-muted-foreground animate-pulse">Loading stays...</p>
+                            <p className="text-muted-foreground animate-pulse">{t("search.loading")}</p>
                         </div>
                     ) : filteredProperties.length === 0 ? (
                         <div className="text-center py-20">
-                            <p className="text-gray-600">No stays found matching your criteria.</p>
+                            <p className="text-gray-600">{t("search.no_results")}</p>
                             <Button variant="outline" className="mt-4" onClick={() => navigate('/')}>
-                                Clear filters
+                                {t("search.clear_filters")}
                             </Button>
                         </div>
                     ) : (
@@ -397,7 +451,7 @@ const SearchResults = () => {
                     <div className="flex justify-center mt-6">
                         {hasNextPage && (
                             <Button onClick={() => fetchNextPage()} disabled={isFetchingNextPage} variant="outline">
-                                {isFetchingNextPage ? "Loading..." : "Load more"}
+                                {isFetchingNextPage ? t("search.loading_more") : t("search.load_more")}
                             </Button>
                         )}
                     </div>

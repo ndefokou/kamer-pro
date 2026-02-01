@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { WebAuthService } from "@/services/webAuthService";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -26,7 +27,8 @@ const withRetry = async <T,>(fn: () => Promise<T>, attempts = 3, baseDelayMs = 6
   throw lastErr;
 };
 
-const WebAuthLogin = () => {
+const Login = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const redirectTo = useMemo(() => params.get("redirect") || "/", [params]);
@@ -70,18 +72,23 @@ const WebAuthLogin = () => {
     setError(null);
     try {
       if (!loginEmail.trim() || !loginPassword) {
-        setError("Please enter email and password");
+        setError(t("auth.enterEmailPassword"));
         return;
       }
 
-      await withRetry(() => webAuth.login(loginEmail.trim(), loginPassword));
+      const authData = await withRetry(() => webAuth.login(loginEmail.trim(), loginPassword));
+      if (authData.token) {
+        localStorage.setItem("token", authData.token);
+        localStorage.setItem("userId", authData.user_id.toString());
+        localStorage.setItem("username", authData.username || "");
+      }
       await login(); // Refresh session in context
       navigate(redirectTo, { replace: true });
     } catch (err: unknown) {
       const message =
         (err as { response?: { data?: { error?: string } } })?.response?.data?.error ||
         (err as Error)?.message ||
-        "Login failed";
+        t("auth.loginFailed");
       setError(message);
     } finally {
       setLoading(false);
@@ -93,23 +100,28 @@ const WebAuthLogin = () => {
     setError(null);
     try {
       if (!username.trim() || !phone.trim() || !password || !email.trim() || !confirmPassword) {
-        setError("Please fill in all fields");
+        setError(t("auth.fillAllFields"));
         return;
       }
 
       if (password !== confirmPassword) {
-        setError("Passwords do not match");
+        setError(t("auth.passwordsDoNotMatch"));
         return;
       }
 
-      await withRetry(() => webAuth.register(username.trim(), password, phone.trim(), email.trim()));
+      const authData = await withRetry(() => webAuth.register(username.trim(), password, phone.trim(), email.trim()));
+      if (authData.token) {
+        localStorage.setItem("token", authData.token);
+        localStorage.setItem("userId", authData.user_id.toString());
+        localStorage.setItem("username", authData.username || "");
+      }
       await login(); // Refresh session in context
       navigate(redirectTo, { replace: true });
     } catch (err: unknown) {
       const message =
         (err as { response?: { data?: { error?: string } } })?.response?.data?.error ||
         (err as Error)?.message ||
-        "Registration failed";
+        t("auth.registrationFailed");
       setError(message);
     } finally {
       setLoading(false);
@@ -119,7 +131,7 @@ const WebAuthLogin = () => {
   if (authLoading) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
-        <div>Loading...</div>
+        <div>{t("common.loading")}</div>
       </div>
     );
   }
@@ -131,7 +143,7 @@ const WebAuthLogin = () => {
         size="icon"
         onClick={() => navigate(-1)}
         className="absolute top-6 left-6 rounded-full hover:bg-gray-100"
-        aria-label="Go back"
+        aria-label={t("common.back")}
       >
         <ChevronLeft className="h-6 w-6" />
       </Button>
@@ -140,8 +152,8 @@ const WebAuthLogin = () => {
       </div>
       <div className="w-full max-w-md">
         <div className="mb-6 text-center">
-          <h1 className="text-2xl font-semibold">Welcome</h1>
-          <p className="text-gray-600 text-sm">Login or create an account to become a host</p>
+          <h1 className="text-2xl font-semibold">{t("auth.welcome")}</h1>
+          <p className="text-gray-600 text-sm">{t("auth.loginSubtitle")}</p>
         </div>
 
         {/* Tabs */}
@@ -150,13 +162,13 @@ const WebAuthLogin = () => {
             className={`flex-1 py-2 rounded-full text-sm font-semibold ${activeTab === "login" ? "bg-white shadow" : "text-gray-600"}`}
             onClick={() => setActiveTab("login")}
           >
-            Login
+            {t("auth.login")}
           </button>
           <button
             className={`flex-1 py-2 rounded-full text-sm font-semibold ${activeTab === "register" ? "bg-white shadow" : "text-gray-600"}`}
             onClick={() => setActiveTab("register")}
           >
-            Register
+            {t("auth.register")}
           </button>
         </div>
 
@@ -165,7 +177,7 @@ const WebAuthLogin = () => {
           {activeTab === "login" ? (
             <>
               <div>
-                <label className="block text-sm font-medium mb-1">Email</label>
+                <label className="block text-sm font-medium mb-1">{t("auth.email")}</label>
                 <input
                   type="email"
                   value={loginEmail}
@@ -176,7 +188,7 @@ const WebAuthLogin = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">Password</label>
+                <label className="block text-sm font-medium mb-1">{t("auth.password")}</label>
                 <div className="relative">
                   <input
                     type={showLoginPassword ? "text" : "password"}
@@ -198,7 +210,7 @@ const WebAuthLogin = () => {
           ) : (
             <>
               <div>
-                <label className="block text-sm font-medium mb-1">Username</label>
+                <label className="block text-sm font-medium mb-1">{t("auth.username")}</label>
                 <input
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
@@ -208,7 +220,7 @@ const WebAuthLogin = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">Email</label>
+                <label className="block text-sm font-medium mb-1">{t("auth.email")}</label>
                 <input
                   type="email"
                   value={email}
@@ -219,7 +231,7 @@ const WebAuthLogin = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">Phone (WhatsApp)</label>
+                <label className="block text-sm font-medium mb-1">{t("auth.phoneLabel")}</label>
                 <input
                   type="tel"
                   value={phone}
@@ -230,7 +242,7 @@ const WebAuthLogin = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">Password</label>
+                <label className="block text-sm font-medium mb-1">{t("auth.password")}</label>
                 <div className="relative">
                   <input
                     type={showPassword ? "text" : "password"}
@@ -250,7 +262,7 @@ const WebAuthLogin = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">Confirm Password</label>
+                <label className="block text-sm font-medium mb-1">{t("auth.confirmPassword")}</label>
                 <div className="relative">
                   <input
                     type={showConfirmPassword ? "text" : "password"}
@@ -276,20 +288,20 @@ const WebAuthLogin = () => {
           <div className="pt-2">
             {activeTab === "login" ? (
               <Button disabled={loading} onClick={handleLogin} className="w-full bg-gray-900 text-white hover:bg-gray-800">
-                {loading ? "Signing in..." : "Sign in"}
+                {loading ? t("auth.signingIn") : t("auth.signIn")}
               </Button>
             ) : (
               <Button disabled={loading} onClick={handleRegister} className="w-full bg-gray-900 text-white hover:bg-gray-800">
-                {loading ? "Creating account..." : "Create account"}
+                {loading ? t("auth.creatingAccount") : t("auth.createAccount")}
               </Button>
             )}
           </div>
 
-          <div className="text-xs text-gray-500 text-center">By continuing you agree to our Terms and Privacy Policy.</div>
+          <div className="text-xs text-gray-500 text-center">{t("auth.agreeTerms")}</div>
         </div>
       </div>
     </div>
   );
 };
 
-export default WebAuthLogin;
+export default Login;

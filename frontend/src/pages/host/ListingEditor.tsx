@@ -983,7 +983,7 @@ const ListingEditor: React.FC = () => {
                                             }}
                                             className="bg-black text-white hover:bg-gray-800 rounded-lg px-6"
                                         >
-                                            Save
+                                            {t('common.save', 'Save')}
                                         </Button>
                                     </div>
                                 </div >
@@ -1290,33 +1290,33 @@ const ListingEditor: React.FC = () => {
                                     const sections = [
                                         {
                                             id: 'listingDescription',
-                                            title: 'Listing description',
-                                            subtitle: descriptionData.listingDescription || 'Add details',
-                                            placeholder: 'Describe your place...',
+                                            title: t('host.editor.description.listingDescription'),
+                                            subtitle: descriptionData.listingDescription || t('host.editor.sidebar.addDescription'),
+                                            placeholder: t('host.editor.description.placeholderDetailed.listingDescription'),
                                         },
                                         {
                                             id: 'propertyDetails',
-                                            title: 'Your property',
-                                            subtitle: descriptionData.propertyDetails || 'Add details',
-                                            placeholder: 'Share a general description of your property\'s rooms and spaces so guests know what to expect.',
+                                            title: t('host.editor.description.propertyDetails'),
+                                            subtitle: descriptionData.propertyDetails || t('host.editor.sidebar.addDetails'),
+                                            placeholder: t('host.editor.description.placeholderDetailed.propertyDetails'),
                                         },
                                         {
                                             id: 'guestAccess',
-                                            title: 'Guest access',
-                                            subtitle: descriptionData.guestAccess || 'Add details',
-                                            placeholder: 'Describe what areas guests can access...',
+                                            title: t('host.editor.description.guestAccess'),
+                                            subtitle: descriptionData.guestAccess || t('host.editor.sidebar.addDetails'),
+                                            placeholder: t('host.editor.description.placeholderDetailed.guestAccess'),
                                         },
                                         {
                                             id: 'guestInteraction',
-                                            title: 'Interaction with guests',
-                                            subtitle: descriptionData.guestInteraction || 'Add details',
-                                            placeholder: 'Describe how you\'ll interact with guests...',
+                                            title: t('host.editor.description.guestInteraction'),
+                                            subtitle: descriptionData.guestInteraction || t('host.editor.sidebar.addDetails'),
+                                            placeholder: t('host.editor.description.placeholderDetailed.guestInteraction'),
                                         },
                                         {
                                             id: 'otherDetails',
-                                            title: 'Other details to note',
-                                            subtitle: descriptionData.otherDetails || 'Add details',
-                                            placeholder: 'Add any other important details...',
+                                            title: t('host.editor.description.otherDetails'),
+                                            subtitle: descriptionData.otherDetails || t('host.editor.sidebar.addDetails'),
+                                            placeholder: t('host.editor.description.placeholderDetailed.otherDetails'),
                                         },
                                     ];
 
@@ -1338,7 +1338,7 @@ const ListingEditor: React.FC = () => {
                                         <div className={`${isMobileSection ? '' : 'hidden md:block'}`}>
                                             <div className="max-w-2xl">
                                                 <div className="mb-8">
-                                                    <h2 className="text-2xl font-semibold mb-2">Description</h2>
+                                                    <h2 className="text-2xl font-semibold mb-2">{t('host.editor.sidebar.description', 'Description')}</h2>
                                                 </div>
 
                                                 <div className="space-y-0 border border-gray-200 rounded-xl overflow-hidden">
@@ -1391,7 +1391,7 @@ const ListingEditor: React.FC = () => {
                                                             )}
                                                             <div className="mb-2">
                                                                 <div className="text-xs text-gray-500 mb-2">
-                                                                    {tempDescription.length}/500 available
+                                                                    {t('host.editor.description.availableCharacters', { count: 500 - tempDescription.length })}
                                                                 </div>
                                                                 <textarea
                                                                     value={tempDescription}
@@ -1413,14 +1413,14 @@ const ListingEditor: React.FC = () => {
                                                                 onClick={() => setEditingDescriptionSection(null)}
                                                                 className="text-base font-medium text-gray-900 hover:underline"
                                                             >
-                                                                Cancel
+                                                                {t('common.cancel')}
                                                             </button>
                                                             <Button
                                                                 onClick={handleSaveSection}
                                                                 disabled={tempDescription.length === 0}
                                                                 className="bg-gray-900 text-white hover:bg-gray-800 rounded-lg px-6 disabled:opacity-50 disabled:cursor-not-allowed"
                                                             >
-                                                                Save
+                                                                {t('common.save')}
                                                             </Button>
                                                         </div>
                                                     </div>
@@ -1556,7 +1556,7 @@ const ListingEditor: React.FC = () => {
                             {
                                 photoView === 'overview' && !isMobileSection && activeSection !== 'photos' && activeSection !== 'title' && activeSection !== 'description' && activeSection !== 'pricing' && activeSection !== 'availability' && activeSection !== 'number_of_guests' && activeSection !== 'amenities' && activeSection !== 'house_rules' && activeSection !== 'guest_safety' && activeSection !== 'cancellation_policy' && (
                                     <div className="flex items-center justify-center h-full text-gray-500">
-                                        Select a section to edit
+                                        {t('host.editor.selectSection')}
                                     </div>
                                 )
                             }
@@ -1572,7 +1572,7 @@ const ListingEditor: React.FC = () => {
                                     className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-gray-900 text-white shadow-lg"
                                 >
                                     <Eye className="h-5 w-5" />
-                                    <span className="font-medium">View</span>
+                                    <span className="font-medium">{t('host.editor.view')}</span>
                                 </button>
                             </div>
                         )
@@ -1872,19 +1872,19 @@ const ListingEditor: React.FC = () => {
                         <li className="flex items-center justify-center">
                             <a href="/host/reservations" className="flex flex-col items-center gap-1 text-gray-600">
                                 <Home className="h-5 w-5" />
-                                <span>reservations</span>
+                                <span>{t('nav.reservations', 'Reservations')}</span>
                             </a>
                         </li>
                         <li className="flex items-center justify-center">
                             <a href="/host/dashboard" className="flex flex-col items-center gap-1 text-gray-900 font-medium">
                                 <Grid3x3 className="h-5 w-5" />
-                                <span>Listings</span>
+                                <span>{t('nav.listings', 'Listings')}</span>
                             </a>
                         </li>
                         <li className="flex items-center justify-center">
                             <a href="#" className="flex flex-col items-center gap-1 text-gray-600">
                                 <Mail className="h-5 w-5" />
-                                <span>Messages</span>
+                                <span>{t('nav.messages', 'Messages')}</span>
                             </a>
                         </li>
                     </ul>

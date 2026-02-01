@@ -39,6 +39,20 @@ const createCacheKey = (url: string, params?: any): string => {
   return `${url}${params ? '?' + JSON.stringify(params) : ''}`;
 };
 
+// Request interceptor to add Authorization header
+apiClient.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
 apiClient.interceptors.response.use(
   (response) => {
     // Global Cache Invalidation for Mutations
@@ -60,7 +74,7 @@ apiClient.interceptors.response.use(
     return response;
   },
   (error) => {
-    const isAuthPage = window.location.pathname.includes("/webauth-login");
+    const isAuthPage = window.location.pathname.includes("/login");
 
     if (error.response && error.response.status === 401 && !isAuthPage && !error.config.url?.includes("/account/me")) {
 
@@ -72,7 +86,7 @@ apiClient.interceptors.response.use(
       // Redirect to login, preserving the intended destination
       const current = `${window.location.pathname}${window.location.search}`;
       const redirect = encodeURIComponent(current || "/");
-      window.location.href = `/webauth-login?redirect=${redirect}`;
+      window.location.href = `/login?redirect=${redirect}`;
 
     } else if (error.response && error.response.status === 401 && isAuthPage) {
       console.log("Session check failed on auth page, this is expected.");
@@ -94,7 +108,10 @@ const cachedGet = async <T = any>(url: string, config?: any): Promise<T> => {
   const requestPromise = (async () => {
     try {
       // 1. Ultra-fast Synchronous Cache (LocalStorage) for Critical Paths
-      if (url === '/listings' && (!config?.params?.offset || config.params.offset === 0)) {
+      // Only for general listings (no search, location, category, or guests filters)
+      const hasFilters = config?.params?.search || config?.params?.location || config?.params?.category || config?.params?.guests;
+      // Home page uses a specific large limit and no filters
+      if (url === '/listings' && !hasFilters && config?.params?.limit > 20 && !config?.params?.offset) {
         const criticalData = localStorage.getItem('critical_listings');
         if (criticalData) {
           try {
@@ -224,6 +241,10 @@ const getCachedResponse = async (url: string, params?: any): Promise<any | null>
       return null;
     } else if (url === '/listings' || url.includes('/listings/host/') || url === '/listings/my-listings') {
       // Multiple listings
+      // For general /listings with filters, don't return ALL cached listings
+      if (url === '/listings' && params && (params.search || params.location || params.category || params.guests)) {
+        return null;
+      }
       return await dbService.getAllCachedListings();
     } else if (url.includes('/account/user/')) {
       // User data

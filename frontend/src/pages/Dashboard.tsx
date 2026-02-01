@@ -54,6 +54,7 @@ const Dashboard = () => {
     };
 
     const inferCity = useCallback((p: Product): string => {
+        if (!p?.listing) return '';
         const text = [p.listing.city, p.listing.address, p.listing.title].filter(Boolean).join(' ');
         const norm = normalizeCity(text);
         if (norm) {
@@ -89,6 +90,7 @@ const Dashboard = () => {
         const map = new Map<string, { name: string; items: Product[] }>();
         const otherItemsNoKey: Product[] = [];
         (properties || []).forEach((p) => {
+            if (!p?.listing) return;
             let raw = (p.listing.city || '').trim();
             if (!raw) raw = inferCity(p);
             const key = normalizeCity(raw);
@@ -132,47 +134,51 @@ const Dashboard = () => {
 
 
 
-    const PropertyCard = ({ product, index }: { product: Product; index: number }) => (
-        <div className="flex-shrink-0 w-[180px] sm:w-[240px] md:w-[280px] cursor-pointer group">
-            <div className="relative aspect-[4/3] sm:aspect-square rounded-xl overflow-hidden mb-2">
-                <OptimizedImage
-                    src={getImageUrl(product.photos[0]?.url) || "https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=400&h=400&fit=crop"}
-                    alt={product.listing.title || "Property image"}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    onClick={() => navigate(`/product/${product.listing.id}`)}
-                />
-                <button
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        toggleFavorite(product.listing.id);
-                    }}
-                    className="absolute top-3 right-3 p-2 rounded-full hover:scale-110 transition-transform"
-                >
-                    <Heart
-                        className={`h-6 w-6 ${isInWishlist(product.listing.id)
-                            ? 'fill-green-600 text-green-600'
-                            : 'fill-black/50 text-white stroke-white stroke-2'
-                            }`}
+    const PropertyCard = ({ product, index }: { product: Product; index: number }) => {
+        if (!product?.listing) return null;
+
+        return (
+            <div className="flex-shrink-0 w-[180px] sm:w-[240px] md:w-[280px] cursor-pointer group">
+                <div className="relative aspect-[4/3] sm:aspect-square rounded-xl overflow-hidden mb-2">
+                    <OptimizedImage
+                        src={getImageUrl(product.photos?.[0]?.url) || "https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=400&h=400&fit=crop"}
+                        alt={product.listing.title || "Property image"}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        onClick={() => navigate(`/product/${product.listing.id}`)}
                     />
-                </button>
-                <div className="absolute top-3 left-3 bg-white px-3 py-1 rounded-full text-xs font-semibold">
-                    Guest favorite
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            toggleFavorite(product.listing.id);
+                        }}
+                        className="absolute top-3 right-3 p-2 rounded-full hover:scale-110 transition-transform"
+                    >
+                        <Heart
+                            className={`h-6 w-6 ${isInWishlist(product.listing.id)
+                                ? 'fill-green-600 text-green-600'
+                                : 'fill-black/50 text-white stroke-white stroke-2'
+                                }`}
+                        />
+                    </button>
+                    <div className="absolute top-3 left-3 bg-white px-3 py-1 rounded-full text-xs font-semibold">
+                        {t('Guest favorite')}
+                    </div>
+                </div>
+                <div className="space-y-1">
+                    <div className="flex items-start justify-between">
+                        <h3 className="font-semibold text-gray-900 truncate flex-1 text-[13px] sm:text-sm">{product.listing.title}</h3>
+                    </div>
+                    <p className="text-xs sm:text-sm text-gray-700">
+                        {(product.listing.property_type || 'Appartement')} · {product.listing.city}
+                    </p>
+                    <div className="flex items-baseline gap-1 pt-0.5">
+                        <span className="font-semibold text-gray-900 text-[13px] sm:text-[15px]">{product.listing.price_per_night?.toLocaleString()} FCFA</span>
+                        <span className="text-xs sm:text-sm text-gray-600">{t('per night')}</span>
+                    </div>
                 </div>
             </div>
-            <div className="space-y-1">
-                <div className="flex items-start justify-between">
-                    <h3 className="font-semibold text-gray-900 truncate flex-1 text-[13px] sm:text-sm">{product.listing.title}</h3>
-                </div>
-                <p className="text-xs sm:text-sm text-gray-700">
-                    {(product.listing.property_type || 'Appartement')} · {product.listing.city}
-                </p>
-                <div className="flex items-baseline gap-1 pt-0.5">
-                    <span className="font-semibold text-gray-900 text-[13px] sm:text-[15px]">{product.listing.price_per_night?.toLocaleString()} FCFA</span>
-                    <span className="text-xs sm:text-sm text-gray-600">{t('per night')}</span>
-                </div>
-            </div>
-        </div>
-    );
+        );
+    };
 
     const PropertySection = ({ title, properties, city }: { title: string; properties: Product[]; city?: string }) => {
         const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -202,7 +208,7 @@ const Dashboard = () => {
         const isOther = !!city && normalizeCity(city) === 'other';
 
         return (
-            <div className="mb-12 group relative">
+            <div className="mb-0 group relative">
                 <div className="flex items-center justify-between mb-6">
                     <h2 className="text-2xl font-bold text-gray-900">{city && !isOther ? t('StaysIn', { city }) : title}</h2>
                     {city && (
@@ -257,7 +263,7 @@ const Dashboard = () => {
         <div className="min-h-screen bg-white pb-20 md:pb-0">
             <SEO
                 title={t("Explore")}
-                description="Discover the best stays and products across Cameroon. Filter by price, location, and property type to find your perfect match."
+                description={t("dashboard.seo.description")}
             />
             {/* Header */}
             <Header />
@@ -270,7 +276,7 @@ const Dashboard = () => {
             </div>
 
             {/* Main Content */}
-            <main className="container mx-auto px-4 sm:px-6 py-8">
+            <main className="container mx-auto px-4 sm:px-6 pt-8 pb-2">
                 {isLoading ? (
                     <div className="flex flex-col items-center justify-center py-20 gap-4">
                         <div className="relative">
