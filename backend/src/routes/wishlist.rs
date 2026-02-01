@@ -2,7 +2,7 @@ use actix_web::{delete, get, post, web, HttpRequest, HttpResponse, Responder};
 use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
 
-use crate::middleware::auth::extract_user_id_from_token;
+use crate::middleware::auth::extract_user_id;
 
 #[derive(Debug, Serialize, Deserialize, sqlx::FromRow)]
 pub struct WishlistItem {
@@ -11,10 +11,10 @@ pub struct WishlistItem {
     pub product_id: String,
     pub created_at: String,
     // Fields joined from the products table
-    pub product_name: String,
-    pub product_price: f64,
-    pub product_location: String,
-    pub product_category: String,
+    pub product_name: Option<String>,
+    pub product_price: Option<f64>,
+    pub product_location: Option<String>,
+    pub product_category: Option<String>,
     pub product_image: Option<String>,
     pub product_contact_phone: Option<String>,
 }
@@ -24,24 +24,17 @@ pub struct AddToWishlistRequest {
     pub product_id: String,
 }
 
-fn extract_user_id(req: &HttpRequest) -> Result<i32, HttpResponse> {
-    if let Some(cookie) = req.cookie("session") {
-        return extract_user_id_from_token(cookie.value()).map_err(|_| {
-            HttpResponse::Unauthorized().json(serde_json::json!({
-                "error": "Invalid or expired token"
-            }))
-        });
-    }
-    Err(HttpResponse::Unauthorized().json(serde_json::json!({
-        "error": "Missing authorization token"
-    })))
-}
+// extract_user_id removed, using middleware one
 
 #[get("")]
 async fn get_wishlist(pool: web::Data<PgPool>, req: HttpRequest) -> impl Responder {
     let user_id = match extract_user_id(&req) {
         Ok(id) => id,
-        Err(response) => return response,
+        Err(_) => {
+            return HttpResponse::Unauthorized().json(serde_json::json!({
+                "error": "Invalid or missing authorization"
+            }))
+        }
     };
 
     let result = sqlx::query_as::<_, WishlistItem>(
@@ -84,7 +77,11 @@ pub async fn add_to_wishlist(
 ) -> impl Responder {
     let user_id = match extract_user_id(&req) {
         Ok(id) => id,
-        Err(response) => return response,
+        Err(_) => {
+            return HttpResponse::Unauthorized().json(serde_json::json!({
+                "error": "Invalid or missing authorization"
+            }))
+        }
     };
 
     // Validate listing exists (avoid FK error on product_id)
@@ -170,7 +167,11 @@ pub async fn remove_from_wishlist(
 ) -> impl Responder {
     let user_id = match extract_user_id(&req) {
         Ok(id) => id,
-        Err(response) => return response,
+        Err(_) => {
+            return HttpResponse::Unauthorized().json(serde_json::json!({
+                "error": "Invalid or missing authorization"
+            }))
+        }
     };
     let wishlist_item_id = path.into_inner();
 
@@ -201,7 +202,11 @@ pub async fn remove_from_wishlist_by_product(
 ) -> impl Responder {
     let user_id = match extract_user_id(&req) {
         Ok(id) => id,
-        Err(response) => return response,
+        Err(_) => {
+            return HttpResponse::Unauthorized().json(serde_json::json!({
+                "error": "Invalid or missing authorization"
+            }))
+        }
     };
     let product_id = path.into_inner();
 
@@ -232,14 +237,18 @@ pub async fn check_wishlist(
 ) -> impl Responder {
     let user_id = match extract_user_id(&req) {
         Ok(id) => id,
-        Err(response) => return response,
+        Err(_) => {
+            return HttpResponse::Unauthorized().json(serde_json::json!({
+                "error": "Invalid or missing authorization"
+            }))
+        }
     };
     let product_id = path.into_inner();
 
-    let result: Result<Option<i32>, _> =
+    let result: Result<Option<i32>, sqlx::Error> =
         sqlx::query_scalar("SELECT id FROM wishlist WHERE user_id = $1 AND product_id = $2")
             .bind(user_id)
-            .bind(product_id)
+            .bind(product_id.clone())
             .fetch_optional(pool.get_ref())
             .await;
 
