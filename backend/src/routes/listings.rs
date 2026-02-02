@@ -542,13 +542,11 @@ async fn get_listing_with_details(
     .bind(listing.host_id)
     .fetch_optional(pool);
 
-    let (amenities_rows, photos, videos, unavailable_dates, profile_row) = tokio::try_join!(
-        amenities_fut,
-        photos_fut,
-        videos_fut,
-        unavailable_fut,
-        profile_fut
-    )?;
+    let amenities_rows = amenities_fut.await?;
+    let photos = photos_fut.await?;
+    let videos = videos_fut.await?;
+    let unavailable_dates = unavailable_fut.await?;
+    let profile_row = profile_fut.await?;
 
     let amenities: Vec<String> = amenities_rows.into_iter().map(|a| a.amenity_type).collect();
     let (host_username, contact_phone, host_avatar): (
