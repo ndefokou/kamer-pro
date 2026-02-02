@@ -68,7 +68,7 @@ const router = createBrowserRouter(
         { path: "reservations", lazy: async () => ({ Component: (await import("./pages/host/Reservations")).default }) },
         { path: "calendar", lazy: async () => ({ Component: (await import("./pages/host/HostCalendar")).default }) },
         { path: "listings", lazy: async () => ({ Component: (await import("./pages/host/Reservations")).default }) },
-        { path: "listing-editor/:id", lazy: async () => ({ Component: (await import("./pages/host/ListingEditor")).default }) },
+        { path: "editor/:id", lazy: async () => ({ Component: (await import("./pages/host/ListingEditor")).default }) },
         { path: "bedroom-editor/:id", lazy: async () => ({ Component: (await import("./pages/host/BedroomEditor")).default }) },
         { path: "bathroom-editor/:id", lazy: async () => ({ Component: (await import("./pages/host/BathroomEditor")).default }) },
       ],
