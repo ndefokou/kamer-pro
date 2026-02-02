@@ -202,6 +202,7 @@ async fn main() -> std::io::Result<()> {
                             .service(routes::calendar::update_settings),
                     )
                     .service(web::scope("/reports").service(routes::reports::create_report))
+                    .service(routes::translate::translate_text)
                     .service(
                         web::scope("/admin")
                             .service(routes::admin::get_hosts)
