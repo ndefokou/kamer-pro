@@ -33,9 +33,6 @@ const Header: React.FC = () => {
                     <DropdownMenuItem className="font-semibold" onClick={() => navigate('/messages')}>
                         {t("Messages")}
                     </DropdownMenuItem>
-                    <DropdownMenuItem className="font-semibold hidden md:flex">
-                        {t("Notifications")}
-                    </DropdownMenuItem>
                     <DropdownMenuItem className="font-semibold" onClick={() => navigate('/bookings')}>
                         {t("Reservations")}
                     </DropdownMenuItem>
