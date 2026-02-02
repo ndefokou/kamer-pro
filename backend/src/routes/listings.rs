@@ -512,7 +512,7 @@ async fn get_listing_with_details(
     .fetch_all(pool);
 
     let photos_fut = sqlx::query_as::<_, ListingPhoto>(
-        "SELECT * FROM listing_photos WHERE listing_id = $1 ORDER BY display_order, id",
+        "SELECT id, listing_id, url, caption, room_type, COALESCE(is_cover, FALSE) as is_cover, COALESCE(display_order, 0) as display_order, uploaded_at FROM listing_photos WHERE listing_id = $1 ORDER BY display_order, id",
     )
     .bind(listing_id)
     .fetch_all(pool);
