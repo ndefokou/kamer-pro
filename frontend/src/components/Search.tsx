@@ -35,6 +35,8 @@ const MbokoSearch = () => {
     const [openWhere, setOpenWhere] = useState(false);
     const [openWhen, setOpenWhen] = useState(false);
     const [placeTab, setPlaceTab] = useState<"destination" | "nearby">("destination");
+    const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+    const [mobileStep, setMobileStep] = useState<"where" | "when" | "who">("where");
     const [dateTolerance, setDateTolerance] = useState<0 | 1 | 2 | 3>(0);
     const [isMobile, setIsMobile] = useState<boolean>(typeof window !== 'undefined' ? window.matchMedia('(max-width: 640px)').matches : false);
     const [whenStep, setWhenStep] = useState<"dates" | "guests">("dates");
@@ -46,6 +48,18 @@ const MbokoSearch = () => {
         try { m.addEventListener('change', handler); } catch { m.addListener(handler); }
         return () => { try { m.removeEventListener('change', handler); } catch { m.removeListener(handler); } };
     }, []);
+
+    // Prevent body scroll when mobile search is open
+    useEffect(() => {
+        if (mobileSearchOpen) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = 'unset';
+        }
+        return () => {
+            document.body.style.overflow = 'unset';
+        };
+    }, [mobileSearchOpen]);
 
     const runSearch = () => {
         const params = new URLSearchParams();
@@ -63,6 +77,7 @@ const MbokoSearch = () => {
 
         const totalGuests = guests.adults + guests.children;
         if (totalGuests > 0) params.set("guests", totalGuests.toString());
+        setMobileSearchOpen(false);
         navigate(`/marketplace?${params.toString()}`);
     };
 
@@ -79,26 +94,260 @@ const MbokoSearch = () => {
     };
 
     const suggestions = [
-        { name: "Centre", desc: "Region • Yaounde and surroundings", icon: "📍" },
-        { name: "Littoral", desc: "Region • Douala and surroundings", icon: "🌊" },
-        { name: "South", desc: "Region • Kribi, Ebolowa", icon: "🌴" },
-        { name: "Southwest", desc: "Region • Buea, Limbe, Tiko", icon: "🌋" },
-        { name: "Northwest", desc: "Region • Bamenda", icon: "⛰️" },
-        { name: "West", desc: "Region • Bafoussam, Dschang", icon: "🏞️" },
-        { name: "Adamawa", desc: "Region • Ngaoundere", icon: "🐄" },
-        { name: "North", desc: "Region • Garoua", icon: "🌾" },
-        { name: "Far North", desc: "Region • Maroua", icon: "🏜️" },
-        { name: "East", desc: "Region • Bertoua", icon: "🌳" },
+        { name: t("search.suggestions_list.Centre.name"), desc: t("search.suggestions_list.Centre.desc"), icon: "📍" },
+        { name: t("search.suggestions_list.Littoral.name"), desc: t("search.suggestions_list.Littoral.desc"), icon: "🌊" },
+        { name: t("search.suggestions_list.South.name"), desc: t("search.suggestions_list.South.desc"), icon: "🌴" },
+        { name: t("search.suggestions_list.Southwest.name"), desc: t("search.suggestions_list.Southwest.desc"), icon: "🌋" },
+        { name: t("search.suggestions_list.Northwest.name"), desc: t("search.suggestions_list.Northwest.desc"), icon: "⛰️" },
+        { name: t("search.suggestions_list.West.name"), desc: t("search.suggestions_list.West.desc"), icon: "🏞️" },
+        { name: t("search.suggestions_list.Adamawa.name"), desc: t("search.suggestions_list.Adamawa.desc"), icon: "🐄" },
+        { name: t("search.suggestions_list.North.name"), desc: t("search.suggestions_list.North.desc"), icon: "🌾" },
+        { name: t("search.suggestions_list.Far North.name"), desc: t("search.suggestions_list.Far North.desc"), icon: "🏜️" },
+        { name: t("search.suggestions_list.East.name"), desc: t("search.suggestions_list.East.desc"), icon: "🌳" },
     ];
+
+    if (mobileSearchOpen && isMobile) {
+        return (
+            <div className="fixed inset-0 z-[60] bg-gray-100 flex flex-col font-sans">
+                {/* Header */}
+                <div className="px-4 py-4 flex items-center justify-between bg-white relative">
+                    <button
+                        onClick={() => setMobileSearchOpen(false)}
+                        className="h-8 w-8 rounded-full border border-gray-200 grid place-items-center hover:bg-gray-50"
+                    >
+                        <X className="h-4 w-4" />
+                    </button>
+                    <div className="flex gap-6 text-sm font-medium">
+                        <button className="text-gray-900 border-b-2 border-gray-900 pb-1">{t('Stays')}</button>
+                    </div>
+                    <div className="w-8" />
+                </div>
+
+                <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                    {/* Destination Section */}
+                    <div className={`bg-white rounded-3xl shadow-sm overflow-hidden transition-all duration-300 ${mobileStep === 'where' ? 'ring-2 ring-black bg-white' : 'bg-white'}`}>
+                        {mobileStep === 'where' ? (
+                            <div className="p-6">
+                                <h2 className="text-2xl font-bold mb-4">{t('where')}</h2>
+                                <div className="relative mb-4">
+                                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-800" />
+                                    <input
+                                        type="text"
+                                        placeholder={t("search destinations")}
+                                        value={where}
+                                        onChange={(e) => setWhere(e.target.value)}
+                                        className="w-full pl-12 pr-4 py-4 bg-gray-100 rounded-xl font-medium text-gray-900 placeholder:text-gray-500 focus:outline-none"
+                                        autoFocus
+                                    />
+                                </div>
+                                <div className="mt-4 max-h-[300px] overflow-y-auto">
+                                    <h3 className="text-xs font-bold text-gray-500 mb-2 uppercase tracking-wider">{t('common.suggestions')}</h3>
+                                    <div className="space-y-2">
+                                        {suggestions.map((item) => (
+                                            <div
+                                                key={item.name}
+                                                className="flex items-center gap-4 p-2 hover:bg-gray-50 rounded-xl cursor-pointer"
+                                                onClick={() => {
+                                                    setWhere(item.name);
+                                                    setMobileStep('when');
+                                                }}
+                                            >
+                                                <div className="h-10 w-10 bg-gray-100 rounded-lg flex items-center justify-center text-xl">
+                                                    {item.icon}
+                                                </div>
+                                                <div>
+                                                    <div className="font-semibold text-gray-900">{item.name}</div>
+                                                    <div className="text-xs text-gray-500">{item.desc}</div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        ) : (
+                            <div
+                                className="px-6 py-4 flex justify-between items-center cursor-pointer"
+                                onClick={() => setMobileStep('where')}
+                            >
+                                <span className="text-gray-500 font-medium text-sm">{t('where')}</span>
+                                <span className="font-bold text-sm text-gray-900">{where || t('common.anywhere')}</span>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* When Section */}
+                    <div className={`bg-white rounded-3xl shadow-sm overflow-hidden transition-all duration-300 ${mobileStep === 'when' ? 'ring-2 ring-black' : ''}`}>
+                        {mobileStep === 'when' ? (
+                            <div className="p-4">
+                                <h2 className="text-2xl font-bold mb-4 px-2">{t('common.when')}</h2>
+                                <div className="flex justify-center mb-4 bg-gray-100 p-1 rounded-full w-fit mx-auto">
+                                    <button
+                                        onClick={() => setActiveTab("dates")}
+                                        className={`px-4 py-1.5 text-sm font-semibold rounded-full transition-all ${activeTab === "dates" ? "bg-white shadow-sm text-gray-900" : "text-gray-600 hover:bg-gray-200"}`}
+                                    >
+                                        {t('common.dates')}
+                                    </button>
+                                    <button
+                                        onClick={() => setActiveTab("flexible")}
+                                        className={`px-4 py-1.5 text-sm font-semibold rounded-full transition-all ${activeTab === "flexible" ? "bg-white shadow-sm text-gray-900" : "text-gray-600 hover:bg-gray-200"}`}
+                                    >
+                                        {t('common.flexible')}
+                                    </button>
+                                </div>
+
+                                {activeTab === "dates" ? (
+                                    <div className="flex justify-center">
+                                        <Calendar
+                                            mode="range"
+                                            selected={date}
+                                            onSelect={setDate}
+                                            numberOfMonths={1}
+                                            className="border-0 bg-transparent p-0 w-full flex justify-center"
+                                            disabled={{ before: new Date(new Date().setHours(0, 0, 0, 0)) }}
+                                            locale={locale}
+                                            classNames={{
+                                                month: "space-y-4 w-full",
+                                                table: "w-full border-collapse space-y-1",
+                                                head_row: "flex w-full mt-2 mb-2",
+                                                head_cell: "text-muted-foreground rounded-md w-9 font-normal text-[0.8rem] flex-1",
+                                                row: "flex w-full mt-2",
+                                                cell: "h-9 w-9 text-center text-sm p-0 relative [&:has([aria-selected].day-range-end)]:rounded-r-md [&:has([aria-selected].day-outside)]:bg-accent/50 [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20 flex-1",
+                                                day: "h-9 w-9 p-0 font-normal aria-selected:opacity-100 rounded-full hover:bg-gray-100 w-full h-full flex items-center justify-center",
+                                                day_selected: "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground rounded-full",
+                                                day_today: "bg-accent text-accent-foreground rounded-full",
+                                                day_outside: "day-outside text-muted-foreground opacity-50 aria-selected:bg-accent/50 aria-selected:text-muted-foreground aria-selected:opacity-30",
+                                                day_disabled: "text-muted-foreground opacity-50",
+                                                day_range_middle: "aria-selected:bg-accent aria-selected:text-accent-foreground",
+                                                day_hidden: "invisible",
+                                            }}
+                                        />
+                                    </div>
+                                ) : (
+                                    <div className="space-y-4">
+                                        <div className="text-center">
+                                            <h3 className="text-lg font-semibold mb-4">{t('common.howLong')}</h3>
+                                            <div className="flex flex-wrap justify-center gap-2">
+                                                {FLEXIBLE_OPTIONS.map((option) => (
+                                                    <button
+                                                        key={option}
+                                                        onClick={() => setFlexibleDuration(option)}
+                                                        className={`px-4 py-2 rounded-full border text-sm font-medium transition-colors ${flexibleDuration === option ? "border-black bg-gray-50" : "border-gray-300 hover:border-black"}`}
+                                                    >
+                                                        {t(`common.flexibleOptions.duration.${option}`)}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        ) : (
+                            <div
+                                className="px-6 py-4 flex justify-between items-center cursor-pointer"
+                                onClick={() => setMobileStep('when')}
+                            >
+                                <span className="text-gray-500 font-medium text-sm">{t('common.when')}</span>
+                                <span className="font-bold text-sm text-gray-900">
+                                    {activeTab === "dates" && date?.from
+                                        ? `${format(date.from, "MMM dd", { locale })}${date.to ? ` - ${format(date.to, "MMM dd", { locale })}` : ""}`
+                                        : t('common.addDates')}
+                                </span>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Who Section */}
+                    <div className={`bg-white rounded-3xl shadow-sm overflow-hidden transition-all duration-300 ${mobileStep === 'who' ? 'ring-2 ring-black' : ''}`}>
+                        {mobileStep === 'who' ? (
+                            <div className="p-6">
+                                <h2 className="text-2xl font-bold mb-6">{t('common.who')}</h2>
+                                <div className="space-y-6">
+                                    {[
+                                        { type: "adults", label: t("common.adults"), sub: t("Age 13+") },
+                                        { type: "children", label: t("common.children"), sub: t("Ages 2-12") },
+                                        { type: "infants", label: t("common.infants"), sub: t("Under 2") },
+                                        { type: "pets", label: t("common.pets"), sub: t("Traveling with a service animal?") },
+                                    ].map((item) => (
+                                        <div key={item.type} className="flex items-center justify-between">
+                                            <div>
+                                                <div className="font-bold text-gray-900">{item.label}</div>
+                                                <div className="text-sm text-gray-500">{item.sub}</div>
+                                            </div>
+                                            <div className="flex items-center gap-4">
+                                                <button
+                                                    type="button"
+                                                    className="h-8 w-8 rounded-full border border-gray-300 text-gray-500 hover:border-black disabled:opacity-20 grid place-items-center"
+                                                    onClick={() => updateGuest(item.type as keyof typeof guests, 'sub')}
+                                                    disabled={guests[item.type as keyof typeof guests] === 0}
+                                                >
+                                                    <Minus className="h-4 w-4" />
+                                                </button>
+                                                <span className="w-4 text-center text-gray-900 font-medium">
+                                                    {guests[item.type as keyof typeof guests]}
+                                                </span>
+                                                <button
+                                                    type="button"
+                                                    className="h-8 w-8 rounded-full border border-gray-300 text-gray-500 hover:border-black grid place-items-center"
+                                                    onClick={() => updateGuest(item.type as keyof typeof guests, 'add')}
+                                                >
+                                                    <Plus className="h-4 w-4" />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        ) : (
+                            <div
+                                className="px-6 py-4 flex justify-between items-center cursor-pointer"
+                                onClick={() => setMobileStep('who')}
+                            >
+                                <span className="text-gray-500 font-medium text-sm">{t('common.who')}</span>
+                                <span className="font-bold text-sm text-gray-900">
+                                    {guests.adults + guests.children > 0
+                                        ? t('common.guest_count', { count: guests.adults + guests.children })
+                                        : t('common.addGuests')}
+                                </span>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Footer */}
+                <div className="bg-white border-t border-gray-200 p-4 pb-6 flex items-center justify-between">
+                    <button
+                        className="text-base font-semibold underline text-gray-900"
+                        onClick={() => {
+                            setWhere("");
+                            setDate(undefined);
+                            setGuests({ adults: 0, children: 0, infants: 0, pets: 0 });
+                        }}
+                    >
+                        {t('common.clearAll')}
+                    </button>
+                    <button
+                        className="bg-[#E91E63] text-white px-8 py-3 rounded-lg font-bold text-lg flex items-center gap-2"
+                        onClick={runSearch}
+                    >
+                        <Search className="h-5 w-5" />
+                        {t('common.search')}
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <form onSubmit={handleSearch} className="w-full max-w-4xl mx-auto relative z-40">
             {/* Mobile Search Trigger */}
             <div className="md:hidden w-full px-4">
-                <div className="flex items-center gap-3 bg-white rounded-full shadow-md border border-gray-200 p-3" onClick={() => setOpenWhere(true)}>
-                    <Search className="h-5 w-5 text-gray-500 ml-2" />
-                    <div className="flex-1">
-                        <span className="text-sm font-semibold text-gray-500">{t('common.startSearch')}</span>
+                <div className="flex items-center gap-3 bg-white rounded-full shadow-md border border-gray-200 p-3" onClick={() => setMobileSearchOpen(true)}>
+                    <Search className="h-5 w-5 text-gray-900 ml-2" />
+                    <div className="flex-1 flex flex-col">
+                        <span className="text-sm font-semibold text-gray-900">{t('search.start_research')}</span>
+                    </div>
+                    <div className="p-2 bg-white rounded-full border border-gray-200">
+                        <div className="h-4 w-4 border-t-2 border-r-2 border-gray-900 rotate-45 transform translate-y-[1px] translate-x-[-1px]"></div>
                     </div>
                 </div>
             </div>
@@ -124,7 +373,7 @@ const MbokoSearch = () => {
                     <PopoverContent className="w-[350px] p-0 rounded-3xl overflow-hidden shadow-xl border-0 mt-4" align="start">
                         <div className="p-4">
                             <h3 className="text-xs font-bold text-gray-500 mb-4 px-2 uppercase tracking-wider">{t('common.suggestions')}</h3>
-                            <div className="space-y-1">
+                            <div className="space-y-1 max-h-[300px] overflow-y-auto custom-scrollbar">
                                 {suggestions.map((item) => (
                                     <div
                                         key={item.name}
@@ -201,7 +450,7 @@ const MbokoSearch = () => {
                                     onClick={() => setPlaceTab('destination')}
                                     type="button"
                                 >
-                                    Destination
+                                    {t('common.destination')}
                                 </button>
                                 <button
                                     className={`px-3 py-1.5 rounded-full text-sm font-medium ${placeTab === 'nearby' ? 'bg-black text-white' : 'bg-gray-100 text-gray-700'}`}
@@ -418,7 +667,7 @@ const MbokoSearch = () => {
                     </label>
                     <div className="text-sm text-gray-900 font-medium truncate">
                         {guests.adults + guests.children > 0
-                            ? `${guests.adults + guests.children} guests`
+                            ? t('common.guest_count', { count: guests.adults + guests.children })
                             : <span className="text-gray-400 font-normal">{t("add guests")}</span>}
                     </div>
                 </div>

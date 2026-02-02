@@ -38,7 +38,7 @@ const Wishlist: React.FC = () => {
                         </Button>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:md:grid-cols-3 lg:grid-cols-4 gap-8">
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                         {wishlistItems.map((item) => (
                             <div key={item.id} className="group relative">
                                 <Link to={`/product/${item.id}`}>
@@ -49,22 +49,25 @@ const Wishlist: React.FC = () => {
                                             className="h-full w-full object-cover object-center group-hover:opacity-75 transition-opacity"
                                         />
                                     </div>
-                                    <h3 className="mt-4 text-sm text-gray-700">{item.name}</h3>
-                                    <p className="mt-1 text-lg font-medium text-gray-900">{formatPrice(item.price)}</p>
+                                    <h3 className="mt-2 text-sm font-medium text-gray-900 line-clamp-1">{item.name}</h3>
+                                    <p className="text-sm text-gray-500">{formatPrice(item.price)}</p>
                                 </Link>
                                 <Button
                                     variant="ghost"
                                     size="icon"
-                                    className="absolute top-2 right-2"
-                                    onClick={() => removeFromWishlistByProduct(item.id)}
+                                    className="absolute top-2 right-2 h-8 w-8 bg-white/50 backdrop-blur-sm hover:bg-white/80"
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        removeFromWishlistByProduct(item.id);
+                                    }}
                                 >
-                                    <Heart className="h-6 w-6 fill-green-600 text-green-600" />
+                                    <Heart className="h-5 w-5 fill-green-600 text-green-600" />
                                 </Button>
                             </div>
                         ))}
                     </div>
                 )}
-            </div>
+            </div >
             <MobileNav />
         </>
     );

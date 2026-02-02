@@ -38,6 +38,7 @@
     "search": "Search",
     "suggestions": "Suggestions",
     "nearby": "Nearby",
+    "destination": "Destination",
     "close": "Close",
     "clearAll": "Clear all",
     "next": "Next",
@@ -179,6 +180,7 @@
     }
   },
   "search": {
+    "start_research": "Start your research",
     "stays_count": "{{count}} stays",
     "stay_count": "{{count}} stay",
     "stays_in": "Stays in {{location}}",
@@ -190,7 +192,49 @@
     "loading_more": "Loading...",
     "across_cameroon": "across Cameroon",
     "browse_available": "Browse {{count}} available stays {{location}}",
-    "cameroon": "Cameroon"
+    "cameroon": "Cameroon",
+    "suggestions_list": {
+      "Centre": {
+        "name": "Centre",
+        "desc": "Region • Yaounde and surroundings"
+      },
+      "Littoral": {
+        "name": "Littoral",
+        "desc": "Region • Douala and surroundings"
+      },
+      "South": {
+        "name": "South",
+        "desc": "Region • Kribi, Ebolowa"
+      },
+      "Southwest": {
+        "name": "Southwest",
+        "desc": "Region • Buea, Limbe, Tiko"
+      },
+      "Northwest": {
+        "name": "Northwest",
+        "desc": "Region • Bamenda"
+      },
+      "West": {
+        "name": "West",
+        "desc": "Region • Bafoussam, Dschang"
+      },
+      "Adamawa": {
+        "name": "Adamawa",
+        "desc": "Region • Ngaoundere"
+      },
+      "North": {
+        "name": "North",
+        "desc": "Region • Garoua"
+      },
+      "Far North": {
+        "name": "Far North",
+        "desc": "Region • Maroua"
+      },
+      "East": {
+        "name": "East",
+        "desc": "Region • Bertoua"
+      }
+    }
   },
   "poi": {
     "restaurant": "Restaurant",
@@ -789,6 +833,26 @@
     "buea": "Buea"
   },
   "your wishlist is empty": "Your wishlist is empty",
+  "myBookings": {
+    "title": "My reservations",
+    "seoDescription": "View and manage your {{count}} reservations on Le Mboko.",
+    "status": {
+      "confirmed": "Confirmed",
+      "pending": "Pending",
+      "cancelled": "Cancelled"
+    },
+    "viewListing": "View listing",
+    "cancel": "Cancel",
+    "cancelConfirm": "Are you sure you want to cancel this reservation?",
+    "cancelSuccess": "Reservation cancelled",
+    "cancelError": "Failed to cancel reservation",
+    "empty": {
+      "title": "No reservations yet",
+      "description": "Browse the marketplace and find your first stay.",
+      "button": "Explore stays"
+    },
+    "total": "Total: {{price}}"
+  },
   "save items you love to your wishlist": "Save items you love to your wishlist",
   "browse products": "Browse Products",
   "my wishlist": "My Wishlist",

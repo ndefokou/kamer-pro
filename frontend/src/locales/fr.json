@@ -27,6 +27,7 @@
     "search": "Rechercher",
     "suggestions": "Suggestions",
     "nearby": "À proximité",
+    "destination": "Destination",
     "close": "Fermer",
     "clearAll": "Tout effacer",
     "next": "Suivant",
@@ -144,6 +145,7 @@
     }
   },
   "search": {
+    "start_research": "Commencer votre recherche",
     "stays_count": "{{count}} séjours",
     "stay_count": "{{count}} séjour",
     "stays_in": "Séjours à {{location}}",
@@ -155,7 +157,49 @@
     "loading_more": "Chargement...",
     "across_cameroon": "à travers le Cameroun",
     "browse_available": "Parcourez {{count}} logements disponibles {{location}}",
-    "cameroon": "Cameroun"
+    "cameroon": "Cameroun",
+    "suggestions_list": {
+      "Centre": {
+        "name": "Centre",
+        "desc": "Région • Yaoundé et environs"
+      },
+      "Littoral": {
+        "name": "Littoral",
+        "desc": "Région • Douala et environs"
+      },
+      "South": {
+        "name": "Sud",
+        "desc": "Région • Kribi, Ebolowa"
+      },
+      "Southwest": {
+        "name": "Sud-Ouest",
+        "desc": "Région • Buea, Limbe, Tiko"
+      },
+      "Northwest": {
+        "name": "Nord-Ouest",
+        "desc": "Région • Bamenda"
+      },
+      "West": {
+        "name": "Ouest",
+        "desc": "Région • Bafoussam, Dschang"
+      },
+      "Adamawa": {
+        "name": "Adamaoua",
+        "desc": "Région • Ngaoundéré"
+      },
+      "North": {
+        "name": "Nord",
+        "desc": "Région • Garoua"
+      },
+      "Far North": {
+        "name": "Extrême-Nord",
+        "desc": "Région • Maroua"
+      },
+      "East": {
+        "name": "Est",
+        "desc": "Région • Bertoua"
+      }
+    }
   },
   "poi": {
     "restaurant": "Restaurant",
@@ -798,6 +842,26 @@
     "buea": "Buea"
   },
   "your wishlist is empty": "Votre liste de favoris est vide",
+  "myBookings": {
+    "title": "Mes réservations",
+    "seoDescription": "Consultez et gérez vos {{count}} réservations sur Le Mboko.",
+    "status": {
+      "confirmed": "Confirmée",
+      "pending": "En attente",
+      "cancelled": "Annulée"
+    },
+    "viewListing": "Voir l'annonce",
+    "cancel": "Annuler",
+    "cancelConfirm": "Êtes-vous sûr de vouloir annuler cette réservation ?",
+    "cancelSuccess": "Réservation annulée",
+    "cancelError": "Échec de l'annulation de la réservation",
+    "empty": {
+      "title": "Aucune réservation pour le moment",
+      "description": "Parcourez le marché et trouvez votre premier séjour.",
+      "button": "Explorer les séjours"
+    },
+    "total": "Total : {{price}}"
+  },
   "save items you love to your wishlist": "Enregistrez les articles que vous aimez dans vos favoris",
   "browse products": "Parcourir les produits",
   "my wishlist": "Mes favoris",

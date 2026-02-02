@@ -21,7 +21,7 @@ function cacheKey(text: string, target: string, source?: string) {
 export async function translateText(text: string, target: string, opts: TranslateOptions = {}): Promise<string> {
   try {
     const source = opts.source ?? 'auto';
-    const endpoint = opts.endpoint ?? (import.meta?.env?.VITE_TRANSLATE_ENDPOINT as string) ?? 'https://libretranslate.de/translate';
+    const endpoint = opts.endpoint ?? (import.meta?.env?.VITE_TRANSLATE_ENDPOINT as string) ?? '/api/translate';
     const apiKey = opts.apiKey ?? (import.meta?.env?.VITE_TRANSLATE_API_KEY as string) ?? undefined;
     const ttlMs = opts.ttlMs ?? DEFAULT_TTL;
 
