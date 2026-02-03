@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Menu, Settings, Plus, LogOut, ChevronLeft } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -60,34 +60,34 @@ const HostHeader: React.FC = () => {
                         </div>
                     </div>
                     <nav className="hidden md:flex gap-8 text-sm font-medium">
-                        <a
-                            href="/host/reservations"
+                        <Link
+                            to="/host/reservations"
                             className={`${isActive('/host/reservations') ? 'text-gray-900 font-semibold relative pb-6' : 'text-gray-600 hover:text-gray-900 transition-colors'}`}
                         >
                             {t('nav.reservations', 'Reservations')}
                             {isActive('/host/reservations') && <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-900"></span>}
-                        </a>
-                        <a
-                            href="/host/calendar"
+                        </Link>
+                        <Link
+                            to="/host/calendar"
                             className={`${isActive('/host/calendar') ? 'text-gray-900 font-semibold relative pb-6' : 'text-gray-600 hover:text-gray-900 transition-colors'}`}
                         >
                             {t('nav.calendar', 'Calendar')}
                             {isActive('/host/calendar') && <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-900"></span>}
-                        </a>
-                        <a
-                            href="/host/dashboard"
+                        </Link>
+                        <Link
+                            to="/host/dashboard"
                             className={`${isActive('/host/dashboard') ? 'text-gray-900 font-semibold relative pb-6' : 'text-gray-600 hover:text-gray-900 transition-colors'}`}
                         >
                             {t('nav.listings', 'Listings')}
                             {isActive('/host/dashboard') && <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-900"></span>}
-                        </a>
-                        <a
-                            href="/messages?view=host"
+                        </Link>
+                        <Link
+                            to="/messages?view=host"
                             className={`${location.pathname === '/messages' ? 'text-gray-900 font-semibold relative pb-6' : 'text-gray-600 hover:text-gray-900 transition-colors'}`}
                         >
                             {t('nav.messages', 'Messages')}
                             {location.pathname === '/messages' && <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-900"></span>}
-                        </a>
+                        </Link>
                     </nav>
                 </div>
 

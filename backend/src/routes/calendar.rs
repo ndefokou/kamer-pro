@@ -1,4 +1,5 @@
 use actix_web::{get, put, web, HttpRequest, HttpResponse, Responder};
+use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
 
@@ -70,6 +71,77 @@ pub struct UpdateSettingsRequest {
 
 use crate::middleware::auth::extract_user_id_from_token;
 
+async fn ensure_calendar_schema(pool: &PgPool) -> Result<(), sqlx::Error> {
+    sqlx::query(
+        r#"
+        CREATE TABLE IF NOT EXISTS calendar_pricing (
+            id SERIAL PRIMARY KEY,
+            listing_id TEXT NOT NULL,
+            date DATE NOT NULL,
+            price DOUBLE PRECISION NOT NULL,
+            is_available BOOLEAN DEFAULT TRUE,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (listing_id) REFERENCES listings(id) ON DELETE CASCADE,
+            UNIQUE(listing_id, date)
+        )
+        "#,
+    )
+    .execute(pool)
+    .await?;
+
+    sqlx::query(
+        "CREATE INDEX IF NOT EXISTS idx_calendar_pricing_listing_id ON calendar_pricing(listing_id)",
+    )
+    .execute(pool)
+    .await?;
+
+    sqlx::query(
+        "CREATE INDEX IF NOT EXISTS idx_calendar_pricing_date ON calendar_pricing(date)",
+    )
+    .execute(pool)
+    .await?;
+
+    sqlx::query(
+        r#"
+        CREATE TABLE IF NOT EXISTS listing_settings (
+            id SERIAL PRIMARY KEY,
+            listing_id TEXT NOT NULL UNIQUE,
+            base_price DOUBLE PRECISION,
+            weekend_price DOUBLE PRECISION,
+            smart_pricing_enabled BOOLEAN DEFAULT FALSE,
+            weekly_discount DOUBLE PRECISION DEFAULT 0,
+            monthly_discount DOUBLE PRECISION DEFAULT 0,
+            min_nights INTEGER DEFAULT 1,
+            max_nights INTEGER DEFAULT 365,
+            advance_notice TEXT DEFAULT 'same_day',
+            same_day_cutoff_time TEXT DEFAULT '12:00',
+            preparation_time TEXT DEFAULT 'none',
+            availability_window INTEGER DEFAULT 12,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (listing_id) REFERENCES listings(id) ON DELETE CASCADE
+        )
+        "#,
+    )
+    .execute(pool)
+    .await?;
+
+    sqlx::query(
+        "CREATE INDEX IF NOT EXISTS idx_listing_settings_listing_id ON listing_settings(listing_id)",
+    )
+    .execute(pool)
+    .await?;
+
+    sqlx::query(
+        "CREATE INDEX IF NOT EXISTS idx_calendar_pricing_listing_avail_date ON calendar_pricing(listing_id, is_available, date)",
+    )
+    .execute(pool)
+    .await?;
+
+    Ok(())
+}
+
 fn extract_user_id(req: &HttpRequest) -> Result<i32, HttpResponse> {
     if let Some(auth_header) = req.headers().get("Authorization") {
         if let Ok(auth_str) = auth_header.to_str() {
@@ -132,6 +204,12 @@ pub async fn get_calendar(
     path: web::Path<String>,
     query: web::Query<CalendarQuery>,
 ) -> impl Responder {
+    if let Err(e) = ensure_calendar_schema(pool.get_ref()).await {
+        log::error!("Failed to ensure calendar schema: {:?}", e);
+        return HttpResponse::InternalServerError().json(serde_json::json!({
+            "error": "Failed to initialize calendar schema"
+        }));
+    }
     let user_id = match extract_user_id(&req) {
         Ok(id) => id,
         Err(response) => return response,
@@ -143,6 +221,22 @@ pub async fn get_calendar(
         return response;
     }
 
+    // Parse dates
+    let start_date = match NaiveDate::parse_from_str(&query.start_date, "%Y-%m-%d") {
+        Ok(d) => d,
+        Err(_) => {
+            return HttpResponse::BadRequest()
+                .json(serde_json::json!({ "error": "Invalid start_date format" }))
+        }
+    };
+    let end_date = match NaiveDate::parse_from_str(&query.end_date, "%Y-%m-%d") {
+        Ok(d) => d,
+        Err(_) => {
+            return HttpResponse::BadRequest()
+                .json(serde_json::json!({ "error": "Invalid end_date format" }))
+        }
+    };
+
     // Fetch calendar pricing for date range
     let query_str = r#"
         SELECT * FROM calendar_pricing
@@ -152,8 +246,8 @@ pub async fn get_calendar(
 
     match sqlx::query_as::<_, CalendarPricing>(query_str)
         .bind(&listing_id)
-        .bind(&query.start_date)
-        .bind(&query.end_date)
+        .bind(start_date)
+        .bind(end_date)
         .fetch_all(pool.get_ref())
         .await
     {
@@ -175,6 +269,12 @@ pub async fn update_calendar_dates(
     path: web::Path<String>,
     body: web::Json<UpdateCalendarDatesRequest>,
 ) -> impl Responder {
+    if let Err(e) = ensure_calendar_schema(pool.get_ref()).await {
+        log::error!("Failed to ensure calendar schema: {:?}", e);
+        return HttpResponse::InternalServerError().json(serde_json::json!({
+            "error": "Failed to initialize calendar schema"
+        }));
+    }
     let user_id = match extract_user_id(&req) {
         Ok(id) => id,
         Err(response) => return response,
@@ -187,45 +287,82 @@ pub async fn update_calendar_dates(
     }
 
     // Get base price from listing or settings
-    let base_price: Option<f64> = sqlx::query_scalar(
-        "SELECT COALESCE(
-            (SELECT base_price FROM listing_settings WHERE listing_id = $1),
-            (SELECT price_per_night FROM listings WHERE id = $2)
-        )",
+    let base_price: f64 = match sqlx::query_scalar::<_, Option<f64>>(
+        "SELECT base_price FROM listing_settings WHERE listing_id = $1",
     )
     .bind(&listing_id)
-    .bind(&listing_id)
-    .fetch_optional(pool.get_ref())
+    .fetch_one(pool.get_ref())
     .await
-    .unwrap_or(None)
-    .flatten();
+    {
+        Ok(Some(bp)) => bp,
+        _ => sqlx::query_scalar::<_, Option<f64>>(
+            "SELECT price_per_night FROM listings WHERE id = $1",
+        )
+        .bind(&listing_id)
+        .fetch_one(pool.get_ref())
+        .await
+        .unwrap_or(None)
+        .unwrap_or(0.0),
+    };
 
-    let price = body.price.or(base_price).unwrap_or(0.0);
+    let price = body.price.unwrap_or(base_price);
     let is_available: bool = body.is_available.unwrap_or(true);
 
     // Update or insert pricing for each date
-    for date in &body.dates {
-        let result = sqlx::query(
-            r#"
-            INSERT INTO calendar_pricing (listing_id, date, price, is_available, updated_at)
-            VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP)
-            ON CONFLICT(listing_id, date) DO UPDATE SET
-                price = excluded.price,
-                is_available = excluded.is_available,
-                updated_at = CURRENT_TIMESTAMP
-            "#,
-        )
-        .bind(&listing_id)
-        .bind(date)
-        .bind(price)
-        .bind(is_available)
-        .execute(pool.get_ref())
-        .await;
+    for date_str in &body.dates {
+        let date = match NaiveDate::parse_from_str(date_str, "%Y-%m-%d") {
+            Ok(d) => d,
+            Err(_) => {
+                return HttpResponse::BadRequest().json(serde_json::json!({
+                    "error": format!("Invalid date format: {}", date_str)
+                }));
+            }
+        };
+
+        // If caller did not provide a price, we should not overwrite existing price on update.
+        // We still need a price value for inserts; use base price fallback for that.
+        let result = if body.price.is_some() {
+            // Explicit price provided: upsert both price and availability
+            sqlx::query(
+                r#"
+                INSERT INTO calendar_pricing (listing_id, date, price, is_available, updated_at)
+                VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP)
+                ON CONFLICT(listing_id, date) DO UPDATE SET
+                    price = EXCLUDED.price,
+                    is_available = EXCLUDED.is_available,
+                    updated_at = CURRENT_TIMESTAMP
+                "#,
+            )
+            .bind(&listing_id)
+            .bind(date)
+            .bind(price)
+            .bind(is_available)
+            .execute(pool.get_ref())
+            .await
+        } else {
+            // No price provided: only toggle availability on update; keep existing price.
+            // On insert, use base price fallback.
+            sqlx::query(
+                r#"
+                INSERT INTO calendar_pricing (listing_id, date, price, is_available, updated_at)
+                VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP)
+                ON CONFLICT(listing_id, date) DO UPDATE SET
+                    is_available = EXCLUDED.is_available,
+                    updated_at = CURRENT_TIMESTAMP
+                "#,
+            )
+            .bind(&listing_id)
+            .bind(date)
+            .bind(price)
+            .bind(is_available)
+            .execute(pool.get_ref())
+            .await
+        };
 
         if let Err(e) = result {
-            log::error!("Failed to update calendar date {}: {:?}", date, e);
+            log::error!("Failed to update calendar date {}: {:?}", date_str, e);
             return HttpResponse::InternalServerError().json(serde_json::json!({
-                "error": format!("Failed to update date {}: {}", date, e)
+                "error": format!("Failed to update date {}: {}", date_str, e)
             }));
         }
     }
@@ -242,6 +379,12 @@ pub async fn get_settings(
     req: HttpRequest,
     path: web::Path<String>,
 ) -> impl Responder {
+    if let Err(e) = ensure_calendar_schema(pool.get_ref()).await {
+        log::error!("Failed to ensure calendar schema: {:?}", e);
+        return HttpResponse::InternalServerError().json(serde_json::json!({
+            "error": "Failed to initialize calendar schema"
+        }));
+    }
     let user_id = match extract_user_id(&req) {
         Ok(id) => id,
         Err(response) => return response,
@@ -311,6 +454,12 @@ pub async fn update_settings(
     path: web::Path<String>,
     body: web::Json<UpdateSettingsRequest>,
 ) -> impl Responder {
+    if let Err(e) = ensure_calendar_schema(pool.get_ref()).await {
+        log::error!("Failed to ensure calendar schema: {:?}", e);
+        return HttpResponse::InternalServerError().json(serde_json::json!({
+            "error": "Failed to initialize calendar schema"
+        }));
+    }
     let user_id = match extract_user_id(&req) {
         Ok(id) => id,
         Err(response) => return response,

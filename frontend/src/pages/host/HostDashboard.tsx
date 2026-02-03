@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import apiClient, { deleteListing as deleteListingApi } from '@/api/client';
 import { Button } from '@/components/ui/button';
 import { Plus, Grid3x3, Menu, Mail, Home, Globe, HelpCircle, Settings, BookOpen, Users, UserPlus, LogOut, Trash, Calendar } from 'lucide-react';
@@ -361,37 +361,37 @@ const HostDashboard: React.FC = () => {
                 <div className="max-w-md mx-auto px-6">
                     <ul className="grid grid-cols-4 h-16">
                         <li className="flex items-center justify-center">
-                            <a href="/host/reservations" className="flex flex-col items-center gap-1 group w-full h-full justify-center">
+                            <Link to="/host/reservations" className="flex flex-col items-center gap-1 group w-full h-full justify-center">
                                 <div className="p-1.5 rounded-full group-active:scale-95 transition-transform group-hover:bg-gray-100">
                                     <BookOpen className="h-6 w-6 text-gray-500 group-hover:text-gray-900 transition-colors" />
                                 </div>
                                 <span className="text-[10px] font-medium text-gray-500 group-hover:text-gray-900 transition-colors">{t('nav.reservations', 'reservations')}</span>
-                            </a>
+                            </Link>
                         </li>
                         <li className="flex items-center justify-center">
-                            <a href="/host/calendar" className="flex flex-col items-center gap-1 group w-full h-full justify-center">
+                            <Link to="/host/calendar" className="flex flex-col items-center gap-1 group w-full h-full justify-center">
                                 <div className="p-1.5 rounded-full group-active:scale-95 transition-transform group-hover:bg-gray-100">
                                     <Calendar className="h-6 w-6 text-gray-500 group-hover:text-gray-900 transition-colors" />
                                 </div>
                                 <span className="text-[10px] font-medium text-gray-500 group-hover:text-gray-900 transition-colors">{t('nav.calendar', 'Calendar')}</span>
-                            </a>
+                            </Link>
                         </li>
 
                         <li className="flex items-center justify-center">
-                            <a href="/host/dashboard" className="flex flex-col items-center gap-1 group w-full h-full justify-center">
+                            <Link to="/host/dashboard" className="flex flex-col items-center gap-1 group w-full h-full justify-center">
                                 <div className="p-1.5 rounded-full group-active:scale-95 transition-transform">
                                     <Grid3x3 className="h-6 w-6 text-primary fill-current" />
                                 </div>
                                 <span className="text-[10px] font-medium text-primary">{t('nav.listings', 'Listings')}</span>
-                            </a>
+                            </Link>
                         </li>
                         <li className="flex items-center justify-center">
-                            <a href="/messages?view=host" className="flex flex-col items-center gap-1 group w-full h-full justify-center">
+                            <Link to="/messages?view=host" className="flex flex-col items-center gap-1 group w-full h-full justify-center">
                                 <div className="p-1.5 rounded-full group-active:scale-95 transition-transform group-hover:bg-gray-100">
                                     <Mail className="h-6 w-6 text-gray-500 group-hover:text-gray-900 transition-colors" />
                                 </div>
                                 <span className="text-[10px] font-medium text-gray-500 group-hover:text-gray-900 transition-colors">{t('nav.messages', 'Messages')}</span>
-                            </a>
+                            </Link>
                         </li>
                     </ul>
                 </div>

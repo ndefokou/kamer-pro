@@ -9,6 +9,7 @@ import SEO from "@/components/SEO";
 import { getImageUrl, formatPrice } from "@/lib/utils";
 import OptimizedImage from "@/components/OptimizedImage";
 import MobileNav from "@/components/MobileNav";
+import Loading from "@/components/Loading";
 
 const StatusBadge = ({ status }: { status: BookingWithDetails["booking"]["status"] }) => {
   const { t } = useTranslation();
@@ -50,7 +51,7 @@ export default function MyBookings() {
       <Header />
       <main className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
         <h1 className="text-2xl font-bold mb-6">{t('myBookings.title')}</h1>
-        {isLoading && <div>{t('common.loading')}</div>}
+        {isLoading && <Loading message={t('common.loading')} />}
         {error && <div className="text-red-600">{t('common.error')}</div>}
         {!isLoading && !error && (
           (data && data.length > 0) ? (

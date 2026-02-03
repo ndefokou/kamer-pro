@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import { createHashRouter, RouterProvider } from "react-router-dom";
 import { WishlistProvider } from "@/contexts/WishlistContext";
 import { MessagingProvider } from "@/contexts/MessagingContext";
 import { HostProvider } from "@/contexts/HostContext";
@@ -25,7 +25,7 @@ export const queryClient = new QueryClient({
   },
 });
 
-const router = createBrowserRouter(
+const router = createHashRouter(
   [
     { path: "/", element: <Suspense fallback={<div />}><Dashboard /></Suspense> },
     { path: "/marketplace", lazy: async () => ({ Component: (await import("./pages/SearchResults")).default }) },
@@ -76,7 +76,7 @@ const router = createBrowserRouter(
     { path: "*", element: <Suspense fallback={<div />}><NotFound /></Suspense> },
   ],
   {
-    // @ts-ignore
+    // @ts-expect-error - hydrateFallbackElement is not in the type definition but is supported
     hydrateFallbackElement: (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>

@@ -8,6 +8,7 @@ import { Heart } from 'lucide-react';
 import Header from '@/components/Header';
 import SEO from '@/components/SEO';
 import MobileNav from '@/components/MobileNav';
+import Loading from '@/components/Loading';
 
 const Wishlist: React.FC = () => {
     const { wishlistItems, removeFromWishlistByProduct, isLoading, refreshWishlist } = useWishlist();
@@ -18,7 +19,7 @@ const Wishlist: React.FC = () => {
     }, [refreshWishlist]);
 
     if (isLoading) {
-        return <div>Loading...</div>;
+        return <Loading fullScreen message="Loading wishlist..." />;
     }
 
     return (

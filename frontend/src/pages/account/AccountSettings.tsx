@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import Loading from "@/components/Loading";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -148,7 +149,7 @@ const AccountSettings = () => {
     { id: "travel", label: "Travel for work" },
   ];
 
-  if (loading) return <div className="p-6">Loading...</div>;
+  if (loading) return <Loading fullScreen message="Loading account..." />;
   if (!data) return <div className="p-6">{error || "Unable to load account."}</div>;
 
   const p: AccountProfile = data.profile || ({} as AccountProfile);

@@ -60,6 +60,28 @@ apiClient.interceptors.response.use(
     if (method && ['post', 'put', 'delete'].includes(method.toLowerCase()) && url) {
       if (url.includes('/listings')) {
         dbService.clearCacheByPattern('listings');
+      } else if (url.includes('/calendar')) {
+        // Calendar changes affect listing availability displayed to guests
+        dbService.clearCacheByPattern('listings');
+
+        // Broadcast calendar availability change to other tabs and within the app
+        try {
+          // Extract listingId from /calendar/:listingId/...
+          const match = url.match(/\/calendar\/([^\/]+)/);
+          const listingId = match ? match[1] : undefined;
+
+          // 1) Cross-tab broadcast
+          if (typeof BroadcastChannel !== 'undefined' && listingId) {
+            const bc = new BroadcastChannel('calendar-updates');
+            bc.postMessage({ type: 'calendar_updated', listingId });
+            bc.close();
+          }
+
+          // 2) Intra-tab event
+          if (listingId) {
+            window.dispatchEvent(new CustomEvent('calendar_updated', { detail: { listingId } }));
+          }
+        } catch { /* noop */ }
       } else if (url.includes('/bookings')) {
         dbService.clearCacheByPattern('bookings');
       } else if (url.includes('/messages')) {
@@ -74,22 +96,26 @@ apiClient.interceptors.response.use(
     return response;
   },
   (error) => {
-    const isAuthPage = window.location.pathname.includes("/login");
+    const isAuthPage = window.location.hash.includes('#/login');
 
-    if (error.response && error.response.status === 401 && !isAuthPage && !error.config.url?.includes("/account/me")) {
+    // Suppress 401 for session check - return "not logged in" state without error
+    if (error.response && error.response.status === 401 && error.config && error.config.url && error.config.url.includes('/account/me')) {
+      return Promise.resolve({ data: { user: null, profile: null } });
+    }
 
+    if (error.response && error.response.status === 401 && !isAuthPage) {
       // Clear any stale auth data
-      localStorage.removeItem("token");
-      localStorage.removeItem("username");
-      localStorage.removeItem("userId");
+      localStorage.removeItem('token');
+      localStorage.removeItem('username');
+      localStorage.removeItem('userId');
 
-      // Redirect to login, preserving the intended destination
-      const current = `${window.location.pathname}${window.location.search}`;
-      const redirect = encodeURIComponent(current || "/");
-      window.location.href = `/login?redirect=${redirect}`;
+      // Redirect to login, preserving the intended destination (hash-based routing)
+      const current = window.location.hash || '#/';
+      const redirect = encodeURIComponent(current);
+      window.location.href = `#/login?redirect=${redirect}`;
 
     } else if (error.response && error.response.status === 401 && isAuthPage) {
-      console.log("Session check failed on auth page, this is expected.");
+      console.log('Session check failed on auth page, this is expected.');
     }
 
     return Promise.reject(error);
@@ -131,7 +157,8 @@ const cachedGet = async <T = any>(url: string, config?: any): Promise<T> => {
       }
 
       // 2. Try IndexedDB cache second (Stale-While-Revalidate pattern)
-      const cached = await getCachedResponse(url, config?.params);
+      const cachedUnknown = await getCachedResponse(url, config?.params as Record<string, unknown> | undefined);
+      const cached = cachedUnknown as T | null;
 
       if (cached && (!Array.isArray(cached) || cached.length > 0)) {
         // Fetch in background to update cache without blocking the UI
@@ -163,7 +190,7 @@ const cachedGet = async <T = any>(url: string, config?: any): Promise<T> => {
 
     } catch (error) {
       // Network failed, try cache as fallback
-      const cached = await getCachedResponse(url, config?.params);
+      const cached = (await getCachedResponse(url, config?.params as Record<string, unknown> | undefined)) as T | null;
       if (cached) {
         console.log('Using cached data due to network error:', url);
         return cached;
@@ -228,7 +255,7 @@ const cacheResponse = async (url: string, data: any, params?: any): Promise<void
 };
 
 // Get cached response based on URL
-const getCachedResponse = async (url: string, params?: any): Promise<any | null> => {
+const getCachedResponse = async (url: string, params?: Record<string, unknown>): Promise<unknown | null> => {
   try {
     if (url.includes('/listings/') && !url.includes('/reviews') && !url.includes('/my-listings')) {
       // Single listing
@@ -246,7 +273,7 @@ const getCachedResponse = async (url: string, params?: any): Promise<any | null>
         return null;
       }
       return await dbService.getAllCachedListings();
-    } else if (url.includes('/account/user/')) { 
+    } else if (url.includes('/account/user/')) {
       // User data
       const id = parseInt(url.split('/account/user/')[1]);
       return await dbService.getCachedUser(id);
@@ -407,6 +434,19 @@ export const getMyProducts = async () => {
 
 export const getListing = async (id: string): Promise<Product> => {
   return await cachedGet<Product>(`/listings/${id}`);
+};
+
+// Force fresh fetch of a single listing, bypassing SWR/IndexedDB cache.
+// Use this on correctness-sensitive pages (e.g., booking) to reflect immediate availability changes.
+export const getListingFresh = async (id: string): Promise<Product> => {
+  const response = await apiClient.get(`/listings/${id}`);
+  // Keep local cache in sync for subsequent loads
+  try {
+    await cacheResponse(`/listings/${id}`, response.data, undefined);
+  } catch (e) {
+    // swallow cache errors
+  }
+  return response.data;
 };
 
 export const deleteListing = async (id: string) => {

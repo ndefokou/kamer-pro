@@ -12,7 +12,7 @@ pub struct S3Storage {
 
 impl S3Storage {
     /// Initialize Supabase storage client
-    pub async fn new() -> Result<Self, String> {
+    pub fn new() -> Result<Self, String> {
         let bucket = env::var("SUPABASE_BUCKET")
             .map_err(|_| "SUPABASE_BUCKET environment variable not set")?;
 

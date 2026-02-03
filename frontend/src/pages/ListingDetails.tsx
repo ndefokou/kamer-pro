@@ -1,9 +1,10 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { getListing, createBooking, getListingReviews, addListingReview, ListingReview } from '@/api/client';
+import { getListingFresh as getListing, createBooking, getListingReviews, addListingReview, ListingReview } from '@/api/client';
 import { Button } from '@/components/ui/button';
 import { Loader2, Share, Heart, Star, Minus, Plus, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import Loading from '@/components/Loading';
 import { getImageUrl, formatPrice } from '@/lib/utils';
 import OptimizedImage from '@/components/OptimizedImage';
 import { openWhatsApp } from '@/lib/whatsapp';
@@ -65,11 +66,45 @@ const ListingDetails: React.FC = () => {
     const navigate = useNavigate();
     const { addToWishlist, removeFromWishlistByProduct, isInWishlist } = useWishlist();
 
-    const { data: product, isLoading, error } = useQuery({
+    const { data: product, isLoading, error, refetch } = useQuery({
         queryKey: ['listing', id],
         queryFn: () => getListing(id!),
         enabled: !!id,
     });
+
+    // Live updates: listen for host calendar availability changes and refetch if this listing was updated
+    React.useEffect(() => {
+        if (!id) return;
+        let bc: BroadcastChannel | null = null;
+
+        const onWindowEvent = (e: Event) => {
+            const detail = (e as CustomEvent).detail as { listingId?: string } | undefined;
+            if (detail?.listingId === id) {
+                refetch();
+            }
+        };
+
+        try {
+            // Cross-tab channel
+            if ('BroadcastChannel' in window) {
+                bc = new BroadcastChannel('calendar-updates');
+                bc.onmessage = (msg: MessageEvent) => {
+                    const data = msg.data as { type?: string; listingId?: string };
+                    if (data?.type === 'calendar_updated' && data.listingId === id) {
+                        refetch();
+                    }
+                };
+            }
+        } catch { /* noop */ }
+
+        // Intra-tab event
+        window.addEventListener('calendar_updated', onWindowEvent as EventListener);
+
+        return () => {
+            window.removeEventListener('calendar_updated', onWindowEvent as EventListener);
+            try { bc?.close(); } catch { /* noop */ }
+        };
+    }, [id, refetch]);
 
 
     const [checkInDate, setCheckInDate] = React.useState<Date | null>(null);
@@ -181,11 +216,7 @@ const ListingDetails: React.FC = () => {
     }, [product?.unavailable_dates]);
 
     if (isLoading) {
-        return (
-            <div className="min-h-screen flex items-center justify-center">
-                <Loader2 className="h-8 w-8 animate-spin" />
-            </div>
-        );
+        return <Loading fullScreen message={t('common.loading', 'Loading...')} />;
     }
 
     if (error || !product) {

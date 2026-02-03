@@ -1,8 +1,8 @@
 export interface TranslateOptions {
-  source?: string; // e.g., 'auto'
-  endpoint?: string; // override endpoint
-  apiKey?: string; // optional API key if your server requires it
-  ttlMs?: number; // cache TTL
+  source?: string; 
+  endpoint?: string;
+  apiKey?: string;
+  ttlMs?: number;
 }
 
 const DEFAULT_TTL = 1000 * 60 * 60 * 24 * 30; // 30 days

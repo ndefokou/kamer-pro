@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import apiClient from '@/api/client';
 import { Button } from '@/components/ui/button';
 import { Menu, ChevronDown, X, Check, Calendar as CalendarIcon, Grid3x3, Mail, Home, Globe, HelpCircle, Settings, BookOpen, Users, UserPlus, LogOut, Plus } from 'lucide-react';
@@ -8,6 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { getImageUrl } from '@/lib/utils';
 import OptimizedImage from '@/components/OptimizedImage';
+import Loading from '@/components/Loading';
 import CalendarGrid from '@/components/host/CalendarGrid';
 import PriceSettingsModal from '@/components/host/PriceSettingsModal';
 import AvailabilitySettingsModal from '../../components/host/AvailabilitySettingsModal';
@@ -17,7 +18,7 @@ interface CalendarPricing {
     listing_id: string;
     date: string;
     price: number;
-    is_available: number;
+    is_available: boolean;
 }
 
 interface MyListing {
@@ -61,6 +62,7 @@ const HostCalendar: React.FC = () => {
     const [currentMonth, setCurrentMonth] = useState(new Date());
     const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
     const [loading, setLoading] = useState(true);
+    const [updatingAvailability, setUpdatingAvailability] = useState(false);
     const [listingPrice, setListingPrice] = useState<number>(0);
     const [editingPrice, setEditingPrice] = useState<number>(0);
     const [showCustomSettings, setShowCustomSettings] = useState(false);
@@ -89,9 +91,9 @@ const HostCalendar: React.FC = () => {
     }, [listingId]);
 
     const fetchCalendarData = useCallback(async () => {
-        const startDate = new Date();
-        const endDate = new Date();
-        endDate.setMonth(endDate.getMonth() + 12);
+        // Fetch the exact window displayed: Jan of currentYear through Dec of next year
+        const startDate = new Date(currentYear, 0, 1);
+        const endDate = new Date(currentYear + 1, 11, 31);
 
         try {
             const response = await apiClient.get(`/calendar/${listingId}`, {
@@ -111,7 +113,7 @@ const HostCalendar: React.FC = () => {
         } finally {
             setLoading(false);
         }
-    }, [listingId]);
+    }, [listingId, currentYear]);
 
     const fetchSettings = useCallback(async () => {
         try {
@@ -124,30 +126,61 @@ const HostCalendar: React.FC = () => {
 
     useEffect(() => {
         const initCalendar = async () => {
-            if (!listingId) {
-                setListingsLoading(true);
-                try {
-                    const response = await apiClient.get('/listings/my-listings');
-                    const rows = Array.isArray(response.data) ? response.data : [];
-                    setMyListings(rows);
+            setListingsLoading(true);
+            try {
+                // Always fetch the current user's listings first
+                const response = await apiClient.get('/listings/my-listings');
+                const rows = Array.isArray(response.data) ? response.data : [];
+                setMyListings(rows);
+
+                // If no listingId provided, stay on picker view (below renders picker)
+                if (!listingId) {
                     if (rows.length === 0) {
                         navigate('/host/dashboard');
                     }
-                } catch (error) {
-                    console.error('Failed to fetch listings:', error);
-                    navigate('/host/dashboard');
-                } finally {
-                    setListingsLoading(false);
+                    return;
                 }
-                return;
+
+                // Validate that the provided listingId belongs to the current user
+                const ownsSelected = rows.some((item) => item.listing?.id === listingId);
+                if (!ownsSelected) {
+                    console.warn('Selected listing does not belong to current user. Redirecting to picker.');
+                    navigate('/host/calendar');
+                    return;
+                }
+
+                // Safe to load calendar/settings for this listing
+                await Promise.all([
+                    fetchListingPrice(),
+                    fetchCalendarData(),
+                    fetchSettings(),
+                ]);
+            } catch (error) {
+                console.error('Failed to initialize calendar:', error);
+                navigate('/host/dashboard');
+            } finally {
+                setListingsLoading(false);
             }
-            fetchListingPrice();
-            fetchCalendarData();
-            fetchSettings();
         };
 
         initCalendar();
     }, [listingId, navigate, fetchListingPrice, fetchCalendarData, fetchSettings]);
+
+    // Refetch calendar when the visible year changes
+    useEffect(() => {
+        if (listingId) {
+            setLoading(true);
+            fetchCalendarData();
+        }
+    }, [currentYear, listingId, fetchCalendarData]);
+
+    // Reset state when switching listings to ensure isolation per listing
+    useEffect(() => {
+        setSelectedDates([]);
+        setPricingData(new Map());
+        setSettings(null);
+        setEditingPrice(0);
+    }, [listingId]);
 
     const handleDateSelect = (date: string) => {
         setSelectedDates(prev => {
@@ -164,21 +197,54 @@ const HostCalendar: React.FC = () => {
     };
 
     const handleAvailabilityToggle = async () => {
-        if (selectedDates.length === 0) return;
+        if (selectedDates.length === 0 || updatingAvailability) return;
+
+        // Guard: ensure the selected listing belongs to the current user before mutating
+        if (myListings.length > 0 && !myListings.some((l) => l.listing?.id === listingId)) {
+            console.warn('Refusing to update availability for a listing not owned by current user');
+            return;
+        }
 
         const currentAvailability = selectedDates.every(date => {
             const data = pricingData.get(date);
-            return (data?.is_available ?? 1) === 1;
+            return data?.is_available ?? true;
         });
+
+        const nextAvailability = !currentAvailability;
+
+        // Optimistic update: flip availability for selected dates
+        const prevMap = new Map(pricingData);
+        const nextMap = new Map(pricingData);
+        const fallbackPrice = settings?.base_price || listingPrice || 0;
+        selectedDates.forEach(date => {
+            const existing = nextMap.get(date);
+            if (existing) {
+                nextMap.set(date, { ...existing, is_available: nextAvailability });
+            } else {
+                nextMap.set(date, {
+                    id: -1,
+                    listing_id: listingId,
+                    date,
+                    price: fallbackPrice,
+                    is_available: nextAvailability,
+                });
+            }
+        });
+        setPricingData(nextMap);
+        setUpdatingAvailability(true);
 
         try {
             await apiClient.put(`/calendar/${listingId}/dates`, {
                 dates: selectedDates,
-                is_available: !currentAvailability,
+                is_available: nextAvailability,
             });
             await fetchCalendarData();
         } catch (error) {
             console.error('Failed to update availability:', error);
+            // Revert on failure
+            setPricingData(prevMap);
+        } finally {
+            setUpdatingAvailability(false);
         }
     };
 
@@ -268,7 +334,7 @@ const HostCalendar: React.FC = () => {
         : settings?.base_price || listingPrice;
 
     const isAvailable = selectedDates.length > 0
-        ? selectedDates.every(date => (pricingData.get(date)?.is_available ?? 1) === 1)
+        ? selectedDates.every(date => pricingData.get(date)?.is_available ?? true)
         : true;
 
     return (
@@ -281,13 +347,13 @@ const HostCalendar: React.FC = () => {
                             Le Mboko
                         </div>
                         <nav className="hidden md:flex gap-8 text-sm font-medium">
-                            <a href="/host/reservations" className="text-gray-600 hover:text-gray-900 transition-colors">{t('nav.reservations', 'reservations')}</a>
-                            <a href="/host/calendar" className="text-gray-900 font-semibold relative pb-6">
+                            <Link to="/host/reservations" className="text-gray-600 hover:text-gray-900 transition-colors">{t('nav.reservations', 'reservations')}</Link>
+                            <Link to="/host/calendar" className="text-gray-900 font-semibold relative pb-6">
                                 {t('nav.calendar', 'Calendar')}
                                 <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-900"></span>
-                            </a>
-                            <a href="/host/dashboard" className="text-gray-600 hover:text-gray-900 transition-colors">{t('nav.listings', 'Listings')}</a>
-                            <a href="#" className="text-gray-600 hover:text-gray-900 transition-colors">{t('nav.messages', 'Messages')}</a>
+                            </Link>
+                            <Link to="/host/dashboard" className="text-gray-600 hover:text-gray-900 transition-colors">{t('nav.listings', 'Listings')}</Link>
+                            <Link to="/messages?view=host" className="text-gray-600 hover:text-gray-900 transition-colors">{t('nav.messages', 'Messages')}</Link>
                         </nav>
                     </div>
 
@@ -372,7 +438,7 @@ const HostCalendar: React.FC = () => {
                             <p className="text-gray-600">{t('host.calendar.pickListingHelp', 'Select a listing to manage its availability')}</p>
                         </div>
                         {listingsLoading ? (
-                            <div className="text-gray-500">{t('common.loading', 'Loading...')}</div>
+                            <Loading message={t('common.loading', 'Loading...')} />
                         ) : myListings.length > 0 ? (
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                                 {myListings.map((item) => (
@@ -449,7 +515,7 @@ const HostCalendar: React.FC = () => {
                             {/* Calendar Grids */
                             }
                             {loading ? (
-                                <div className="text-center py-12 text-gray-500">{t('host.calendar.loading', 'Loading calendar...')}</div>
+                                <Loading message={t('host.calendar.loading', 'Loading calendar...')} />
                             ) : (
                                 <div className="space-y-12">
                                     {getMonthsToDisplay().map((month, index) => {
@@ -498,6 +564,7 @@ const HostCalendar: React.FC = () => {
                                                     <span className="text-sm font-medium">{t('host.calendar.available', 'Available')}</span>
                                                     <button
                                                         onClick={handleAvailabilityToggle}
+                                                        disabled={updatingAvailability}
                                                         className={`w-12 h-6 rounded-full transition-colors ${isAvailable ? 'bg-green-500' : 'bg-red-500'}`}
                                                         aria-pressed={isAvailable}
                                                         aria-label={isAvailable ? t('host.calendar.available', 'Available') : t('host.calendar.unavailable', 'Unavailable')}
@@ -691,36 +758,36 @@ const HostCalendar: React.FC = () => {
                 <div className="max-w-md mx-auto px-6">
                     <ul className="grid grid-cols-4 h-16">
                         <li className="flex items-center justify-center">
-                            <a href="/host/reservations" className="flex flex-col items-center gap-1 group w-full h-full justify-center">
+                            <Link to="/host/reservations" className="flex flex-col items-center gap-1 group w-full h-full justify-center">
                                 <div className="p-1.5 rounded-full group-active:scale-95 transition-transform group-hover:bg-gray-100">
                                     <Home className="h-6 w-6 text-gray-500 group-hover:text-gray-900 transition-colors" />
                                 </div>
                                 <span className="text-[10px] font-medium text-gray-500 group-hover:text-gray-900 transition-colors">{t('nav.reservations', 'reservations')}</span>
-                            </a>
+                            </Link>
                         </li>
                         <li className="flex items-center justify-center">
-                            <a href="/host/calendar" className="flex flex-col items-center gap-1 group w-full h-full justify-center">
+                            <Link to="/host/calendar" className="flex flex-col items-center gap-1 group w-full h-full justify-center">
                                 <div className="p-1.5 rounded-full group-active:scale-95 transition-transform">
                                     <CalendarIcon className="h-6 w-6 text-primary fill-current" />
                                 </div>
                                 <span className="text-[10px] font-medium text-primary">{t('nav.calendar', 'Calendar')}</span>
-                            </a>
+                            </Link>
                         </li>
                         <li className="flex items-center justify-center">
-                            <a href="/host/dashboard" className="flex flex-col items-center gap-1 group w-full h-full justify-center">
+                            <Link to="/host/dashboard" className="flex flex-col items-center gap-1 group w-full h-full justify-center">
                                 <div className="p-1.5 rounded-full group-active:scale-95 transition-transform group-hover:bg-gray-100">
                                     <Grid3x3 className="h-6 w-6 text-gray-500 group-hover:text-gray-900 transition-colors" />
                                 </div>
                                 <span className="text-[10px] font-medium text-gray-500 group-hover:text-gray-900 transition-colors">{t('nav.listings', 'Listings')}</span>
-                            </a>
+                            </Link>
                         </li>
                         <li className="flex items-center justify-center">
-                            <a href="#" className="flex flex-col items-center gap-1 group w-full h-full justify-center">
+                            <Link to="/messages?view=host" className="flex flex-col items-center gap-1 group w-full h-full justify-center">
                                 <div className="p-1.5 rounded-full group-active:scale-95 transition-transform group-hover:bg-gray-100">
                                     <Mail className="h-6 w-6 text-gray-500 group-hover:text-gray-900 transition-colors" />
                                 </div>
                                 <span className="text-[10px] font-medium text-gray-500 group-hover:text-gray-900 transition-colors">{t('nav.messages', 'Messages')}</span>
-                            </a>
+                            </Link>
                         </li>
                     </ul>
                 </div>
