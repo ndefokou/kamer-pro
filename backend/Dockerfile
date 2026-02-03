@@ -36,8 +36,9 @@ RUN mkdir -p public/uploads
 # Build the application
 RUN --mount=type=cache,target=/usr/local/cargo/registry \
     --mount=type=cache,target=/usr/src/app/target \
-    cargo build --release --locked && \
-    cp target/release/backend ./backend
+    rustup target add x86_64-unknown-linux-musl && \
+    cargo build --release --locked --target x86_64-unknown-linux-musl && \
+    cp target/x86_64-unknown-linux-musl/release/backend ./backend
 
 # 2. Runtime stage
 FROM alpine:3.20

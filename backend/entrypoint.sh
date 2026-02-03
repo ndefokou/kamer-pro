@@ -44,5 +44,11 @@ else
   echo "RUN_MIGRATIONS not set; skipping migrations at container start."
 fi
 
+echo "--- DEBUG START ---"
+echo "Binary info:"
+ls -la /app/backend
+ldd /app/backend || echo "ldd failed"
+echo "--- DEBUG END ---"
+
 echo "--- Starting application ---"
-exec su-exec appuser ./backend
+su-exec appuser ./backend 2>&1

@@ -294,7 +294,9 @@ pub async fn get_host_listings(
         });
     }
 
-    let resp = HttpResponse::Ok().json(out);
+    let resp = HttpResponse::Ok()
+        .insert_header(("Cache-Control", "public, max-age=60, stale-while-revalidate=300"))
+        .json(out);
     log::info!(
         "get_host_listings latency_ms={}",
         started.elapsed().as_millis()
@@ -726,7 +728,9 @@ pub async fn get_listing(
             listing_cache
                 .insert(listing_id.clone(), listing.clone())
                 .await;
-            HttpResponse::Ok().json(listing)
+            HttpResponse::Ok()
+                .insert_header(("Cache-Control", "public, max-age=60, stale-while-revalidate=300"))
+                .json(listing)
         }
         Err(sqlx::Error::RowNotFound) => HttpResponse::NotFound().json(serde_json::json!({
             "error": "Listing not found"
@@ -1482,7 +1486,9 @@ pub async fn get_all_listings(
 
     if let Some(cached) = listing_cache.get(&cache_key).await {
         log::info!("Cache hit for {}", cache_key);
-        return HttpResponse::Ok().json(cached);
+        return HttpResponse::Ok()
+            .insert_header(("Cache-Control", "public, max-age=60, stale-while-revalidate=300"))
+            .json(cached);
     }
 
     // Select specific columns to avoid fetching heavy text fields
@@ -1632,5 +1638,7 @@ pub async fn get_all_listings(
         "get_all_listings latency_ms={} (cache miss)",
         started.elapsed().as_millis()
     );
-    HttpResponse::Ok().json(out)
+    HttpResponse::Ok()
+        .insert_header(("Cache-Control", "public, max-age=60, stale-while-revalidate=300"))
+        .json(out)
 }
