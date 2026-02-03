@@ -205,9 +205,8 @@ const cachedGet = async <T = any>(url: string, config?: any): Promise<T> => {
             .then(response => {
               cacheResponse(url, response.data, config?.params);
               notifyCacheUpdate(url, response.data);
-
-              // Invalidate queries to refresh UI with fresh data
-              queryClient.invalidateQueries();
+              // Avoid global invalidation here to prevent unnecessary refetches across the app.
+              // Pages relying on this data will re-render via subscribers or next mount.
             })
             .catch(() => {
               // Reset cooldown on error to allow retry

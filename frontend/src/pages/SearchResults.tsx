@@ -139,6 +139,10 @@ const SearchResults = () => {
     } = useInfiniteQuery<Product[], Error>({
         queryKey: ["products", location, guests],
         initialPageParam: 0,
+        staleTime: 120000,
+        gcTime: 600000,
+        placeholderData: (prev) => prev, // keepPreviousData behavior
+        retry: 2,
         queryFn: ({ pageParam }) => {
             const isManaged = (Object.keys(knownCities) as Array<keyof typeof knownCities>).includes(normalizeCity(location) as any) ||
                 (Object.keys(regions) as Array<keyof typeof regions>).includes(normalizeCity(location) as any) ||
@@ -148,17 +152,12 @@ const SearchResults = () => {
             return getProducts({
                 search: (location && !isManaged) ? location : undefined,
                 guests: guests > 0 ? guests : undefined,
-                limit: isManaged ? 100 : 20, // Fetch more for managed to ensure inference finds them
+                limit: 20,
                 offset: (pageParam as number) || 0,
             });
         },
         getNextPageParam: (lastPage, allPages) => {
-            const locNorm = normalizeCity(location);
-            const isManaged = (Object.keys(knownCities) as Array<keyof typeof knownCities>).includes(locNorm as any) ||
-                (Object.keys(regions) as Array<keyof typeof regions>).includes(locNorm as any) ||
-                locNorm === 'other' ||
-                locNorm === 'buea';
-            const limit = isManaged ? 100 : 20;
+            const limit = 20;
             return lastPage.length === limit ? allPages.length * limit : undefined;
         },
     });

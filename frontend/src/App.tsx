@@ -16,8 +16,8 @@ import { PWAInstallPrompt } from "./components/PWAInstallPrompt";
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 60000,
-      gcTime: 300000,
+      staleTime: 120000,
+      gcTime: 600000,
       refetchOnWindowFocus: false,
       retry: 3,
       retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
