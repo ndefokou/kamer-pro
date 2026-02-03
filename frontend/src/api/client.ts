@@ -96,22 +96,21 @@ apiClient.interceptors.response.use(
     return response;
   },
   (error) => {
-    const isAuthPage = window.location.pathname.includes("/login");
+    const isAuthPage = window.location.hash.includes('#/login');
 
-    if (error.response && error.response.status === 401 && !isAuthPage && !error.config.url?.includes("/account/me")) {
-
+    if (error.response && error.response.status === 401 && !isAuthPage && !error.config.url?.includes('/account/me')) {
       // Clear any stale auth data
-      localStorage.removeItem("token");
-      localStorage.removeItem("username");
-      localStorage.removeItem("userId");
+      localStorage.removeItem('token');
+      localStorage.removeItem('username');
+      localStorage.removeItem('userId');
 
-      // Redirect to login, preserving the intended destination
-      const current = `${window.location.pathname}${window.location.search}`;
-      const redirect = encodeURIComponent(current || "/");
-      window.location.href = `/login?redirect=${redirect}`;
+      // Redirect to login, preserving the intended destination (hash-based routing)
+      const current = window.location.hash || '#/';
+      const redirect = encodeURIComponent(current);
+      window.location.href = `#/login?redirect=${redirect}`;
 
     } else if (error.response && error.response.status === 401 && isAuthPage) {
-      console.log("Session check failed on auth page, this is expected.");
+      console.log('Session check failed on auth page, this is expected.');
     }
 
     return Promise.reject(error);
