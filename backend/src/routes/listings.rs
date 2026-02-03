@@ -707,11 +707,27 @@ pub async fn create_listing(
 
 /// GET /api/listings/:id - Get listing details
 #[get("/{id}")]
-pub async fn get_listing(pool: web::Data<PgPool>, path: web::Path<String>) -> impl Responder {
+pub async fn get_listing(
+    pool: web::Data<PgPool>,
+    listing_cache: web::Data<Cache<String, ListingWithDetails>>,
+    path: web::Path<String>,
+) -> impl Responder {
     let listing_id = path.into_inner();
 
+    // Check cache first
+    if let Some(cached) = listing_cache.get(&listing_id).await {
+        log::info!("Cache hit for listing {}", listing_id);
+        return HttpResponse::Ok().json(cached);
+    }
+
     match get_listing_with_details(pool.get_ref(), &listing_id).await {
-        Ok(listing) => HttpResponse::Ok().json(listing),
+        Ok(listing) => {
+            // Cache the result
+            listing_cache
+                .insert(listing_id.clone(), listing.clone())
+                .await;
+            HttpResponse::Ok().json(listing)
+        }
         Err(sqlx::Error::RowNotFound) => HttpResponse::NotFound().json(serde_json::json!({
             "error": "Listing not found"
         })),
@@ -725,6 +741,7 @@ pub async fn get_listing(pool: web::Data<PgPool>, path: web::Path<String>) -> im
 #[put("/{id}")]
 pub async fn update_listing(
     pool: web::Data<PgPool>,
+    listing_cache: web::Data<Cache<String, ListingWithDetails>>,
     req: HttpRequest,
     path: web::Path<String>,
     body: web::Json<UpdateListingRequest>,
@@ -849,10 +866,14 @@ pub async fn update_listing(
             query_builder.push_bind(&listing_id);
 
             let result = match query_builder.build().execute(pool.get_ref()).await {
-                Ok(_) => HttpResponse::Ok().json(serde_json::json!({
-                    "id": listing_id,
-                    "updated": true
-                })),
+                Ok(_) => {
+                    // Invalidate cache
+                    listing_cache.invalidate(&listing_id).await;
+                    HttpResponse::Ok().json(serde_json::json!({
+                        "id": listing_id,
+                        "updated": true
+                    }))
+                }
                 Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
                     "error": format!("Failed to update listing: {}", e)
                 })),
@@ -879,6 +900,7 @@ pub async fn update_listing(
 #[delete("/{id}")]
 pub async fn delete_listing(
     pool: web::Data<PgPool>,
+    listing_cache: web::Data<Cache<String, ListingWithDetails>>,
     req: HttpRequest,
     path: web::Path<String>,
 ) -> impl Responder {
@@ -902,9 +924,12 @@ pub async fn delete_listing(
                 .execute(pool.get_ref())
                 .await
             {
-                Ok(_) => HttpResponse::Ok().json(serde_json::json!({
-                    "message": "Listing deleted successfully"
-                })),
+                Ok(_) => {
+                    listing_cache.invalidate(&listing_id).await;
+                    HttpResponse::Ok().json(serde_json::json!({
+                        "message": "Listing deleted successfully"
+                    }))
+                }
                 Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
                     "error": format!("Failed to delete listing: {}", e)
                 })),
@@ -1054,6 +1079,7 @@ pub async fn get_my_listings(
 #[post("/{id}/publish")]
 pub async fn publish_listing(
     pool: web::Data<PgPool>,
+    listing_cache: web::Data<Cache<String, ListingWithDetails>>,
     req: HttpRequest,
     path: web::Path<String>,
 ) -> impl Responder {
@@ -1126,6 +1152,7 @@ pub async fn publish_listing(
     {
         Ok(_) => {
             log::info!("Successfully published listing {}", listing_id);
+            listing_cache.invalidate(&listing_id).await;
             HttpResponse::Ok().json(serde_json::json!({
                 "id": listing_id,
                 "status": "published"
@@ -1150,6 +1177,7 @@ pub async fn publish_listing(
 #[post("/{id}/unpublish")]
 pub async fn unpublish_listing(
     pool: web::Data<PgPool>,
+    listing_cache: web::Data<Cache<String, ListingWithDetails>>,
     req: HttpRequest,
     path: web::Path<String>,
 ) -> impl Responder {
@@ -1174,6 +1202,7 @@ pub async fn unpublish_listing(
         Ok(result) => {
             if result.rows_affected() > 0 {
                 log::info!("Successfully unpublished listing {}", listing_id);
+                listing_cache.invalidate(&listing_id).await;
                 let resp = HttpResponse::Ok().json(serde_json::json!({
                     "id": listing_id,
                     "status": "unpublished"
@@ -1220,6 +1249,7 @@ pub async fn unpublish_listing(
 #[post("/{id}/amenities")]
 pub async fn add_amenities(
     pool: web::Data<PgPool>,
+    listing_cache: web::Data<Cache<String, ListingWithDetails>>,
     req: HttpRequest,
     path: web::Path<String>,
     body: web::Json<AddAmenitiesRequest>,
@@ -1257,7 +1287,10 @@ pub async fn add_amenities(
             }
 
             match get_listing_with_details(pool.get_ref(), &listing_id).await {
-                Ok(listing) => HttpResponse::Ok().json(listing),
+                Ok(listing) => {
+                    listing_cache.invalidate(&listing_id).await;
+                    HttpResponse::Ok().json(listing)
+                }
                 Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
                     "error": format!("Failed to fetch listing: {}", e)
                 })),
@@ -1279,6 +1312,7 @@ pub async fn add_amenities(
 #[post("/{id}/photos")]
 pub async fn sync_photos(
     pool: web::Data<PgPool>,
+    listing_cache: web::Data<Cache<String, ListingWithDetails>>,
     req: HttpRequest,
     path: web::Path<String>,
     body: web::Json<SyncPhotosRequest>,
@@ -1349,7 +1383,10 @@ pub async fn sync_photos(
             }
 
             match get_listing_with_details(pool.get_ref(), &listing_id).await {
-                Ok(listing) => HttpResponse::Ok().json(listing),
+                Ok(listing) => {
+                    listing_cache.invalidate(&listing_id).await;
+                    HttpResponse::Ok().json(listing)
+                }
                 Err(e) => HttpResponse::InternalServerError()
                     .json(serde_json::json!({"error": format!("Failed to fetch listing: {}", e)})),
             }
@@ -1370,6 +1407,7 @@ pub async fn sync_photos(
 #[post("/{id}/videos")]
 pub async fn add_video(
     pool: web::Data<PgPool>,
+    listing_cache: web::Data<Cache<String, ListingWithDetails>>,
     req: HttpRequest,
     path: web::Path<String>,
     body: web::Json<AddVideoRequest>,
@@ -1402,7 +1440,10 @@ pub async fn add_video(
                 .await
             {
                 Ok(_) => match get_listing_with_details(pool.get_ref(), &listing_id).await {
-                    Ok(listing) => HttpResponse::Ok().json(listing),
+                    Ok(listing) => {
+                        listing_cache.invalidate(&listing_id).await;
+                        HttpResponse::Ok().json(listing)
+                    }
                     Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
                         "error": format!("Failed to fetch listing: {}", e)
                     })),

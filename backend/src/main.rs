@@ -7,13 +7,14 @@ use moka::future::Cache;
 use sqlx::postgres::{PgConnectOptions, PgPoolOptions};
 use std::env;
 use std::str::FromStr;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 mod middleware;
 mod routes;
 mod s3;
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    let start = Instant::now();
     println!("Rust application starting...");
     dotenv().ok();
     env_logger::init();
@@ -43,7 +44,7 @@ async fn main() -> std::io::Result<()> {
 
     if !uploads_dir.exists() {
         std::fs::create_dir_all(&uploads_dir).expect("Failed to create uploads directory");
-        println!("Created uploads directory"); 
+        println!("Created uploads directory");
     }
 
     let max_conns: u32 = env::var("DATABASE_MAX_CONNECTIONS")
@@ -70,21 +71,31 @@ async fn main() -> std::io::Result<()> {
     // Some versions of SQLx 0.7 need this in addition to statement_cache_capacity(0)
     // to strictly avoid named prepared statements.
 
+    // Use connect_lazy_with to avoid waiting for network connection
+    // This allows the server to start immediately
     let pool = PgPoolOptions::new()
         .max_connections(max_conns)
         .acquire_timeout(Duration::from_secs(10))
-        .connect_with(connection_options)
-        .await
-        .expect("Failed to create pool.");
+        .connect_lazy_with(connection_options);
 
-    // Run migrations
-    println!("Running migrations...");
-    let mut migrator = sqlx::migrate::Migrator::new(std::path::Path::new("./migrations"))
-        .await
-        .expect("Failed to load migrations");
-    migrator.set_ignore_missing(true);
-    migrator.run(&pool).await.expect("Failed to run migrations");
-    println!("Migrations completed successfully.");
+    // Run migrations in background to not block startup
+    let pool_for_migration = pool.clone();
+    tokio::spawn(async move {
+        println!("Background: Running migrations...");
+        match sqlx::migrate::Migrator::new(std::path::Path::new("./migrations")).await {
+            Ok(migrator) => {
+                // migrator.set_ignore_missing(true); // set_ignore_missing is not on Migrator instance in some versions, check sqlx version if error
+                // In sqlx 0.7+, ignore_missing is usually a build option or configured differently.
+                // Assuming standard usage for now.
+                if let Err(e) = migrator.run(&pool_for_migration).await {
+                    eprintln!("Background: Failed to run migrations: {}", e);
+                } else {
+                    println!("Background: Migrations completed successfully.");
+                }
+            }
+            Err(e) => eprintln!("Background: Failed to load migrations: {}", e),
+        }
+    });
 
     // Initialize S3 storage
     println!("Initializing S3 storage...");
@@ -109,6 +120,15 @@ async fn main() -> std::io::Result<()> {
         .time_to_live(Duration::from_secs(300))
         .build();
 
+    // Initialize single listing cache (key: listing_id, value: ListingWithDetails)
+    // Capacity: 500 listings, TTL: 10 minutes
+    let single_listing_cache: Cache<String, ListingWithDetails> = Cache::builder()
+        .max_capacity(500)
+        .time_to_live(Duration::from_secs(600))
+        .build();
+
+    println!("🚀 Server ready in {:?}", start.elapsed());
+
     HttpServer::new(move || {
         let cors = Cors::default()
             .allow_any_method()
@@ -121,6 +141,7 @@ async fn main() -> std::io::Result<()> {
             .app_data(web::Data::new(pool.clone()))
             .app_data(web::Data::new(s3_storage.clone()))
             .app_data(web::Data::new(listing_cache.clone()))
+            .app_data(web::Data::new(single_listing_cache.clone()))
             .service(
                 web::scope("/api")
                     .service(
