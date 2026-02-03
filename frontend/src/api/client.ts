@@ -246,7 +246,7 @@ const getCachedResponse = async (url: string, params?: any): Promise<any | null>
         return null;
       }
       return await dbService.getAllCachedListings();
-    } else if (url.includes('/account/user/')) {
+    } else if (url.includes('/account/user/')) { 
       // User data
       const id = parseInt(url.split('/account/user/')[1]);
       return await dbService.getCachedUser(id);
