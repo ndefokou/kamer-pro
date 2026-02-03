@@ -43,7 +43,7 @@ async fn main() -> std::io::Result<()> {
 
     if !uploads_dir.exists() {
         std::fs::create_dir_all(&uploads_dir).expect("Failed to create uploads directory");
-        println!("Created uploads directory");
+        println!("Created uploads directory"); 
     }
 
     let max_conns: u32 = env::var("DATABASE_MAX_CONNECTIONS")
