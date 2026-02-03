@@ -30,10 +30,14 @@ RUN --mount=type=cache,target=/usr/local/cargo/registry \
 # Now copy the rest of the application files
 COPY . .
 
+# Ensure public directory exists
+RUN mkdir -p public/uploads
+
 # Build the application
 RUN --mount=type=cache,target=/usr/local/cargo/registry \
     --mount=type=cache,target=/usr/src/app/target \
-    cargo build --release --locked
+    cargo build --release --locked && \
+    cp target/release/backend ./backend
 
 # 2. Runtime stage
 FROM alpine:3.20
@@ -42,7 +46,7 @@ WORKDIR /app
 # Install runtime dependencies
 RUN apk add --no-cache openssl ca-certificates curl libgcc postgresql-client su-exec
 
-COPY --from=builder /usr/src/app/target/release/backend .
+COPY --from=builder /usr/src/app/backend .
 COPY --from=builder /usr/src/app/migrations /app/migrations
 COPY --from=builder /usr/src/app/public /app/public
 
