@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { WebAuthService } from "@/services/webAuthService";
+import Loading from "@/components/Loading";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { Eye, EyeOff, ChevronLeft } from "lucide-react";
@@ -129,11 +130,7 @@ const Login = () => {
   };
 
   if (authLoading) {
-    return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div>{t("common.loading")}</div>
-      </div>
-    );
+    return <Loading fullScreen message={t("common.loading")} />;
   }
 
   return (

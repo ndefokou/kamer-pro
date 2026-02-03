@@ -5,7 +5,7 @@ interface CalendarPricing {
     listing_id: string;
     date: string;
     price: number;
-    is_available: number;
+    is_available: boolean;
 }
 
 interface CalendarGridProps {
@@ -59,7 +59,7 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
     const isAvailable = (date: Date): boolean => {
         const dateStr = formatDate(date);
         const pricing = pricingData.get(dateStr);
-        return pricing?.is_available !== 0;
+        return pricing?.is_available !== false;
     };
 
     const isSelected = (date: Date): boolean => {

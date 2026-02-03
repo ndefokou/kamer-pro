@@ -7,24 +7,30 @@ use moka::future::Cache;
 use sqlx::postgres::{PgConnectOptions, PgPoolOptions};
 use std::env;
 use std::str::FromStr;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 mod middleware;
 mod routes;
 mod s3;
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    println!("Rust application starting...");
-    dotenv().ok();
-    env_logger::init();
-    println!("Logger initialized. Starting server...");
+    let start = Instant::now();
+
+    let fast_start = env::var("FAST_START")
+        .map(|v| matches!(v.as_str(), "1" | "true" | "TRUE"))
+        .unwrap_or(false);
+
+    if !fast_start {
+        println!("🟡 Rust application starting...");
+    }
+
+    if !fast_start {
+        dotenv().ok();
+        env_logger::init();
+        println!("Logger initialized. Starting server...");
+    }
 
     let mut database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-
-    // For PGBouncer in transaction mode (common on Render/Supabase Pooler),
-    // we must disable named prepared statements.
-    // 1. prepare_threshold=0: tells SQLx to use unnamed prepared statements
-    // 2. statement_cache_capacity=0: tells SQLx not to cache statements
 
     if !database_url.contains("prepare_threshold") {
         let separator = if database_url.contains('?') { "&" } else { "?" };
@@ -36,25 +42,21 @@ async fn main() -> std::io::Result<()> {
         database_url.push_str(&format!("{}statement_cache_capacity=0", separator));
     }
 
-    // Create the uploads directory if it doesn't exist
+    // Ensure the uploads directory exists (idempotent)
     let uploads_dir = std::path::Path::new("public").join("uploads");
-
-    println!("Uploads directory: {}", uploads_dir.display());
-
-    if !uploads_dir.exists() {
-        std::fs::create_dir_all(&uploads_dir).expect("Failed to create uploads directory");
-        println!("Created uploads directory");
-    }
+    std::fs::create_dir_all(&uploads_dir).expect("Failed to create uploads directory");
 
     let max_conns: u32 = env::var("DATABASE_MAX_CONNECTIONS")
         .ok()
         .and_then(|v| v.parse::<u32>().ok())
         .unwrap_or(10);
 
-    println!(
-        "Initializing database pool: max_connections={} (set DATABASE_MAX_CONNECTIONS to change)",
-        max_conns
-    );
+    if !fast_start {
+        println!(
+            "Initializing database pool: max_connections={} (set DATABASE_MAX_CONNECTIONS to change)",
+            max_conns
+        );
+    }
 
     let connection_options = PgConnectOptions::from_str(&database_url)
         .map_err(|e| {
@@ -65,32 +67,47 @@ async fn main() -> std::io::Result<()> {
         .expect("Malformed DATABASE_URL")
         .statement_cache_capacity(0);
 
-    println!("Database connection properties: statement_cache_capacity=0, prepare_threshold=0");
+    if !fast_start {
+        println!("Database connection properties: statement_cache_capacity=0, prepare_threshold=0");
+    }
 
-    // Some versions of SQLx 0.7 need this in addition to statement_cache_capacity(0)
-    // to strictly avoid named prepared statements.
 
+    // Create a lazy pool so startup doesn't block on establishing DB connections.
+    // Actual connections will be opened on first use.
     let pool = PgPoolOptions::new()
         .max_connections(max_conns)
-        .acquire_timeout(Duration::from_secs(10))
-        .connect_with(connection_options)
-        .await
-        .expect("Failed to create pool.");
+        .min_connections(0)
+        .acquire_timeout(Duration::from_secs(5))
+        .connect_lazy_with(connection_options);
 
-    // Run migrations
-    println!("Running migrations...");
-    let mut migrator = sqlx::migrate::Migrator::new(std::path::Path::new("./migrations"))
-        .await
-        .expect("Failed to load migrations");
-    migrator.set_ignore_missing(true);
-    migrator.run(&pool).await.expect("Failed to run migrations");
-    println!("Migrations completed successfully.");
+    // Optionally run migrations on startup when explicitly enabled.
+    // Default is to skip to avoid blocking startup; set MIGRATE_ON_START=true to enable.
+    if env::var("MIGRATE_ON_START").unwrap_or_else(|_| "false".into()) == "true" {
+        if !fast_start { println!("MIGRATE_ON_START=true: running migrations in background..."); }
+        let pool_clone = pool.clone();
+        tokio::spawn(async move {
+            let start = std::time::Instant::now();
+            match sqlx::migrate::Migrator::new(std::path::Path::new("./migrations")).await {
+                Ok(mut migrator) => {
+                    migrator.set_ignore_missing(true);
+                    if let Err(e) = migrator.run(&pool_clone).await {
+                        eprintln!("Failed to run migrations: {}", e);
+                    } else if !fast_start {
+                        println!("Migrations completed successfully in {:?}.", start.elapsed());
+                    }
+                }
+                Err(e) => eprintln!("Failed to load migrations: {}", e),
+            }
+        });
+    } else {
+        if !fast_start { println!("MIGRATE_ON_START not set; skipping migrations at startup."); }
+    }
 
     // Initialize S3 storage
-    println!("Initializing S3 storage...");
-    let s3_storage = match s3::S3Storage::new().await {
+    if !fast_start { println!("Initializing S3 storage..."); }
+    let s3_storage = match s3::S3Storage::new() {
         Ok(storage) => {
-            println!("S3 storage initialized successfully.");
+            if !fast_start { println!("S3 storage initialized successfully."); }
             storage
         }
         Err(e) => {
@@ -109,7 +126,7 @@ async fn main() -> std::io::Result<()> {
         .time_to_live(Duration::from_secs(300))
         .build();
 
-    HttpServer::new(move || {
+    let server = HttpServer::new(move || {
         let cors = Cors::default()
             .allow_any_method()
             .allow_any_header()
@@ -212,8 +229,18 @@ async fn main() -> std::io::Result<()> {
             )
             // Serve static files from /uploads route
             .service(fs::Files::new("/uploads", uploads_dir_clone.clone()).show_files_listing())
-    })
-    .bind("0.0.0.0:8082")?
-    .run()
-    .await
+    });
+
+    if !fast_start { println!("🚀 Server fully initialized in {:?}", start.elapsed()); }
+
+    let workers: usize = env::var("SERVER_WORKERS")
+        .ok()
+        .and_then(|v| v.parse::<usize>().ok())
+        .unwrap_or(1);
+
+    server
+        .workers(workers)
+        .bind("0.0.0.0:8082")?
+        .run()
+        .await
 }

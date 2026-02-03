@@ -1,12 +1,13 @@
+# syntax=docker/dockerfile:1.6
 # 1. Build stage
 FROM rust:1.83-alpine3.20 AS builder
 WORKDIR /usr/src/app
 
-# Switch to nightly toolchain to use unstable features
-RUN rustup default nightly
-
 # Install build dependencies for Alpine
-RUN apk add --no-cache musl-dev openssl-dev openssl-libs-static pkgconfig
+RUN apk add --no-cache musl-dev openssl-dev pkgconfig
+
+# Switch to nightly toolchain so Cargo supports crates that opt into edition2024
+RUN rustup default nightly
 
 # Copy dependency manifests first to leverage Docker cache
 COPY Cargo.toml Cargo.lock ./
@@ -22,16 +23,17 @@ RUN mkdir .cargo && \
 
 # Create a dummy main.rs to build only dependencies
 RUN mkdir src && echo "fn main() {}" > src/main.rs
-RUN cargo build -j 2 --release
+RUN --mount=type=cache,target=/usr/local/cargo/registry \
+    --mount=type=cache,target=/usr/src/app/target \
+    cargo build --release --locked
 
 # Now copy the rest of the application files
 COPY . .
 
 # Build the application
-RUN cargo build -j 2 --release
-
-# Download pre-compiled sqlx-cli binary
-RUN cargo install sqlx-cli --version=0.7.3 --features native-tls,rustls,postgres --no-default-features
+RUN --mount=type=cache,target=/usr/local/cargo/registry \
+    --mount=type=cache,target=/usr/src/app/target \
+    cargo build --release --locked
 
 # 2. Runtime stage
 FROM alpine:3.20
@@ -41,7 +43,6 @@ WORKDIR /app
 RUN apk add --no-cache openssl ca-certificates curl libgcc postgresql-client su-exec
 
 COPY --from=builder /usr/src/app/target/release/backend .
-COPY --from=builder /usr/local/cargo/bin/sqlx /usr/local/bin/
 COPY --from=builder /usr/src/app/migrations /app/migrations
 COPY --from=builder /usr/src/app/public /app/public
 

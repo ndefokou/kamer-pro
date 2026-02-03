@@ -9,6 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getImageUrl } from '@/lib/utils';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import HostHeader from '@/components/HostHeader';
+import Loading from '@/components/Loading';
 import { getUserById } from '@/services/accountService';
 import { useTranslation } from 'react-i18next';
 
@@ -161,7 +162,7 @@ const Reservations: React.FC = () => {
     };
 
     if (loading) {
-        return <div className="p-8 text-center text-gray-500">{t('common.loading', 'Loading...')}</div>;
+        return <Loading fullScreen message={t('common.loading', 'Loading...')} />;
     }
 
     const getStatusLabel = (s: string) => {
