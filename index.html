@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Le Mboko</title>
+  <meta name="description"
+    content="Connect with buyers and sellers in Yaoundé, Cameroon. Browse products, list items, and discover local deals on Le Mboko marketplace." />
+  <meta name="author" content="Le Mboko" />
+  <link rel="icon" type="image/png" href="/le-mboko-frontend/logo.png" />
+  <link rel="shortcut icon" type="image/png" href="/le-mboko-frontend/logo.png" />
+  <link rel="apple-touch-icon" href="/le-mboko-frontend/logo.png" />
+  <style>
+    /* Critical Fonts and Reset */
+    :root {
+      --primary: #0D9488;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background: #ffffff;
+    }
+
+    @font-face {
+      font-family: 'system-sans';
+      src: local("-apple-system"), local("BlinkMacSystemFont"), local("Segoe UI"), local("Roboto");
+      font-display: swap;
+    }
+  </style>
+  <link rel="mask-icon" href="/masked-icon.svg" color="#FFFFFF" />
+  <meta name="theme-color" content="#ffffff" />
+  <link rel="preconnect" href="http://127.0.0.1:8082" />
+  <link rel="dns-prefetch" href="http://127.0.0.1:8082" />
+  <link rel="preconnect" href="https://unpkg.com" />
+  <link rel="modulepreload" href="data:application/octet-stream;base64,aW1wb3J0IFJlYWN0IGZyb20gInJlYWN0IjsKaW1wb3J0IFJlYWN0RE9NIGZyb20gInJlYWN0LWRvbS9jbGllbnQiOwppbXBvcnQgQXBwIGZyb20gIi4vQXBwLnRzeCI7CmltcG9ydCAiLi9pbmRleC5jc3MiOwppbXBvcnQgeyBUb2FzdGVyIH0gZnJvbSAiQC9jb21wb25lbnRzL3VpL3RvYXN0ZXIiOwppbXBvcnQgIi4vaTE4biI7CmltcG9ydCB7IFN1c3BlbnNlIH0gZnJvbSAicmVhY3QiOwoKaW1wb3J0IFNwbGFzaFNjcmVlbiBmcm9tICJAL2NvbXBvbmVudHMvU3BsYXNoU2NyZWVuIjsKClJlYWN0RE9NLmNyZWF0ZVJvb3QoZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoInJvb3QiKSEpLnJlbmRlcigKICA8UmVhY3QuU3RyaWN0TW9kZT4KICAgIDxTdXNwZW5zZSBmYWxsYmFjaz17PFNwbGFzaFNjcmVlbiAvPn0+CiAgICAgIDxBcHAgLz4KICAgIDwvU3VzcGVuc2U+CiAgICA8VG9hc3RlciAvPgogIDwvUmVhY3QuU3RyaWN0TW9kZT4sCik7Cg==" />
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <script type="module" crossorigin src="/le-mboko-frontend/assets/index-BumHlSai.js"></script>
+  <link rel="stylesheet" crossorigin href="/le-mboko-frontend/assets/index-rYl6YJc3.css">
+<link rel="manifest" href="/le-mboko-frontend/manifest.webmanifest"><script id="vite-plugin-pwa:register-sw" src="/le-mboko-frontend/registerSW.js"></script></head>
+
+<body>
+  <div id="root">
+    <!-- Instant Splash Screen for Poor Networks -->
+    <style>
+      .initial-splash {
+        position: fixed;
+        inset: 0;
+        background: #ffffff;
+        flex-direction: column;
+        justify-content: center;
+        z-index: 9999;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        display: flex;
+        align-items: center;
+      }
+
+      .splash-content {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 24px;
+        animation: fadeIn 0.5s ease-out;
+      }
+
+      .logo-box {
+        position: relative;
+        height: 96px;
+        width: 96px;
+        background: #0D9488;
+        /* Primary Teal */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 16px;
+        box-shadow: 0 20px 25px -5px rgba(13, 148, 136, 0.2);
+        transform: rotate(12deg);
+      }
+
+      .logo-icon {
+        height: 48px;
+        width: 48px;
+        color: white;
+        transform: rotate(-12deg);
+      }
+
+      .splash-title {
+        font-size: 30px;
+        font-weight: 700;
+        color: #111827;
+        margin: 0;
+      }
+
+      .splash-title span {
+        color: #0D9488;
+      }
+
+      .loading-dots {
+        display: flex;
+        gap: 4px;
+        margin-top: 8px;
+      }
+
+      .dot {
+        height: 6px;
+        width: 6px;
+        background: #0D9488;
+        border-radius: 50%;
+        animation: bounce 1.4s infinite ease-in-out both;
+      }
+
+      .dot:nth-child(1) {
+        animation-delay: -0.32s;
+      }
+
+      .dot:nth-child(2) {
+        animation-delay: -0.16s;
+      }
+
+      @keyframes bounce {
+
+        0%,
+        80%,
+        100% {
+          transform: scale(0);
+        }
+
+        40% {
+          transform: scale(1.0);
+        }
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: scale(0.95);
+        }
+
+        to {
+          opacity: 1;
+          transform: scale(1);
+        }
+      }
+
+      .splash-tagline {
+        color: #9CA3AF;
+        font-size: 14px;
+        font-weight: 500;
+        position: absolute;
+        bottom: -64px;
+        white-space: nowrap;
+      }
+    </style>
+    <div class="initial-splash">
+      <div class="splash-content">
+        <div class="logo-box">
+          <svg class="logo-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+            <polyline points="9 22 9 12 15 12 15 22" />
+          </svg>
+        </div>
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+          <h1 class="splash-title">Le <span>Mboko</span></h1>
+          <div class="loading-dots">
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+
+</html>

@@ -1,0 +1,1 @@
+import{ab as a}from"./index-BumHlSai.js";const c=async()=>(await a.get("/account/me")).data,n=async t=>(await a.get(`/account/user/${t}`)).data,r=async t=>(await a.put("/account/update",t)).data;export{n as a,c as g,r as u};
