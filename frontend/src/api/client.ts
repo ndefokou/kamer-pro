@@ -14,6 +14,7 @@ const getBaseUrl = () => {
 const apiClient = axios.create({
   baseURL: getBaseUrl(),
   withCredentials: true,
+  timeout: 15000,
 });
 
 // Request deduplication map
@@ -46,12 +47,31 @@ apiClient.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    // Adaptive timeout per request based on network quality (fail fast on poor connections)
+    try {
+      const quality = networkService.getCurrentInfo().quality;
+      const timeout = quality === 'poor' ? 6000 : quality === 'moderate' ? 10000 : 15000;
+      config.timeout = Math.max(3000, timeout);
+    } catch (_e) {
+      void 0;
+    }
     return config;
   },
   (error) => {
     return Promise.reject(error);
   }
 );
+
+// Retry helper for transient GET failures
+const __shouldRetryGet = (error: unknown) => {
+  const err = error as import('axios').AxiosError;
+  const cfg = err?.config;
+  if (!cfg) return false;
+  const method = (cfg.method || '').toLowerCase();
+  if (method !== 'get') return false;
+  const status = err.response?.status;
+  return !status || status === 408 || status === 429 || (status >= 500 && status < 600);
+};
 
 apiClient.interceptors.response.use(
   (response) => {
@@ -96,6 +116,21 @@ apiClient.interceptors.response.use(
     return response;
   },
   (error) => {
+    // Lightweight exponential backoff retries for GETs on flaky networks
+    try {
+      const cfg: import('axios').AxiosRequestConfig & { __retryCount?: number } = (error?.config || {}) as any;
+      if (__shouldRetryGet(error)) {
+        cfg.__retryCount = (cfg.__retryCount || 0) + 1;
+        const quality = networkService.getCurrentInfo().quality;
+        const maxRetries = quality === 'poor' ? 2 : quality === 'moderate' ? 2 : 3;
+        if (cfg.__retryCount <= maxRetries) {
+          const delay = Math.min(1000 * 2 ** (cfg.__retryCount - 1), 5000);
+          return new Promise((resolve) => setTimeout(resolve, delay)).then(() => apiClient.request(cfg));
+        }
+      }
+    } catch (_e) {
+      void 0;
+    }
     const isAuthPage = window.location.hash.includes('#/login');
 
     // Suppress 401 for session check - return "not logged in" state without error
@@ -128,7 +163,7 @@ const cachedGet = async <T = any>(url: string, config?: any): Promise<T> => {
 
   // Check for pending request (deduplication)
   if (pendingRequests.has(cacheKey)) {
-    return pendingRequests.get(cacheKey);
+    return pendingRequests.get(cacheKey) as Promise<T>;
   }
 
   const requestPromise = (async () => {
@@ -149,7 +184,7 @@ const cachedGet = async <T = any>(url: string, config?: any): Promise<T> => {
                   localStorage.setItem('critical_listings', JSON.stringify(res.data.slice(0, 10)));
                 }
                 cacheResponse(url, res.data, config?.params);
-              }).catch(() => { });
+              }).catch(() => undefined);
               return parsed;
             }
           } catch (e) { }
@@ -201,7 +236,7 @@ const cachedGet = async <T = any>(url: string, config?: any): Promise<T> => {
     }
   })();
 
-  pendingRequests.set(cacheKey, requestPromise);
+  pendingRequests.set(cacheKey, requestPromise as Promise<any>);
   return requestPromise;
 };
 

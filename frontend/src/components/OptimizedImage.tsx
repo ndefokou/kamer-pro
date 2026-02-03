@@ -52,14 +52,14 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
 
             // Add quality parameter based on network
             if (targetQuality === 'low') {
-                url.searchParams.set('w', '400');
-                url.searchParams.set('q', '50');
+                url.searchParams.set('w', '200');
+                url.searchParams.set('q', '30');
             } else if (targetQuality === 'medium') {
-                url.searchParams.set('w', '800');
-                url.searchParams.set('q', '70');
+                url.searchParams.set('w', '600');
+                url.searchParams.set('q', '60');
             } else {
-                url.searchParams.set('w', '1200');
-                url.searchParams.set('q', '85');
+                url.searchParams.set('w', '1000');
+                url.searchParams.set('q', '80');
             }
 
             // Request WebP format if supported
