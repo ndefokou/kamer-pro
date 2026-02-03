@@ -44,9 +44,10 @@ FROM alpine:3.20
 WORKDIR /app
 
 # Install runtime dependencies
-RUN apk add --no-cache openssl ca-certificates curl libgcc postgresql-client su-exec
+RUN apk add --no-cache openssl ca-certificates curl libgcc postgresql-client su-exec libc6-compat
 
 COPY --from=builder /usr/src/app/backend .
+RUN chmod +x backend
 COPY --from=builder /usr/src/app/migrations /app/migrations
 COPY --from=builder /usr/src/app/public /app/public
 

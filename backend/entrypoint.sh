@@ -4,6 +4,8 @@ set -e
 echo "--- Running entrypoint.sh ---"
 echo "Running as user: $(whoami)"
 echo "DATABASE_URL is set"
+ls -la ./backend
+ldd ./backend || echo "ldd not available or failed"
 
 # Optionally wait for Postgres to be ready (skip when SKIP_DB_WAIT=true)
 if [ "$SKIP_DB_WAIT" = "true" ]; then
