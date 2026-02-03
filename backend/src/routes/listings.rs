@@ -228,8 +228,8 @@ pub async fn get_host_listings(
     let photo_rows = match sqlx::query_as::<_, ListingPhoto>(
         r#"
         WITH ranked AS (
-            SELECT id, listing_id, url, caption, room_type, is_cover, display_order, uploaded_at,
-                   ROW_NUMBER() OVER (PARTITION BY listing_id ORDER BY is_cover DESC, display_order, id) AS rn
+            SELECT id, listing_id, url, caption, room_type, COALESCE(is_cover, FALSE) as is_cover, COALESCE(display_order, 0) as display_order, uploaded_at,
+                   ROW_NUMBER() OVER (PARTITION BY listing_id ORDER BY COALESCE(is_cover, FALSE) DESC, COALESCE(display_order, 0), id) AS rn
             FROM listing_photos
             WHERE listing_id = ANY($1)
         )
@@ -1001,8 +1001,8 @@ pub async fn get_my_listings(
     let photo_rows = match sqlx::query_as::<_, ListingPhoto>(
         r#"
         WITH ranked AS (
-            SELECT id, listing_id, url, caption, room_type, is_cover, display_order, uploaded_at,
-                   ROW_NUMBER() OVER (PARTITION BY listing_id ORDER BY is_cover DESC, display_order, id) AS rn
+            SELECT id, listing_id, url, caption, room_type, COALESCE(is_cover, FALSE) as is_cover, COALESCE(display_order, 0) as display_order, uploaded_at,
+                   ROW_NUMBER() OVER (PARTITION BY listing_id ORDER BY COALESCE(is_cover, FALSE) DESC, COALESCE(display_order, 0), id) AS rn
             FROM listing_photos
             WHERE listing_id = ANY($1)
         )
@@ -1575,8 +1575,8 @@ pub async fn get_all_listings(
     let photo_rows = match sqlx::query_as::<_, ListingPhoto>(
         r#"
         WITH ranked AS (
-            SELECT id, listing_id, url, caption, room_type, is_cover, display_order, uploaded_at,
-                   ROW_NUMBER() OVER (PARTITION BY listing_id ORDER BY is_cover DESC, display_order, id) AS rn
+            SELECT id, listing_id, url, caption, room_type, COALESCE(is_cover, FALSE) as is_cover, COALESCE(display_order, 0) as display_order, uploaded_at,
+                   ROW_NUMBER() OVER (PARTITION BY listing_id ORDER BY COALESCE(is_cover, FALSE) DESC, COALESCE(display_order, 0), id) AS rn
             FROM listing_photos
             WHERE listing_id = ANY($1)
         )

@@ -5,6 +5,7 @@ use actix_web::{middleware::Compress, web, App, HttpServer};
 use dotenv::dotenv;
 use moka::future::Cache;
 use sqlx::postgres::{PgConnectOptions, PgPoolOptions};
+use sqlx::Executor;
 use std::env;
 use std::str::FromStr;
 use std::time::{Duration, Instant};
@@ -71,19 +72,26 @@ async fn main() -> std::io::Result<()> {
         println!("Database connection properties: statement_cache_capacity=0, prepare_threshold=0");
     }
 
-
     // Create a lazy pool so startup doesn't block on establishing DB connections.
     // Actual connections will be opened on first use.
     let pool = PgPoolOptions::new()
         .max_connections(max_conns)
         .min_connections(0)
         .acquire_timeout(Duration::from_secs(5))
+        .after_connect(|conn, _meta| {
+            Box::pin(async move {
+                conn.execute("DEALLOCATE ALL").await?;
+                Ok(())
+            })
+        })
         .connect_lazy_with(connection_options);
 
     // Optionally run migrations on startup when explicitly enabled.
     // Default is to skip to avoid blocking startup; set MIGRATE_ON_START=true to enable.
     if env::var("MIGRATE_ON_START").unwrap_or_else(|_| "false".into()) == "true" {
-        if !fast_start { println!("MIGRATE_ON_START=true: running migrations in background..."); }
+        if !fast_start {
+            println!("MIGRATE_ON_START=true: running migrations in background...");
+        }
         let pool_clone = pool.clone();
         tokio::spawn(async move {
             let start = std::time::Instant::now();
@@ -93,21 +101,30 @@ async fn main() -> std::io::Result<()> {
                     if let Err(e) = migrator.run(&pool_clone).await {
                         eprintln!("Failed to run migrations: {}", e);
                     } else if !fast_start {
-                        println!("Migrations completed successfully in {:?}.", start.elapsed());
+                        println!(
+                            "Migrations completed successfully in {:?}.",
+                            start.elapsed()
+                        );
                     }
                 }
                 Err(e) => eprintln!("Failed to load migrations: {}", e),
             }
         });
     } else {
-        if !fast_start { println!("MIGRATE_ON_START not set; skipping migrations at startup."); }
+        if !fast_start {
+            println!("MIGRATE_ON_START not set; skipping migrations at startup.");
+        }
     }
 
     // Initialize S3 storage
-    if !fast_start { println!("Initializing S3 storage..."); }
+    if !fast_start {
+        println!("Initializing S3 storage...");
+    }
     let s3_storage = match s3::S3Storage::new() {
         Ok(storage) => {
-            if !fast_start { println!("S3 storage initialized successfully."); }
+            if !fast_start {
+                println!("S3 storage initialized successfully.");
+            }
             storage
         }
         Err(e) => {
@@ -123,6 +140,13 @@ async fn main() -> std::io::Result<()> {
     // Capacity: 100 unique queries, TTL: 5 minutes
     let listing_cache: Cache<String, Vec<ListingWithDetails>> = Cache::builder()
         .max_capacity(100)
+        .time_to_live(Duration::from_secs(300))
+        .build();
+
+    // Initialize single listing cache (key: listing ID, value: listing details)
+    // Capacity: 500 items, TTL: 5 minutes
+    let single_listing_cache: Cache<String, ListingWithDetails> = Cache::builder()
+        .max_capacity(500)
         .time_to_live(Duration::from_secs(300))
         .build();
 
@@ -232,16 +256,14 @@ async fn main() -> std::io::Result<()> {
             .service(fs::Files::new("/uploads", uploads_dir_clone.clone()).show_files_listing())
     });
 
-    if !fast_start { println!("🚀 Server fully initialized in {:?}", start.elapsed()); }
+    if !fast_start {
+        println!("🚀 Server fully initialized in {:?}", start.elapsed());
+    }
 
     let workers: usize = env::var("SERVER_WORKERS")
         .ok()
         .and_then(|v| v.parse::<usize>().ok())
         .unwrap_or(1);
 
-    server
-        .workers(workers)
-        .bind("0.0.0.0:8082")?
-        .run()
-        .await
+    server.workers(workers).bind("0.0.0.0:8082")?.run().await
 }
