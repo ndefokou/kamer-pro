@@ -46,6 +46,22 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
 
         try {
             const url = new URL(originalUrl, window.location.origin);
+
+            // Supabase Storage supports an image render endpoint
+            const isSupabase = url.hostname.includes('supabase.co') && url.pathname.includes('/storage/v1/object/public/');
+            if (isSupabase) {
+                const supa = new URL(url.toString());
+                // Correct path: /storage/v1/render/image/public/<bucket>/<path>
+                supa.pathname = supa.pathname.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/');
+                supa.searchParams.set('width', '20');
+                supa.searchParams.set('quality', '10');
+                supa.searchParams.set('resize', 'contain');
+                if (supportsWebP()) {
+                    supa.searchParams.set('format', 'webp');
+                }
+                return supa.toString();
+            }
+
             url.searchParams.set('w', '20');
             url.searchParams.set('q', '10');
             url.searchParams.set('blur', '10');
@@ -86,7 +102,8 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
 
             if (isSupabase) {
                 const supa = new URL(url.toString());
-                supa.pathname = supa.pathname.replace('/storage/v1/object/', '/storage/v1/render/image/');
+                // Correct render path expected by Supabase: /storage/v1/render/image/public/... 
+                supa.pathname = supa.pathname.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/');
                 supa.searchParams.set('width', imageWidth.toString());
                 supa.searchParams.set('quality', targetQuality === 'low' ? '30' : targetQuality === 'medium' ? '60' : '80');
                 if (supportsWebP()) {
@@ -186,40 +203,26 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
                     return;
                 }
 
-                // Step 3: Load from network with optimized quality
+                // Step 3: Build an optimized URL and set it immediately so the browser can load it natively
                 const optimizedUrl = getOptimizedUrl(src, effectiveQuality);
-
-                // Try to fetch and cache the image
-                try {
-                    const response = await fetch(optimizedUrl, {
-                        mode: 'cors',
-                        credentials: 'omit',
-                    });
-
-                    if (!response.ok) {
-                        throw new Error(`HTTP ${response.status}`);
-                    }
-
-                    const blob = await response.blob();
-
-                    // Cache the image
-                    await dbService.cacheImage(src, blob);
-
-                    if (isMounted) {
-                        const objectUrl = URL.createObjectURL(blob);
-                        setImageSrc(objectUrl);
-                        setIsLoading(false);
-                        onLoad?.();
-                    }
-                } catch (fetchError) {
-                    // Fallback: use direct URL loading (let browser handle it)
-                    console.warn('Fetch failed, using direct URL:', fetchError);
-                    if (isMounted) {
-                        setImageSrc(optimizedUrl);
-                        setIsLoading(false);
-                        // Don't call onLoad here, let the img onLoad event handle it
-                    }
+                if (isMounted) {
+                    setImageSrc(optimizedUrl);
                 }
+
+                // Step 4: Best-effort background fetch to cache the image (non-blocking)
+                (async () => {
+                    try {
+                        const response = await fetch(optimizedUrl, {
+                            mode: 'cors',
+                            credentials: 'omit',
+                        });
+                        if (!response.ok) return; // don't throw; keep UX smooth
+                        const blob = await response.blob();
+                        await dbService.cacheImage(src, blob).catch(() => undefined);
+                    } catch {
+                        // Ignore caching errors; the direct URL is already set
+                    }
+                })();
             } catch (error) {
                 console.error('Error loading image:', error);
                 if (isMounted) {
