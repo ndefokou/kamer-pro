@@ -493,7 +493,12 @@ pub async fn get_towns(pool: web::Data<PgPool>) -> impl Responder {
     .await;
 
     match result {
-        Ok(rows) => HttpResponse::Ok().json(rows),
+        Ok(rows) => HttpResponse::Ok()
+            .insert_header((
+                "Cache-Control",
+                "public, max-age=300, stale-while-revalidate=600",
+            ))
+            .json(rows),
         Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
             "error": format!("Database error: {}", e)
         })),

@@ -1,7 +1,7 @@
 use crate::routes::listings::ListingWithDetails;
 use actix_cors::Cors;
 use actix_files as fs;
-use actix_web::{middleware::Compress, web, App, HttpServer};
+use actix_web::{middleware::{Compress, DefaultHeaders}, web, App, HttpServer};
 use dotenv::dotenv;
 use moka::future::Cache;
 use sqlx::postgres::{PgConnectOptions, PgPoolOptions};
@@ -254,8 +254,23 @@ async fn main() -> std::io::Result<()> {
                             .service(routes::admin::get_reports),
                     ),
             )
-            // Serve static files from /uploads route
-            .service(fs::Files::new("/uploads", uploads_dir_clone.clone()).show_files_listing())
+            // Serve static files from /uploads route with strong caching
+            .service(
+                web::scope("/uploads")
+                    .wrap(
+                        DefaultHeaders::new().add((
+                            "Cache-Control",
+                            "public, max-age=600, stale-while-revalidate=600",
+                        )),
+                    )
+                    .service(
+                        fs::Files::new("/", uploads_dir_clone.clone())
+                            .use_etag(true)
+                            .use_last_modified(true)
+                            .prefer_utf8(true)
+                            .show_files_listing(),
+                    ),
+            )
     });
 
     if !fast_start {
@@ -265,7 +280,7 @@ async fn main() -> std::io::Result<()> {
     let workers: usize = env::var("SERVER_WORKERS")
         .ok()
         .and_then(|v| v.parse::<usize>().ok())
-        .unwrap_or(1);
+        .unwrap_or_else(|| num_cpus::get().max(1));
 
     server.workers(workers).bind("0.0.0.0:8082")?.run().await
 }
