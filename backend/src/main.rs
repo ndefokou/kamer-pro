@@ -50,15 +50,22 @@ async fn main() -> std::io::Result<()> {
     let uploads_dir = std::path::Path::new("public").join("uploads");
     std::fs::create_dir_all(&uploads_dir).expect("Failed to create uploads directory");
 
+    // Keep pool very small by default to avoid Supabase session limits
     let max_conns: u32 = env::var("DATABASE_MAX_CONNECTIONS")
         .ok()
         .and_then(|v| v.parse::<u32>().ok())
-        .unwrap_or(50);
+        .unwrap_or(1);
+
+    // How long to wait for a free connection in the pool before timing out
+    let acquire_timeout_ms: u64 = env::var("DATABASE_ACQUIRE_TIMEOUT_MS")
+        .ok()
+        .and_then(|v| v.parse::<u64>().ok())
+        .unwrap_or(20_000);
 
     if !fast_start {
         println!(
-            "Initializing database pool: max_connections={} (set DATABASE_MAX_CONNECTIONS to change)",
-            max_conns
+            "Initializing database pool: max_connections={} acquire_timeout_ms={} (set DATABASE_MAX_CONNECTIONS / DATABASE_ACQUIRE_TIMEOUT_MS to change)",
+            max_conns, acquire_timeout_ms
         );
     }
 
@@ -80,6 +87,7 @@ async fn main() -> std::io::Result<()> {
     let pool = PgPoolOptions::new()
         .max_connections(max_conns)
         .min_connections(0)
+        .acquire_timeout(Duration::from_millis(acquire_timeout_ms))
         .after_connect(|conn, _meta| {
             Box::pin(async move {
                 conn.execute("DEALLOCATE ALL").await?;

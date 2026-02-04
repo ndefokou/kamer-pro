@@ -96,17 +96,34 @@ pub async fn get_reviews(pool: web::Data<PgPool>, path: web::Path<String>) -> im
         ORDER BY r.created_at DESC
     "#;
 
-    match sqlx::query_as::<_, ReviewRow>(query)
-        .bind(listing_id)
-        .fetch_all(pool.get_ref())
-        .await
-    {
-        Ok(rows) => HttpResponse::Ok().json(rows),
-        Err(e) => {
-            log::error!("Failed to fetch reviews: {:?}", e);
-            HttpResponse::InternalServerError().json(serde_json::json!({
-                "error": "Database error"
-            }))
+    // Retry a few times on PoolTimedOut and other transient errors
+    let mut attempt = 0u8;
+    loop {
+        let result = sqlx::query_as::<_, ReviewRow>(query)
+            .bind(&listing_id)
+            .fetch_all(pool.get_ref())
+            .await;
+
+        match result {
+            Ok(rows) => break HttpResponse::Ok().json(rows),
+            Err(e) => {
+                let is_pool_timeout = matches!(e, sqlx::Error::PoolTimedOut);
+                if is_pool_timeout && attempt < 3 {
+                    let backoff_ms = 200u64 * 2u64.saturating_pow(attempt as u32);
+                    log::warn!(
+                        "get_reviews retrying due to PoolTimedOut (attempt {}), backing off {}ms",
+                        attempt + 1,
+                        backoff_ms
+                    );
+                    attempt += 1;
+                    tokio::time::sleep(std::time::Duration::from_millis(backoff_ms)).await;
+                    continue;
+                }
+                log::error!("Failed to fetch reviews: {:?}", e);
+                break HttpResponse::InternalServerError().json(serde_json::json!({
+                    "error": "Database error"
+                }));
+            }
         }
     }
 }
