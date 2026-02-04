@@ -634,8 +634,8 @@ const ListingDetails: React.FC = () => {
                                     setIsPhotoGalleryOpen(true);
                                 }}
                             >
-                                <span className="hidden sm:inline">{t('listing.actions.showAllPhotos')}</span>
-                                <span className="sm:hidden">{t('listing.details.photos')}</span>
+                                <span className="hidden sm:inline">{t('listing.actions.showAllPhotos', { defaultValue: 'Show all photos' })}</span>
+                                <span className="sm:hidden">{t('listing.details.photos', { defaultValue: 'Photos' })}</span>
                             </button>
                         </div>
                     ) : (
@@ -685,7 +685,7 @@ const ListingDetails: React.FC = () => {
                                     return (
                                         <div key={amenityKey} className="flex items-center gap-3">
                                             <Icon className="h-6 w-6 text-gray-700" />
-                                            <span className="text-gray-900">{t(`amenities.${amenityKey}`)}</span>
+                                            <span className="text-gray-900">{t(`amenities.${amenityKey}`, { defaultValue: amenity.label })}</span>
                                         </div>
                                     );
                                 })}
