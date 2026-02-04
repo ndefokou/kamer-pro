@@ -1,7 +1,10 @@
 use crate::routes::listings::ListingWithDetails;
 use actix_cors::Cors;
 use actix_files as fs;
-use actix_web::{middleware::{Compress, DefaultHeaders}, web, App, HttpServer};
+use actix_web::{
+    middleware::{Compress, DefaultHeaders},
+    web, App, HttpServer,
+};
 use dotenv::dotenv;
 use moka::future::Cache;
 use sqlx::postgres::{PgConnectOptions, PgPoolOptions};
@@ -50,7 +53,7 @@ async fn main() -> std::io::Result<()> {
     let max_conns: u32 = env::var("DATABASE_MAX_CONNECTIONS")
         .ok()
         .and_then(|v| v.parse::<u32>().ok())
-        .unwrap_or(10);
+        .unwrap_or(50);
 
     if !fast_start {
         println!(
@@ -77,7 +80,6 @@ async fn main() -> std::io::Result<()> {
     let pool = PgPoolOptions::new()
         .max_connections(max_conns)
         .min_connections(0)
-        .acquire_timeout(Duration::from_secs(30))
         .after_connect(|conn, _meta| {
             Box::pin(async move {
                 conn.execute("DEALLOCATE ALL").await?;
@@ -257,12 +259,10 @@ async fn main() -> std::io::Result<()> {
             // Serve static files from /uploads route with strong caching
             .service(
                 web::scope("/uploads")
-                    .wrap(
-                        DefaultHeaders::new().add((
-                            "Cache-Control",
-                            "public, max-age=600, stale-while-revalidate=600",
-                        )),
-                    )
+                    .wrap(DefaultHeaders::new().add((
+                        "Cache-Control",
+                        "public, max-age=600, stale-while-revalidate=600",
+                    )))
                     .service(
                         fs::Files::new("/", uploads_dir_clone.clone())
                             .use_etag(true)
