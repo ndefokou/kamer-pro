@@ -1,0 +1,40 @@
+# Netlify configuration
+# Build: run frontend and publish its dist
+[build]
+  base = "frontend"
+  publish = "dist"
+  command = "npm ci && npm run build"
+
+# Redirect SPA routes to index.html
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+  force = true
+  conditions = {Role = ["!bot"]}
+
+# Proxy all API requests to your backend. Update 'to' with your backend origin.
+# To use the proxy, DO NOT set VITE_API_URL/VITE_BACKEND_URL on Netlify so the app falls back to '/api'.
+[[redirects]]
+  from = "/api/*"
+  to = "https://le-mboko-r3o1.onrender.com/api/:splat"
+  status = 200
+  force = true
+
+# Caching headers for static assets
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# Cache HTML moderately
+[[headers]]
+  for = "/index.html"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+# Cache images (served from backend or proxied) lightly at the edge
+[[headers]]
+  for = "/uploads/*"
+  [headers.values]
+    Cache-Control = "public, max-age=600"

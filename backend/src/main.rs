@@ -77,7 +77,7 @@ async fn main() -> std::io::Result<()> {
     let pool = PgPoolOptions::new()
         .max_connections(max_conns)
         .min_connections(0)
-        .acquire_timeout(Duration::from_secs(2))
+        .acquire_timeout(Duration::from_secs(30))
         .after_connect(|conn, _meta| {
             Box::pin(async move {
                 conn.execute("DEALLOCATE ALL").await?;
