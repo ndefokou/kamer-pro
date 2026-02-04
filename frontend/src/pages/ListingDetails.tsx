@@ -31,6 +31,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useWishlist } from '@/hooks/useWishlist';
 import { useTranslation } from 'react-i18next';
 import TranslatedText from '@/components/TranslatedText';
+import { useConnectionQuality } from '@/services/networkService';
 
 
 const ListingMap = lazy(() => import("@/components/Map/ListingMap"));
@@ -118,6 +119,9 @@ const ListingDetails: React.FC = () => {
     const { toast } = useToast();
     const closeBtnRef = React.useRef<HTMLButtonElement>(null);
     const desktopCalRef = React.useRef<HTMLDivElement>(null);
+
+    const { isSlowConnection } = useConnectionQuality();
+    const [showMap, setShowMap] = React.useState(!isSlowConnection);
 
     const openMobileDatePicker = () => {
         try {
@@ -1006,17 +1010,28 @@ const ListingDetails: React.FC = () => {
                         )}
                     </div>
                     <div className="h-64 md:h-[400px] rounded-xl overflow-hidden z-0 relative">
-                        <Suspense fallback={
+                        {showMap ? (
+                            <Suspense fallback={
+                                <div className="h-full w-full bg-slate-100 flex items-center justify-center">
+                                    <MapIcon className="h-8 w-8 text-slate-300 animate-pulse" />
+                                </div>
+                            }>
+                                <ListingMap
+                                    latitude={listing.latitude}
+                                    longitude={listing.longitude}
+                                    title={listing.title}
+                                />
+                            </Suspense>
+                        ) : (
                             <div className="h-full w-full bg-slate-100 flex items-center justify-center">
-                                <MapIcon className="h-8 w-8 text-slate-300 animate-pulse" />
+                                <button
+                                    className="px-4 py-2 bg-white border rounded-lg text-sm font-medium shadow-sm hover:bg-gray-50"
+                                    onClick={() => setShowMap(true)}
+                                >
+                                    {t('Load map...')}
+                                </button>
                             </div>
-                        }>
-                            <ListingMap
-                                latitude={listing.latitude}
-                                longitude={listing.longitude}
-                                title={listing.title}
-                            />
-                        </Suspense>
+                        )}
                     </div>
                 </div>
 

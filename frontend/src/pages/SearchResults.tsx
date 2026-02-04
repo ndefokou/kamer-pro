@@ -18,6 +18,7 @@ import HorizontalPropertySection from "@/components/HorizontalPropertySection";
 import PropertyCard from "@/components/PropertyCard";
 import NearbyPOI from "@/components/NearbyPOI";
 import SEO from "@/components/SEO";
+import { useConnectionQuality } from "@/services/networkService";
 
 // Fix Leaflet default icon issue
 const SearchMap = lazy(() => import("@/components/Map/SearchMap"));
@@ -105,6 +106,10 @@ const SearchResults = () => {
     const checkout = searchParams.get("checkout");
     const guests = parseInt(searchParams.get("guests") || "0");
 
+    const { isSlowConnection, recommendedPageSize } = useConnectionQuality();
+
+    const pageSize = Math.max(5, Math.min(20, recommendedPageSize));
+
     const {
         data,
         isLoading,
@@ -117,7 +122,7 @@ const SearchResults = () => {
         staleTime: 120000,
         gcTime: 600000,
         placeholderData: (prev) => prev, // keepPreviousData behavior
-        retry: 2,
+        retry: isSlowConnection ? 0 : 2,
         queryFn: ({ pageParam }) => {
             const isManaged = (Object.keys(knownCities) as Array<keyof typeof knownCities>).includes(normalizeCity(location) as any) ||
                 (Object.keys(regions) as Array<keyof typeof regions>).includes(normalizeCity(location) as any) ||
@@ -127,12 +132,12 @@ const SearchResults = () => {
             return getProducts({
                 search: (location && !isManaged) ? location : undefined,
                 guests: guests > 0 ? guests : undefined,
-                limit: 20,
+                limit: pageSize,
                 offset: (pageParam as number) || 0,
             });
         },
         getNextPageParam: (lastPage, allPages) => {
-            const limit = 20;
+            const limit = pageSize;
             return lastPage.length === limit ? allPages.length * limit : undefined;
         },
     });
@@ -427,6 +432,7 @@ const SearchResults = () => {
                 </div>
 
                 {/* Map (Right) */}
+                {!isSlowConnection && (
                 <div className="hidden md:block w-[40%] lg:w-[45%] xl:w-[50%] h-[calc(100vh-80px)] sticky top-20">
                     <Suspense fallback={
                         <div className="h-full w-full bg-slate-100 flex items-center justify-center">
@@ -443,6 +449,7 @@ const SearchResults = () => {
                         />
                     </Suspense>
                 </div>
+                )}
             </div>
         </div>
     );

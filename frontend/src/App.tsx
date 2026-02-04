@@ -12,6 +12,7 @@ const Dashboard = lazy(() => import("./pages/Dashboard"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { PWAInstallPrompt } from "./components/PWAInstallPrompt";
+import { networkService } from "@/services/networkService";
 
 export const queryClient = new QueryClient({
   defaultOptions: {
@@ -19,8 +20,16 @@ export const queryClient = new QueryClient({
       staleTime: 120000,
       gcTime: 600000,
       refetchOnWindowFocus: false,
-      retry: 3,
-      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+      retry: (failureCount, _error) => {
+        try {
+          const q = networkService.getCurrentInfo().quality;
+          const max = q === 'poor' ? 0 : q === 'moderate' ? 1 : 2;
+          return failureCount < max;
+        } catch {
+          return failureCount < 2;
+        }
+      },
+      retryDelay: (attemptIndex) => Math.min(500 * 2 ** attemptIndex, 3000),
     },
   },
 });

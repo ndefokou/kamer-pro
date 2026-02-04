@@ -18,7 +18,6 @@ const getBaseUrl = () => {
 const apiClient = axios.create({
   baseURL: getBaseUrl(),
   withCredentials: true,
-  timeout: 15000,
 });
 
 // Request deduplication map
@@ -51,14 +50,6 @@ apiClient.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
-    // Adaptive timeout per request based on network quality (fail fast on poor connections)
-    try {
-      const quality = networkService.getCurrentInfo().quality;
-      const timeout = quality === 'poor' ? 6000 : quality === 'moderate' ? 10000 : 15000;
-      config.timeout = Math.max(3000, timeout);
-    } catch (_e) {
-      void 0;
-    }
     return config;
   },
   (error) => {
@@ -84,6 +75,8 @@ apiClient.interceptors.response.use(
     if (method && ['post', 'put', 'delete'].includes(method.toLowerCase()) && url) {
       if (url.includes('/listings')) {
         dbService.clearCacheByPattern('listings');
+        // Ensure next fetch isn't throttled by background cooldown
+        try { lastBackgroundFetch.clear(); } catch { /* noop */ }
       } else if (url.includes('/calendar')) {
         // Calendar changes affect listing availability displayed to guests
         dbService.clearCacheByPattern('listings');
@@ -196,10 +189,12 @@ const cachedGet = async <T = any>(url: string, config?: any): Promise<T> => {
       }
 
       // 2. Try IndexedDB cache second (Stale-While-Revalidate pattern)
+      // For the general home feed (small limit, no filters), prefer a fresh network fetch
+      const preferNetworkForHomeFeed = url === '/listings' && !hasFilters && (!config?.params?.limit || config?.params?.limit <= 20) && !config?.params?.offset;
       const cachedUnknown = await getCachedResponse(url, config?.params as Record<string, unknown> | undefined);
       const cached = cachedUnknown as T | null;
 
-      if (cached && (!Array.isArray(cached) || cached.length > 0)) {
+      if (!preferNetworkForHomeFeed && cached && (!Array.isArray(cached) || cached.length > 0)) {
         // Fetch in background to update cache without blocking the UI
         // Only if we haven't fetched in the last minute
         const lastFetch = lastBackgroundFetch.get(cacheKey) || 0;

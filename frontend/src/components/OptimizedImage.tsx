@@ -71,7 +71,6 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
         try {
             const url = new URL(originalUrl, window.location.origin);
 
-            // Determine width based on quality and viewport
             let imageWidth = targetWidth;
             if (!imageWidth) {
                 if (targetQuality === 'low') {
@@ -83,22 +82,24 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
                 }
             }
 
-            // Add quality parameter based on network
-            url.searchParams.set('w', imageWidth.toString());
+            const isSupabase = url.hostname.includes('supabase.co') && url.pathname.includes('/storage/v1/object/public/');
 
-            if (targetQuality === 'low') {
-                url.searchParams.set('q', '30');
-            } else if (targetQuality === 'medium') {
-                url.searchParams.set('q', '60');
-            } else {
-                url.searchParams.set('q', '80');
+            if (isSupabase) {
+                const supa = new URL(url.toString());
+                supa.pathname = supa.pathname.replace('/storage/v1/object/', '/storage/v1/render/image/');
+                supa.searchParams.set('width', imageWidth.toString());
+                supa.searchParams.set('quality', targetQuality === 'low' ? '30' : targetQuality === 'medium' ? '60' : '80');
+                if (supportsWebP()) {
+                    supa.searchParams.set('format', 'webp');
+                }
+                return supa.toString();
             }
 
-            // Request WebP format if supported
+            url.searchParams.set('w', imageWidth.toString());
+            url.searchParams.set('q', targetQuality === 'low' ? '30' : targetQuality === 'medium' ? '60' : '80');
             if (supportsWebP()) {
                 url.searchParams.set('fm', 'webp');
             }
-
             return url.toString();
         } catch {
             // If URL parsing fails, return original
@@ -242,6 +243,7 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
     };
 
     const srcSet = getSrcSet(src, effectiveQuality);
+    const shouldUseSrcSet = !!srcSet && !(imageSrc && imageSrc.startsWith('blob:'));
 
     return (
         <>
@@ -256,8 +258,8 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
             <img
                 ref={imgRef}
                 src={imageSrc || blurDataUrl || undefined}
-                srcSet={imageSrc && srcSet ? srcSet : undefined}
-                sizes={imageSrc ? "(max-width: 640px) 400px, (max-width: 1024px) 800px, 1200px" : undefined}
+                srcSet={shouldUseSrcSet ? srcSet : undefined}
+                sizes={shouldUseSrcSet ? "(max-width: 640px) 400px, (max-width: 1024px) 800px, 1200px" : undefined}
                 alt={alt}
                 className={className}
                 width={width}

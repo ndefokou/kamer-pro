@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState, memo } from "react";
 import { Link } from "react-router-dom";
 import { Heart, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -156,4 +156,4 @@ const PropertyCard = ({
     );
 };
 
-export default PropertyCard;
+export default memo(PropertyCard);
