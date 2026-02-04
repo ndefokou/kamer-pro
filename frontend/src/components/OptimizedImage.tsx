@@ -189,25 +189,41 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
                 // Step 3: Load from network with optimized quality
                 const optimizedUrl = getOptimizedUrl(src, effectiveQuality);
 
-                // Fetch image
-                const response = await fetch(optimizedUrl);
-                if (!response.ok) throw new Error('Failed to load image');
+                // Try to fetch and cache the image
+                try {
+                    const response = await fetch(optimizedUrl, {
+                        mode: 'cors',
+                        credentials: 'omit',
+                    });
 
-                const blob = await response.blob();
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
 
-                // Cache the image
-                await dbService.cacheImage(src, blob);
+                    const blob = await response.blob();
 
-                if (isMounted) {
-                    const objectUrl = URL.createObjectURL(blob);
-                    setImageSrc(objectUrl);
-                    setIsLoading(false);
-                    onLoad?.();
+                    // Cache the image
+                    await dbService.cacheImage(src, blob);
+
+                    if (isMounted) {
+                        const objectUrl = URL.createObjectURL(blob);
+                        setImageSrc(objectUrl);
+                        setIsLoading(false);
+                        onLoad?.();
+                    }
+                } catch (fetchError) {
+                    // Fallback: use direct URL loading (let browser handle it)
+                    console.warn('Fetch failed, using direct URL:', fetchError);
+                    if (isMounted) {
+                        setImageSrc(optimizedUrl);
+                        setIsLoading(false);
+                        // Don't call onLoad here, let the img onLoad event handle it
+                    }
                 }
             } catch (error) {
                 console.error('Error loading image:', error);
                 if (isMounted) {
-                    // Fallback to direct URL
+                    // Final fallback to original URL
                     setImageSrc(src);
                     setHasError(true);
                     setIsLoading(false);
@@ -226,6 +242,7 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
             }
         };
     }, [isInView, src, effectiveQuality]);
+
 
     // Placeholder styles with blur effect
     const placeholderStyle: React.CSSProperties = {
@@ -265,15 +282,22 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
                 width={width}
                 height={height}
                 loading={priority ? 'eager' : 'lazy'}
+                crossOrigin="anonymous"
                 style={!imageSrc || isLoading ? placeholderStyle : { transition: 'opacity 0.3s ease-in' }}
                 onClick={onClick}
                 onLoad={() => {
                     setIsLoading(false);
                 }}
-                onError={() => {
-                    setHasError(true);
-                    setIsLoading(false);
-                    onError?.();
+                onError={(e) => {
+                    // If image fails to load and we haven't tried the original src yet
+                    if (imageSrc !== src && src) {
+                        console.warn('Image load failed, trying original src:', src);
+                        setImageSrc(src);
+                    } else {
+                        setHasError(true);
+                        setIsLoading(false);
+                        onError?.();
+                    }
                 }}
             />
         </>

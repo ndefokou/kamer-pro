@@ -14,7 +14,7 @@ export default defineConfig(({ mode }) => ({
       "/api": {
         target: "http://127.0.0.1:8082",
         changeOrigin: true,
-        timeout: 300000, // 5 minutes for large file uploads
+        timeout: 300000, 
         proxyTimeout: 300000,
         configure: (proxy, _options) => {
           proxy.on('error', (err, _req, _res) => {
@@ -64,7 +64,6 @@ export default defineConfig(({ mode }) => ({
                 maxEntries: 100,
                 maxAgeSeconds: 60 * 30, // 30 minutes
               },
-              networkTimeoutSeconds: 10,
               cacheableResponse: {
                 statuses: [0, 200],
               },
