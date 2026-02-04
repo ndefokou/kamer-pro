@@ -34,6 +34,7 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
     const [isInView, setIsInView] = useState(priority);
     const imgRef = useRef<HTMLImageElement>(null);
     const { recommendedImageQuality, isSlowConnection } = useConnectionQuality();
+    const supabaseTransformEnabled = (import.meta as any).env?.VITE_SUPABASE_TRANSFORM_ENABLED === 'true';
 
     // Determine image quality based on network
     const effectiveQuality = quality || recommendedImageQuality;
@@ -47,9 +48,9 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
         try {
             const url = new URL(originalUrl, window.location.origin);
 
-            // Supabase Storage supports an image render endpoint
+            // Supabase Storage image render endpoint (only if enabled)
             const isSupabase = url.hostname.includes('supabase.co') && url.pathname.includes('/storage/v1/object/public/');
-            if (isSupabase) {
+            if (isSupabase && supabaseTransformEnabled) {
                 const supa = new URL(url.toString());
                 // Correct path: /storage/v1/render/image/public/<bucket>/<path>
                 supa.pathname = supa.pathname.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/');
@@ -100,7 +101,7 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
 
             const isSupabase = url.hostname.includes('supabase.co') && url.pathname.includes('/storage/v1/object/public/');
 
-            if (isSupabase) {
+            if (isSupabase && supabaseTransformEnabled) {
                 const supa = new URL(url.toString());
                 // Correct render path expected by Supabase: /storage/v1/render/image/public/... 
                 supa.pathname = supa.pathname.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/');
@@ -263,7 +264,8 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
     };
 
     const srcSet = getSrcSet(src, effectiveQuality);
-    const shouldUseSrcSet = !!srcSet && !(imageSrc && imageSrc.startsWith('blob:'));
+    // Disable srcSet when we've fallen back to original URL or when an error occurred (prevents repeated 400s)
+    const shouldUseSrcSet = !!srcSet && !(imageSrc && (imageSrc.startsWith('blob:') || imageSrc === src)) && !hasError;
 
     return (
         <>
@@ -296,6 +298,7 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
                     if (imageSrc !== src && src) {
                         console.warn('Image load failed, trying original src:', src);
                         setImageSrc(src);
+                        setHasError(true); // disable srcset to avoid repeated failing attempts
                     } else {
                         setHasError(true);
                         setIsLoading(false);
