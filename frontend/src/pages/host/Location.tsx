@@ -1,28 +1,14 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, Suspense, lazy } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
-import { Icon, LatLng, Marker as LeafletMarker } from 'leaflet';
 import { useHost } from '@/contexts/HostContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { MapPin, X } from 'lucide-react';
+import { MapPin, X, Map as MapIcon } from 'lucide-react';
 import apiClient from '@/api/client';
-import 'leaflet/dist/leaflet.css';
 import { useToast } from '@/hooks/use-toast';
 
-// Fix for default marker icon in Leaflet with Webpack/Vite
-import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
-import markerIcon from 'leaflet/dist/images/marker-icon.png';
-import markerShadow from 'leaflet/dist/images/marker-shadow.png';
-
-const DefaultIconProto = Icon.Default.prototype as unknown as { _getIconUrl?: unknown };
-delete DefaultIconProto._getIconUrl;
-Icon.Default.mergeOptions({
-    iconUrl: markerIcon,
-    iconRetinaUrl: markerIcon2x,
-    shadowUrl: markerShadow,
-});
+const HostLocationMap = lazy(() => import("@/components/Map/HostLocationMap"));
 
 // Default center: Cameroon
 const DEFAULT_CENTER: [number, number] = [7.3697, 12.3547];
@@ -53,50 +39,9 @@ interface ListingLite {
     country?: string;
 }
 
-// Component to handle map centering
-function MapController({ center, zoom }: { center: LatLng; zoom?: number }) {
-    const map = useMap();
-
-    useEffect(() => {
-        map.setView(center, zoom || map.getZoom());
-    }, [center, zoom, map]);
-
-    return null;
-}
-
-// Component to handle map clicks and marker dragging
-function LocationMarker({
-    position,
-    setPosition
-}: {
-    position: LatLng;
-    setPosition: (pos: LatLng) => void;
-}) {
-    const markerRef = useRef<LeafletMarker | null>(null);
-
-    const eventHandlers = {
-        dragend() {
-            const marker = markerRef.current;
-            if (marker != null) {
-                setPosition(marker.getLatLng());
-            }
-        },
-    };
-
-    useMapEvents({
-        click(e) {
-            setPosition(e.latlng);
-        },
-    });
-
-    return (
-        <Marker
-            draggable={true}
-            eventHandlers={eventHandlers}
-            position={position}
-            ref={markerRef}
-        />
-    );
+interface LatLngLiteral {
+    lat: number;
+    lng: number;
 }
 
 // Helper to format location name from geocoding result
@@ -122,20 +67,20 @@ const Location: React.FC = () => {
     const [saving, setSaving] = useState(false);
 
     // Initialize position from draft or listing
-    const getInitialPosition = () => {
+    const getInitialPosition = (): LatLngLiteral => {
         if (isEditMode && listing?.latitude && listing?.longitude) {
-            return new LatLng(listing.latitude, listing.longitude);
+            return { lat: listing.latitude, lng: listing.longitude };
         }
         if (draft.latitude && draft.longitude) {
-            return new LatLng(draft.latitude, draft.longitude);
+            return { lat: draft.latitude, lng: draft.longitude };
         }
-        return new LatLng(DEFAULT_CENTER[0], DEFAULT_CENTER[1]);
+        return { lat: DEFAULT_CENTER[0], lng: DEFAULT_CENTER[1] };
     };
 
     const initialPosition = getInitialPosition();
 
-    const [position, setPosition] = useState<LatLng>(initialPosition);
-    const [mapCenter, setMapCenter] = useState<LatLng>(initialPosition);
+    const [position, setPosition] = useState<LatLngLiteral>(initialPosition);
+    const [mapCenter, setMapCenter] = useState<LatLngLiteral>(initialPosition);
     const [mapZoom, setMapZoom] = useState<number>(
         (isEditMode && listing?.latitude && listing?.longitude) || (draft.latitude && draft.longitude) ? 13 : DEFAULT_ZOOM
     );
@@ -165,7 +110,7 @@ const Location: React.FC = () => {
                     if (listingData.country) setSelectedCountry(listingData.country);
 
                     if (listingData.latitude && listingData.longitude) {
-                        const pos = new LatLng(listingData.latitude, listingData.longitude);
+                        const pos = { lat: listingData.latitude, lng: listingData.longitude };
                         setPosition(pos);
                         setMapCenter(pos);
                         setMapZoom(13);
@@ -212,7 +157,7 @@ const Location: React.FC = () => {
     }, [searchQuery]);
 
     const handleSelectResult = (result: GeocodingResult) => {
-        const newPos = new LatLng(parseFloat(result.lat), parseFloat(result.lon));
+        const newPos = { lat: parseFloat(result.lat), lng: parseFloat(result.lon) };
         setPosition(newPos);
         setMapCenter(newPos);
         setMapZoom(13);
@@ -273,7 +218,7 @@ const Location: React.FC = () => {
                 country_name?: string;
             };
             if (typeof data.latitude === 'number' && typeof data.longitude === 'number') {
-                const newPos = new LatLng(data.latitude, data.longitude);
+                const newPos = { lat: data.latitude, lng: data.longitude };
                 setPosition(newPos);
                 setMapCenter(newPos);
                 setMapZoom(12);
@@ -321,7 +266,7 @@ const Location: React.FC = () => {
         navigator.geolocation.getCurrentPosition(
             async (pos) => {
                 const { latitude, longitude } = pos.coords;
-                const newPos = new LatLng(latitude, longitude);
+                const newPos = { lat: latitude, lng: longitude };
                 setPosition(newPos);
                 setMapCenter(newPos);
                 setMapZoom(15);
@@ -506,18 +451,19 @@ const Location: React.FC = () => {
             {/* Map Container */}
             <div className="flex-1 px-4 md:px-8 pb-4">
                 <div className="max-w-4xl mx-auto h-[400px] md:h-[500px] rounded-lg overflow-hidden border-2 border-border shadow-lg">
-                    <MapContainer
-                        center={initialPosition}
-                        zoom={mapZoom}
-                        style={{ height: '100%', width: '100%' }}
-                    >
-                        <TileLayer
-                            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    <Suspense fallback={
+                        <div className="h-full w-full bg-slate-100 flex items-center justify-center">
+                            <MapIcon className="h-8 w-8 text-slate-300 animate-pulse" />
+                        </div>
+                    }>
+                        <HostLocationMap
+                            initialPosition={initialPosition}
+                            mapCenter={mapCenter}
+                            mapZoom={mapZoom}
+                            position={position}
+                            setPosition={setPosition}
                         />
-                        <MapController center={mapCenter} zoom={mapZoom} />
-                        <LocationMarker position={position} setPosition={setPosition} />
-                    </MapContainer>
+                    </Suspense>
                 </div>
             </div>
 

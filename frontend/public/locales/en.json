@@ -28,7 +28,10 @@
     "savePhotosCount": "Save {{count}} {{unit}}",
     "total": "Total",
     "share": "Share",
-    "seeAll": "See all"
+    "seeAll": "See all",
+    "offline": "You're offline. Showing cached data.",
+    "backOnline": "Back online",
+    "checkConnection": "Check your connection and try again"
   },
   "logout": "Logout",
   "login": "Login",
@@ -657,5 +660,12 @@
   },
   "StaysIn": " stays · {{city}}",
   "seeAll": "See all",
-  "other Locations": "Other locations"
+  "otherLocations": "Other locations",
+  "You're offline. Showing cached data.": "You're offline. Showing cached data.",
+  "Back online": "Back online",
+  "Check your connection and try again": "Check your connection and try again",
+  "Failed to load properties.": "Failed to load properties.",
+  "Loading best offers...": "Loading best offers...",
+  "per night": "per night",
+  "Guest favorite": "Guest favorite"
 }

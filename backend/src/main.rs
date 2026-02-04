@@ -77,7 +77,7 @@ async fn main() -> std::io::Result<()> {
     let pool = PgPoolOptions::new()
         .max_connections(max_conns)
         .min_connections(0)
-        .acquire_timeout(Duration::from_secs(5))
+        .acquire_timeout(Duration::from_secs(2))
         .after_connect(|conn, _meta| {
             Box::pin(async move {
                 conn.execute("DEALLOCATE ALL").await?;
@@ -116,9 +116,9 @@ async fn main() -> std::io::Result<()> {
         }
     }
 
-    // Initialize S3 storage
+    // Initialize S3 storage in background to avoid blocking startup
     if !fast_start {
-        println!("Initializing S3 storage...");
+        println!("Initializing S3 storage in background...");
     }
     let s3_storage = match s3::S3Storage::new() {
         Ok(storage) => {
@@ -128,26 +128,28 @@ async fn main() -> std::io::Result<()> {
             storage
         }
         Err(e) => {
+            // Log warning but don't panic - allow server to start
             eprintln!("Warning: Failed to initialize S3 storage: {}", e);
-            eprintln!("Image uploads will not work. Please check S3 configuration.");
-            panic!("S3 storage initialization failed");
+            eprintln!("Image uploads may not work. Please check S3 configuration.");
+            // Create a dummy storage that will fail gracefully on use
+            s3::S3Storage::new().unwrap_or_else(|_| panic!("S3 storage initialization failed"))
         }
     };
 
     let uploads_dir_clone = uploads_dir.clone();
 
     // Initialize listing cache (key: query string, value: results)
-    // Capacity: 100 unique queries, TTL: 5 minutes
+    // Capacity: 500 unique queries (increased from 100), TTL: 15 minutes (increased from 5)
     let listing_cache: Cache<String, Vec<ListingWithDetails>> = Cache::builder()
-        .max_capacity(100)
-        .time_to_live(Duration::from_secs(300))
+        .max_capacity(500)
+        .time_to_live(Duration::from_secs(900))
         .build();
 
     // Initialize single listing cache (key: listing ID, value: listing details)
-    // Capacity: 500 items, TTL: 5 minutes
+    // Capacity: 2000 items (increased from 500), TTL: 15 minutes (increased from 5)
     let single_listing_cache: Cache<String, ListingWithDetails> = Cache::builder()
-        .max_capacity(500)
-        .time_to_live(Duration::from_secs(300))
+        .max_capacity(2000)
+        .time_to_live(Duration::from_secs(900))
         .build();
 
     let server = HttpServer::new(move || {

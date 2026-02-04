@@ -4,11 +4,15 @@ import { networkService } from "../services/networkService";
 import { queryClient } from "../App";
 
 const getBaseUrl = () => {
-  const envUrl = import.meta.env.VITE_API_URL;
-  if (!envUrl) return "/api";
+  // Prefer explicit backend origin if provided; fall back to legacy VITE_API_URL, then to site-relative /api
+  const raw = (import.meta.env.VITE_BACKEND_URL as string | undefined)
+    || (import.meta.env.VITE_API_URL as string | undefined)
+    || "/api";
+
   // Remove trailing slash if present to avoid double slashes
-  const cleanUrl = envUrl.replace(/\/$/, "");
-  return cleanUrl.endsWith("/api") ? cleanUrl : `${cleanUrl}/api`;
+  const clean = raw.replace(/\/$/, "");
+  // If it's already ending with /api, keep it; otherwise append /api
+  return clean.endsWith("/api") ? clean : `${clean}/api`;
 };
 
 const apiClient = axios.create({

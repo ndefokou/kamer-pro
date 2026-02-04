@@ -12,9 +12,18 @@ export const getImageUrl = (imagePath: string) => {
   if (imagePath.startsWith("http")) {
     return imagePath;
   }
-  const base = (import.meta.env.VITE_BACKEND_URL as string | undefined)
+  let base = (import.meta.env.VITE_BACKEND_URL as string | undefined)
     || (import.meta.env.VITE_API_URL as string | undefined)
     || "/api";
+
+  // Avoid shipping localhost base URLs to production environments
+  try {
+    const isLocal = /localhost|127\.0\.0\.1/.test(base);
+    const runningLocal = /localhost|127\.0\.0\.1/.test(window.location.hostname);
+    if (isLocal && !runningLocal) {
+      base = "/api";
+    }
+  } catch { /* noop */ }
   const imagePathClean = imagePath.startsWith("/")
     ? imagePath.substring(1)
     : imagePath;

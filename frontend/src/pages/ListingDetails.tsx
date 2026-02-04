@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { getListingFresh as getListing, createBooking, getListingReviews, addListingReview, ListingReview } from '@/api/client';
@@ -9,13 +9,7 @@ import { getImageUrl, formatPrice } from '@/lib/utils';
 import OptimizedImage from '@/components/OptimizedImage';
 import { openWhatsApp } from '@/lib/whatsapp';
 import { AMENITY_DETAILS } from '@/data/amenities';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
-import 'leaflet/dist/leaflet.css';
-import L from 'leaflet';
 
-// Fix for default marker icon
-import icon from 'leaflet/dist/images/marker-icon.png';
-import iconShadow from 'leaflet/dist/images/marker-shadow.png';
 import Footer from '@/components/Footer';
 import Header from '@/components/Header';
 import { DayPicker, DateRange } from 'react-day-picker';
@@ -39,14 +33,7 @@ import { useTranslation } from 'react-i18next';
 import TranslatedText from '@/components/TranslatedText';
 
 
-const DefaultIcon = L.icon({
-    iconUrl: icon,
-    shadowUrl: iconShadow,
-    iconSize: [25, 41],
-    iconAnchor: [12, 41]
-});
-
-L.Marker.prototype.options.icon = DefaultIcon;
+const ListingMap = lazy(() => import("@/components/Map/ListingMap"));
 
 
 interface Review {
@@ -1019,23 +1006,17 @@ const ListingDetails: React.FC = () => {
                         )}
                     </div>
                     <div className="h-64 md:h-[400px] rounded-xl overflow-hidden z-0 relative">
-                        <MapContainer
-                            center={[listing.latitude || 4.0511, listing.longitude || 9.7679]}
-                            zoom={13}
-                            scrollWheelZoom={false}
-                            className="h-full w-full"
-                        >
-                            <TileLayer
-                                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                        <Suspense fallback={
+                            <div className="h-full w-full bg-slate-100 flex items-center justify-center">
+                                <MapIcon className="h-8 w-8 text-slate-300 animate-pulse" />
+                            </div>
+                        }>
+                            <ListingMap
+                                latitude={listing.latitude}
+                                longitude={listing.longitude}
+                                title={listing.title}
                             />
-                            <Marker position={[listing.latitude || 4.0511, listing.longitude || 9.7679]}>
-                                <Popup>
-                                    <div className="font-semibold">{listing.title}</div>
-                                    <div className="text-sm text-gray-600">{t('listing.details.exactLocation')}</div>
-                                </Popup>
-                            </Marker>
-                        </MapContainer>
+                        </Suspense>
                     </div>
                 </div>
 

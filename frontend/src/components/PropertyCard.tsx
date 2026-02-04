@@ -16,6 +16,7 @@ interface PropertyCardProps {
     images: { image_url: string }[];
     rating?: number;
     isGuestFavorite?: boolean;
+    priority?: boolean;
 }
 
 const PropertyCard = ({
@@ -26,6 +27,7 @@ const PropertyCard = ({
     images,
     rating,
     isGuestFavorite = false,
+    priority = false,
 }: PropertyCardProps) => {
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const { isInWishlist, addToWishlist, removeFromWishlistByProduct } = useWishlist();
@@ -68,6 +70,7 @@ const PropertyCard = ({
                             src={getImageUrl(images[currentImageIndex]?.image_url)}
                             alt={name}
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
+                            priority={priority}
                         />
                     ) : (
                         <div className="w-full h-full flex items-center justify-center bg-muted text-muted-foreground">

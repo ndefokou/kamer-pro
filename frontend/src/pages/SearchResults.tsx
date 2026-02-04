@@ -1,10 +1,7 @@
-import { useEffect, useMemo, useCallback } from "react";
+import { Suspense, lazy, useMemo } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
-import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
-import { Home as HomeIcon } from "lucide-react";
+import { Home as HomeIcon, Map as MapIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getProducts, Product, getTowns, TownCount } from "@/api/client";
 import { getImageUrl, formatPrice } from "@/lib/utils";
@@ -23,29 +20,7 @@ import NearbyPOI from "@/components/NearbyPOI";
 import SEO from "@/components/SEO";
 
 // Fix Leaflet default icon issue
-import icon from "leaflet/dist/images/marker-icon.png";
-import iconShadow from "leaflet/dist/images/marker-shadow.png";
-
-const DefaultIcon = L.icon({
-    iconUrl: icon,
-    shadowUrl: iconShadow,
-    iconSize: [25, 41],
-    iconAnchor: [12, 41],
-});
-
-L.Marker.prototype.options.icon = DefaultIcon;
-
-const FitMapBounds = ({ bounds, singlePoint }: { bounds?: L.LatLngBoundsExpression; singlePoint?: [number, number] | null }) => {
-    const map = useMap();
-    useEffect(() => {
-        if (bounds) {
-            map.fitBounds(bounds, { padding: [24, 24], maxZoom: 12 });
-        } else if (singlePoint) {
-            map.setView(singlePoint, 12);
-        }
-    }, [map, bounds, singlePoint]);
-    return null;
-};
+const SearchMap = lazy(() => import("@/components/Map/SearchMap"));
 
 const normalizeCity = (s?: string) => (s || "").trim().toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '');
 const preferredOrder = ["yaounde", "douala", "kribi"];
@@ -314,12 +289,7 @@ const SearchResults = () => {
         return null;
     }, [location, knownCities]);
 
-    // Compute bounds to fit all markers
-    const mapBounds = useMemo(() => {
-        const pts = mapPoints.map((p) => [p.lat, p.lon] as [number, number]);
-        if (pts.length === 0 && fallbackCenter) return undefined;
-        return pts.length ? L.latLngBounds(pts) : undefined;
-    }, [mapPoints, fallbackCenter]);
+
 
     const singlePoint = useMemo(() => {
         if (mapPoints.length === 1) {
@@ -458,34 +428,20 @@ const SearchResults = () => {
 
                 {/* Map (Right) */}
                 <div className="hidden md:block w-[40%] lg:w-[45%] xl:w-[50%] h-[calc(100vh-80px)] sticky top-20">
-                    <MapContainer
-                        center={[3.8480, 11.5021]} // Default to Yaounde
-                        zoom={13}
-                        scrollWheelZoom={true}
-                        className="h-full w-full"
-                    >
-                        <TileLayer
-                            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    <Suspense fallback={
+                        <div className="h-full w-full bg-slate-100 flex items-center justify-center">
+                            <div className="flex flex-col items-center gap-2">
+                                <MapIcon className="h-8 w-8 text-slate-300 animate-pulse" />
+                                <span className="text-sm text-slate-400">{t("Loading map...")}</span>
+                            </div>
+                        </div>
+                    }>
+                        <SearchMap
+                            mapPoints={mapPoints}
+                            singlePoint={singlePoint}
+                            fallbackCenter={fallbackCenter}
                         />
-                        <FitMapBounds bounds={mapBounds} singlePoint={singlePoint} />
-                        <NearbyPOI />
-                        {mapPoints.map(({ id, lat, lon, product }) => (
-                            <Marker key={id} position={[lat, lon]}>
-                                <Popup>
-                                    <div className="w-48">
-                                        <OptimizedImage
-                                            src={getImageUrl(product.photos[0]?.url) || "https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=400&h=400&fit=crop"}
-                                            alt={product.listing.title}
-                                            className="w-full h-32 object-cover rounded-lg mb-2"
-                                        />
-                                        <h3 className="font-semibold text-sm truncate">{product.listing.title}</h3>
-                                        <p className="text-sm font-bold">{formatPrice(product.listing.price_per_night || 0)}</p>
-                                    </div>
-                                </Popup>
-                            </Marker>
-                        ))}
-                    </MapContainer>
+                    </Suspense>
                 </div>
             </div>
         </div>

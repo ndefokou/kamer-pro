@@ -28,6 +28,7 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
     onClick,
 }) => {
     const [imageSrc, setImageSrc] = useState<string>('');
+    const [blurDataUrl, setBlurDataUrl] = useState<string>('');
     const [isLoading, setIsLoading] = useState(true);
     const [hasError, setHasError] = useState(false);
     const [isInView, setIsInView] = useState(priority);
@@ -37,8 +38,28 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
     // Determine image quality based on network
     const effectiveQuality = quality || recommendedImageQuality;
 
-    // Generate optimized image URL
-    const getOptimizedUrl = (originalUrl: string, targetQuality: string): string => {
+    // Generate tiny blur-up placeholder URL (< 1KB)
+    const getBlurDataUrl = (originalUrl: string): string => {
+        if (!originalUrl || originalUrl.startsWith('data:') || originalUrl.startsWith('blob:')) {
+            return '';
+        }
+
+        try {
+            const url = new URL(originalUrl, window.location.origin);
+            url.searchParams.set('w', '20');
+            url.searchParams.set('q', '10');
+            url.searchParams.set('blur', '10');
+            if (supportsWebP()) {
+                url.searchParams.set('fm', 'webp');
+            }
+            return url.toString();
+        } catch {
+            return '';
+        }
+    };
+
+    // Generate optimized image URL with responsive sizes
+    const getOptimizedUrl = (originalUrl: string, targetQuality: string, targetWidth?: number): string => {
         if (!originalUrl) return '';
 
         // If it's already a data URL or blob, return as is
@@ -50,15 +71,26 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
         try {
             const url = new URL(originalUrl, window.location.origin);
 
+            // Determine width based on quality and viewport
+            let imageWidth = targetWidth;
+            if (!imageWidth) {
+                if (targetQuality === 'low') {
+                    imageWidth = 400;
+                } else if (targetQuality === 'medium') {
+                    imageWidth = 800;
+                } else {
+                    imageWidth = 1200;
+                }
+            }
+
             // Add quality parameter based on network
+            url.searchParams.set('w', imageWidth.toString());
+
             if (targetQuality === 'low') {
-                url.searchParams.set('w', '200');
                 url.searchParams.set('q', '30');
             } else if (targetQuality === 'medium') {
-                url.searchParams.set('w', '600');
                 url.searchParams.set('q', '60');
             } else {
-                url.searchParams.set('w', '1000');
                 url.searchParams.set('q', '80');
             }
 
@@ -71,6 +103,22 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
         } catch {
             // If URL parsing fails, return original
             return originalUrl;
+        }
+    };
+
+    // Generate srcset for responsive images
+    const getSrcSet = (originalUrl: string, targetQuality: string): string => {
+        if (!originalUrl || originalUrl.startsWith('data:') || originalUrl.startsWith('blob:')) {
+            return '';
+        }
+
+        try {
+            const sizes = targetQuality === 'low' ? [400, 600] : [400, 800, 1200];
+            return sizes
+                .map(size => `${getOptimizedUrl(originalUrl, targetQuality, size)} ${size}w`)
+                .join(', ');
+        } catch {
+            return '';
         }
     };
 
@@ -109,7 +157,7 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
         };
     }, [priority]);
 
-    // Load image with caching
+    // Load blur placeholder first, then full image
     useEffect(() => {
         if (!isInView || !src) return;
 
@@ -120,7 +168,13 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
                 setIsLoading(true);
                 setHasError(false);
 
-                // Try to get from cache first
+                // Step 1: Load tiny blur placeholder immediately
+                const blurUrl = getBlurDataUrl(src);
+                if (blurUrl && isMounted) {
+                    setBlurDataUrl(blurUrl);
+                }
+
+                // Step 2: Try to get from cache first
                 const cachedBlob = await dbService.getCachedImage(src);
 
                 if (cachedBlob && isMounted) {
@@ -131,7 +185,7 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
                     return;
                 }
 
-                // Load from network
+                // Step 3: Load from network with optimized quality
                 const optimizedUrl = getOptimizedUrl(src, effectiveQuality);
 
                 // Fetch image
@@ -172,15 +226,22 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
         };
     }, [isInView, src, effectiveQuality]);
 
-    // Placeholder styles
+    // Placeholder styles with blur effect
     const placeholderStyle: React.CSSProperties = {
         backgroundColor: '#e5e7eb',
-        backgroundImage: isLoading
-            ? 'linear-gradient(90deg, #e5e7eb 0%, #f3f4f6 50%, #e5e7eb 100%)'
-            : undefined,
-        backgroundSize: isLoading ? '200% 100%' : undefined,
-        animation: isLoading ? 'shimmer 1.5s infinite' : undefined,
+        backgroundImage: blurDataUrl
+            ? `url(${blurDataUrl})`
+            : isLoading
+                ? 'linear-gradient(90deg, #e5e7eb 0%, #f3f4f6 50%, #e5e7eb 100%)'
+                : undefined,
+        backgroundSize: blurDataUrl ? 'cover' : isLoading ? '200% 100%' : undefined,
+        backgroundPosition: 'center',
+        filter: blurDataUrl && isLoading ? 'blur(10px)' : undefined,
+        animation: !blurDataUrl && isLoading ? 'shimmer 1.5s infinite' : undefined,
+        transition: 'filter 0.3s ease-out',
     };
+
+    const srcSet = getSrcSet(src, effectiveQuality);
 
     return (
         <>
@@ -194,14 +255,19 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
             </style>
             <img
                 ref={imgRef}
-                src={imageSrc || undefined}
+                src={imageSrc || blurDataUrl || undefined}
+                srcSet={imageSrc && srcSet ? srcSet : undefined}
+                sizes={imageSrc ? "(max-width: 640px) 400px, (max-width: 1024px) 800px, 1200px" : undefined}
                 alt={alt}
                 className={className}
                 width={width}
                 height={height}
                 loading={priority ? 'eager' : 'lazy'}
-                style={!imageSrc ? placeholderStyle : undefined}
+                style={!imageSrc || isLoading ? placeholderStyle : { transition: 'opacity 0.3s ease-in' }}
                 onClick={onClick}
+                onLoad={() => {
+                    setIsLoading(false);
+                }}
                 onError={() => {
                     setHasError(true);
                     setIsLoading(false);

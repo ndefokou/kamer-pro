@@ -22,8 +22,9 @@ import Header from "@/components/Header";
 import MobileNav from "@/components/MobileNav";
 import { useWishlist } from "@/hooks/useWishlist";
 import { networkService } from "@/services/networkService";
-
 import PropertyCard from "@/components/PropertyCard";
+import { PropertySectionSkeleton } from "@/components/PropertyCardSkeleton";
+import OfflineIndicator from "@/components/OfflineIndicator";
 
 // PropertySection component defined outside to prevent re-renders
 const PropertySection = ({ title, properties, city }: { title: string; properties: Product[]; city?: string }) => {
@@ -97,7 +98,8 @@ const PropertySection = ({ title, properties, city }: { title: string; propertie
                                 location={product.listing.city}
                                 price={product.listing.price_per_night || 0}
                                 images={product.photos?.map(p => ({ image_url: p.url })) || []}
-                                isGuestFavorite={false} // Add logic if available
+                                isGuestFavorite={false} 
+                                priority={index < 4} 
                             />
                         </div>
                     ))}
@@ -124,9 +126,11 @@ const Dashboard = () => {
     const { user, logout } = useAuth();
     // Removed useWishlist hook since PropertyCard handles it internally
 
+    // Reduced initial load for 2G networks - load 12 items instead of 40+
     const { data: properties, isLoading, error } = useQuery<Product[]>({
         queryKey: ["products"],
-        queryFn: () => getProducts({ limit: networkService.getRecommendedPageSize() + 10 }),
+        queryFn: () => getProducts({ limit: 12 }),
+        staleTime: 5 * 60 * 1000, // 5 minutes - reduce refetches on slow networks
     });
 
     const normalizeCity = (s?: string) => (s || "").trim().toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '');
@@ -222,6 +226,9 @@ const Dashboard = () => {
                 title={t("Explore")}
                 description={t("dashboard.seo.description")}
             />
+            {/* Offline Indicator */}
+            <OfflineIndicator />
+
             {/* Header */}
             <Header />
 
@@ -235,18 +242,17 @@ const Dashboard = () => {
             {/* Main Content */}
             <main className="container mx-auto px-4 sm:px-6 pt-8 pb-2">
                 {isLoading ? (
-                    <div className="flex flex-col items-center justify-center py-20 gap-4">
-                        <div className="relative">
-                            <div className="h-12 w-12 rounded-full border-4 border-primary/30 border-t-primary animate-spin" />
-                            <div className="absolute inset-0 flex items-center justify-center">
-                                <HomeIcon className="h-4 w-4 text-primary/50" />
-                            </div>
-                        </div>
-                        <p className="text-muted-foreground animate-pulse">{t("Loading best offers...")}</p>
-                    </div>
+                    <>
+                        <PropertySectionSkeleton count={4} />
+                        <PropertySectionSkeleton count={4} />
+                        <PropertySectionSkeleton count={4} />
+                    </>
                 ) : error ? (
                     <div className="text-center py-20">
                         <p className="text-red-500">{t("Failed to load properties.")}</p>
+                        <p className="text-sm text-muted-foreground mt-2">
+                            {t("Check your connection and try again")}
+                        </p>
                     </div>
                 ) : (
                     <>

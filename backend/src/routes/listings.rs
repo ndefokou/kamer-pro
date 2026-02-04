@@ -14,37 +14,63 @@ pub struct Listing {
     pub id: String,
     pub host_id: i32,
     pub status: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub property_type: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub title: Option<String>,
     #[sqlx(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub address: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub city: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub country: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub latitude: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub longitude: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub price_per_night: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub currency: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub cleaning_fee: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub max_guests: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub bedrooms: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub beds: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub bathrooms: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub instant_book: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub min_nights: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub max_nights: Option<i32>,
     #[sqlx(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub safety_devices: Option<String>,
     #[sqlx(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub house_rules: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub created_at: Option<chrono::NaiveDateTime>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub updated_at: Option<chrono::NaiveDateTime>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub published_at: Option<chrono::NaiveDateTime>,
     #[sqlx(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub cancellation_policy: Option<String>,
     #[sqlx(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub getting_around: Option<String>,
     #[sqlx(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub scenic_views: Option<String>,
 }
 
@@ -295,7 +321,10 @@ pub async fn get_host_listings(
     }
 
     let resp = HttpResponse::Ok()
-        .insert_header(("Cache-Control", "public, max-age=60, stale-while-revalidate=300"))
+        .insert_header((
+            "Cache-Control",
+            "public, max-age=60, stale-while-revalidate=300",
+        ))
         .json(out);
     log::info!(
         "get_host_listings latency_ms={}",
@@ -318,8 +347,11 @@ pub struct ListingWithDetails {
     pub videos: Vec<ListingVideo>,
     pub safety_items: Vec<String>,
     pub unavailable_dates: Vec<UnavailableDateRange>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub contact_phone: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub host_avatar: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub host_username: Option<String>,
 }
 
@@ -328,10 +360,13 @@ pub struct ListingPhoto {
     pub id: i32,
     pub listing_id: String,
     pub url: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub caption: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub room_type: Option<String>,
     pub is_cover: bool,
     pub display_order: i32,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub uploaded_at: Option<chrono::NaiveDateTime>,
 }
 
@@ -340,6 +375,7 @@ pub struct ListingVideo {
     pub id: i32,
     pub listing_id: String,
     pub url: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub uploaded_at: Option<chrono::NaiveDateTime>,
 }
 
@@ -514,7 +550,7 @@ async fn get_listing_with_details(
     .fetch_all(pool);
 
     let photos_fut = sqlx::query_as::<_, ListingPhoto>(
-        "SELECT id, listing_id, url, caption, room_type, COALESCE(is_cover, FALSE) as is_cover, COALESCE(display_order, 0) as display_order, uploaded_at FROM listing_photos WHERE listing_id = $1 ORDER BY display_order, id",
+        "SELECT id, listing_id, url, caption, room_type, COALESCE(is_cover, FALSE) as is_cover, COALESCE(display_order, 0) as display_order, uploaded_at FROM listing_photos WHERE listing_id = $1 ORDER BY is_cover DESC, display_order, id",
     )
     .bind(listing_id)
     .fetch_all(pool);
@@ -524,15 +560,22 @@ async fn get_listing_with_details(
             .bind(listing_id)
             .fetch_all(pool);
 
+    // Optimized unavailable dates query with date range limit (1 year ahead)
     let unavailable_fut = sqlx::query_as::<_, UnavailableDateRange>(
         r#"
         SELECT check_in, check_out
         FROM bookings
-        WHERE listing_id = $1 AND status = 'confirmed' AND check_out >= CURRENT_DATE
+        WHERE listing_id = $1 
+          AND status = 'confirmed' 
+          AND check_out >= CURRENT_DATE
+          AND check_in <= CURRENT_DATE + INTERVAL '1 year'
         UNION ALL
         SELECT date AS check_in, (date + INTERVAL '1 day')::date AS check_out
         FROM calendar_pricing
-        WHERE listing_id = $1 AND is_available = FALSE AND date >= CURRENT_DATE
+        WHERE listing_id = $1 
+          AND is_available = FALSE 
+          AND date >= CURRENT_DATE
+          AND date <= CURRENT_DATE + INTERVAL '1 year'
         "#,
     )
     .bind(listing_id)
@@ -729,7 +772,10 @@ pub async fn get_listing(
                 .insert(listing_id.clone(), listing.clone())
                 .await;
             HttpResponse::Ok()
-                .insert_header(("Cache-Control", "public, max-age=60, stale-while-revalidate=300"))
+                .insert_header((
+                    "Cache-Control",
+                    "public, max-age=60, stale-while-revalidate=300",
+                ))
                 .json(listing)
         }
         Err(sqlx::Error::RowNotFound) => HttpResponse::NotFound().json(serde_json::json!({
@@ -1487,7 +1533,10 @@ pub async fn get_all_listings(
     if let Some(cached) = listing_cache.get(&cache_key).await {
         log::info!("Cache hit for {}", cache_key);
         return HttpResponse::Ok()
-            .insert_header(("Cache-Control", "public, max-age=60, stale-while-revalidate=300"))
+            .insert_header((
+                "Cache-Control",
+                "public, max-age=60, stale-while-revalidate=300",
+            ))
             .json(cached);
     }
 
@@ -1497,13 +1546,14 @@ pub async fn get_all_listings(
 
     if let Some(ref search) = query.search {
         let pattern = format!("%{}%", search);
+        // Only search indexed fields that are in SELECT clause
         query_builder.push(" AND (title ILIKE ");
-        query_builder.push_bind(pattern.clone());
-        query_builder.push(" OR description ILIKE ");
         query_builder.push_bind(pattern.clone());
         query_builder.push(" OR city ILIKE ");
         query_builder.push_bind(pattern.clone());
         query_builder.push(" OR country ILIKE ");
+        query_builder.push_bind(pattern.clone());
+        query_builder.push(" OR address ILIKE ");
         query_builder.push_bind(pattern);
         query_builder.push(")");
     }
@@ -1639,6 +1689,9 @@ pub async fn get_all_listings(
         started.elapsed().as_millis()
     );
     HttpResponse::Ok()
-        .insert_header(("Cache-Control", "public, max-age=60, stale-while-revalidate=300"))
+        .insert_header((
+            "Cache-Control",
+            "public, max-age=60, stale-while-revalidate=300",
+        ))
         .json(out)
 }
