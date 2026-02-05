@@ -14,7 +14,7 @@ export default defineConfig(({ mode }) => ({
       "/api": {
         target: "http://127.0.0.1:8082",
         changeOrigin: true,
-        timeout: 300000, 
+        timeout: 300000,
         proxyTimeout: 300000,
         configure: (proxy, _options) => {
           proxy.on('error', (err, _req, _res) => {
@@ -34,11 +34,6 @@ export default defineConfig(({ mode }) => ({
     react(),
     mode === "development" && componentTagger(),
     compression({
-      algorithm: 'brotliCompress',
-      ext: '.br',
-      threshold: 1024,
-    }),
-    compression({
       algorithm: 'gzip',
       ext: '.gz',
       threshold: 1024,
@@ -52,9 +47,17 @@ export default defineConfig(({ mode }) => ({
       workbox: {
         skipWaiting: true,
         clientsClaim: true,
+        // @ts-ignore - fetchOptions is valid for workbox-build but might not be in the current type definitions
+        fetchOptions: {
+          cache: 'no-store',
+        },
         globPatterns: ['**/*.{js,css,html,ico,png,svg,webp,jpg,jpeg,webmanifest}'],
         cleanupOutdatedCaches: true,
         runtimeCaching: [
+          {
+            urlPattern: ({ url }) => url.pathname.startsWith('/api'),
+            handler: 'NetworkOnly',
+          },
           {
             // Cache images with cache-first strategy
             urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp)$/i,
