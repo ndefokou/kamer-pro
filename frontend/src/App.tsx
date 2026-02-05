@@ -13,6 +13,7 @@ const NotFound = lazy(() => import("./pages/NotFound"));
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { PWAInstallPrompt } from "./components/PWAInstallPrompt";
 import { networkService } from "@/services/networkService";
+import { cachePolicyService } from "@/services/cachePolicyService";
 
 export const queryClient = new QueryClient({
   defaultOptions: {
@@ -57,7 +58,7 @@ const router = createBrowserRouter(
       element: <ProtectedRoute />,
       children: [
         { index: true, lazy: async () => ({ Component: (await import("./pages/admin/AdminDashboard")).default }) },
-      ], 
+      ],
     },
     {
       path: "/host",
@@ -99,6 +100,9 @@ const router = createBrowserRouter(
 );
 
 import { HelmetProvider } from "react-helmet-async";
+
+// Initialize cache policy
+cachePolicyService.init().catch(console.error);
 
 const App = () => (
   <HelmetProvider>

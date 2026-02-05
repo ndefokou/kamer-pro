@@ -177,6 +177,10 @@ async fn main() -> std::io::Result<()> {
             .app_data(web::Data::new(single_listing_cache.clone()))
             .service(
                 web::scope("/api")
+                    .wrap(DefaultHeaders::new().add((
+                        "X-Robots-Tag",
+                        "noindex, nofollow",
+                    )))
                     .service(routes::listings::dashboard_summary)
                     .service(
                         web::scope("/auth")
