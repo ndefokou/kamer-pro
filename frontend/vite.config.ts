@@ -66,10 +66,7 @@ export default defineConfig(({ mode }) => ({
                 maxEntries: 100,
                 maxAgeSeconds: 60 * 30, // 30 minutes
               },
-<<<<<<< HEAD
-=======
               networkTimeoutSeconds: 5, // Reduced for faster fallback to cache
->>>>>>> improve-app-latency
               cacheableResponse: {
                 statuses: [0, 200],
               },
