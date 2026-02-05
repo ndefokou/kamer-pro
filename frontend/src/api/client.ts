@@ -122,7 +122,7 @@ apiClient.interceptors.response.use(
         const quality = networkService.getCurrentInfo().quality;
         const maxRetries = quality === 'poor' ? 2 : quality === 'moderate' ? 2 : 3;
         if (cfg.__retryCount <= maxRetries) {
-          const delay = Math.min(1000 * 2 ** (cfg.__retryCount - 1), 5000);
+          const delay = Math.min(500 * 2 ** (cfg.__retryCount - 1), 3000);
           return new Promise((resolve) => setTimeout(resolve, delay)).then(() => apiClient.request(cfg));
         }
       }

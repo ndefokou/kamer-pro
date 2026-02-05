@@ -127,11 +127,12 @@ const Dashboard = () => {
     // Removed useWishlist hook since PropertyCard handles it internally
 
     // Reduced initial load for 2G networks - load 12 items instead of 40+
+    const recommendedLimit = useMemo(() => networkService.getRecommendedPageSize(), []);
     const { data: properties, isLoading, error } = useQuery<Product[]>({
-        queryKey: ["products"],
-        queryFn: () => getProducts({ limit: 12 }),
-        staleTime: 0, // DEBUG: Force fresh fetch
+        queryKey: ["products", recommendedLimit],
+        queryFn: () => getProducts({ limit: recommendedLimit }),
         // staleTime: 5 * 60 * 1000, // 5 minutes - reduce refetches on slow networks
+        staleTime: 30 * 1000, // 30s for testing
     });
 
     console.log('Dashboard.tsx: properties', properties);
