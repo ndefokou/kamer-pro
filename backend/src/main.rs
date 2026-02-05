@@ -167,6 +167,7 @@ async fn main() -> std::io::Result<()> {
             .app_data(web::Data::new(single_listing_cache.clone()))
             .service(
                 web::scope("/api")
+                    .service(routes::listings::dashboard_summary)
                     .service(
                         web::scope("/auth")
                             .service(routes::auth::registration_start)

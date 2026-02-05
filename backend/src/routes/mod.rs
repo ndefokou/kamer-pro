@@ -11,3 +11,4 @@ pub mod account;
 pub mod admin;
 pub mod reports;
 pub mod translate;
+pub mod aggregate;

@@ -98,8 +98,8 @@ const PropertySection = ({ title, properties, city }: { title: string; propertie
                                 location={product.listing.city}
                                 price={product.listing.price_per_night || 0}
                                 images={product.photos?.map(p => ({ image_url: p.url })) || []}
-                                isGuestFavorite={false} 
-                                priority={index < 4} 
+                                isGuestFavorite={false}
+                                priority={index < 4}
                             />
                         </div>
                     ))}
@@ -130,8 +130,13 @@ const Dashboard = () => {
     const { data: properties, isLoading, error } = useQuery<Product[]>({
         queryKey: ["products"],
         queryFn: () => getProducts({ limit: 12 }),
-        staleTime: 5 * 60 * 1000, // 5 minutes - reduce refetches on slow networks
+        staleTime: 0, // DEBUG: Force fresh fetch
+        // staleTime: 5 * 60 * 1000, // 5 minutes - reduce refetches on slow networks
     });
+
+    console.log('Dashboard.tsx: properties', properties);
+    console.log('Dashboard.tsx: isLoading', isLoading);
+    console.log('Dashboard.tsx: error', error);
 
     const normalizeCity = (s?: string) => (s || "").trim().toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '');
     const preferredOrder = useMemo(() => ["yaounde", "douala", "kribi"], []);
@@ -188,6 +193,7 @@ const Dashboard = () => {
     const { grouped, other, buea } = useMemo(() => {
         const map = new Map<string, { name: string; items: Product[] }>();
         const otherItemsNoKey: Product[] = [];
+        console.log('Dashboard.tsx: processing properties for groups', properties);
         (properties || []).forEach((p) => {
             if (!p?.listing) return;
             let raw = (p.listing.city || '').trim();

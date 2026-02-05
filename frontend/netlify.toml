@@ -5,21 +5,22 @@
   publish = "dist"
   command = "npm ci && npm run build"
 
-# Redirect SPA routes to index.html
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
-  force = true
-  conditions = {Role = ["!bot"]}
-
 # Proxy all API requests to your backend. Update 'to' with your backend origin.
+# IMPORTANT: This must come BEFORE the SPA catch-all so /api/* is not swallowed by it.
 # To use the proxy, DO NOT set VITE_API_URL/VITE_BACKEND_URL on Netlify so the app falls back to '/api'.
 [[redirects]]
   from = "/api/*"
   to = "https://le-mboko-r3o1.onrender.com/api/:splat"
   status = 200
   force = true
+
+# Redirect SPA routes to index.html (placed after API proxy)
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+  force = true
+  conditions = {Role = ["!bot"]}
 
 # Caching headers for static assets
 [[headers]]

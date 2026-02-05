@@ -3,10 +3,28 @@ use actix_web::{post, web, Error, HttpRequest, HttpResponse};
 use futures_util::stream::{StreamExt, TryStreamExt};
 use serde::Serialize;
 use sqlx::PgPool;
+use image::{imageops::FilterType, DynamicImage, GenericImageView};
+use std::io::Cursor;
 
 #[derive(Serialize)]
 struct ErrorResponse {
     message: String,
+}
+
+fn limit_image_dimensions(img: DynamicImage, max_w: u32, max_h: u32) -> DynamicImage {
+    let (w, h) = img.dimensions();
+    if w <= max_w && h <= max_h {
+        return img;
+    }
+    img.resize(max_w, max_h, FilterType::Lanczos3)
+}
+
+fn encode_webp(img: &DynamicImage, out: &mut Vec<u8>) -> Result<(), image::ImageError> {
+    use image::codecs::webp::WebPEncoder;
+    let mut cursor = Cursor::new(out);
+    let encoder = WebPEncoder::new_lossless(&mut cursor);
+    let rgba = img.to_rgba8();
+    encoder.encode(&rgba, rgba.width(), rgba.height(), image::ColorType::Rgba8)
 }
 
 #[derive(Serialize)]
@@ -39,7 +57,25 @@ pub async fn upload_images_standalone(
                 file_data.extend_from_slice(&data);
             }
 
-            // Upload to S3
+            // If it's an image, resize and create a WebP variant
+            let is_image = content_type.starts_with("image/");
+            if is_image {
+                if let Ok(img) = image::load_from_memory(&file_data) {
+                    let resized = limit_image_dimensions(img, 1600, 1600);
+                    // Encode WebP
+                    let mut webp_buf = Vec::new();
+                    if encode_webp(&resized, &mut webp_buf).is_ok() {
+                        if let Ok(webp_url) = s3
+                            .upload_file(webp_buf, &format!("{}.webp", filename), "image/webp")
+                            .await
+                        {
+                            file_urls.push(webp_url);
+                        }
+                    }
+                }
+            }
+
+            // Upload original
             match s3.upload_file(file_data, &filename, &content_type).await {
                 Ok(url) => {
                     println!("Successfully uploaded file to S3: {}", url);

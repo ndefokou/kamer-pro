@@ -1,4 +1,5 @@
-import axios from "axios";
+import axios, { AxiosRequestConfig } from "axios";
+import { decode as msgpackDecode } from "@msgpack/msgpack";
 import { dbService } from "../services/dbService";
 import { networkService } from "../services/networkService";
 import { queryClient } from "../App";
@@ -10,7 +11,7 @@ const getBaseUrl = () => {
     || "/api";
 
   // Remove trailing slash if present to avoid double slashes
-  const clean = raw.replace(/\/$/, "");
+  const clean = raw.endsWith("/") ? raw.slice(0, -1) : raw;
   // If it's already ending with /api, keep it; otherwise append /api
   return clean.endsWith("/api") ? clean : `${clean}/api`;
 };
@@ -21,10 +22,10 @@ const apiClient = axios.create({
 });
 
 // Request deduplication map
-const pendingRequests = new Map<string, Promise<any>>();
+const pendingRequests = new Map<string, Promise<unknown>>();
 
 // Cache update listeners
-type CacheListener = (url: string, data: any) => void;
+type CacheListener = (url: string, data: unknown) => void;
 const cacheListeners = new Set<CacheListener>();
 const lastBackgroundFetch = new Map<string, number>();
 const BG_FETCH_COOLDOWN = 60000; // 1 minute
@@ -34,12 +35,12 @@ export const subscribeToCache = (listener: CacheListener) => {
   return () => cacheListeners.delete(listener);
 };
 
-const notifyCacheUpdate = (url: string, data: any) => {
+const notifyCacheUpdate = (url: string, data: unknown) => {
   cacheListeners.forEach(listener => listener(url, data));
 };
 
 // Helper to create cache key
-const createCacheKey = (url: string, params?: any): string => {
+const createCacheKey = (url: string, params?: Record<string, unknown>): string => {
   return `${url}${params ? '?' + JSON.stringify(params) : ''}`;
 };
 
@@ -154,8 +155,43 @@ apiClient.interceptors.response.use(
   }
 );
 
+// Perform GET requesting compact binary (MessagePack) when available and decode response
+const getWithBinary = async (url: string, config?: AxiosRequestConfig): Promise<unknown> => {
+  const headers = {
+    ...(config?.headers || {}),
+    Accept: "application/json", // Force JSON for stability debugging
+    // Accept: "application/x-msgpack, application/msgpack, application/json", 
+  } as Record<string, string>;
+
+  try {
+    // Use standard JSON request for now
+    const response = await apiClient.get(url, {
+      ...config,
+      headers,
+    });
+
+    if (!response.data) {
+      console.warn('getWithBinary: Received empty data for', url);
+      return null;
+    }
+
+    console.log(`getWithBinary: Success for ${url}. Data type: ${typeof response.data}. IsArray: ${Array.isArray(response.data)}`);
+    if (Array.isArray(response.data)) {
+      console.log(`getWithBinary: Array length: ${response.data.length}`);
+    }
+
+    return response.data;
+  } catch (error) {
+    console.error('getWithBinary: Error fetching', url, error);
+    if (axios.isAxiosError(error) && error.response) {
+      return error.response.data;
+    }
+    throw error;
+  }
+};
+
 // Enhanced GET with caching
-const cachedGet = async <T = any>(url: string, config?: any): Promise<T> => {
+const cachedGet = async <T = unknown>(url: string, config?: AxiosRequestConfig): Promise<T> => {
   const cacheKey = createCacheKey(url, config?.params);
 
   // Check for pending request (deduplication)
@@ -184,7 +220,7 @@ const cachedGet = async <T = any>(url: string, config?: any): Promise<T> => {
               }).catch(() => undefined);
               return parsed;
             }
-          } catch (e) { }
+          } catch (e) { /* ignore parse error */ }
         }
       }
 
@@ -200,10 +236,10 @@ const cachedGet = async <T = any>(url: string, config?: any): Promise<T> => {
         const lastFetch = lastBackgroundFetch.get(cacheKey) || 0;
         if (Date.now() - lastFetch > BG_FETCH_COOLDOWN) {
           lastBackgroundFetch.set(cacheKey, Date.now());
-          apiClient.get(url, config)
-            .then(response => {
-              cacheResponse(url, response.data, config?.params);
-              notifyCacheUpdate(url, response.data);
+          getWithBinary(url, config)
+            .then(data => {
+              cacheResponse(url, data, config?.params);
+              notifyCacheUpdate(url, data);
               // Avoid global invalidation here to prevent unnecessary refetches across the app.
               // Pages relying on this data will re-render via subscribers or next mount.
             })
@@ -217,9 +253,9 @@ const cachedGet = async <T = any>(url: string, config?: any): Promise<T> => {
       }
 
       // If no cache, fetch from network
-      const response = await apiClient.get(url, config);
-      await cacheResponse(url, response.data, config?.params);
-      return response.data;
+      const data = await getWithBinary(url, config);
+      await cacheResponse(url, data, config?.params);
+      return data as T;
 
     } catch (error) {
       // Network failed, try cache as fallback
@@ -234,21 +270,21 @@ const cachedGet = async <T = any>(url: string, config?: any): Promise<T> => {
     }
   })();
 
-  pendingRequests.set(cacheKey, requestPromise as Promise<any>);
-  return requestPromise;
+  pendingRequests.set(cacheKey, requestPromise as Promise<unknown>);
+  return requestPromise as Promise<T>;
 };
 
 // Cache response based on URL
-const cacheResponse = async (url: string, data: any, params?: any): Promise<void> => {
+const cacheResponse = async (url: string, data: unknown, params?: Record<string, unknown> | undefined): Promise<void> => {
   try {
     if (url.includes('/listings/') && !url.includes('/reviews') && !url.includes('/my-listings')) {
       // Single listing
       const id = url.split('/listings/')[1].split('/')[0];
-      await dbService.cacheListing(id, data);
+      await dbService.cacheListing(id, data as any);
     } else if (url === '/listings' || url.includes('/listings/host/') || url === '/listings/my-listings') {
       // Multiple listings
       if (Array.isArray(data)) {
-        await dbService.cacheListings(data);
+        await dbService.cacheListings(data as any);
         // Save first page of general listings to localStorage for ultra-fast initial paint
         if (url === '/listings' && (!params?.offset || params.offset === 0) && data.length > 0) {
           localStorage.setItem('critical_listings', JSON.stringify(data.slice(0, 10)));
@@ -257,25 +293,25 @@ const cacheResponse = async (url: string, data: any, params?: any): Promise<void
     } else if (url.includes('/account/user/')) {
       // User data
       const id = parseInt(url.split('/account/user/')[1]);
-      await dbService.cacheUser(id, data);
+      await dbService.cacheUser(id, data as any);
     } else if (url.includes('/reviews')) {
       // Reviews
       const listingId = url.split('/listings/')[1].split('/reviews')[0];
-      await dbService.cacheReviews(listingId, data);
+      await dbService.cacheReviews(listingId, data as any);
     } else if (url.includes('/bookings')) {
       // Bookings
       if (Array.isArray(data)) {
-        await dbService.cacheBookings(data);
+        await dbService.cacheBookings(data as any);
       }
     } else if (url === '/listings/towns') {
       // Towns
       if (Array.isArray(data)) {
-        await dbService.cacheTowns(data);
+        await dbService.cacheTowns(data as any);
       }
     } else if (url === '/messages/conversations') {
       // Conversations
       if (Array.isArray(data)) {
-        await dbService.cacheConversations(data);
+        await dbService.cacheConversations(data as any);
       }
     } else if (url.includes('/messages/conversations/')) {
       // Single conversation/messages

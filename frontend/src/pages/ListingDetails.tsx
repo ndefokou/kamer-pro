@@ -20,12 +20,12 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
 import { MessageSquare, ShieldCheck, Award, Calendar as CalendarIcon, Map as MapIcon } from 'lucide-react';
-import ReviewModal from '@/components/ReviewModal';
+const ReviewModal = lazy(() => import('@/components/ReviewModal'));
 import { DEFAULT_HOUSE_RULES, type HouseRules } from '@/components/host/HouseRulesSection';
-import ShareModal from '@/components/ShareModal';
-import MessageHostModal from '@/components/MessageHostModal';
-import ReportHostModal from '@/components/ReportHostModal';
-import PhotoGallery from '@/components/PhotoGallery';
+const ShareModal = lazy(() => import('@/components/ShareModal'));
+const MessageHostModal = lazy(() => import('@/components/MessageHostModal'));
+const ReportHostModal = lazy(() => import('@/components/ReportHostModal'));
+const PhotoGallery = lazy(() => import('@/components/PhotoGallery'));
 import SEO from '@/components/SEO';
 import { useToast } from '@/hooks/use-toast';
 import { useWishlist } from '@/hooks/useWishlist';
@@ -525,34 +525,41 @@ const ListingDetails: React.FC = () => {
                     </div>
                 </div>
 
-                <ShareModal
-                    isOpen={isShareModalOpen}
-                    onClose={() => setIsShareModalOpen(false)}
-                    listing={{ ...listing, photos: sortedPhotos }}
-                />
+                <Suspense fallback={null}>
+                    <ShareModal
+                        isOpen={isShareModalOpen}
+                        onClose={() => setIsShareModalOpen(false)}
+                        listing={{ ...listing, photos: sortedPhotos }}
+                    />
+                </Suspense>
 
-                <MessageHostModal
-                    isOpen={isMessageModalOpen}
-                    onClose={() => setIsMessageModalOpen(false)}
-                    listingId={listing.id}
-                    hostId={listing.host_id}
-                    hostName={hostName} // TODO: Get actual host name
-                />
+                <Suspense fallback={null}>
+                    <MessageHostModal
+                        isOpen={isMessageModalOpen}
+                        onClose={() => setIsMessageModalOpen(false)}
+                        listingId={listing.id}
+                        hostId={listing.host_id}
+                        hostName={hostName} // TODO: Get actual host name
+                    />
+                </Suspense>
 
-                <ReportHostModal
-                    isOpen={isReportModalOpen}
-                    onClose={() => setIsReportModalOpen(false)}
-                    hostId={listing.host_id}
-                    listingId={listing.id}
-                />
+                <Suspense fallback={null}>
+                    <ReportHostModal
+                        isOpen={isReportModalOpen}
+                        onClose={() => setIsReportModalOpen(false)}
+                        hostId={listing.host_id}
+                        listingId={listing.id}
+                    />
+                </Suspense>
 
-                <PhotoGallery
-
-                    isOpen={isPhotoGalleryOpen}
-                    onClose={() => setIsPhotoGalleryOpen(false)}
-                    photos={sortedPhotos}
-                    initialPhotoIndex={initialPhotoIndex}
-                />
+                <Suspense fallback={null}>
+                    <PhotoGallery
+                        isOpen={isPhotoGalleryOpen}
+                        onClose={() => setIsPhotoGalleryOpen(false)}
+                        photos={sortedPhotos}
+                        initialPhotoIndex={initialPhotoIndex}
+                    />
+                </Suspense>
 
                 {/* Photo Gallery */}
                 <div className="mb-8 rounded-xl overflow-hidden shadow-sm">
