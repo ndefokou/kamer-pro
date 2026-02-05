@@ -1152,6 +1152,7 @@ pub async fn get_my_listings(
 pub async fn publish_listing(
     pool: web::Data<PgPool>,
     listing_cache: web::Data<Cache<String, ListingWithDetails>>,
+    listings_list_cache: web::Data<Cache<String, Vec<ListingWithDetails>>>,
     req: HttpRequest,
     path: web::Path<String>,
 ) -> impl Responder {
@@ -1225,6 +1226,8 @@ pub async fn publish_listing(
         Ok(_) => {
             log::info!("Successfully published listing {}", listing_id);
             listing_cache.invalidate(&listing_id).await;
+            // Ensure any cached listing queries are refreshed so the new item appears immediately
+            listings_list_cache.invalidate_all();
             HttpResponse::Ok().json(serde_json::json!({
                 "id": listing_id,
                 "status": "published"
@@ -1250,6 +1253,7 @@ pub async fn publish_listing(
 pub async fn unpublish_listing(
     pool: web::Data<PgPool>,
     listing_cache: web::Data<Cache<String, ListingWithDetails>>,
+    listings_list_cache: web::Data<Cache<String, Vec<ListingWithDetails>>>,
     req: HttpRequest,
     path: web::Path<String>,
 ) -> impl Responder {
@@ -1275,6 +1279,8 @@ pub async fn unpublish_listing(
             if result.rows_affected() > 0 {
                 log::info!("Successfully unpublished listing {}", listing_id);
                 listing_cache.invalidate(&listing_id).await;
+                // Ensure cached listing query pages drop the unpublished item
+                listings_list_cache.invalidate_all();
                 let resp = HttpResponse::Ok().json(serde_json::json!({
                     "id": listing_id,
                     "status": "unpublished"
