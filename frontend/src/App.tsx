@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { createHashRouter, RouterProvider } from "react-router-dom";
+import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { WishlistProvider } from "@/contexts/WishlistContext";
 import { MessagingProvider } from "@/contexts/MessagingContext";
 import { HostProvider } from "@/contexts/HostContext";
@@ -34,7 +34,7 @@ export const queryClient = new QueryClient({
   },
 });
 
-const router = createHashRouter(
+const router = createBrowserRouter(
   [
     { path: "/", element: <Suspense fallback={<div />}><Dashboard /></Suspense> },
     { path: "/marketplace", lazy: async () => ({ Component: (await import("./pages/SearchResults")).default }) },
