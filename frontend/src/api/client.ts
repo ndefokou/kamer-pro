@@ -211,14 +211,7 @@ const cachedGet = async <T = unknown>(url: string, config?: AxiosRequestConfig):
           try {
             const parsed = JSON.parse(criticalData);
             if (Array.isArray(parsed) && parsed.length > 0) {
-              // Fetch update in background
-              apiClient.get(url, config).then(res => {
-                if (res.data && res.data.length > 0) {
-                  // Store full dataset for consistency on refresh
-                  localStorage.setItem('critical_listings', JSON.stringify(res.data));
-                }
-                cacheResponse(url, res.data, config?.params);
-              }).catch(() => undefined);
+              // Return cached critical listings immediately without a background network request
               return parsed;
             }
           } catch (e) { /* ignore parse error */ }
@@ -232,24 +225,7 @@ const cachedGet = async <T = unknown>(url: string, config?: AxiosRequestConfig):
       const cached = cachedUnknown as T | null;
 
       if (!preferNetworkForHomeFeed && cached && (!Array.isArray(cached) || cached.length > 0)) {
-        // Fetch in background to update cache without blocking the UI
-        // Only if we haven't fetched in the last minute
-        const lastFetch = lastBackgroundFetch.get(cacheKey) || 0;
-        if (Date.now() - lastFetch > BG_FETCH_COOLDOWN) {
-          lastBackgroundFetch.set(cacheKey, Date.now());
-          getWithBinary(url, config)
-            .then(data => {
-              cacheResponse(url, data, config?.params);
-              notifyCacheUpdate(url, data);
-              // Avoid global invalidation here to prevent unnecessary refetches across the app.
-              // Pages relying on this data will re-render via subscribers or next mount.
-            })
-            .catch(() => {
-              // Reset cooldown on error to allow retry
-              lastBackgroundFetch.delete(cacheKey);
-            });
-        }
-
+        // Return cached data immediately with no background revalidation to avoid duplicate requests
         return cached;
       }
 

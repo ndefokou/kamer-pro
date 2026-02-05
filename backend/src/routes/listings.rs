@@ -872,40 +872,20 @@ pub async fn create_listing(
         Err(response) => return response,
     };
 
-    // Check if user exists, create if not
-    let user_exists: Option<i32> = match sqlx::query_scalar("SELECT id FROM users WHERE id = $1")
-        .bind(user_id)
-        .fetch_optional(pool.get_ref())
-        .await
+    // Ensure user exists: attempt insert and ignore if already present
+    if let Err(e) = sqlx::query(
+        "INSERT INTO users (id, username, email) VALUES ($1, $2, $3) ON CONFLICT (id) DO NOTHING",
+    )
+    .bind(user_id)
+    .bind(format!("host_{}", user_id))
+    .bind(format!("host_{}@mboamaison.com", user_id))
+    .execute(pool.get_ref())
+    .await
     {
-        Ok(id) => id,
-        Err(e) => {
-            log::error!("Failed to check user existence: {:?}", e);
-            return HttpResponse::InternalServerError().json(serde_json::json!({
-                "error": "Database error while verifying user"
-            }));
-        }
-    };
-
-    if user_exists.is_none() {
-        log::info!("User ID {} not found, creating new user", user_id);
-
-        // Auto-create user with basic info
-        match sqlx::query("INSERT INTO users (id, username, email) VALUES ($1, $2, $3)")
-            .bind(user_id)
-            .bind(format!("host_{}", user_id))
-            .bind(format!("host_{}@mboamaison.com", user_id))
-            .execute(pool.get_ref())
-            .await
-        {
-            Ok(_) => log::info!("Successfully created user {}", user_id),
-            Err(e) => {
-                log::error!("Failed to create user: {:?}", e);
-                return HttpResponse::InternalServerError().json(serde_json::json!({
-                    "error": "Failed to create user account"
-                }));
-            }
-        }
+        log::error!("Failed to upsert user {}: {:?}", user_id, e);
+        return HttpResponse::InternalServerError().json(serde_json::json!({
+            "error": "Database error while ensuring user"
+        }));
     }
 
     let listing_id = Uuid::new_v4().to_string();

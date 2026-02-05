@@ -56,63 +56,6 @@ export default defineConfig(({ mode }) => ({
         cleanupOutdatedCaches: true,
         runtimeCaching: [
           {
-            // Cache API responses with network-first strategy
-            urlPattern: /^https?:\/\/.*\/api\/.*/i,
-            method: 'GET',
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'api-cache',
-              expiration: {
-                maxEntries: 100,
-                maxAgeSeconds: 60 * 30, // 30 minutes
-              },
-              networkTimeoutSeconds: 5, // Reduced for faster fallback to cache
-              cacheableResponse: {
-                statuses: [0, 200],
-              },
-            },
-          },
-          {
-            // Background Sync for Mutations (POST, PUT, DELETE)
-            urlPattern: /^https?:\/\/.*\/api\/.*/i,
-            method: 'POST',
-            handler: 'NetworkOnly',
-            options: {
-              backgroundSync: {
-                name: 'api-mutation-queue',
-                options: {
-                  maxRetentionTime: 24 * 60, // Retry for up to 24 hours
-                },
-              },
-            },
-          },
-          {
-            urlPattern: /^https?:\/\/.*\/api\/.*/i,
-            method: 'PUT',
-            handler: 'NetworkOnly',
-            options: {
-              backgroundSync: {
-                name: 'api-mutation-queue',
-                options: {
-                  maxRetentionTime: 24 * 60,
-                },
-              },
-            },
-          },
-          {
-            urlPattern: /^https?:\/\/.*\/api\/.*/i,
-            method: 'DELETE',
-            handler: 'NetworkOnly',
-            options: {
-              backgroundSync: {
-                name: 'api-mutation-queue',
-                options: {
-                  maxRetentionTime: 24 * 60,
-                },
-              },
-            },
-          },
-          {
             // Cache images with cache-first strategy
             urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp)$/i,
             handler: 'CacheFirst',
@@ -120,7 +63,7 @@ export default defineConfig(({ mode }) => ({
               cacheName: 'image-cache',
               expiration: {
                 maxEntries: 200,
-                maxAgeSeconds: 60 * 60 * 24 * 7, // 7 days
+                maxAgeSeconds: 60 * 60 * 24 * 7,
               },
               cacheableResponse: {
                 statuses: [0, 200],
@@ -135,7 +78,7 @@ export default defineConfig(({ mode }) => ({
               cacheName: 'font-cache',
               expiration: {
                 maxEntries: 20,
-                maxAgeSeconds: 60 * 60 * 24 * 365, // 1 year
+                maxAgeSeconds: 60 * 60 * 24 * 365,
               },
             },
           },
