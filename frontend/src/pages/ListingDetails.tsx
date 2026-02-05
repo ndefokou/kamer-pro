@@ -1043,7 +1043,7 @@ const ListingDetails: React.FC = () => {
                             </p>
                         )}
                     </div>
-                    <div className="h-64 md:h-[400px] rounded-xl overflow-hidden z-0 relative">
+                    <div ref={mapContainerRef} className="h-64 md:h-[400px] rounded-xl overflow-hidden z-0 relative">
                         {showMap ? (
                             <Suspense fallback={
                                 <div className="h-full w-full bg-slate-100 flex items-center justify-center">
@@ -1058,12 +1058,10 @@ const ListingDetails: React.FC = () => {
                             </Suspense>
                         ) : (
                             <div className="h-full w-full bg-slate-100 flex items-center justify-center">
-                                <button
-                                    className="px-4 py-2 bg-white border rounded-lg text-sm font-medium shadow-sm hover:bg-gray-50"
-                                    onClick={() => setShowMap(true)}
-                                >
-                                    {t('Load map...')}
-                                </button>
+                                <div className="flex flex-col items-center gap-2">
+                                    <MapIcon className="h-8 w-8 text-slate-300" />
+                                    <p className="text-sm text-slate-400">{t('Scroll to load map...')}</p>
+                                </div>
                             </div>
                         )}
                     </div>
