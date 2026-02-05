@@ -431,15 +431,14 @@ const ListingDetails: React.FC = () => {
             return;
         }
 
-        const current = `${window.location.pathname}${window.location.search}`;
         const isLoggedIn = !!localStorage.getItem('userId');
         if (!isLoggedIn) {
             toast({
-                title: 'Login required',
-                description: 'Please log in to reserve a listing.',
+                title: 'Account required',
+                description: 'Please create an account or log in to reserve a listing.',
                 variant: 'destructive'
             });
-            window.location.href = `/login?redirect=${encodeURIComponent(current || '/')}`;
+            window.location.href = `/login?tab=register&redirect=${encodeURIComponent('/')}`;
             return;
         }
 
@@ -685,7 +684,7 @@ const ListingDetails: React.FC = () => {
                     <div className="md:col-span-2">
                         <div className="border-b pb-6 mb-6">
                             <h2 className="text-xl font-semibold mb-1">
-                                <TranslatedText as="span" text={`${propertyTypes.find(t => t.id === listing.property_type)?.label || listing.property_type} hosted by ${hostName}`} />
+                                <TranslatedText as="span" text={listing.title} />
                             </h2>
                             <p className="text-muted-foreground">
                                 {t('listing.details.unitCount.guests', { count: listing.max_guests })} • {t('listing.details.unitCount.bedrooms', { count: listing.bedrooms })} • {t('listing.details.unitCount.beds', { count: listing.beds })} • {t('listing.details.unitCount.baths', { count: listing.bathrooms })}
