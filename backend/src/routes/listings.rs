@@ -1,6 +1,7 @@
 use actix_web::{delete, get, post, put, web, HttpRequest, HttpResponse, Responder};
 use moka::future::Cache;
 use serde::{Deserialize, Serialize};
+use sha1::{Digest, Sha1};
 use sqlx::PgPool;
 use std::collections::HashMap;
 use uuid::Uuid;
@@ -74,6 +75,107 @@ pub struct Listing {
     pub scenic_views: Option<String>,
 }
 
+// ============================================================================
+// Aggregation: Dashboard summary
+// ============================================================================
+#[derive(Debug, Serialize, Default)]
+pub struct DashboardSummary {
+    pub unread_messages: i64,
+    pub wishlist_count: i64,
+    pub upcoming_bookings: i64,
+}
+
+/// GET /api/v1/dashboard-summary
+#[get("/v1/dashboard-summary")]
+pub async fn dashboard_summary(pool: web::Data<PgPool>, req: HttpRequest) -> impl Responder {
+    // Anonymous users: empty, cacheable
+    let user_id = match extract_user_id(&req) {
+        Ok(id) => id,
+        Err(_) => {
+            let body = DashboardSummary::default();
+            let json = match serde_json::to_vec(&body) {
+                Ok(v) => v,
+                Err(_) => Vec::new(),
+            };
+            let etag = format!("\"{}\"", hex::encode(Sha1::digest(&json)));
+            if let Some(tag) = req.headers().get(actix_web::http::header::IF_NONE_MATCH) {
+                if tag.to_str().ok() == Some(etag.as_str()) {
+                    return HttpResponse::NotModified().finish();
+                }
+            }
+            return HttpResponse::Ok()
+                .insert_header((actix_web::http::header::ETAG, etag))
+                .insert_header(("Cache-Control", "public, max-age=0, must-revalidate"))
+                .json(body);
+        }
+    };
+
+    let unread_fut = sqlx::query_scalar::<_, i64>(
+        "SELECT COUNT(*) FROM messages WHERE recipient_id = $1 AND is_read = FALSE",
+    )
+    .bind(user_id)
+    .fetch_one(pool.get_ref());
+
+    let wishlist_fut =
+        sqlx::query_scalar::<_, i64>("SELECT COUNT(*) FROM wishlist WHERE user_id = $1")
+            .bind(user_id)
+            .fetch_one(pool.get_ref());
+
+    let upcoming_fut = sqlx::query_scalar::<_, i64>(
+        "SELECT COUNT(*) FROM bookings WHERE guest_id = $1 AND status = 'confirmed' AND check_in >= CURRENT_DATE",
+    )
+    .bind(user_id)
+    .fetch_one(pool.get_ref());
+
+    let (unread_messages, wishlist_count, upcoming_bookings) =
+        match tokio::join!(unread_fut, wishlist_fut, upcoming_fut) {
+            (Ok(u), Ok(w), Ok(b)) => (u, w, b),
+            _ => (0, 0, 0),
+        };
+
+    let summary = DashboardSummary {
+        unread_messages,
+        wishlist_count,
+        upcoming_bookings,
+    };
+    let accept = req
+        .headers()
+        .get(actix_web::http::header::ACCEPT)
+        .and_then(|h| h.to_str().ok())
+        .unwrap_or("");
+
+    if accept.contains("application/x-msgpack") || accept.contains("application/msgpack") {
+        if let Ok(bytes) = rmp_serde::to_vec(&summary) {
+            let etag = format!("\"{}\"", hex::encode(Sha1::digest(&bytes)));
+            if let Some(tag) = req.headers().get(actix_web::http::header::IF_NONE_MATCH) {
+                if tag.to_str().ok() == Some(etag.as_str()) {
+                    return HttpResponse::NotModified().finish();
+                }
+            }
+            return HttpResponse::Ok()
+                .insert_header((
+                    actix_web::http::header::CONTENT_TYPE,
+                    "application/x-msgpack",
+                ))
+                .insert_header((actix_web::http::header::ETAG, etag))
+                .insert_header(("Cache-Control", "public, max-age=0, must-revalidate"))
+                .body(bytes);
+        }
+    }
+
+    let json = serde_json::to_vec(&summary).unwrap_or_default();
+    let etag = format!("\"{}\"", hex::encode(Sha1::digest(&json)));
+    if let Some(tag) = req.headers().get(actix_web::http::header::IF_NONE_MATCH) {
+        if tag.to_str().ok() == Some(etag.as_str()) {
+            return HttpResponse::NotModified().finish();
+        }
+    }
+    HttpResponse::Ok()
+        .insert_header((actix_web::http::header::ETAG, etag))
+        .insert_header(("Cache-Control", "public, max-age=0, must-revalidate"))
+        .json(summary)
+}
+
 #[derive(Debug, Deserialize)]
 pub struct PageParams {
     pub limit: Option<i64>,
@@ -82,7 +184,11 @@ pub struct PageParams {
 
 /// GET /api/listings/{id}/reviews - List reviews for a listing (with usernames)
 #[get("/{id}/reviews")]
-pub async fn get_reviews(pool: web::Data<PgPool>, path: web::Path<String>) -> impl Responder {
+pub async fn get_reviews(
+    pool: web::Data<PgPool>,
+    req: HttpRequest,
+    path: web::Path<String>,
+) -> impl Responder {
     let listing_id = path.into_inner();
 
     let query = r#"
@@ -96,34 +202,63 @@ pub async fn get_reviews(pool: web::Data<PgPool>, path: web::Path<String>) -> im
         ORDER BY r.created_at DESC
     "#;
 
-    // Retry a few times on PoolTimedOut and other transient errors
-    let mut attempt = 0u8;
-    loop {
-        let result = sqlx::query_as::<_, ReviewRow>(query)
-            .bind(&listing_id)
-            .fetch_all(pool.get_ref())
-            .await;
+    match sqlx::query_as::<_, ReviewRow>(query)
+        .bind(listing_id)
+        .fetch_all(pool.get_ref())
+        .await
+    {
+        Ok(rows) => {
+            let accept = req
+                .headers()
+                .get(actix_web::http::header::ACCEPT)
+                .and_then(|h| h.to_str().ok())
+                .unwrap_or("");
 
-        match result {
-            Ok(rows) => break HttpResponse::Ok().json(rows),
-            Err(e) => {
-                let is_pool_timeout = matches!(e, sqlx::Error::PoolTimedOut);
-                if is_pool_timeout && attempt < 3 {
-                    let backoff_ms = 200u64 * 2u64.saturating_pow(attempt as u32);
-                    log::warn!(
-                        "get_reviews retrying due to PoolTimedOut (attempt {}), backing off {}ms",
-                        attempt + 1,
-                        backoff_ms
-                    );
-                    attempt += 1;
-                    tokio::time::sleep(std::time::Duration::from_millis(backoff_ms)).await;
-                    continue;
+            // Serialize as JSON by default, or MessagePack if client accepts it
+            if accept.contains("application/x-msgpack") || accept.contains("application/msgpack") {
+                match rmp_serde::to_vec(&rows) {
+                    Ok(bytes) => {
+                        let etag = format!("\"{}\"", hex::encode(Sha1::digest(&bytes)));
+                        if let Some(tag) = req.headers().get(actix_web::http::header::IF_NONE_MATCH)
+                        {
+                            if tag.to_str().ok() == Some(etag.as_str()) {
+                                return HttpResponse::NotModified().finish();
+                            }
+                        }
+                        HttpResponse::Ok()
+                            .insert_header((
+                                actix_web::http::header::CONTENT_TYPE,
+                                "application/x-msgpack",
+                            ))
+                            .insert_header((actix_web::http::header::ETAG, etag))
+                            .body(bytes)
+                    }
+                    Err(e) => {
+                        log::error!("msgpack serialize error: {:?}", e);
+                        HttpResponse::Ok().json(rows)
+                    }
                 }
-                log::error!("Failed to fetch reviews: {:?}", e);
-                break HttpResponse::InternalServerError().json(serde_json::json!({
-                    "error": "Database error"
-                }));
+            } else {
+                let json = match serde_json::to_vec(&rows) {
+                    Ok(v) => v,
+                    Err(_) => Vec::new(),
+                };
+                let etag = format!("\"{}\"", hex::encode(Sha1::digest(&json)));
+                if let Some(tag) = req.headers().get(actix_web::http::header::IF_NONE_MATCH) {
+                    if tag.to_str().ok() == Some(etag.as_str()) {
+                        return HttpResponse::NotModified().finish();
+                    }
+                }
+                HttpResponse::Ok()
+                    .insert_header((actix_web::http::header::ETAG, etag))
+                    .json(rows)
             }
+        }
+        Err(e) => {
+            log::error!("Failed to fetch reviews: {:?}", e);
+            HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": "Database error"
+            }))
         }
     }
 }
@@ -223,6 +358,7 @@ pub async fn add_review(
 #[get("/host/{id}")]
 pub async fn get_host_listings(
     pool: web::Data<PgPool>,
+    req: HttpRequest,
     path: web::Path<i32>,
     query: web::Query<PageParams>,
 ) -> impl Responder {
@@ -337,17 +473,59 @@ pub async fn get_host_listings(
         });
     }
 
-    let resp = HttpResponse::Ok()
-        .insert_header((
-            "Cache-Control",
-            "public, max-age=60, stale-while-revalidate=300",
-        ))
-        .json(out);
+    // Content negotiation + ETag for better caching over slow networks
+    let accept = req
+        .headers()
+        .get(actix_web::http::header::ACCEPT)
+        .and_then(|h| h.to_str().ok())
+        .unwrap_or("");
+
+    if accept.contains("application/x-msgpack") || accept.contains("application/msgpack") {
+        if let Ok(bytes) = rmp_serde::to_vec(&out) {
+            let etag = format!("\"{}\"", hex::encode(Sha1::digest(&bytes)));
+            if let Some(tag) = req.headers().get(actix_web::http::header::IF_NONE_MATCH) {
+                if tag.to_str().ok() == Some(etag.as_str()) {
+                    log::info!(
+                        "get_host_listings latency_ms={} (304)",
+                        started.elapsed().as_millis()
+                    );
+                    return HttpResponse::NotModified().finish();
+                }
+            }
+            log::info!(
+                "get_host_listings latency_ms={}",
+                started.elapsed().as_millis()
+            );
+            return HttpResponse::Ok()
+                .insert_header((
+                    actix_web::http::header::CONTENT_TYPE,
+                    "application/x-msgpack",
+                ))
+                .insert_header((actix_web::http::header::ETAG, etag))
+                .insert_header(("Cache-Control", "public, max-age=0, must-revalidate"))
+                .body(bytes);
+        }
+    }
+
+    let json = serde_json::to_vec(&out).unwrap_or_default();
+    let etag = format!("\"{}\"", hex::encode(Sha1::digest(&json)));
+    if let Some(tag) = req.headers().get(actix_web::http::header::IF_NONE_MATCH) {
+        if tag.to_str().ok() == Some(etag.as_str()) {
+            log::info!(
+                "get_host_listings latency_ms={} (304)",
+                started.elapsed().as_millis()
+            );
+            return HttpResponse::NotModified().finish();
+        }
+    }
     log::info!(
         "get_host_listings latency_ms={}",
         started.elapsed().as_millis()
     );
-    resp
+    HttpResponse::Ok()
+        .insert_header((actix_web::http::header::ETAG, etag))
+        .insert_header(("Cache-Control", "public, max-age=0, must-revalidate"))
+        .body(json)
 }
 
 #[derive(Debug, Serialize, Deserialize, sqlx::FromRow, Clone)]
@@ -777,6 +955,7 @@ pub async fn create_listing(
 pub async fn get_listing(
     pool: web::Data<PgPool>,
     listing_cache: web::Data<Cache<String, ListingWithDetails>>,
+    req: HttpRequest,
     path: web::Path<String>,
 ) -> impl Responder {
     let listing_id = path.into_inner();
@@ -784,7 +963,39 @@ pub async fn get_listing(
     // Check cache first
     if let Some(cached) = listing_cache.get(&listing_id).await {
         log::info!("Cache hit for listing {}", listing_id);
-        return HttpResponse::Ok().json(cached);
+        let accept = req
+            .headers()
+            .get(actix_web::http::header::ACCEPT)
+            .and_then(|h| h.to_str().ok())
+            .unwrap_or("");
+
+        if accept.contains("application/x-msgpack") || accept.contains("application/msgpack") {
+            if let Ok(bytes) = rmp_serde::to_vec(&cached) {
+                let etag = format!("\"{}\"", hex::encode(Sha1::digest(&bytes)));
+                if let Some(tag) = req.headers().get(actix_web::http::header::IF_NONE_MATCH) {
+                    if tag.to_str().ok() == Some(etag.as_str()) {
+                        return HttpResponse::NotModified().finish();
+                    }
+                }
+                return HttpResponse::Ok()
+                    .insert_header((
+                        actix_web::http::header::CONTENT_TYPE,
+                        "application/x-msgpack",
+                    ))
+                    .insert_header((actix_web::http::header::ETAG, etag))
+                    .body(bytes);
+            }
+        }
+        let json = serde_json::to_vec(&cached).unwrap_or_default();
+        let etag = format!("\"{}\"", hex::encode(Sha1::digest(&json)));
+        if let Some(tag) = req.headers().get(actix_web::http::header::IF_NONE_MATCH) {
+            if tag.to_str().ok() == Some(etag.as_str()) {
+                return HttpResponse::NotModified().finish();
+            }
+        }
+        return HttpResponse::Ok()
+            .insert_header((actix_web::http::header::ETAG, etag))
+            .json(cached);
     }
 
     match get_listing_with_details(pool.get_ref(), &listing_id).await {
@@ -793,11 +1004,45 @@ pub async fn get_listing(
             listing_cache
                 .insert(listing_id.clone(), listing.clone())
                 .await;
+            let accept = req
+                .headers()
+                .get(actix_web::http::header::ACCEPT)
+                .and_then(|h| h.to_str().ok())
+                .unwrap_or("");
+            if accept.contains("application/x-msgpack") || accept.contains("application/msgpack") {
+                match rmp_serde::to_vec(&listing) {
+                    Ok(bytes) => {
+                        let etag = format!("\"{}\"", hex::encode(Sha1::digest(&bytes)));
+                        if let Some(tag) = req.headers().get(actix_web::http::header::IF_NONE_MATCH)
+                        {
+                            if tag.to_str().ok() == Some(etag.as_str()) {
+                                return HttpResponse::NotModified().finish();
+                            }
+                        }
+                        return HttpResponse::Ok()
+                            .insert_header((
+                                actix_web::http::header::CONTENT_TYPE,
+                                "application/x-msgpack",
+                            ))
+                            .insert_header((actix_web::http::header::ETAG, etag))
+                            .insert_header(("Cache-Control", "public, max-age=0, must-revalidate"))
+                            .body(bytes);
+                    }
+                    Err(e) => {
+                        log::error!("msgpack serialize error: {:?}", e);
+                    }
+                }
+            }
+            let json = serde_json::to_vec(&listing).unwrap_or_default();
+            let etag = format!("\"{}\"", hex::encode(Sha1::digest(&json)));
+            if let Some(tag) = req.headers().get(actix_web::http::header::IF_NONE_MATCH) {
+                if tag.to_str().ok() == Some(etag.as_str()) {
+                    return HttpResponse::NotModified().finish();
+                }
+            }
             HttpResponse::Ok()
-                .insert_header((
-                    "Cache-Control",
-                    "public, max-age=60, stale-while-revalidate=300",
-                ))
+                .insert_header((actix_web::http::header::ETAG, etag))
+                .insert_header(("Cache-Control", "public, max-age=0, must-revalidate"))
                 .json(listing)
         }
         Err(sqlx::Error::RowNotFound) => HttpResponse::NotFound().json(serde_json::json!({
@@ -814,6 +1059,7 @@ pub async fn get_listing(
 pub async fn update_listing(
     pool: web::Data<PgPool>,
     listing_cache: web::Data<Cache<String, ListingWithDetails>>,
+    listing_list_cache: web::Data<Cache<String, Vec<ListingWithDetails>>>,
     req: HttpRequest,
     path: web::Path<String>,
     body: web::Json<UpdateListingRequest>,
@@ -941,6 +1187,7 @@ pub async fn update_listing(
                 Ok(_) => {
                     // Invalidate cache
                     listing_cache.invalidate(&listing_id).await;
+                    listing_list_cache.invalidate_all();
                     HttpResponse::Ok().json(serde_json::json!({
                         "id": listing_id,
                         "updated": true
@@ -973,6 +1220,7 @@ pub async fn update_listing(
 pub async fn delete_listing(
     pool: web::Data<PgPool>,
     listing_cache: web::Data<Cache<String, ListingWithDetails>>,
+    listing_list_cache: web::Data<Cache<String, Vec<ListingWithDetails>>>,
     req: HttpRequest,
     path: web::Path<String>,
 ) -> impl Responder {
@@ -998,6 +1246,7 @@ pub async fn delete_listing(
             {
                 Ok(_) => {
                     listing_cache.invalidate(&listing_id).await;
+                    listing_list_cache.invalidate_all();
                     HttpResponse::Ok().json(serde_json::json!({
                         "message": "Listing deleted successfully"
                     }))
@@ -1152,7 +1401,7 @@ pub async fn get_my_listings(
 pub async fn publish_listing(
     pool: web::Data<PgPool>,
     listing_cache: web::Data<Cache<String, ListingWithDetails>>,
-    listings_list_cache: web::Data<Cache<String, Vec<ListingWithDetails>>>,
+    listing_list_cache: web::Data<Cache<String, Vec<ListingWithDetails>>>,
     req: HttpRequest,
     path: web::Path<String>,
 ) -> impl Responder {
@@ -1226,8 +1475,7 @@ pub async fn publish_listing(
         Ok(_) => {
             log::info!("Successfully published listing {}", listing_id);
             listing_cache.invalidate(&listing_id).await;
-            // Ensure any cached listing queries are refreshed so the new item appears immediately
-            listings_list_cache.invalidate_all();
+            listing_list_cache.invalidate_all();
             HttpResponse::Ok().json(serde_json::json!({
                 "id": listing_id,
                 "status": "published"
@@ -1253,7 +1501,7 @@ pub async fn publish_listing(
 pub async fn unpublish_listing(
     pool: web::Data<PgPool>,
     listing_cache: web::Data<Cache<String, ListingWithDetails>>,
-    listings_list_cache: web::Data<Cache<String, Vec<ListingWithDetails>>>,
+    listing_list_cache: web::Data<Cache<String, Vec<ListingWithDetails>>>,
     req: HttpRequest,
     path: web::Path<String>,
 ) -> impl Responder {
@@ -1279,8 +1527,7 @@ pub async fn unpublish_listing(
             if result.rows_affected() > 0 {
                 log::info!("Successfully unpublished listing {}", listing_id);
                 listing_cache.invalidate(&listing_id).await;
-                // Ensure cached listing query pages drop the unpublished item
-                listings_list_cache.invalidate_all();
+                listing_list_cache.invalidate_all();
                 let resp = HttpResponse::Ok().json(serde_json::json!({
                     "id": listing_id,
                     "status": "unpublished"
@@ -1548,6 +1795,7 @@ pub async fn add_video(
 pub async fn get_all_listings(
     pool: web::Data<PgPool>,
     listing_cache: web::Data<Cache<String, Vec<ListingWithDetails>>>,
+    req: HttpRequest,
     query: web::Query<ListingFilters>,
 ) -> impl Responder {
     let started = std::time::Instant::now();
@@ -1560,12 +1808,42 @@ pub async fn get_all_listings(
 
     if let Some(cached) = listing_cache.get(&cache_key).await {
         log::info!("Cache hit for {}", cache_key);
+        let accept = req
+            .headers()
+            .get(actix_web::http::header::ACCEPT)
+            .and_then(|h| h.to_str().ok())
+            .unwrap_or("");
+
+        if accept.contains("application/x-msgpack") || accept.contains("application/msgpack") {
+            if let Ok(bytes) = rmp_serde::to_vec(&cached) {
+                let etag = format!("\"{}\"", hex::encode(Sha1::digest(&bytes)));
+                if let Some(tag) = req.headers().get(actix_web::http::header::IF_NONE_MATCH) {
+                    if tag.to_str().ok() == Some(etag.as_str()) {
+                        return HttpResponse::NotModified().finish();
+                    }
+                }
+                return HttpResponse::Ok()
+                    .insert_header((
+                        actix_web::http::header::CONTENT_TYPE,
+                        "application/x-msgpack",
+                    ))
+                    .insert_header((actix_web::http::header::ETAG, etag))
+                    .insert_header(("Cache-Control", "public, max-age=0, must-revalidate"))
+                    .body(bytes);
+            }
+        }
+
+        let json = serde_json::to_vec(&cached).unwrap_or_default();
+        let etag = format!("\"{}\"", hex::encode(Sha1::digest(&json)));
+        if let Some(tag) = req.headers().get(actix_web::http::header::IF_NONE_MATCH) {
+            if tag.to_str().ok() == Some(etag.as_str()) {
+                return HttpResponse::NotModified().finish();
+            }
+        }
         return HttpResponse::Ok()
-            .insert_header((
-                "Cache-Control",
-                "public, max-age=60, stale-while-revalidate=300",
-            ))
-            .json(cached);
+            .insert_header((actix_web::http::header::ETAG, etag))
+            .insert_header(("Cache-Control", "public, max-age=0, must-revalidate"))
+            .body(json);
     }
 
     // Select specific columns to avoid fetching heavy text fields
@@ -1624,8 +1902,8 @@ pub async fn get_all_listings(
     if limit < 1 {
         limit = 1;
     }
-    if limit > 100 {
-        limit = 100;
+    if limit > 500 {
+        limit = 500;
     }
     let offset = query.offset.unwrap_or(0).max(0);
 
@@ -1716,10 +1994,41 @@ pub async fn get_all_listings(
         "get_all_listings latency_ms={} (cache miss)",
         started.elapsed().as_millis()
     );
+
+    let accept = req
+        .headers()
+        .get(actix_web::http::header::ACCEPT)
+        .and_then(|h| h.to_str().ok())
+        .unwrap_or("");
+
+    if accept.contains("application/x-msgpack") || accept.contains("application/msgpack") {
+        if let Ok(bytes) = rmp_serde::to_vec(&out) {
+            let etag = format!("\"{}\"", hex::encode(Sha1::digest(&bytes)));
+            if let Some(tag) = req.headers().get(actix_web::http::header::IF_NONE_MATCH) {
+                if tag.to_str().ok() == Some(etag.as_str()) {
+                    return HttpResponse::NotModified().finish();
+                }
+            }
+            return HttpResponse::Ok()
+                .insert_header((
+                    actix_web::http::header::CONTENT_TYPE,
+                    "application/x-msgpack",
+                ))
+                .insert_header((actix_web::http::header::ETAG, etag))
+                .insert_header(("Cache-Control", "public, max-age=0, must-revalidate"))
+                .body(bytes);
+        }
+    }
+
+    let json = serde_json::to_vec(&out).unwrap_or_default();
+    let etag = format!("\"{}\"", hex::encode(Sha1::digest(&json)));
+    if let Some(tag) = req.headers().get(actix_web::http::header::IF_NONE_MATCH) {
+        if tag.to_str().ok() == Some(etag.as_str()) {
+            return HttpResponse::NotModified().finish();
+        }
+    }
     HttpResponse::Ok()
-        .insert_header((
-            "Cache-Control",
-            "public, max-age=60, stale-while-revalidate=300",
-        ))
-        .json(out)
+        .insert_header((actix_web::http::header::ETAG, etag))
+        .insert_header(("Cache-Control", "public, max-age=0, must-revalidate"))
+        .body(json)
 }

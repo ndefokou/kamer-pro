@@ -7,6 +7,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
 import { getImageUrl, formatPrice } from "@/lib/utils";
 import OptimizedImage from "./OptimizedImage";
+import TranslatedText from "./TranslatedText";
+import { propertyTypes } from "@/data/propertyTypes";
 
 interface PropertyCardProps {
     id: string;
@@ -17,6 +19,7 @@ interface PropertyCardProps {
     rating?: number;
     isGuestFavorite?: boolean;
     priority?: boolean;
+    propertyType?: string;
 }
 
 const PropertyCard = ({
@@ -28,6 +31,7 @@ const PropertyCard = ({
     rating,
     isGuestFavorite = false,
     priority = false,
+    propertyType,
 }: PropertyCardProps) => {
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const { isInWishlist, addToWishlist, removeFromWishlistByProduct } = useWishlist();
@@ -142,7 +146,15 @@ const PropertyCard = ({
                         )}
                     </div>
 
-                    <p className="text-sm text-muted-foreground line-clamp-1">{name}</p>
+                    <p className="text-sm text-muted-foreground line-clamp-1">
+                        {name}
+                        {propertyType && (
+                            <>
+                                {" • "}
+                                <TranslatedText as="span" text={propertyTypes.find(t => t.id === propertyType)?.label || propertyType} />
+                            </>
+                        )}
+                    </p>
 
                     <div className="flex items-baseline gap-1 mt-1">
                         <span className="font-semibold text-[15px] text-foreground">

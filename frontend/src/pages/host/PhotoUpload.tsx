@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useHost } from '@/contexts/HostContext';
@@ -19,12 +19,29 @@ const PhotoUpload: React.FC = () => {
     const [uploading, setUploading] = useState(false);
     const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
 
+    // Debug: Log photos array whenever it changes
+    useEffect(() => {
+        console.log('Photos state changed:', photos);
+        console.log('Photos count:', photos.length);
+        const uniquePhotos = [...new Set(photos)];
+        console.log('Unique photos count:', uniquePhotos.length);
+        if (photos.length !== uniquePhotos.length) {
+            console.warn('DUPLICATE PHOTOS DETECTED!');
+            console.warn('Duplicates:', photos.filter((item, index) => photos.indexOf(item) !== index));
+        }
+    }, [photos]);
+
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = e.target.files;
-        if (!files) return;
+        if (!files || files.length === 0) return;
 
+        // Prevent concurrent uploads
+        if (uploading) {
+            console.log('Upload already in progress, ignoring');
+            return;
+        }
 
-
+        console.log('Starting upload for', files.length, 'file(s)');
         setUploading(true);
 
         const formData = new FormData();
@@ -40,19 +57,33 @@ const PhotoUpload: React.FC = () => {
             });
 
             const data = response.data;
-            const newPhotos = [...photos, ...data.urls];
-            setPhotos(newPhotos);
+            console.log('Upload response:', data);
+            console.log('URLs received:', data.urls);
+
+            // Use functional update to avoid stale closure issues
+            setPhotos(prevPhotos => {
+                console.log('Previous photos count:', prevPhotos.length);
+                const newPhotos = [...prevPhotos, ...data.urls];
+                console.log('New photos count:', newPhotos.length);
+                return newPhotos;
+            });
 
             toast({
                 title: t('host.photos.uploadSuccessTitle', 'Photos uploaded'),
                 description: t('host.photos.uploadSuccessDesc', '{{count}} photo(s) uploaded successfully', { count: files.length }),
             });
+
+            // Reset the file input to prevent duplicate uploads
+            e.target.value = '';
         } catch (error) {
             toast({
                 title: t('host.photos.uploadFailedTitle', 'Upload failed'),
                 description: t('host.photos.uploadFailedDesc', 'Failed to upload photos. Please try again.'),
                 variant: 'destructive',
             });
+
+            // Reset the file input even on error
+            e.target.value = '';
         } finally {
             setUploading(false);
         }

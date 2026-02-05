@@ -27,7 +27,7 @@ import { PropertySectionSkeleton } from "@/components/PropertyCardSkeleton";
 import OfflineIndicator from "@/components/OfflineIndicator";
 
 // PropertySection component defined outside to prevent re-renders
-const PropertySection = ({ title, properties, city }: { title: string; properties: Product[]; city?: string }) => {
+const PropertySection = ({ title, properties, city, inferCity }: { title: string; properties: Product[]; city?: string; inferCity: (p: Product) => string }) => {
     const { t } = useTranslation();
     const navigate = useNavigate();
     const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -90,19 +90,22 @@ const PropertySection = ({ title, properties, city }: { title: string; propertie
                     onScroll={handleScroll}
                     className="flex gap-4 md:gap-6 overflow-x-auto pb-3 snap-x snap-mandatory scroll-smooth [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']"
                 >
-                    {properties.filter(Boolean).map((product, index) => (
-                        <div key={product.listing.id} className="flex-shrink-0 w-[180px] sm:w-[240px] md:w-[280px]">
-                            <PropertyCard
-                                id={product.listing.id}
-                                name={product.listing.title}
-                                location={product.listing.city}
-                                price={product.listing.price_per_night || 0}
-                                images={product.photos?.map(p => ({ image_url: p.url })) || []}
-                                isGuestFavorite={false} 
-                                priority={index < 4} 
-                            />
-                        </div>
-                    ))}
+                    {properties.filter(Boolean).map((product, index) => {
+                        const inferredCity = inferCity(product);
+                        return (
+                            <div key={product.listing.id} className="flex-shrink-0 w-[180px] sm:w-[240px] md:w-[280px]">
+                                <PropertyCard
+                                    id={product.listing.id}
+                                    name={product.listing.title}
+                                    location={product.listing.city || inferredCity || 'Unknown'}
+                                    price={product.listing.price_per_night || 0}
+                                    images={product.photos?.map(p => ({ image_url: p.url })) || []}
+                                    isGuestFavorite={false}
+                                    priority={index < 4}
+                                />
+                            </div>
+                        );
+                    })}
                 </div>
 
                 {/* Right Arrow */}
@@ -126,15 +129,19 @@ const Dashboard = () => {
     const { user, logout } = useAuth();
     // Removed useWishlist hook since PropertyCard handles it internally
 
-    // Reduced initial load for 2G networks - load 12 items instead of 40+
+    // For dashboard grouping, we successfully need a larger sample size to populate all cities
+    // even if network is slow, otherwise cities like Buea might be empty if latest 20 are all Douala
+    const recommendedLimit = 100; // Force 100 to fix grouping issue
     const { data: properties, isLoading, error } = useQuery<Product[]>({
-        queryKey: ["products", { limit: 12 }],
-        queryFn: () => getProducts({ limit: 12 }),
-        // Ensure newly published listings appear immediately
-        staleTime: 0,
-        refetchOnMount: "always",
-        refetchOnWindowFocus: true,
+        queryKey: ["products", recommendedLimit],
+        queryFn: () => getProducts({ limit: recommendedLimit }),
+        // staleTime: 5 * 60 * 1000, // 5 minutes - reduce refetches on slow networks
+        staleTime: 30 * 1000, // 30s for testing
     });
+
+    console.log('Dashboard.tsx: properties', properties);
+    console.log('Dashboard.tsx: isLoading', isLoading);
+    console.log('Dashboard.tsx: error', error);
 
     const normalizeCity = (s?: string) => (s || "").trim().toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '');
     const preferredOrder = useMemo(() => ["yaounde", "douala", "kribi"], []);
@@ -191,6 +198,17 @@ const Dashboard = () => {
     const { grouped, other, buea } = useMemo(() => {
         const map = new Map<string, { name: string; items: Product[] }>();
         const otherItemsNoKey: Product[] = [];
+        console.log('Dashboard.tsx: processing properties for groups', properties);
+        if (properties) {
+            console.log('Dashboard.tsx: Sample of first 5 properties:', properties.slice(0, 5).map(p => ({
+                id: p.listing.id,
+                city: p.listing.city,
+                title: p.listing.title,
+                status: p.listing.status
+            })));
+            const bueaProps = properties.filter(p => p.listing.city?.toLowerCase().includes('buea'));
+            console.log('Dashboard.tsx: Found Buea properties explicitly:', bueaProps.length, bueaProps);
+        }
         (properties || []).forEach((p) => {
             if (!p?.listing) return;
             let raw = (p.listing.city || '').trim();
@@ -268,6 +286,7 @@ const Dashboard = () => {
                                     title={t('StaysIn', { city: g.name })}
                                     properties={g.items}
                                     city={g.name}
+                                    inferCity={inferCity}
                                 />
                             ))}
                         {buea.length > 0 && (
@@ -276,6 +295,7 @@ const Dashboard = () => {
                                 title={t('StaysIn', { city: 'Buea' })}
                                 properties={buea}
                                 city="Buea"
+                                inferCity={inferCity}
                             />
                         )}
                         {other.length > 0 && (
@@ -284,6 +304,7 @@ const Dashboard = () => {
                                 title={t('otherLocations')}
                                 properties={other}
                                 city="other"
+                                inferCity={inferCity}
                             />
                         )}
                     </>

@@ -20,18 +20,19 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
 import { MessageSquare, ShieldCheck, Award, Calendar as CalendarIcon, Map as MapIcon } from 'lucide-react';
-import ReviewModal from '@/components/ReviewModal';
+const ReviewModal = lazy(() => import('@/components/ReviewModal'));
 import { DEFAULT_HOUSE_RULES, type HouseRules } from '@/components/host/HouseRulesSection';
-import ShareModal from '@/components/ShareModal';
-import MessageHostModal from '@/components/MessageHostModal';
-import ReportHostModal from '@/components/ReportHostModal';
-import PhotoGallery from '@/components/PhotoGallery';
+const ShareModal = lazy(() => import('@/components/ShareModal'));
+const MessageHostModal = lazy(() => import('@/components/MessageHostModal'));
+const ReportHostModal = lazy(() => import('@/components/ReportHostModal'));
+const PhotoGallery = lazy(() => import('@/components/PhotoGallery'));
 import SEO from '@/components/SEO';
 import { useToast } from '@/hooks/use-toast';
 import { useWishlist } from '@/hooks/useWishlist';
 import { useTranslation } from 'react-i18next';
 import TranslatedText from '@/components/TranslatedText';
 import { useConnectionQuality } from '@/services/networkService';
+import { propertyTypes } from '@/data/propertyTypes';
 
 
 const ListingMap = lazy(() => import("@/components/Map/ListingMap"));
@@ -119,9 +120,36 @@ const ListingDetails: React.FC = () => {
     const { toast } = useToast();
     const closeBtnRef = React.useRef<HTMLButtonElement>(null);
     const desktopCalRef = React.useRef<HTMLDivElement>(null);
+    const mapContainerRef = React.useRef<HTMLDivElement>(null);
 
     const { isSlowConnection } = useConnectionQuality();
     const [showMap, setShowMap] = React.useState(!isSlowConnection);
+
+    // Automatically load map when it comes into view
+    React.useEffect(() => {
+        if (showMap || !mapContainerRef.current) return;
+
+        const observer = new IntersectionObserver(
+            (entries) => {
+                entries.forEach((entry) => {
+                    if (entry.isIntersecting) {
+                        setShowMap(true);
+                        observer.disconnect();
+                    }
+                });
+            },
+            {
+                rootMargin: '100px', // Start loading 100px before the map comes into view
+                threshold: 0.1,
+            }
+        );
+
+        observer.observe(mapContainerRef.current);
+
+        return () => {
+            observer.disconnect();
+        };
+    }, [showMap]);
 
     const openMobileDatePicker = () => {
         try {
@@ -525,34 +553,41 @@ const ListingDetails: React.FC = () => {
                     </div>
                 </div>
 
-                <ShareModal
-                    isOpen={isShareModalOpen}
-                    onClose={() => setIsShareModalOpen(false)}
-                    listing={{ ...listing, photos: sortedPhotos }}
-                />
+                <Suspense fallback={null}>
+                    <ShareModal
+                        isOpen={isShareModalOpen}
+                        onClose={() => setIsShareModalOpen(false)}
+                        listing={{ ...listing, photos: sortedPhotos }}
+                    />
+                </Suspense>
 
-                <MessageHostModal
-                    isOpen={isMessageModalOpen}
-                    onClose={() => setIsMessageModalOpen(false)}
-                    listingId={listing.id}
-                    hostId={listing.host_id}
-                    hostName={hostName} // TODO: Get actual host name
-                />
+                <Suspense fallback={null}>
+                    <MessageHostModal
+                        isOpen={isMessageModalOpen}
+                        onClose={() => setIsMessageModalOpen(false)}
+                        listingId={listing.id}
+                        hostId={listing.host_id}
+                        hostName={hostName} // TODO: Get actual host name
+                    />
+                </Suspense>
 
-                <ReportHostModal
-                    isOpen={isReportModalOpen}
-                    onClose={() => setIsReportModalOpen(false)}
-                    hostId={listing.host_id}
-                    listingId={listing.id}
-                />
+                <Suspense fallback={null}>
+                    <ReportHostModal
+                        isOpen={isReportModalOpen}
+                        onClose={() => setIsReportModalOpen(false)}
+                        hostId={listing.host_id}
+                        listingId={listing.id}
+                    />
+                </Suspense>
 
-                <PhotoGallery
-
-                    isOpen={isPhotoGalleryOpen}
-                    onClose={() => setIsPhotoGalleryOpen(false)}
-                    photos={sortedPhotos}
-                    initialPhotoIndex={initialPhotoIndex}
-                />
+                <Suspense fallback={null}>
+                    <PhotoGallery
+                        isOpen={isPhotoGalleryOpen}
+                        onClose={() => setIsPhotoGalleryOpen(false)}
+                        photos={sortedPhotos}
+                        initialPhotoIndex={initialPhotoIndex}
+                    />
+                </Suspense>
 
                 {/* Photo Gallery */}
                 <div className="mb-8 rounded-xl overflow-hidden shadow-sm">
@@ -650,7 +685,7 @@ const ListingDetails: React.FC = () => {
                     <div className="md:col-span-2">
                         <div className="border-b pb-6 mb-6">
                             <h2 className="text-xl font-semibold mb-1">
-                                <TranslatedText as="span" text={listing.title} />
+                                <TranslatedText as="span" text={`${propertyTypes.find(t => t.id === listing.property_type)?.label || listing.property_type} hosted by ${hostName}`} />
                             </h2>
                             <p className="text-muted-foreground">
                                 {t('listing.details.unitCount.guests', { count: listing.max_guests })} • {t('listing.details.unitCount.bedrooms', { count: listing.bedrooms })} • {t('listing.details.unitCount.beds', { count: listing.beds })} • {t('listing.details.unitCount.baths', { count: listing.bathrooms })}
@@ -1009,7 +1044,7 @@ const ListingDetails: React.FC = () => {
                             </p>
                         )}
                     </div>
-                    <div className="h-64 md:h-[400px] rounded-xl overflow-hidden z-0 relative">
+                    <div ref={mapContainerRef} className="h-64 md:h-[400px] rounded-xl overflow-hidden z-0 relative">
                         {showMap ? (
                             <Suspense fallback={
                                 <div className="h-full w-full bg-slate-100 flex items-center justify-center">
@@ -1024,12 +1059,10 @@ const ListingDetails: React.FC = () => {
                             </Suspense>
                         ) : (
                             <div className="h-full w-full bg-slate-100 flex items-center justify-center">
-                                <button
-                                    className="px-4 py-2 bg-white border rounded-lg text-sm font-medium shadow-sm hover:bg-gray-50"
-                                    onClick={() => setShowMap(true)}
-                                >
-                                    {t('Load map...')}
-                                </button>
+                                <div className="flex flex-col items-center gap-2">
+                                    <MapIcon className="h-8 w-8 text-slate-300" />
+                                    <p className="text-sm text-slate-400">{t('Scroll to load map...')}</p>
+                                </div>
                             </div>
                         )}
                     </div>

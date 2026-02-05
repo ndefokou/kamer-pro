@@ -382,7 +382,7 @@ const ListingPreview: React.FC<ListingPreviewProps> = ({ listing, isOpen, onClos
                                         return (
                                             <div key={amenityKey} className="flex items-center gap-4">
                                                 <Icon className="h-6 w-6 text-gray-700" />
-                                                <span className="text-gray-900">{amenity.label}</span>
+                                                <span className="text-gray-900">{t(`amenities.${amenityKey}`)}</span>
                                             </div>
                                         );
                                     })}
@@ -406,7 +406,7 @@ const ListingPreview: React.FC<ListingPreviewProps> = ({ listing, isOpen, onClos
                                             return (
                                                 <div key={`unavailable-${amenityKey}`} className="flex items-center gap-4 opacity-60">
                                                     <Icon className="h-6 w-6 text-gray-400" />
-                                                    <span className="text-gray-500 line-through">{amenity.label}</span>
+                                                    <span className="text-gray-500 line-through">{t(`amenities.${amenityKey}`)}</span>
                                                 </div>
                                             );
                                         });

@@ -183,18 +183,23 @@ class DatabaseService {
     async cacheListings(listings: any[], ttl: number = TTL.LISTINGS): Promise<void> {
         const db = await this.ensureDB();
         const tx = db.transaction('listings', 'readwrite');
+        const now = Date.now();
 
-        await Promise.all([
-            ...listings.map(listing =>
-                tx.store.put({
-                    id: listing.listing?.id || listing.id,
-                    data: listing,
-                    timestamp: Date.now(),
-                    ttl,
-                })
-            ),
-            tx.done,
-        ]);
+        for (const item of listings) {
+            const rawId = (item && (item.listing?.id ?? item.id)) as unknown;
+            const id = typeof rawId === 'string' ? rawId : (rawId != null ? String(rawId) : '');
+            if (!id) {
+                // Skip entries without a valid id to avoid IndexedDB DataError
+                continue;
+            }
+            await tx.store.put({
+                id,
+                data: item,
+                timestamp: now,
+                ttl,
+            });
+        }
+        await tx.done;
     }
 
     async getAllCachedListings(): Promise<any[] | null> {

@@ -99,19 +99,29 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
                 }
             }
 
-            const isSupabase = url.hostname.includes('supabase.co') && url.pathname.includes('/storage/v1/object/public/');
+            // const isSupabase = url.hostname.includes('supabase.co') && (url.pathname.includes('/storage/v1/object/public/') || url.pathname.includes('/storage/v1/render/image/public/'));
 
-            if (isSupabase && supabaseTransformEnabled) {
+            // Disable Supabase Image Transformation for now as it causes 400 Bad Request
+            // (likely due to project tier restrictions or configuration)
+            /*
+            if (isSupabase) {
                 const supa = new URL(url.toString());
-                // Correct render path expected by Supabase: /storage/v1/render/image/public/... 
-                supa.pathname = supa.pathname.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/');
-                supa.searchParams.set('width', imageWidth.toString());
-                supa.searchParams.set('quality', targetQuality === 'low' ? '30' : targetQuality === 'medium' ? '60' : '80');
-                if (supportsWebP()) {
-                    supa.searchParams.set('format', 'webp');
+                // Handle both /object/public/ and /render/image/public/
+                if (supa.pathname.includes('/storage/v1/object/')) {
+                    supa.pathname = supa.pathname.replace('/storage/v1/object/', '/storage/v1/render/image/');
+                }
+
+                // Only add params if we are firmly in the render/image endpoint now
+                if (supa.pathname.includes('/storage/v1/render/image/')) {
+                    supa.searchParams.set('width', imageWidth.toString());
+                    supa.searchParams.set('quality', targetQuality === 'low' ? '30' : targetQuality === 'medium' ? '60' : '80');
+                    if (supportsWebP()) {
+                        supa.searchParams.set('format', 'webp');
+                    }
                 }
                 return supa.toString();
             }
+            */
 
             url.searchParams.set('w', imageWidth.toString());
             url.searchParams.set('q', targetQuality === 'low' ? '30' : targetQuality === 'medium' ? '60' : '80');
@@ -225,7 +235,8 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
                     }
                 })();
             } catch (error) {
-                console.error('Error loading image:', error);
+                // Squelch validation error for cleaner console
+                // console.error('Error loading image:', error);
                 if (isMounted) {
                     // Final fallback to original URL
                     setImageSrc(src);

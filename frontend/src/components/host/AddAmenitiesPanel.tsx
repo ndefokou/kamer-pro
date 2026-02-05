@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, Search, Plus, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AMENITY_CATEGORIES, AMENITY_DETAILS, getAllAmenities, AmenityCategory } from '@/data/amenities';
@@ -10,6 +11,7 @@ interface AddAmenitiesPanelProps {
 }
 
 const AddAmenitiesPanel: React.FC<AddAmenitiesPanelProps> = ({ selectedAmenities, onToggle, onClose }) => {
+    const { t } = useTranslation();
     const [searchQuery, setSearchQuery] = useState('');
     const [activeCategory, setActiveCategory] = useState<AmenityCategory | 'All'>('All');
 
@@ -83,8 +85,8 @@ const AddAmenitiesPanel: React.FC<AddAmenitiesPanelProps> = ({ selectedAmenities
                         <button
                             onClick={() => setActiveCategory('All')}
                             className={`whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium border transition-colors ${activeCategory === 'All'
-                                    ? 'border-black bg-black text-white'
-                                    : 'border-gray-200 hover:border-black bg-white text-gray-700'
+                                ? 'border-black bg-black text-white'
+                                : 'border-gray-200 hover:border-black bg-white text-gray-700'
                                 }`}
                         >
                             All
@@ -94,8 +96,8 @@ const AddAmenitiesPanel: React.FC<AddAmenitiesPanelProps> = ({ selectedAmenities
                                 key={category}
                                 onClick={() => setActiveCategory(category)}
                                 className={`whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium border transition-colors ${activeCategory === category
-                                        ? 'border-black bg-black text-white'
-                                        : 'border-gray-200 hover:border-black bg-white text-gray-700'
+                                    ? 'border-black bg-black text-white'
+                                    : 'border-gray-200 hover:border-black bg-white text-gray-700'
                                     }`}
                             >
                                 {category}
@@ -134,15 +136,15 @@ const AddAmenitiesPanel: React.FC<AddAmenitiesPanelProps> = ({ selectedAmenities
                                                             <Icon className="h-6 w-6 text-gray-500" />
                                                         </div>
                                                         <div>
-                                                            <div className="text-base font-medium text-gray-900">{amenity.label}</div>
+                                                            <div className="text-base font-medium text-gray-900">{t(`amenities.${amenity.id}`)}</div>
                                                             <div className="text-sm text-gray-500">{amenity.description}</div>
                                                         </div>
                                                     </div>
                                                     <button
                                                         onClick={() => onToggle(amenity.id)}
                                                         className={`flex-shrink-0 w-8 h-8 rounded-full border flex items-center justify-center transition-all ${isSelected
-                                                                ? 'bg-black border-black text-white'
-                                                                : 'border-gray-300 hover:border-black text-gray-600'
+                                                            ? 'bg-black border-black text-white'
+                                                            : 'border-gray-300 hover:border-black text-gray-600'
                                                             }`}
                                                     >
                                                         {isSelected ? (

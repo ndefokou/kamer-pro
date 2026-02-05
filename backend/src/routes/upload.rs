@@ -1,12 +1,30 @@
 use actix_multipart::Multipart;
 use actix_web::{post, web, Error, HttpRequest, HttpResponse};
 use futures_util::stream::{StreamExt, TryStreamExt};
+use image::{imageops::FilterType, DynamicImage, GenericImageView};
 use serde::Serialize;
 use sqlx::PgPool;
+use std::io::Cursor;
 
 #[derive(Serialize)]
 struct ErrorResponse {
     message: String,
+}
+
+fn limit_image_dimensions(img: DynamicImage, max_w: u32, max_h: u32) -> DynamicImage {
+    let (w, h) = img.dimensions();
+    if w <= max_w && h <= max_h {
+        return img;
+    }
+    img.resize(max_w, max_h, FilterType::Lanczos3)
+}
+
+fn encode_webp(img: &DynamicImage, out: &mut Vec<u8>) -> Result<(), image::ImageError> {
+    use image::codecs::webp::WebPEncoder;
+    let mut cursor = Cursor::new(out);
+    let encoder = WebPEncoder::new_lossless(&mut cursor);
+    let rgba = img.to_rgba8();
+    encoder.encode(&rgba, rgba.width(), rgba.height(), image::ColorType::Rgba8)
 }
 
 #[derive(Serialize)]
@@ -25,7 +43,7 @@ pub async fn upload_images_standalone(
     while let Ok(Some(mut field)) = payload.try_next().await {
         let content_disposition = field.content_disposition();
         if let Some(filename) = content_disposition.get_filename() {
-            // Clone filename and content_type to avoid borrow issues
+            // Clone filename to avoid borrow issues
             let filename = filename.to_string();
             let content_type = field.content_type().to_string();
 
@@ -39,17 +57,72 @@ pub async fn upload_images_standalone(
                 file_data.extend_from_slice(&data);
             }
 
-            // Upload to S3
-            match s3.upload_file(file_data, &filename, &content_type).await {
-                Ok(url) => {
-                    println!("Successfully uploaded file to S3: {}", url);
-                    file_urls.push(url);
+            // Only process images
+            if content_type.starts_with("image/") {
+                if let Ok(img) = image::load_from_memory(&file_data) {
+                    // Resize to HD quality (good balance for mobile/web)
+                    let resized = limit_image_dimensions(img, 1280, 1280);
+
+                    // Encode to WebP
+                    let mut webp_buf = Vec::new();
+                    if encode_webp(&resized, &mut webp_buf).is_ok() {
+                        // Change extension to .webp for the storage path
+                        let new_filename = std::path::Path::new(&filename)
+                            .file_stem()
+                            .and_then(|s| s.to_str())
+                            .unwrap_or("image");
+                        let webp_filename = format!("{}.webp", new_filename);
+
+                        match s3.upload_file(webp_buf, &webp_filename, "image/webp").await {
+                            Ok(url) => {
+                                println!("Successfully uploaded optimized WebP to S3: {}", url);
+                                file_urls.push(url);
+                            }
+                            Err(e) => {
+                                eprintln!("Failed to upload WebP to S3: {}", e);
+                                // Fallback: try uploading original if optimization/upload failed?
+                                // For now, return error to encourage fixing the issue
+                                return Ok(HttpResponse::InternalServerError().json(
+                                    ErrorResponse {
+                                        message: format!("Failed to upload optimized image: {}", e),
+                                    },
+                                ));
+                            }
+                        }
+                    } else {
+                        // Fallback if WebP encoding fails (unlikely)
+                        eprintln!("WebP encoding failed, uploading original");
+                        match s3.upload_file(file_data, &filename, &content_type).await {
+                            Ok(url) => file_urls.push(url),
+                            Err(e) => {
+                                return Ok(HttpResponse::InternalServerError().json(
+                                    ErrorResponse {
+                                        message: format!("Failed to upload original image: {}", e),
+                                    },
+                                ))
+                            }
+                        }
+                    }
+                } else {
+                    // Not a valid image format for image-rs, upload as is
+                    match s3.upload_file(file_data, &filename, &content_type).await {
+                        Ok(url) => file_urls.push(url),
+                        Err(e) => {
+                            return Ok(HttpResponse::InternalServerError().json(ErrorResponse {
+                                message: format!("Failed to upload file: {}", e),
+                            }))
+                        }
+                    }
                 }
-                Err(e) => {
-                    eprintln!("Failed to upload to S3: {}", e);
-                    return Ok(HttpResponse::InternalServerError().json(ErrorResponse {
-                        message: format!("Failed to upload file: {}", e),
-                    }));
+            } else {
+                // Not an image (e.g. PDF?), upload as is
+                match s3.upload_file(file_data, &filename, &content_type).await {
+                    Ok(url) => file_urls.push(url),
+                    Err(e) => {
+                        return Ok(HttpResponse::InternalServerError().json(ErrorResponse {
+                            message: format!("Failed to upload file: {}", e),
+                        }))
+                    }
                 }
             }
         }

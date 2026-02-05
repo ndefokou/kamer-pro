@@ -1,4 +1,4 @@
-import { Suspense, lazy, useMemo } from "react";
+import { Suspense, lazy, useMemo, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { Home as HomeIcon, Map as MapIcon } from "lucide-react";
@@ -23,75 +23,8 @@ import { useConnectionQuality } from "@/services/networkService";
 // Fix Leaflet default icon issue
 const SearchMap = lazy(() => import("@/components/Map/SearchMap"));
 
-const normalizeCity = (s?: string) => (s || "").trim().toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '');
-const preferredOrder = ["yaounde", "douala", "kribi"];
-const knownCities = {
-    yaounde: { display: 'Yaounde', lat: 3.8480, lon: 11.5021, synonyms: ['bastos', 'biyem', 'nkolbisson', 'melen', 'odza', 'nkolmesseng', 'nkoabang', 'ekounou', 'essos', 'madagascar'] },
-    douala: { display: 'Douala', lat: 4.0511, lon: 9.7679, synonyms: ['akwa', 'bonapriso', 'bonanjo', 'deido', 'makepe', 'ndogbong', 'logbaba', 'bepanda', 'bonamoussadi'] },
-    kribi: { display: 'Kribi', lat: 2.9400, lon: 9.9100, synonyms: ['mpalla', 'londji', 'ebambe', 'lolabe'] },
-    buea: { display: 'Buea', lat: 4.1527, lon: 9.2410, synonyms: ['molyko', 'muea', 'mile 17', 'bongo square', 'great soppo', 'small soppo', 'bokwango', 'limbe', 'tiko', 'kumba'] },
-    bamenda: { display: 'Bamenda', lat: 5.9631, lon: 10.1591, synonyms: ['mankon', 'bambili', 'nkambé', 'kumbo'] },
-    bafoussam: { display: 'Bafoussam', lat: 5.4769, lon: 10.4170, synonyms: ['dschang', 'bandjoun', 'foumban'] },
-    ngaoundere: { display: 'Ngaoundere', lat: 7.3263, lon: 13.5847, synonyms: ['adamawa', 'tibati', 'meiganga'] },
-    garoua: { display: 'Garoua', lat: 9.3000, lon: 13.4000, synonyms: [] },
-    maroua: { display: 'Maroua', lat: 10.5956, lon: 14.3247, synonyms: ['far north'] },
-    bertoua: { display: 'Bertoua', lat: 4.5833, lon: 13.6833, synonyms: [] },
-    ebolowa: { display: 'Ebolowa', lat: 2.9000, lon: 11.1500, synonyms: ['south'] },
-} as const;
+import { normalizeCity, preferredOrder, knownCities, regions, inferCity } from "@/lib/cityUtils";
 
-const regions = {
-    'centre': ['yaounde'],
-    'littoral': ['douala', 'nkongsamba', 'edea'],
-    'south': ['kribi', 'ebolowa'],
-    'southwest': ['buea', 'limbe', 'tiko', 'kumba'],
-    'northwest': ['bamenda', 'kumbo', 'ndop'],
-    'west': ['bafoussam', 'dschang', 'bandjoun'],
-    'adamawa': ['ngaoundere', 'tibati', 'meiganga'],
-    'north': ['garoua'],
-    'far north': ['maroua', 'kousseri'],
-    'east': ['bertoua', 'batouri'],
-} as const;
-
-const distanceKm = (lat1: number, lon1: number, lat2: number, lon2: number) => {
-    const toRad = (d: number) => d * Math.PI / 180;
-    const R = 6371;
-    const dLat = toRad(lat2 - lat1);
-    const dLon = toRad(lon2 - lon1);
-    const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return R * c;
-};
-
-const inferCity = (p: Product): string => {
-    const text = [p.listing.city, p.listing.address, p.listing.title].filter(Boolean).join(' ');
-    const norm = normalizeCity(text);
-    if (norm) {
-        for (const key of preferredOrder) {
-            if (norm.includes(key)) return knownCities[key as keyof typeof knownCities].display;
-            const syns = knownCities[key as keyof typeof knownCities].synonyms;
-            if (syns.some(s => norm.includes(s))) return knownCities[key as keyof typeof knownCities].display;
-        }
-        for (const key of (Object.keys(knownCities) as Array<keyof typeof knownCities>)) {
-            if ((preferredOrder as readonly string[]).includes(key as string)) continue;
-            if (norm.includes(key)) return knownCities[key].display;
-            const syns = knownCities[key].synonyms;
-            if (syns.some(s => norm.includes(s))) return knownCities[key].display;
-        }
-    }
-    if (p.listing.latitude && p.listing.longitude) {
-        const { latitude, longitude } = p.listing;
-        let best: { key: keyof typeof knownCities; dist: number } | null = null;
-        (Object.keys(knownCities) as Array<keyof typeof knownCities>).forEach((key) => {
-            const city = knownCities[key];
-            const d = distanceKm(latitude!, longitude!, city.lat, city.lon);
-            if (!best || d < best.dist) best = { key, dist: d };
-        });
-        if (best && best.dist <= 80) {
-            return knownCities[best.key].display;
-        }
-    }
-    return '';
-};
 
 const SearchResults = () => {
     const { t } = useTranslation();
@@ -141,6 +74,13 @@ const SearchResults = () => {
             return lastPage.length === limit ? allPages.length * limit : undefined;
         },
     });
+
+    // Auto-load all pages so users see every listing without clicking a button
+    useEffect(() => {
+        if (hasNextPage && !isFetchingNextPage) {
+            fetchNextPage();
+        }
+    }, [hasNextPage, isFetchingNextPage, fetchNextPage, data?.pages?.length]);
 
     const { data: towns } = useQuery<TownCount[]>({
         queryKey: ["towns"],
@@ -406,49 +346,49 @@ const SearchResults = () => {
                         </div>
                     ) : (
                         groupedByCity.map(([city, items]) => (
-                            <HorizontalPropertySection key={city} title={city}>
-                                {items.map((product) => (
-                                    <div key={product.listing.id} className="w-[200px] sm:w-[280px]">
-                                        <PropertyCard
-                                            id={product.listing.id}
-                                            name={product.listing.title ?? "Untitled"}
-                                            location={product.listing.city || inferCity(product) || "Unknown"}
-                                            price={product.listing.price_per_night ?? 0}
-                                            images={product.photos.map((photo) => ({ image_url: photo.url }))}
-                                        />
-                                    </div>
-                                ))}
-                            </HorizontalPropertySection>
+                            <div key={city} className="mb-10">
+                                <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
+                                    FIXED: {city}
+                                </h2>
+                                <div className="grid grid-cols-2 gap-3 md:grid-cols-2 md:gap-6">
+                                    {items.map((product) => (
+                                        <div key={product.listing.id} className="w-full">
+                                            <PropertyCard
+                                                id={product.listing.id}
+                                                name={product.listing.title ?? "Untitled"}
+                                                location={product.listing.city || inferCity(product) || "Unknown"}
+                                                price={product.listing.price_per_night ?? 0}
+                                                images={product.photos.map((photo) => ({ image_url: photo.url }))}
+                                                propertyType={product.listing.property_type}
+                                            />
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
                         ))
                     )}
 
-                    <div className="flex justify-center mt-6">
-                        {hasNextPage && (
-                            <Button onClick={() => fetchNextPage()} disabled={isFetchingNextPage} variant="outline">
-                                {isFetchingNextPage ? t("search.loading_more") : t("search.load_more")}
-                            </Button>
-                        )}
-                    </div>
+                    <div className="flex justify-center mt-6" />
                 </div>
 
                 {/* Map (Right) */}
                 {!isSlowConnection && (
-                <div className="hidden md:block w-[40%] lg:w-[45%] xl:w-[50%] h-[calc(100vh-80px)] sticky top-20">
-                    <Suspense fallback={
-                        <div className="h-full w-full bg-slate-100 flex items-center justify-center">
-                            <div className="flex flex-col items-center gap-2">
-                                <MapIcon className="h-8 w-8 text-slate-300 animate-pulse" />
-                                <span className="text-sm text-slate-400">{t("Loading map...")}</span>
+                    <div className="hidden md:block w-[40%] lg:w-[45%] xl:w-[50%] h-[calc(100vh-80px)] sticky top-20">
+                        <Suspense fallback={
+                            <div className="h-full w-full bg-slate-100 flex items-center justify-center">
+                                <div className="flex flex-col items-center gap-2">
+                                    <MapIcon className="h-8 w-8 text-slate-300 animate-pulse" />
+                                    <span className="text-sm text-slate-400">{t("Loading map...")}</span>
+                                </div>
                             </div>
-                        </div>
-                    }>
-                        <SearchMap
-                            mapPoints={mapPoints}
-                            singlePoint={singlePoint}
-                            fallbackCenter={fallbackCenter}
-                        />
-                    </Suspense>
-                </div>
+                        }>
+                            <SearchMap
+                                mapPoints={mapPoints}
+                                singlePoint={singlePoint}
+                                fallbackCenter={fallbackCenter}
+                            />
+                        </Suspense>
+                    </div>
                 )}
             </div>
         </div>

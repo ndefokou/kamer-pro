@@ -24,6 +24,10 @@ bytes = "1.5"
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 moka = { version = "0.12", features = ["future"] }
 num_cpus = "1.16"
+sha1 = "0.10"
+rmp-serde = "1.1"
+image = { version = "0.24", default-features = false, features = ["png", "jpeg", "webp", "webp-encoder"] }
+hex = "0.4"
 
 [dev-dependencies]
 cargo-watch = "8.5.2"

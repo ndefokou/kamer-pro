@@ -53,10 +53,12 @@ export default defineConfig(({ mode }) => ({
         skipWaiting: true,
         clientsClaim: true,
         globPatterns: ['**/*.{js,css,html,ico,png,svg,webp,jpg,jpeg,webmanifest}'],
+        cleanupOutdatedCaches: true,
         runtimeCaching: [
           {
             // Cache API responses with network-first strategy
             urlPattern: /^https?:\/\/.*\/api\/.*/i,
+            method: 'GET',
             handler: 'NetworkFirst',
             options: {
               cacheName: 'api-cache',
@@ -64,8 +66,52 @@ export default defineConfig(({ mode }) => ({
                 maxEntries: 100,
                 maxAgeSeconds: 60 * 30, // 30 minutes
               },
+<<<<<<< HEAD
+=======
+              networkTimeoutSeconds: 5, // Reduced for faster fallback to cache
+>>>>>>> improve-app-latency
               cacheableResponse: {
                 statuses: [0, 200],
+              },
+            },
+          },
+          {
+            // Background Sync for Mutations (POST, PUT, DELETE)
+            urlPattern: /^https?:\/\/.*\/api\/.*/i,
+            method: 'POST',
+            handler: 'NetworkOnly',
+            options: {
+              backgroundSync: {
+                name: 'api-mutation-queue',
+                options: {
+                  maxRetentionTime: 24 * 60, // Retry for up to 24 hours
+                },
+              },
+            },
+          },
+          {
+            urlPattern: /^https?:\/\/.*\/api\/.*/i,
+            method: 'PUT',
+            handler: 'NetworkOnly',
+            options: {
+              backgroundSync: {
+                name: 'api-mutation-queue',
+                options: {
+                  maxRetentionTime: 24 * 60,
+                },
+              },
+            },
+          },
+          {
+            urlPattern: /^https?:\/\/.*\/api\/.*/i,
+            method: 'DELETE',
+            handler: 'NetworkOnly',
+            options: {
+              backgroundSync: {
+                name: 'api-mutation-queue',
+                options: {
+                  maxRetentionTime: 24 * 60,
+                },
               },
             },
           },
