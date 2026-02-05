@@ -1071,6 +1071,10 @@
     "studio": {
       "label": "Studio",
       "desc": "A one-room living space"
+    },
+    "room": {
+      "label": "Room",
+      "desc": "A private room in a shared property"
     }
   },
   "amenities": {

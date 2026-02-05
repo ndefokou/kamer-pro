@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useHost } from '@/contexts/HostContext';
@@ -18,6 +18,18 @@ const PhotoUpload: React.FC = () => {
     const [coverIndex, setCoverIndex] = useState(draft.coverPhotoIndex || 0);
     const [uploading, setUploading] = useState(false);
     const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
+
+    // Debug: Log photos array whenever it changes
+    useEffect(() => {
+        console.log('Photos state changed:', photos);
+        console.log('Photos count:', photos.length);
+        const uniquePhotos = [...new Set(photos)];
+        console.log('Unique photos count:', uniquePhotos.length);
+        if (photos.length !== uniquePhotos.length) {
+            console.warn('DUPLICATE PHOTOS DETECTED!');
+            console.warn('Duplicates:', photos.filter((item, index) => photos.indexOf(item) !== index));
+        }
+    }, [photos]);
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = e.target.files;

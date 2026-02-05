@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useHost } from '@/contexts/HostContext';
 import { Button } from '@/components/ui/button';
-import { Home, Building2, Hotel, Castle, ChevronLeft } from 'lucide-react';
+import { Home, Building2, Hotel, Castle, DoorOpen, ChevronLeft } from 'lucide-react';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 
 const propertyTypes = [
@@ -11,6 +11,7 @@ const propertyTypes = [
     { id: 'house', label: 'House', icon: Home, description: 'A standalone home' },
     { id: 'villa', label: 'Villa', icon: Castle, description: 'A luxurious standalone property' },
     { id: 'studio', label: 'Studio', icon: Hotel, description: 'A single-room living space' },
+    { id: 'room', label: 'Room', icon: DoorOpen, description: 'A private room in a shared property' },
 ];
 
 const Intro: React.FC = () => {

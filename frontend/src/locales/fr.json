@@ -679,6 +679,10 @@
     "studio": {
       "label": "Studio",
       "desc": "Un espace de vie d'une seule pièce"
+    },
+    "room": {
+      "label": "Chambre",
+      "desc": "Une chambre privée dans un logement partagé"
     }
   },
   "amenities": {
