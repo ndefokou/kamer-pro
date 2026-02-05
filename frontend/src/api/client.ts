@@ -214,7 +214,8 @@ const cachedGet = async <T = unknown>(url: string, config?: AxiosRequestConfig):
               // Fetch update in background
               apiClient.get(url, config).then(res => {
                 if (res.data && res.data.length > 0) {
-                  localStorage.setItem('critical_listings', JSON.stringify(res.data.slice(0, 10)));
+                  // Store full dataset for consistency on refresh
+                  localStorage.setItem('critical_listings', JSON.stringify(res.data));
                 }
                 cacheResponse(url, res.data, config?.params);
               }).catch(() => undefined);
@@ -287,7 +288,8 @@ const cacheResponse = async (url: string, data: unknown, params?: Record<string,
         await dbService.cacheListings(data as any);
         // Save first page of general listings to localStorage for ultra-fast initial paint
         if (url === '/listings' && (!params?.offset || params.offset === 0) && data.length > 0) {
-          localStorage.setItem('critical_listings', JSON.stringify(data.slice(0, 10)));
+          // Store full dataset to avoid truncation after refresh
+          localStorage.setItem('critical_listings', JSON.stringify(data));
         }
       }
     } else if (url.includes('/account/user/')) {
