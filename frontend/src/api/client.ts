@@ -337,8 +337,19 @@ const getCachedResponse = async (url: string, params?: Record<string, unknown>):
       return null;
     } else if (url === '/listings' || url.includes('/listings/host/') || url === '/listings/my-listings') {
       // Multiple listings
-      // For general /listings with filters, don't return ALL cached listings
-      if (url === '/listings' && params && (params.search || params.location || params.category || params.guests)) {
+      // For general /listings with filters or pagination, don't return ALL cached listings
+      if (
+        url === '/listings' &&
+        params &&
+        (
+          params.search ||
+          params.location ||
+          params.category ||
+          params.guests ||
+          typeof (params as any).offset === 'number' ||
+          typeof (params as any).limit === 'number'
+        )
+      ) {
         return null;
       }
       return await dbService.getAllCachedListings();

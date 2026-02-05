@@ -129,8 +129,9 @@ const Dashboard = () => {
     const { user, logout } = useAuth();
     // Removed useWishlist hook since PropertyCard handles it internally
 
-    // Reduced initial load for 2G networks - load 12 items instead of 40+
-    const recommendedLimit = useMemo(() => networkService.getRecommendedPageSize(), []);
+    // For dashboard grouping, we successfully need a larger sample size to populate all cities
+    // even if network is slow, otherwise cities like Buea might be empty if latest 20 are all Douala
+    const recommendedLimit = 100; // Force 100 to fix grouping issue
     const { data: properties, isLoading, error } = useQuery<Product[]>({
         queryKey: ["products", recommendedLimit],
         queryFn: () => getProducts({ limit: recommendedLimit }),
@@ -198,6 +199,16 @@ const Dashboard = () => {
         const map = new Map<string, { name: string; items: Product[] }>();
         const otherItemsNoKey: Product[] = [];
         console.log('Dashboard.tsx: processing properties for groups', properties);
+        if (properties) {
+            console.log('Dashboard.tsx: Sample of first 5 properties:', properties.slice(0, 5).map(p => ({
+                id: p.listing.id,
+                city: p.listing.city,
+                title: p.listing.title,
+                status: p.listing.status
+            })));
+            const bueaProps = properties.filter(p => p.listing.city?.toLowerCase().includes('buea'));
+            console.log('Dashboard.tsx: Found Buea properties explicitly:', bueaProps.length, bueaProps);
+        }
         (properties || []).forEach((p) => {
             if (!p?.listing) return;
             let raw = (p.listing.city || '').trim();
