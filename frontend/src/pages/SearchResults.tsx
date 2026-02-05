@@ -1,4 +1,4 @@
-import { Suspense, lazy, useMemo } from "react";
+import { Suspense, lazy, useMemo, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { Home as HomeIcon, Map as MapIcon } from "lucide-react";
@@ -74,6 +74,13 @@ const SearchResults = () => {
             return lastPage.length === limit ? allPages.length * limit : undefined;
         },
     });
+
+    // Auto-load all pages so users see every listing without clicking a button
+    useEffect(() => {
+        if (hasNextPage && !isFetchingNextPage) {
+            fetchNextPage();
+        }
+    }, [hasNextPage, isFetchingNextPage, fetchNextPage, data?.pages?.length]);
 
     const { data: towns } = useQuery<TownCount[]>({
         queryKey: ["towns"],
@@ -361,13 +368,7 @@ const SearchResults = () => {
                         ))
                     )}
 
-                    <div className="flex justify-center mt-6">
-                        {hasNextPage && (
-                            <Button onClick={() => fetchNextPage()} disabled={isFetchingNextPage} variant="outline">
-                                {isFetchingNextPage ? t("search.loading_more") : t("search.load_more")}
-                            </Button>
-                        )}
-                    </div>
+                    <div className="flex justify-center mt-6" />
                 </div>
 
                 {/* Map (Right) */}

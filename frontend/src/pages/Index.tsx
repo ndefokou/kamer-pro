@@ -5,7 +5,7 @@ import MbokoSearch from "@/components/Search";
 import HorizontalPropertySection from "@/components/HorizontalPropertySection";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { useMemo } from "react";
+import { useMemo, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { normalizeCity, inferCity, preferredOrder, knownCities } from "@/lib/cityUtils";
 
@@ -21,9 +21,17 @@ const Index = () => {
   } = useInfiniteQuery<Product[], Error>({
     queryKey: ["products"],
     initialPageParam: 0,
-    queryFn: ({ pageParam }) => getProducts({ limit: 20, offset: (pageParam as number) || 0 }),
-    getNextPageParam: (lastPage, allPages) => (lastPage.length === 20 ? allPages.length * 20 : undefined),
+    // Use a large limit so we typically get everything in one page
+    queryFn: ({ pageParam }) => getProducts({ limit: 1000, offset: (pageParam as number) || 0 }),
+    getNextPageParam: (lastPage, allPages) => (lastPage.length === 1000 ? allPages.length * 1000 : undefined),
   });
+
+  // Auto-load all pages so all listings are visible by default
+  useEffect(() => {
+    if (hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
+    }
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage, data?.pages?.length]);
 
   const { data: towns } = useQuery<TownCount[]>({
     queryKey: ["towns"],
@@ -105,10 +113,12 @@ const Index = () => {
         )}
 
         {groupedByCity.map(([city, items]) => (
-          <HorizontalPropertySection key={city} title={`${t('Stays in')} ${city}`}>
-            {items.map((product) => (
-              <div key={product.listing.id} className="w-[200px] sm:w-[280px]">
+          <section key={city} className="py-10">
+            <h2 className="text-2xl font-bold mb-6">{`${t('Stays in')} ${city}`}</h2>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6">
+              {items.map((product) => (
                 <PropertyCard
+                  key={product.listing.id}
                   id={product.listing.id}
                   name={product.listing.title ?? "Untitled"}
                   location={product.listing.city || inferCity(product) || "Unknown"}
@@ -116,9 +126,9 @@ const Index = () => {
                   images={product.photos.map((photo) => ({ image_url: photo.url }))}
                   propertyType={product.listing.property_type}
                 />
-              </div>
-            ))}
-          </HorizontalPropertySection>
+              ))}
+            </div>
+          </section>
         ))}
 
         {/* All Listings */}
@@ -136,13 +146,7 @@ const Index = () => {
               />
             ))}
           </div>
-          <div className="flex justify-center mt-6">
-            {hasNextPage && (
-              <Button onClick={() => fetchNextPage()} disabled={isFetchingNextPage} variant="outline">
-                {isFetchingNextPage ? "Loading..." : "Load more"}
-              </Button>
-            )}
-          </div>
+          <div className="flex justify-center mt-6" />
         </section>
       </div>
     </div>
