@@ -119,9 +119,36 @@ const ListingDetails: React.FC = () => {
     const { toast } = useToast();
     const closeBtnRef = React.useRef<HTMLButtonElement>(null);
     const desktopCalRef = React.useRef<HTMLDivElement>(null);
+    const mapContainerRef = React.useRef<HTMLDivElement>(null);
 
     const { isSlowConnection } = useConnectionQuality();
     const [showMap, setShowMap] = React.useState(!isSlowConnection);
+
+    // Automatically load map when it comes into view
+    React.useEffect(() => {
+        if (showMap || !mapContainerRef.current) return;
+
+        const observer = new IntersectionObserver(
+            (entries) => {
+                entries.forEach((entry) => {
+                    if (entry.isIntersecting) {
+                        setShowMap(true);
+                        observer.disconnect();
+                    }
+                });
+            },
+            {
+                rootMargin: '100px', // Start loading 100px before the map comes into view
+                threshold: 0.1,
+            }
+        );
+
+        observer.observe(mapContainerRef.current);
+
+        return () => {
+            observer.disconnect();
+        };
+    }, [showMap]);
 
     const openMobileDatePicker = () => {
         try {

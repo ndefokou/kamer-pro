@@ -27,7 +27,7 @@ import { PropertySectionSkeleton } from "@/components/PropertyCardSkeleton";
 import OfflineIndicator from "@/components/OfflineIndicator";
 
 // PropertySection component defined outside to prevent re-renders
-const PropertySection = ({ title, properties, city }: { title: string; properties: Product[]; city?: string }) => {
+const PropertySection = ({ title, properties, city, inferCity }: { title: string; properties: Product[]; city?: string; inferCity: (p: Product) => string }) => {
     const { t } = useTranslation();
     const navigate = useNavigate();
     const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -90,19 +90,22 @@ const PropertySection = ({ title, properties, city }: { title: string; propertie
                     onScroll={handleScroll}
                     className="flex gap-4 md:gap-6 overflow-x-auto pb-3 snap-x snap-mandatory scroll-smooth [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']"
                 >
-                    {properties.filter(Boolean).map((product, index) => (
-                        <div key={product.listing.id} className="flex-shrink-0 w-[180px] sm:w-[240px] md:w-[280px]">
-                            <PropertyCard
-                                id={product.listing.id}
-                                name={product.listing.title}
-                                location={product.listing.city}
-                                price={product.listing.price_per_night || 0}
-                                images={product.photos?.map(p => ({ image_url: p.url })) || []}
-                                isGuestFavorite={false}
-                                priority={index < 4}
-                            />
-                        </div>
-                    ))}
+                    {properties.filter(Boolean).map((product, index) => {
+                        const inferredCity = inferCity(product);
+                        return (
+                            <div key={product.listing.id} className="flex-shrink-0 w-[180px] sm:w-[240px] md:w-[280px]">
+                                <PropertyCard
+                                    id={product.listing.id}
+                                    name={product.listing.title}
+                                    location={product.listing.city || inferredCity || 'Unknown'}
+                                    price={product.listing.price_per_night || 0}
+                                    images={product.photos?.map(p => ({ image_url: p.url })) || []}
+                                    isGuestFavorite={false}
+                                    priority={index < 4}
+                                />
+                            </div>
+                        );
+                    })}
                 </div>
 
                 {/* Right Arrow */}
@@ -272,6 +275,7 @@ const Dashboard = () => {
                                     title={t('StaysIn', { city: g.name })}
                                     properties={g.items}
                                     city={g.name}
+                                    inferCity={inferCity}
                                 />
                             ))}
                         {buea.length > 0 && (
@@ -280,6 +284,7 @@ const Dashboard = () => {
                                 title={t('StaysIn', { city: 'Buea' })}
                                 properties={buea}
                                 city="Buea"
+                                inferCity={inferCity}
                             />
                         )}
                         {other.length > 0 && (
@@ -288,6 +293,7 @@ const Dashboard = () => {
                                 title={t('otherLocations')}
                                 properties={other}
                                 city="other"
+                                inferCity={inferCity}
                             />
                         )}
                     </>
