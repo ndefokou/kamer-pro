@@ -128,9 +128,12 @@ const Dashboard = () => {
 
     // Reduced initial load for 2G networks - load 12 items instead of 40+
     const { data: properties, isLoading, error } = useQuery<Product[]>({
-        queryKey: ["products"],
+        queryKey: ["products", { limit: 12 }],
         queryFn: () => getProducts({ limit: 12 }),
-        staleTime: 5 * 60 * 1000, // 5 minutes - reduce refetches on slow networks
+        // Ensure newly published listings appear immediately
+        staleTime: 0,
+        refetchOnMount: "always",
+        refetchOnWindowFocus: true,
     });
 
     const normalizeCity = (s?: string) => (s || "").trim().toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '');
