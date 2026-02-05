@@ -47,16 +47,17 @@ export default defineConfig(({ mode }) => ({
       workbox: {
         skipWaiting: true,
         clientsClaim: true,
-        // @ts-ignore - fetchOptions is valid for workbox-build but might not be in the current type definitions
-        fetchOptions: {
-          cache: 'no-store',
-        },
         globPatterns: ['**/*.{js,css,html,ico,png,svg,webp,jpg,jpeg,webmanifest}'],
         cleanupOutdatedCaches: true,
         runtimeCaching: [
           {
             urlPattern: ({ url }) => url.pathname.startsWith('/api'),
             handler: 'NetworkOnly',
+            options: {
+              fetchOptions: {
+                cache: 'no-store',
+              } as any,
+            },
           },
           {
             // Cache images with cache-first strategy
@@ -64,6 +65,9 @@ export default defineConfig(({ mode }) => ({
             handler: 'CacheFirst',
             options: {
               cacheName: 'image-cache',
+              fetchOptions: {
+                cache: 'no-store',
+              } as any,
               expiration: {
                 maxEntries: 200,
                 maxAgeSeconds: 60 * 60 * 24 * 7,
@@ -79,6 +83,9 @@ export default defineConfig(({ mode }) => ({
             handler: 'CacheFirst',
             options: {
               cacheName: 'font-cache',
+              fetchOptions: {
+                cache: 'no-store',
+              } as any,
               expiration: {
                 maxEntries: 20,
                 maxAgeSeconds: 60 * 60 * 24 * 365,
