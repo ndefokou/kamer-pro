@@ -14,6 +14,7 @@ const Preview: React.FC = () => {
     const { draft, publishListing, saveDraft, previousStep } = useHost();
     const { toast } = useToast();
     const [isPublishing, setIsPublishing] = useState(false);
+    const [isSavingDraft, setIsSavingDraft] = useState(false);
 
     const handlePublish = async () => {
         setIsPublishing(true);
@@ -38,6 +39,7 @@ const Preview: React.FC = () => {
     };
 
     const handleSaveDraft = async () => {
+        setIsSavingDraft(true);
         const result = await saveDraft();
         if (result.success) {
             toast({
@@ -52,6 +54,7 @@ const Preview: React.FC = () => {
                 variant: 'destructive',
             });
         }
+        setIsSavingDraft(false);
     };
 
     const handleBack = () => {
@@ -162,14 +165,21 @@ const Preview: React.FC = () => {
 
                 {/* Actions */}
                 <div className="flex justify-between items-center">
-                    <Button variant="outline" onClick={handleBack}>
+                    <Button variant="outline" onClick={handleBack} disabled={isPublishing || isSavingDraft}>
                         {t('common.back', 'Back')}
                     </Button>
                     <div className="flex gap-3">
-                        <Button variant="outline" onClick={handleSaveDraft}>
-                            {t('host.preview.saveDraft', 'Save as draft')}
+                        <Button variant="outline" onClick={handleSaveDraft} disabled={isPublishing || isSavingDraft}>
+                            {isSavingDraft ? (
+                                <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    {t('host.preview.saving', 'Saving...')}
+                                </>
+                            ) : (
+                                t('host.preview.saveDraft', 'Save as draft')
+                            )}
                         </Button>
-                        <Button onClick={handlePublish} disabled={isPublishing} size="lg">
+                        <Button onClick={handlePublish} disabled={isPublishing || isSavingDraft} size="lg">
                             {isPublishing ? (
                                 <>
                                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
