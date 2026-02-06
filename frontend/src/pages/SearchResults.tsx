@@ -348,7 +348,7 @@ const SearchResults = () => {
                         groupedByCity.map(([city, items]) => (
                             <div key={city} className="mb-10">
                                 <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
-                                    FIXED: {city}
+                                    {city}
                                 </h2>
                                 <div className="grid grid-cols-2 gap-3 md:grid-cols-2 md:gap-6">
                                     {items.map((product) => (

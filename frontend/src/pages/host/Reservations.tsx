@@ -30,6 +30,7 @@ interface BookingWithDetails {
     booking: Booking;
     guest_name: string;
     guest_email: string;
+    guest_phone?: string | null;
     listing_title: string;
     listing_photo?: string;
     listing_city?: string;
@@ -63,10 +64,15 @@ const Reservations: React.FC = () => {
         return (parts[0][0] + parts[1][0]).toUpperCase();
     };
 
-    const handleMessageGuest = async (guestId: number) => {
+    const handleMessageGuest = async (guestId: number, guestName: string, phone?: string | null) => {
         try {
-            const res = await getUserById(guestId);
-            const success = openWhatsApp(res.profile?.phone || null, t('host.reservations.whatsappGreeting', { name: res.user.username }));
+            let finalPhone = phone;
+            if (!finalPhone) {
+                const res = await getUserById(guestId);
+                finalPhone = res.profile?.phone;
+            }
+
+            const success = openWhatsApp(finalPhone || null, t('host.reservations.whatsappGreeting', { name: guestName }));
             if (!success) {
                 toast({
                     title: t('common.error'),
@@ -131,12 +137,10 @@ const Reservations: React.FC = () => {
             const all = [...todayBookings, ...upcomingBookings];
             const b = all.find(x => x.booking.id === selectedBookingId);
             if (b) {
-                try {
-                    const res = await getUserById(b.booking.guest_id);
-                    openWhatsApp(res.profile?.phone || null, t('host.reservations.declineWhatsapp', { reason: declineReason }));
-                } catch (e) {
-                    console.error('Failed to send WhatsApp notification', e);
-                }
+                openWhatsApp(
+                    b.guest_phone || null,
+                    t('host.reservations.declineWhatsapp', { name: b.guest_name, reason: declineReason })
+                );
             }
             setDeclineDialogOpen(false);
             // Refresh bookings
@@ -237,7 +241,7 @@ const Reservations: React.FC = () => {
                                                 </div>
                                             </div>
                                             <div className="flex items-center gap-3">
-                                                <Button variant="outline" className="rounded-full px-4 flex items-center gap-2" onClick={() => handleMessageGuest(booking.booking.guest_id)}>
+                                                <Button variant="outline" className="rounded-full px-4 flex items-center gap-2" onClick={() => handleMessageGuest(booking.booking.guest_id, booking.guest_name, booking.guest_phone)}>
                                                     <MessageSquare className="h-4 w-4" />
                                                     {t('common.message', 'Message')}
                                                 </Button>
@@ -298,7 +302,7 @@ const Reservations: React.FC = () => {
                                                     </div>
                                                 </div>
                                             </div>
-                                            <Button variant="outline" className="rounded-full px-4 w-full md:w-auto" onClick={() => handleMessageGuest(booking.booking.guest_id)}>{t('common.message', 'Message')}</Button>
+                                            <Button variant="outline" className="rounded-full px-4 w-full md:w-auto" onClick={() => handleMessageGuest(booking.booking.guest_id, booking.guest_name, booking.guest_phone)}>{t('common.message', 'Message')}</Button>
                                         </div>
                                     </div>
                                 ))}

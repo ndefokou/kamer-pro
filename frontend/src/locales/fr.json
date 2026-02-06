@@ -15,6 +15,10 @@
     "approve": "Approuver",
     "decline": "Refuser",
     "guests": "voyageurs",
+    "guest_count": "{{count}} voyageur",
+    "guest_count_other": "{{count}} voyageurs",
+    "perNight": "par nuit",
+    "manageListings": "Gérer les annonces",
     "searching": "Recherche...",
     "noResults": "Aucun résultat trouvé",
     "zero": "0",
@@ -268,10 +272,6 @@
     "header": {
       "switchToTraveling": "Passer en mode voyageur",
       "createListing": "Créer une nouvelle annonce"
-    },
-    "common": {
-      "perNight": "par nuit",
-      "manageListings": "Gérer les annonces"
     },
     "dashboard": {
       "table": {
@@ -580,8 +580,8 @@
     "declinePlaceholder": "ex. Les dates ne sont plus disponibles...",
     "declining": "Refus en cours...",
     "declineCta": "Refuser la réservation",
-    "whatsappGreeting": "Bonjour {{name}}, j'ai une question concernant votre réservation.",
-    "declineWhatsapp": "Réservation refusée : {{reason}}"
+    "whatsappGreeting": "Bonjour {{name}} ! Je suis votre hôte pour votre prochain séjour.",
+    "declineWhatsapp": "Bonjour {{name}}, malheureusement je dois refuser votre réservation pour la raison suivante : {{reason}}"
   },
   "preview": {
     "untitled": "Annonce sans titre",
@@ -816,6 +816,8 @@
     "all": "Tout",
     "room": "Chambre",
     "villa": "Villa",
+    "house": "Maison",
+    "home": "Logement",
     "apartment": "Appartement",
     "studio": "Studio",
     "furnished_apartment": "Appartement meublé",
@@ -852,7 +854,8 @@
     "status": {
       "confirmed": "Confirmée",
       "pending": "En attente",
-      "cancelled": "Annulée"
+      "cancelled": "Annulée",
+      "declined": "Refusée"
     },
     "viewListing": "Voir l'annonce",
     "cancel": "Annuler",

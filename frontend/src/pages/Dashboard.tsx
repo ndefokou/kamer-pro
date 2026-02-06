@@ -102,6 +102,7 @@ const PropertySection = ({ title, properties, city, inferCity }: { title: string
                                     images={product.photos?.map(p => ({ image_url: p.url })) || []}
                                     isGuestFavorite={false}
                                     priority={index < 4}
+                                    propertyType={product.listing.property_type}
                                 />
                             </div>
                         );

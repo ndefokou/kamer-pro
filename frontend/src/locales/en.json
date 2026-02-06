@@ -26,6 +26,9 @@
     "approve": "Approve",
     "decline": "Decline",
     "guests": "guests",
+    "guest_count": "{{count}} guest",
+    "guest_count_other": "{{count}} guests",
+    "perNight": "per night",
     "searching": "Searching...",
     "noResults": "No results found",
     "zero": "0",
@@ -296,9 +299,6 @@
   "username": "Username",
   "your username": "your_username",
   "host": {
-    "common": {
-      "perNight": "per night"
-    },
     "dashboard": {
       "table": {
         "listing": "Listing",
@@ -747,7 +747,9 @@
       "declineHelp": "Please provide a reason for declining this booking. This message will be sent to the guest.",
       "declinePlaceholder": "e.g., The dates are no longer available...",
       "declining": "Declining...",
-      "declineCta": "Decline Booking"
+      "declineCta": "Decline Booking",
+      "whatsappGreeting": "Hello {{name}}! I'm your host for your upcoming stay.",
+      "declineWhatsapp": "Hello {{name}}, unfortunately I have to decline your booking for the following reason: {{reason}}"
     }
   },
   "messages": {
@@ -803,6 +805,8 @@
     "all": "All",
     "room": "Room",
     "villa": "Villa",
+    "house": "House",
+    "home": "Home",
     "apartment": "Apartment",
     "studio": "Studio",
     "furnished_apartment": "Furnished Apartment",
@@ -839,7 +843,8 @@
     "status": {
       "confirmed": "Confirmed",
       "pending": "Pending",
-      "cancelled": "Cancelled"
+      "cancelled": "Cancelled",
+      "declined": "Declined"
     },
     "viewListing": "View listing",
     "cancel": "Cancel",

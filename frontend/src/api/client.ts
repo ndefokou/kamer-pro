@@ -90,7 +90,7 @@ apiClient.interceptors.response.use(
         // Broadcast calendar availability change to other tabs and within the app
         try {
           // Extract listingId from /calendar/:listingId/...
-          const match = url.match(/\/calendar\/([^/]+)/);
+          const match = url.match(/\/(?:calendar)\/([^/]+)/);
           const listingId = match ? match[1] : undefined;
 
           // 1) Cross-tab broadcast
@@ -106,7 +106,10 @@ apiClient.interceptors.response.use(
           }
         } catch { /* noop */ }
       } else if (url.includes('/bookings')) {
+        // ✅ NEW: booking changes affect availability
         dbService.clearCacheByPattern('bookings');
+        dbService.clearCacheByPattern('listings');
+        try { lastBackgroundFetch.clear(); } catch { /* noop */ }
       } else if (url.includes('/messages')) {
         dbService.clearCacheByPattern('messages');
       } else if (url.includes('/account/user')) {

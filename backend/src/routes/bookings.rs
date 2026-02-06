@@ -22,6 +22,27 @@ pub struct Booking {
 }
 
 /// GET /api/bookings/my - Get bookings for the authenticated guest (history)
+#[derive(Debug, sqlx::FromRow)]
+struct BookingRow {
+    id: String,
+    listing_id: String,
+    guest_id: i32,
+    check_in: String,
+    check_out: String,
+    guests: i32,
+    total_price: f64,
+    status: String,
+    created_at: Option<String>,
+    updated_at: Option<String>,
+    guest_name: String,
+    guest_email: String,
+    guest_phone: Option<String>,
+    listing_title: String,
+    listing_city: Option<String>,
+    listing_country: Option<String>,
+    listing_photo: Option<String>,
+}
+
 #[get("/my")]
 pub async fn get_my_bookings(
     pool: web::Data<PgPool>,
@@ -34,9 +55,10 @@ pub async fn get_my_bookings(
 
     let query = r#"
         SELECT 
-            b.id, b.listing_id, b.guest_id, b.check_in::TEXT, b.check_out::TEXT, b.guests, b.total_price, b.status, b.created_at::TEXT, b.updated_at::TEXT,
+            b.id, b.listing_id, b.guest_id, b.check_in::TEXT as check_in, b.check_out::TEXT as check_out, b.guests, b.total_price, b.status, b.created_at::TEXT as created_at, b.updated_at::TEXT as updated_at,
             u.username as guest_name,
             u.email as guest_email,
+            up.phone as guest_phone,
             l.title as listing_title,
             l.city as listing_city,
             l.country as listing_country,
@@ -44,31 +66,12 @@ pub async fn get_my_bookings(
         FROM bookings b
         INNER JOIN listings l ON b.listing_id = l.id
         INNER JOIN users u ON b.guest_id = u.id
+        LEFT JOIN user_profiles up ON u.id = up.user_id
         WHERE b.guest_id = $1
         ORDER BY b.created_at DESC
     "#;
 
-    match sqlx::query_as::<
-        _,
-        (
-            String,
-            String,
-            i32,
-            String,
-            String,
-            i32,
-            f64,
-            String,
-            Option<String>,
-            Option<String>,
-            String,
-            String,
-            String,
-            Option<String>,
-            Option<String>,
-            Option<String>,
-        ),
-    >(query)
+    match sqlx::query_as::<_, BookingRow>(query)
     .bind(user_id)
     .fetch_all(pool.get_ref())
     .await
@@ -78,23 +81,24 @@ pub async fn get_my_bookings(
                 .into_iter()
                 .map(|row| BookingWithDetails {
                     booking: Booking {
-                        id: row.0,
-                        listing_id: row.1,
-                        guest_id: row.2,
-                        check_in: row.3,
-                        check_out: row.4,
-                        guests: row.5,
-                        total_price: row.6,
-                        status: row.7,
-                        created_at: row.8,
-                        updated_at: row.9,
+                        id: row.id,
+                        listing_id: row.listing_id,
+                        guest_id: row.guest_id,
+                        check_in: row.check_in,
+                        check_out: row.check_out,
+                        guests: row.guests,
+                        total_price: row.total_price,
+                        status: row.status,
+                        created_at: row.created_at,
+                        updated_at: row.updated_at,
                     },
-                    guest_name: row.10,
-                    guest_email: row.11,
-                    listing_title: row.12,
-                    listing_city: row.13,
-                    listing_country: row.14,
-                    listing_photo: row.15,
+                    guest_name: row.guest_name,
+                    guest_email: row.guest_email,
+                    guest_phone: row.guest_phone,
+                    listing_title: row.listing_title,
+                    listing_city: row.listing_city,
+                    listing_country: row.listing_country,
+                    listing_photo: row.listing_photo,
                 })
                 .collect();
 
@@ -114,6 +118,7 @@ pub struct BookingWithDetails {
     pub booking: Booking,
     pub guest_name: String,
     pub guest_email: String,
+    pub guest_phone: Option<String>,
     pub listing_title: String,
     pub listing_photo: Option<String>,
     pub listing_city: Option<String>,
@@ -488,9 +493,10 @@ pub async fn get_today_bookings(pool: web::Data<PgPool>, req: HttpRequest) -> im
 
     let query = r#"
         SELECT 
-            b.id, b.listing_id, b.guest_id, b.check_in::TEXT, b.check_out::TEXT, b.guests, b.total_price, b.status, b.created_at::TEXT, b.updated_at::TEXT,
+            b.id, b.listing_id, b.guest_id, b.check_in::TEXT as check_in, b.check_out::TEXT as check_out, b.guests, b.total_price, b.status, b.created_at::TEXT as created_at, b.updated_at::TEXT as updated_at,
             u.username as guest_name,
             u.email as guest_email,
+            up.phone as guest_phone,
             l.title as listing_title,
             l.city as listing_city,
             l.country as listing_country,
@@ -498,32 +504,13 @@ pub async fn get_today_bookings(pool: web::Data<PgPool>, req: HttpRequest) -> im
         FROM bookings b
         INNER JOIN listings l ON b.listing_id = l.id
         INNER JOIN users u ON b.guest_id = u.id
+        LEFT JOIN user_profiles up ON u.id = up.user_id
         WHERE l.host_id = $1
         AND (DATE(b.check_in) = DATE('now') OR b.status = 'pending')
         ORDER BY CASE WHEN b.status = 'pending' THEN 0 ELSE 1 END, b.check_in ASC
     "#;
 
-    match sqlx::query_as::<
-        _,
-        (
-            String,
-            String,
-            i32,
-            String,
-            String,
-            i32,
-            f64,
-            String,
-            Option<String>,
-            Option<String>,
-            String,
-            String,
-            String,
-            Option<String>,
-            Option<String>,
-            Option<String>,
-        ),
-    >(query)
+    match sqlx::query_as::<_, BookingRow>(query)
     .bind(user_id)
     .fetch_all(pool.get_ref())
     .await
@@ -533,23 +520,24 @@ pub async fn get_today_bookings(pool: web::Data<PgPool>, req: HttpRequest) -> im
                 .into_iter()
                 .map(|row| BookingWithDetails {
                     booking: Booking {
-                        id: row.0,
-                        listing_id: row.1,
-                        guest_id: row.2,
-                        check_in: row.3,
-                        check_out: row.4,
-                        guests: row.5,
-                        total_price: row.6,
-                        status: row.7,
-                        created_at: row.8,
-                        updated_at: row.9,
+                        id: row.id,
+                        listing_id: row.listing_id,
+                        guest_id: row.guest_id,
+                        check_in: row.check_in,
+                        check_out: row.check_out,
+                        guests: row.guests,
+                        total_price: row.total_price,
+                        status: row.status,
+                        created_at: row.created_at,
+                        updated_at: row.updated_at,
                     },
-                    guest_name: row.10,
-                    guest_email: row.11,
-                    listing_title: row.12,
-                    listing_city: row.13,
-                    listing_country: row.14,
-                    listing_photo: row.15,
+                    guest_name: row.guest_name,
+                    guest_email: row.guest_email,
+                    guest_phone: row.guest_phone,
+                    listing_title: row.listing_title,
+                    listing_city: row.listing_city,
+                    listing_country: row.listing_country,
+                    listing_photo: row.listing_photo,
                 })
                 .collect();
 
@@ -577,9 +565,10 @@ pub async fn get_upcoming_bookings(
 
     let query = r#"
         SELECT 
-            b.id, b.listing_id, b.guest_id, b.check_in::TEXT, b.check_out::TEXT, b.guests, b.total_price, b.status, b.created_at::TEXT, b.updated_at::TEXT,
+            b.id, b.listing_id, b.guest_id, b.check_in::TEXT as check_in, b.check_out::TEXT as check_out, b.guests, b.total_price, b.status, b.created_at::TEXT as created_at, b.updated_at::TEXT as updated_at,
             u.username as guest_name,
             u.email as guest_email,
+            up.phone as guest_phone,
             l.title as listing_title,
             l.city as listing_city,
             l.country as listing_country,
@@ -587,33 +576,14 @@ pub async fn get_upcoming_bookings(
         FROM bookings b
         INNER JOIN listings l ON b.listing_id = l.id
         INNER JOIN users u ON b.guest_id = u.id
+        LEFT JOIN user_profiles up ON u.id = up.user_id
         WHERE l.host_id = $1
         AND DATE(b.check_in) > DATE('now')
         AND b.status != 'pending'
         ORDER BY b.check_in ASC
     "#;
 
-    match sqlx::query_as::<
-        _,
-        (
-            String,
-            String,
-            i32,
-            String,
-            String,
-            i32,
-            f64,
-            String,
-            Option<String>,
-            Option<String>,
-            String,
-            String,
-            String,
-            Option<String>,
-            Option<String>,
-            Option<String>,
-        ),
-    >(query)
+    match sqlx::query_as::<_, BookingRow>(query)
     .bind(user_id)
     .fetch_all(pool.get_ref())
     .await
@@ -623,23 +593,24 @@ pub async fn get_upcoming_bookings(
                 .into_iter()
                 .map(|row| BookingWithDetails {
                     booking: Booking {
-                        id: row.0,
-                        listing_id: row.1,
-                        guest_id: row.2,
-                        check_in: row.3,
-                        check_out: row.4,
-                        guests: row.5,
-                        total_price: row.6,
-                        status: row.7,
-                        created_at: row.8,
-                        updated_at: row.9,
+                        id: row.id,
+                        listing_id: row.listing_id,
+                        guest_id: row.guest_id,
+                        check_in: row.check_in,
+                        check_out: row.check_out,
+                        guests: row.guests,
+                        total_price: row.total_price,
+                        status: row.status,
+                        created_at: row.created_at,
+                        updated_at: row.updated_at,
                     },
-                    guest_name: row.10,
-                    guest_email: row.11,
-                    listing_title: row.12,
-                    listing_city: row.13,
-                    listing_country: row.14,
-                    listing_photo: row.15,
+                    guest_name: row.guest_name,
+                    guest_email: row.guest_email,
+                    guest_phone: row.guest_phone,
+                    listing_title: row.listing_title,
+                    listing_city: row.listing_city,
+                    listing_country: row.listing_country,
+                    listing_photo: row.listing_photo,
                 })
                 .collect();
 

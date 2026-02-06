@@ -42,6 +42,26 @@ const PropertyCard = ({
     const { t } = useTranslation();
     const inWishlist = isInWishlist(id);
 
+    const getTypeCitySlug = () => {
+        if (!location) return name;
+
+        const rawType = propertyType || "";
+        const supportedTypes = ["room", "apartment", "studio", "villa", "house"] as const;
+
+        const typeSlug = supportedTypes.find((t) => t === rawType) || (rawType || "home");
+
+        const citySlug = location
+            .toLowerCase()
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .replace(/\s+/g, "");
+
+        const translatedType = t(`categories.${typeSlug}`, typeSlug);
+        const translatedCity = t(`locations.${citySlug}`, location);
+
+        return `${translatedType} • ${translatedCity}`;
+    };
+
     const prefetchDetails = () => {
         queryClient.prefetchQuery({ queryKey: ["listing", id], queryFn: () => getListing(id) });
     };
@@ -146,7 +166,7 @@ const PropertyCard = ({
                 <div className="flex flex-col gap-1">
                     <div className="flex items-start justify-between gap-2">
                         <h3 className="font-semibold text-[15px] text-foreground line-clamp-1 group-hover:text-primary transition-colors">
-                            {location}
+                            {getTypeCitySlug()}
                         </h3>
                         {rating && (
                             <div className="flex items-center gap-1 flex-shrink-0">
