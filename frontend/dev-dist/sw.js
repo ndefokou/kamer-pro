@@ -67,7 +67,7 @@ if (!self.define) {
     });
   };
 }
-define(['./workbox-ebf2bf51'], (function (workbox) { 'use strict';
+define(['./workbox-bd8ba865'], (function (workbox) { 'use strict';
 
   self.skipWaiting();
   workbox.clientsClaim();
@@ -82,47 +82,26 @@ define(['./workbox-ebf2bf51'], (function (workbox) { 'use strict';
     "revision": "3ca0b8505b4bec776b69afdba2768812"
   }, {
     "url": "/index.html",
-<<<<<<< HEAD
-    "revision": "0.ocfhrf0dk78"
-=======
-    "revision": "0.rsdb98lpj08"
->>>>>>> improve-app-latency
+    "revision": "0.tt3a7pe188"
   }], {});
   workbox.cleanupOutdatedCaches();
   workbox.registerRoute(new workbox.NavigationRoute(workbox.createHandlerBoundToURL("/index.html"), {
     allowlist: [/^\/$/],
     denylist: [/^\/api/]
   }));
-  workbox.registerRoute(/^https?:\/\/.*\/api\/.*/i, new workbox.NetworkFirst({
-    "cacheName": "api-cache",
-<<<<<<< HEAD
-=======
-    "networkTimeoutSeconds": 5,
->>>>>>> improve-app-latency
-    plugins: [new workbox.ExpirationPlugin({
-      maxEntries: 100,
-      maxAgeSeconds: 1800
-    }), new workbox.CacheableResponsePlugin({
-      statuses: [0, 200]
-    })]
+  workbox.registerRoute(({
+    url
+  }) => url.pathname.startsWith("/api"), new workbox.NetworkOnly({
+    "fetchOptions": {
+      "cache": "no-store"
+    },
+    plugins: []
   }), 'GET');
-  workbox.registerRoute(/^https?:\/\/.*\/api\/.*/i, new workbox.NetworkOnly({
-    plugins: [new workbox.BackgroundSyncPlugin("api-mutation-queue", {
-      maxRetentionTime: 1440
-    })]
-  }), 'POST');
-  workbox.registerRoute(/^https?:\/\/.*\/api\/.*/i, new workbox.NetworkOnly({
-    plugins: [new workbox.BackgroundSyncPlugin("api-mutation-queue", {
-      maxRetentionTime: 1440
-    })]
-  }), 'PUT');
-  workbox.registerRoute(/^https?:\/\/.*\/api\/.*/i, new workbox.NetworkOnly({
-    plugins: [new workbox.BackgroundSyncPlugin("api-mutation-queue", {
-      maxRetentionTime: 1440
-    })]
-  }), 'DELETE');
   workbox.registerRoute(/\.(?:png|jpg|jpeg|svg|gif|webp)$/i, new workbox.CacheFirst({
     "cacheName": "image-cache",
+    "fetchOptions": {
+      "cache": "no-store"
+    },
     plugins: [new workbox.ExpirationPlugin({
       maxEntries: 200,
       maxAgeSeconds: 604800
@@ -132,6 +111,9 @@ define(['./workbox-ebf2bf51'], (function (workbox) { 'use strict';
   }), 'GET');
   workbox.registerRoute(/\.(?:woff|woff2|ttf|eot)$/i, new workbox.CacheFirst({
     "cacheName": "font-cache",
+    "fetchOptions": {
+      "cache": "no-store"
+    },
     plugins: [new workbox.ExpirationPlugin({
       maxEntries: 20,
       maxAgeSeconds: 31536000

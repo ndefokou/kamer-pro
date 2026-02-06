@@ -82,14 +82,14 @@ const DB_VERSION = 1;
 
 // Default TTL values (in milliseconds)
 const TTL = {
-    LISTINGS: 1000 * 60 * 30, // 30 minutes
+    LISTINGS: 1000 * 60 * 60, // 1 hour
     USERS: 1000 * 60 * 60, // 1 hour
-    MESSAGES: 1000 * 60 * 5, // 5 minutes
-    BOOKINGS: 1000 * 60 * 15, // 15 minutes
+    MESSAGES: 1000 * 60 * 60, // 1 hour
+    BOOKINGS: 1000 * 60 * 60, // 1 hour
     REVIEWS: 1000 * 60 * 60, // 1 hour
-    IMAGES: 1000 * 60 * 60 * 24, // 24 hours
-    TOWNS: 1000 * 60 * 60 * 12, // 12 hours
-    CONVERSATIONS: 1000 * 60 * 5, // 5 minutes
+    IMAGES: 1000 * 60 * 60, // 1 hour
+    TOWNS: 1000 * 60 * 60, // 1 hour
+    CONVERSATIONS: 1000 * 60 * 60, // 1 hour
 };
 
 class DatabaseService {

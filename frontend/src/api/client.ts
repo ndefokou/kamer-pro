@@ -85,7 +85,7 @@ apiClient.interceptors.response.use(
         // Broadcast calendar availability change to other tabs and within the app
         try {
           // Extract listingId from /calendar/:listingId/...
-          const match = url.match(/\/calendar\/([^\/]+)/);
+          const match = url.match(/\/calendar\/([^/]+)/);
           const listingId = match ? match[1] : undefined;
 
           // 1) Cross-tab broadcast
@@ -116,7 +116,7 @@ apiClient.interceptors.response.use(
   (error) => {
     // Lightweight exponential backoff retries for GETs on flaky networks
     try {
-      const cfg: import('axios').AxiosRequestConfig & { __retryCount?: number } = (error?.config || {}) as any;
+      const cfg = (error?.config || {}) as import('axios').AxiosRequestConfig & { __retryCount?: number };
       if (__shouldRetryGet(error)) {
         cfg.__retryCount = (cfg.__retryCount || 0) + 1;
         const quality = networkService.getCurrentInfo().quality;
@@ -201,31 +201,12 @@ const cachedGet = async <T = unknown>(url: string, config?: AxiosRequestConfig):
 
   const requestPromise = (async () => {
     try {
-      // 1. Ultra-fast Synchronous Cache (LocalStorage) for Critical Paths
-      // Only for general listings (no search, location, category, or guests filters)
-      const hasFilters = config?.params?.search || config?.params?.location || config?.params?.category || config?.params?.guests;
-      // Home page uses a specific large limit and no filters
-      if (url === '/listings' && !hasFilters && config?.params?.limit > 20 && !config?.params?.offset) {
-        const criticalData = localStorage.getItem('critical_listings');
-        if (criticalData) {
-          try {
-            const parsed = JSON.parse(criticalData);
-            if (Array.isArray(parsed) && parsed.length > 0) {
-              // Return cached critical listings immediately without a background network request
-              return parsed;
-            }
-          } catch (e) { /* ignore parse error */ }
-        }
-      }
-
-      // 2. Try IndexedDB cache second (Stale-While-Revalidate pattern)
-      // For the general home feed (small limit, no filters), prefer a fresh network fetch
-      const preferNetworkForHomeFeed = url === '/listings' && !hasFilters && (!config?.params?.limit || config?.params?.limit <= 20) && !config?.params?.offset;
+      // Try IndexedDB cache only for whitelisted lightweight endpoints
       const cachedUnknown = await getCachedResponse(url, config?.params as Record<string, unknown> | undefined);
       const cached = cachedUnknown as T | null;
 
-      if (!preferNetworkForHomeFeed && cached && (!Array.isArray(cached) || cached.length > 0)) {
-        // Return cached data immediately with no background revalidation to avoid duplicate requests
+      if (cached && (!Array.isArray(cached) || cached.length > 0)) {
+        // Return cached data immediately without background revalidation
         return cached;
       }
 
@@ -257,44 +238,12 @@ const cacheResponse = async (url: string, data: unknown, params?: Record<string,
     if (url.includes('/listings/') && !url.includes('/reviews') && !url.includes('/my-listings')) {
       // Single listing
       const id = url.split('/listings/')[1].split('/')[0];
-      await dbService.cacheListing(id, data as any);
-    } else if (url === '/listings' || url.includes('/listings/host/') || url === '/listings/my-listings') {
-      // Multiple listings
-      if (Array.isArray(data)) {
-        await dbService.cacheListings(data as any);
-        // Save first page of general listings to localStorage for ultra-fast initial paint
-        if (url === '/listings' && (!params?.offset || params.offset === 0) && data.length > 0) {
-          // Store full dataset to avoid truncation after refresh
-          localStorage.setItem('critical_listings', JSON.stringify(data));
-        }
-      }
-    } else if (url.includes('/account/user/')) {
-      // User data
-      const id = parseInt(url.split('/account/user/')[1]);
-      await dbService.cacheUser(id, data as any);
-    } else if (url.includes('/reviews')) {
-      // Reviews
-      const listingId = url.split('/listings/')[1].split('/reviews')[0];
-      await dbService.cacheReviews(listingId, data as any);
-    } else if (url.includes('/bookings')) {
-      // Bookings
-      if (Array.isArray(data)) {
-        await dbService.cacheBookings(data as any);
-      }
+      await dbService.cacheListing(id, data as unknown);
     } else if (url === '/listings/towns') {
       // Towns
       if (Array.isArray(data)) {
-        await dbService.cacheTowns(data as any);
+        await dbService.cacheTowns(data as unknown as any[]);
       }
-    } else if (url === '/messages/conversations') {
-      // Conversations
-      if (Array.isArray(data)) {
-        await dbService.cacheConversations(data as any);
-      }
-    } else if (url.includes('/messages/conversations/')) {
-      // Single conversation/messages
-      const id = url.split('/messages/conversations/')[1];
-      await dbService.cacheConversation(id, data);
     }
   } catch (error) {
     console.error('Failed to cache response:', error);
@@ -313,39 +262,8 @@ const getCachedResponse = async (url: string, params?: Record<string, unknown>):
         return cached;
       }
       return null;
-    } else if (url === '/listings' || url.includes('/listings/host/') || url === '/listings/my-listings') {
-      // Multiple listings
-      // For general /listings with filters or pagination, don't return ALL cached listings
-      if (
-        url === '/listings' &&
-        params &&
-        (
-          params.search ||
-          params.location ||
-          params.category ||
-          params.guests ||
-          typeof (params as any).offset === 'number' ||
-          typeof (params as any).limit === 'number'
-        )
-      ) {
-        return null;
-      }
-      return await dbService.getAllCachedListings();
-    } else if (url.includes('/account/user/')) {
-      // User data
-      const id = parseInt(url.split('/account/user/')[1]);
-      return await dbService.getCachedUser(id);
-    } else if (url.includes('/reviews')) {
-      // Reviews
-      const listingId = url.split('/listings/')[1].split('/reviews')[0];
-      return await dbService.getCachedReviews(listingId);
     } else if (url === '/listings/towns') {
       return await dbService.getCachedTowns();
-    } else if (url === '/messages/conversations') {
-      return await dbService.getCachedConversations();
-    } else if (url.includes('/messages/conversations/')) {
-      const id = url.split('/messages/conversations/')[1];
-      return await dbService.getCachedConversation(id);
     }
   } catch (error) {
     console.error('Failed to get cached response:', error);

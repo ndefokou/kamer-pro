@@ -1,7 +1,7 @@
 import React, { Suspense, lazy } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { getListingFresh as getListing, createBooking, getListingReviews, addListingReview, ListingReview } from '@/api/client';
+import { getListing, createBooking, getListingReviews, addListingReview, ListingReview } from '@/api/client';
 import { Button } from '@/components/ui/button';
 import { Loader2, Share, Heart, Star, Minus, Plus, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import Loading from '@/components/Loading';

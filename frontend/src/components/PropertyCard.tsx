@@ -1,4 +1,5 @@
 import React, { useState, memo } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { Heart, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -9,6 +10,7 @@ import { getImageUrl, formatPrice } from "@/lib/utils";
 import OptimizedImage from "./OptimizedImage";
 import TranslatedText from "./TranslatedText";
 import { propertyTypes } from "@/data/propertyTypes";
+import { getListing } from "@/api/client";
 
 interface PropertyCardProps {
     id: string;
@@ -33,11 +35,16 @@ const PropertyCard = ({
     priority = false,
     propertyType,
 }: PropertyCardProps) => {
+    const queryClient = useQueryClient();
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const { isInWishlist, addToWishlist, removeFromWishlistByProduct } = useWishlist();
     const { toast } = useToast();
     const { t } = useTranslation();
     const inWishlist = isInWishlist(id);
+
+    const prefetchDetails = () => {
+        queryClient.prefetchQuery({ queryKey: ["listing", id], queryFn: () => getListing(id) });
+    };
 
     const handleWishlistToggle = async (e: React.MouseEvent) => {
         e.preventDefault();
@@ -65,6 +72,9 @@ const PropertyCard = ({
         <Link
             to={`/product/${id}`}
             className="block flex-shrink-0 w-full sm:w-[280px] group cursor-pointer"
+            onMouseEnter={prefetchDetails}
+            onFocus={prefetchDetails}
+            onTouchStart={prefetchDetails}
         >
             <div className="flex flex-col h-full">
                 {/* Image Container */}
