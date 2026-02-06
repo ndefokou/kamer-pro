@@ -78,6 +78,11 @@ apiClient.interceptors.response.use(
         dbService.clearCacheByPattern('listings');
         // Ensure next fetch isn't throttled by background cooldown
         try { lastBackgroundFetch.clear(); } catch { /* noop */ }
+
+        // If it's a publication, we want to be very aggressive with resetting queries
+        if (url.endsWith('/publish')) {
+          queryClient.resetQueries({ queryKey: ['products'] });
+        }
       } else if (url.includes('/calendar')) {
         // Calendar changes affect listing availability displayed to guests
         dbService.clearCacheByPattern('listings');
@@ -85,7 +90,7 @@ apiClient.interceptors.response.use(
         // Broadcast calendar availability change to other tabs and within the app
         try {
           // Extract listingId from /calendar/:listingId/...
-          const match = url.match(/\/calendar\/([^\/]+)/);
+          const match = url.match(/\/calendar\/([^/]+)/);
           const listingId = match ? match[1] : undefined;
 
           // 1) Cross-tab broadcast
@@ -170,8 +175,16 @@ const getWithBinary = async (url: string, config?: CustomAxiosRequestConfig): Pr
   } as Record<string, string>;
 
   try {
+    // Add cache-busting timestamp if skipCache or forceNetwork is set
+    // This helps bypass browser/proxy caches for critical requests
+    let finalUrl = url;
+    if (config?.skipCache || config?.forceNetwork) {
+      const char = finalUrl.includes('?') ? '&' : '?';
+      finalUrl = `${finalUrl}${char}_=${Date.now()}`;
+    }
+
     // Use standard JSON request for now
-    const response = await apiClient.get(url, {
+    const response = await apiClient.get(finalUrl, {
       ...config,
       headers,
     } as AxiosRequestConfig);

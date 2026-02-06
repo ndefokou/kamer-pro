@@ -380,11 +380,19 @@ export const HostProvider: React.FC<{ children: React.ReactNode }> = ({ children
         try {
             await apiClient.post(`/listings/${listingId}/publish`);
 
+            // Clear local draft
             const userDraftKey = `${DRAFT_KEY}_${user.id}`;
             localStorage.removeItem(userDraftKey);
             setDraft(defaultDraft);
 
-            await queryClient.invalidateQueries({ queryKey: ['products'] });
+            // Force refetch of products and towns to ensure home page is up to date
+            // resetQueries will clear the cache and refetch if there are active observers
+            await queryClient.resetQueries({ queryKey: ['products'] });
+            await queryClient.refetchQueries({ queryKey: ['products'], type: 'all' });
+            await queryClient.invalidateQueries({ queryKey: ['towns'] });
+
+            // Wait a tiny bit for DB to propagate changes if needed
+            await new Promise(resolve => setTimeout(resolve, 500));
 
             return { success: true };
 
