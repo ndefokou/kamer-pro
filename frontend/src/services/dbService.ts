@@ -82,13 +82,13 @@ const DB_VERSION = 1;
 
 // Default TTL values (in milliseconds)
 const TTL = {
-    LISTINGS: 1000 * 60 * 30, // 30 minutes
-    USERS: 1000 * 60 * 60, // 1 hour
+    LISTINGS: 1000 * 60 * 15, // 15 minutes
+    USERS: 1000 * 60 * 30, // 30 minutes
     MESSAGES: 1000 * 60 * 5, // 5 minutes
-    BOOKINGS: 1000 * 60 * 15, // 15 minutes
-    REVIEWS: 1000 * 60 * 60, // 1 hour
-    IMAGES: 1000 * 60 * 60 * 24, // 24 hours
-    TOWNS: 1000 * 60 * 60 * 12, // 12 hours
+    BOOKINGS: 1000 * 60 * 10, // 10 minutes
+    REVIEWS: 1000 * 60 * 30, // 30 minutes
+    IMAGES: 1000 * 60 * 60, // 1 hour
+    TOWNS: 1000 * 60 * 60, // 1 hour
     CONVERSATIONS: 1000 * 60 * 5, // 5 minutes
 };
 
@@ -180,21 +180,30 @@ class DatabaseService {
         return cached.data;
     }
 
-    async cacheListings(listings: any[], ttl: number = TTL.LISTINGS): Promise<void> {
+    async cacheListings(listings: Array<{ id: string;[key: string]: any }>, ttl: number = TTL.LISTINGS): Promise<void> {
         const db = await this.ensureDB();
         const tx = db.transaction('listings', 'readwrite');
         const now = Date.now();
 
         for (const item of listings) {
-            const rawId = (item && (item.listing?.id ?? item.id)) as unknown;
-            const id = typeof rawId === 'string' ? rawId : (rawId != null ? String(rawId) : '');
-            if (!id) {
-                // Skip entries without a valid id to avoid IndexedDB DataError
-                continue;
-            }
+            if (!item?.id) continue;
+
+            const essentialData = {
+                id: item.id,
+                title: item.title,
+                price: item.price,
+                image_urls: item.image_urls,
+                location: item.location,
+                description: item.description,
+                rating: item.rating,
+                review_count: item.review_count,
+                created_at: item.created_at,
+                updated_at: item.updated_at
+            };
+
             await tx.store.put({
-                id,
-                data: item,
+                id: item.id,
+                data: essentialData,
                 timestamp: now,
                 ttl,
             });
@@ -286,29 +295,52 @@ class DatabaseService {
         return cached.data;
     }
 
-    async cacheBookings(bookings: any[], ttl: number = TTL.BOOKINGS): Promise<void> {
+    async cacheBookings(bookings: Array<{ id: string;[key: string]: any }>, ttl: number = TTL.BOOKINGS): Promise<void> {
         const db = await this.ensureDB();
         const tx = db.transaction('bookings', 'readwrite');
+        const now = Date.now();
 
-        await Promise.all([
-            ...bookings.map(booking =>
-                tx.store.put({
-                    id: booking.booking?.id || booking.id,
-                    data: booking,
-                    timestamp: Date.now(),
-                    ttl,
-                })
-            ),
-            tx.done,
-        ]);
+        for (const booking of bookings) {
+            if (!booking?.id) continue;
+
+            const essentialData = {
+                id: booking.id,
+                listing_id: booking.listing_id,
+                user_id: booking.user_id,
+                start_date: booking.start_date,
+                end_date: booking.end_date,
+                status: booking.status,
+                total_price: booking.total_price,
+                created_at: booking.created_at,
+                updated_at: booking.updated_at
+            };
+
+            await tx.store.put({
+                id: booking.id,
+                data: essentialData,
+                timestamp: now,
+                ttl,
+            });
+        }
+        await tx.done;
     }
 
     // Review operations
-    async cacheReviews(listingId: string, data: any[], ttl: number = TTL.REVIEWS): Promise<void> {
+    async cacheReviews(listingId: string, reviews: Array<{ id: string;[key: string]: any }>, ttl: number = TTL.REVIEWS): Promise<void> {
         const db = await this.ensureDB();
+        const essentialReviews = reviews.map(review => ({
+            id: review.id,
+            user_id: review.user_id,
+            username: review.username,
+            avatar_url: review.avatar_url,
+            rating: review.rating,
+            comment: review.comment,
+            created_at: review.created_at
+        }));
+
         await db.put('reviews', {
             listingId,
-            data,
+            data: essentialReviews,
             timestamp: Date.now(),
             ttl,
         });
@@ -327,7 +359,7 @@ class DatabaseService {
         return cached.data;
     }
 
-    // Image caching operations
+    // Image operations
     async cacheImage(url: string, blob: Blob, ttl: number = TTL.IMAGES): Promise<void> {
         const db = await this.ensureDB();
         await db.put('images', {
@@ -411,19 +443,17 @@ class DatabaseService {
 
             for (const item of all) {
                 if (this.isExpired(item.timestamp, item.ttl)) {
-                    // Handle different key types
                     let key: any;
                     if ('url' in item) {
                         key = item.url;
                     } else if ('listingId' in item) {
                         key = item.listingId;
                     } else {
-                        key = item.id;
+                        key = (item as any).id;
                     }
                     await store.delete(key);
                 }
             }
-
             await tx.done;
         }
     }
@@ -438,11 +468,11 @@ class DatabaseService {
         localStorage.removeItem('critical_listings');
     }
 
-    async clearStore(storeName: any): Promise<void> {
+    async clearStore(storeName: string): Promise<void> {
         const db = await this.ensureDB();
         const names = Array.from(db.objectStoreNames) as string[];
-        if (names.includes(storeName as string)) {
-            await (db.clear as any)(storeName);
+        if (names.includes(storeName)) {
+            await db.clear(storeName as any);
         }
     }
 

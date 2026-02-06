@@ -1,4 +1,4 @@
-import axios, { AxiosRequestConfig } from "axios";
+import axios, { AxiosRequestConfig, InternalAxiosRequestConfig } from "axios";
 import { decode as msgpackDecode } from "@msgpack/msgpack";
 import { dbService } from "../services/dbService";
 import { networkService } from "../services/networkService";
@@ -155,8 +155,14 @@ apiClient.interceptors.response.use(
   }
 );
 
+interface CustomAxiosRequestConfig extends AxiosRequestConfig {
+  skipCache?: boolean;
+  forceNetwork?: boolean;
+  params?: Record<string, unknown>;
+}
+
 // Perform GET requesting compact binary (MessagePack) when available and decode response
-const getWithBinary = async (url: string, config?: AxiosRequestConfig): Promise<unknown> => {
+const getWithBinary = async (url: string, config?: CustomAxiosRequestConfig): Promise<unknown> => {
   const headers = {
     ...(config?.headers || {}),
     Accept: "application/json", // Force JSON for stability debugging
@@ -168,7 +174,7 @@ const getWithBinary = async (url: string, config?: AxiosRequestConfig): Promise<
     const response = await apiClient.get(url, {
       ...config,
       headers,
-    });
+    } as AxiosRequestConfig);
 
     if (!response.data) {
       console.warn('getWithBinary: Received empty data for', url);
@@ -190,9 +196,12 @@ const getWithBinary = async (url: string, config?: AxiosRequestConfig): Promise<
   }
 };
 
-// Enhanced GET with caching
-const cachedGet = async <T = unknown>(url: string, config?: AxiosRequestConfig): Promise<T> => {
+
+
+// Enhanced GET with caching that prioritizes Supabase
+const cachedGet = async <T = unknown>(url: string, config?: CustomAxiosRequestConfig): Promise<T> => {
   const cacheKey = createCacheKey(url, config?.params);
+  const isOnline = navigator.onLine && networkService.getNetworkInfo().isOnline;
 
   // Check for pending request (deduplication)
   if (pendingRequests.has(cacheKey)) {
@@ -201,45 +210,72 @@ const cachedGet = async <T = unknown>(url: string, config?: AxiosRequestConfig):
 
   const requestPromise = (async () => {
     try {
-      // 1. Ultra-fast Synchronous Cache (LocalStorage) for Critical Paths
-      // Only for general listings (no search, location, category, or guests filters)
-      const hasFilters = config?.params?.search || config?.params?.location || config?.params?.category || config?.params?.guests;
-      // Home page uses a specific large limit and no filters
-      if (url === '/listings' && !hasFilters && config?.params?.limit > 20 && !config?.params?.offset) {
-        const criticalData = localStorage.getItem('critical_listings');
-        if (criticalData) {
-          try {
-            const parsed = JSON.parse(criticalData);
-            if (Array.isArray(parsed) && parsed.length > 0) {
-              // Return cached critical listings immediately without a background network request
-              return parsed;
-            }
-          } catch (e) { /* ignore parse error */ }
+      // When online, always try to fetch from Supabase first
+      if (isOnline) {
+        try {
+          // Force network request by skipping cache
+          const data = await getWithBinary(url, { ...config, skipCache: true });
+
+          // Cache the fresh data in the background for offline use
+          if (!config?.skipCache) {
+            cacheResponse(url, data, config?.params).catch(console.error);
+          }
+
+          return data as T;
+        } catch (networkError) {
+          console.warn('Supabase request failed, falling back to cache:', url, networkError);
+          // Continue to cache fallback
         }
       }
 
-      // 2. Try IndexedDB cache second (Stale-While-Revalidate pattern)
-      // For the general home feed (small limit, no filters), prefer a fresh network fetch
-      const preferNetworkForHomeFeed = url === '/listings' && !hasFilters && (!config?.params?.limit || config?.params?.limit <= 20) && !config?.params?.offset;
-      const cachedUnknown = await getCachedResponse(url, config?.params as Record<string, unknown> | undefined);
-      const cached = cachedUnknown as T | null;
+      // Try cache as fallback when offline or when Supabase request failed
+      const cached = await getCachedResponse(url, config?.params as Record<string, unknown> | undefined) as T | null;
 
-      if (!preferNetworkForHomeFeed && cached && (!Array.isArray(cached) || cached.length > 0)) {
-        // Return cached data immediately with no background revalidation to avoid duplicate requests
+      if (cached) {
+        // If we have cached data and we're offline, return it
+        if (!isOnline) {
+          console.log('Using cached data (offline mode):', url);
+          return cached;
+        }
+
+        // If we're online but the Supabase request failed, return cached data with a warning
+        console.warn('Using cached data (Supabase request failed):', url);
         return cached;
       }
 
-      // If no cache, fetch from network
-      const data = await getWithBinary(url, config);
-      await cacheResponse(url, data, config?.params);
-      return data as T;
+      // If we have no cache and we're offline, throw an error
+      if (!isOnline) {
+        throw new Error('You are currently offline and no cached data is available.');
+      }
+
+      // This should only be reached if we're online but both Supabase and cache failed
+      throw new Error('Unable to fetch data. Please check your connection and try again.');
 
     } catch (error) {
-      // Network failed, try cache as fallback
-      const cached = (await getCachedResponse(url, config?.params as Record<string, unknown> | undefined)) as T | null;
-      if (cached) {
-        console.log('Using cached data due to network error:', url);
-        return cached;
+      // If we have a network error but we're actually online, try one more time
+      if (isOnline && axios.isAxiosError(error) && !error.response) {
+        try {
+          console.log('Retrying Supabase request...');
+          const data = await getWithBinary(url, { ...config, skipCache: true });
+
+          // Update cache with the fresh data
+          if (!config?.skipCache) {
+            cacheResponse(url, data, config?.params).catch(console.error);
+          }
+
+          return data as T;
+        } catch (retryError) {
+          console.error('Retry failed:', retryError);
+
+          // If we still fail but have cached data, use it as a last resort
+          const cached = await getCachedResponse(url, config?.params as Record<string, unknown> | undefined) as T | null;
+          if (cached) {
+            console.warn('Using cached data after retry failure:', url);
+            return cached;
+          }
+
+          throw new Error('Unable to fetch data. Please check your connection and try again.');
+        }
       }
       throw error;
     } finally {
@@ -254,47 +290,73 @@ const cachedGet = async <T = unknown>(url: string, config?: AxiosRequestConfig):
 // Cache response based on URL
 const cacheResponse = async (url: string, data: unknown, params?: Record<string, unknown> | undefined): Promise<void> => {
   try {
+    // Skip caching for large datasets or when explicitly disabled
+    if (params?.skipCache) return;
+
     if (url.includes('/listings/') && !url.includes('/reviews') && !url.includes('/my-listings')) {
-      // Single listing
-      const id = url.split('/listings/')[1].split('/')[0];
-      await dbService.cacheListing(id, data as any);
+      // Single listing - only cache if it has essential data
+      const listing = data as any;
+      if (listing && listing.id) {
+        await dbService.cacheListing(listing.id, listing);
+      }
     } else if (url === '/listings' || url.includes('/listings/host/') || url === '/listings/my-listings') {
-      // Multiple listings
-      if (Array.isArray(data)) {
-        await dbService.cacheListings(data as any);
-        // Save first page of general listings to localStorage for ultra-fast initial paint
-        if (url === '/listings' && (!params?.offset || params.offset === 0) && data.length > 0) {
-          // Store full dataset to avoid truncation after refresh
-          localStorage.setItem('critical_listings', JSON.stringify(data));
+      // Multiple listings - only cache first page
+      if (Array.isArray(data) && (!params?.offset || params.offset === 0)) {
+        // Limit the number of listings to cache (first 20)
+        const listingsToCache = (data as any[]).slice(0, 20);
+        if (listingsToCache.length > 0) {
+          await dbService.cacheListings(listingsToCache);
+
+          // Only store minimal data in localStorage for critical listings
+          if (url === '/listings' && !params?.search && !params?.location && !params?.category) {
+            const minimalListings = listingsToCache.map(({ id, title, price, image_urls, location }) => ({
+              id,
+              title,
+              price,
+              image_urls,
+              location
+            }));
+            localStorage.setItem('critical_listings', JSON.stringify(minimalListings));
+          }
         }
       }
     } else if (url.includes('/account/user/')) {
-      // User data
-      const id = parseInt(url.split('/account/user/')[1]);
-      await dbService.cacheUser(id, data as any);
+      // User data - only cache basic user info
+      const userData = data as any;
+      if (userData && userData.id) {
+        const { id, email, username, avatar_url } = userData;
+        await dbService.cacheUser(id, { id, email, username, avatar_url });
+      }
     } else if (url.includes('/reviews')) {
-      // Reviews
+      // Reviews - limit to first 10
       const listingId = url.split('/listings/')[1].split('/reviews')[0];
-      await dbService.cacheReviews(listingId, data as any);
-    } else if (url.includes('/bookings')) {
-      // Bookings
-      if (Array.isArray(data)) {
-        await dbService.cacheBookings(data as any);
+      const reviews = Array.isArray(data) ? (data as any[]).slice(0, 10) : [];
+      if (reviews.length > 0) {
+        await dbService.cacheReviews(listingId, reviews);
       }
-    } else if (url === '/listings/towns') {
-      // Towns
-      if (Array.isArray(data)) {
-        await dbService.cacheTowns(data as any);
+    } else if (url.includes('/bookings') && Array.isArray(data)) {
+      // Bookings - limit to first 10
+      const bookings = (data as any[]).slice(0, 10);
+      if (bookings.length > 0) {
+        await dbService.cacheBookings(bookings);
       }
-    } else if (url === '/messages/conversations') {
-      // Conversations
-      if (Array.isArray(data)) {
-        await dbService.cacheConversations(data as any);
-      }
+    } else if (url === '/listings/towns' && Array.isArray(data)) {
+      // Towns - limit to first 50
+      await dbService.cacheTowns((data as any[]).slice(0, 50));
+    } else if (url === '/messages/conversations' && Array.isArray(data)) {
+      // Conversations - limit to first 20
+      await dbService.cacheConversations((data as any[]).slice(0, 20));
     } else if (url.includes('/messages/conversations/')) {
-      // Single conversation/messages
-      const id = url.split('/messages/conversations/')[1];
-      await dbService.cacheConversation(id, data);
+      // Single conversation - limit messages to last 50
+      const conversation = data as any;
+      if (conversation?.messages && Array.isArray(conversation.messages)) {
+        const limitedConversation = {
+          ...conversation,
+          messages: conversation.messages.slice(-50) // Only keep last 50 messages
+        };
+        const id = url.split('/messages/conversations/')[1];
+        await dbService.cacheConversation(id, limitedConversation);
+      }
     }
   } catch (error) {
     console.error('Failed to cache response:', error);
@@ -302,14 +364,27 @@ const cacheResponse = async (url: string, data: unknown, params?: Record<string,
 };
 
 // Get cached response based on URL
+interface CachedListing {
+  id: string;
+  title: string;
+  price: number;
+  image_urls: string[];
+  location: string;
+  description?: string;
+  rating?: number;
+  review_count?: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
 const getCachedResponse = async (url: string, params?: Record<string, unknown>): Promise<unknown | null> => {
   try {
     if (url.includes('/listings/') && !url.includes('/reviews') && !url.includes('/my-listings')) {
       // Single listing
       const id = url.split('/listings/')[1].split('/')[0];
-      const cached = await dbService.getCachedListing(id);
-      // Only return if it's a "full" listing (has description or safety_items or something marketplace lacks)
-      if (cached && cached.listing && (cached.listing.description || cached.listing.safety_devices)) {
+      const cached = await dbService.getCachedListing(id) as CachedListing | null;
+      // Only return if it's a valid listing with essential data
+      if (cached && cached.id && cached.title && cached.price !== undefined) {
         return cached;
       }
       return null;
