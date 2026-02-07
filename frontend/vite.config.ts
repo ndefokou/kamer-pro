@@ -7,6 +7,7 @@ import compression from 'vite-plugin-compression';
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
+  base: "/kamer-pro/",
   server: {
     host: "::",
     port: 8080,
