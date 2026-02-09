@@ -18,7 +18,10 @@ import { cachePolicyService } from "@/services/cachePolicyService";
 
 import { queryClient } from "@/lib/queryClient";
 
-
+// Detect if running on GitHub Pages subpath
+const isGitHubPages = window.location.hostname.includes("github.io") ||
+  window.location.pathname.startsWith("/kamer-pro");
+const basename = isGitHubPages ? "/kamer-pro" : "/";
 const router = createBrowserRouter(
   [
     {
@@ -81,7 +84,7 @@ const router = createBrowserRouter(
     { path: "*", element: <Suspense fallback={<div />}><NotFound /></Suspense> },
   ],
   {
-    basename: "/",
+    basename: basename,
     // @ts-expect-error - hydrateFallbackElement is not in the type definition but is supported
     hydrateFallbackElement: (
       <div className="min-h-screen flex items-center justify-center">
