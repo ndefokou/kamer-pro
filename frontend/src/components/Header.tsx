@@ -87,7 +87,7 @@ const Header: React.FC = () => {
                         <div className="flex items-center gap-2 cursor-pointer overflow-hidden" onClick={() => navigate("/")}>
                             <div className="relative h-10 w-10 shrink-0">
                                 <img
-                                    src="/logo.png"
+                                    src="logo.png"
                                     alt="Le Mboko"
                                     width={40}
                                     height={40}

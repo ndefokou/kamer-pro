@@ -104,7 +104,7 @@ export default defineConfig(({ mode }) => ({
         theme_color: "#ffffff",
         background_color: "#ffffff",
         display: "standalone",
-        start_url: "/",
+        start_url: ".",
         icons: [
           {
             src: "logo.png",

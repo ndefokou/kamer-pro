@@ -28,8 +28,15 @@ export type {
 const getBaseUrl = () => {
   // Prefer explicit backend origin if provided; fall back to legacy VITE_API_URL, then to site-relative /api
   const raw = (import.meta.env.VITE_BACKEND_URL as string | undefined)
-    || (import.meta.env.VITE_API_URL as string | undefined)
-    || "/api";
+    || (import.meta.env.VITE_API_URL as string | undefined);
+
+  if (!raw) {
+    // If no backend URL is provided, assume /api relative to the current deployment
+    const isGitHubPages = window.location.hostname.includes("github.io") ||
+      window.location.pathname.startsWith("/kamer-pro");
+    const prefix = isGitHubPages ? "/kamer-pro" : "";
+    return `${prefix}/api`;
+  }
 
   // Remove trailing slash if present to avoid double slashes
   const clean = raw.endsWith("/") ? raw.slice(0, -1) : raw;
