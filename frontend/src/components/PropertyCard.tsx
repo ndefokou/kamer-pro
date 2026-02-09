@@ -62,8 +62,35 @@ const PropertyCard = ({
         return `${translatedType} • ${translatedCity}`;
     };
 
-    const prefetchDetails = () => {
-        queryClient.prefetchQuery({ queryKey: ["listing", id], queryFn: () => getListing(id) });
+    const [prefetchTimer, setPrefetchTimer] = React.useState<NodeJS.Timeout | null>(null);
+
+    const handleMouseEnter = () => {
+        // Cancel any existing timer to be safe
+        if (prefetchTimer) clearTimeout(prefetchTimer);
+
+        // Preload the component JS as soon as hover starts
+        // We use a dynamic import which Vite will optimize
+        const preloadComponent = () => import("../pages/ListingDetails");
+        preloadComponent().catch(() => { });
+
+        // Set a new timer for data prefetching
+        const timer = setTimeout(() => {
+            queryClient.prefetchQuery({
+                queryKey: ["listing", id],
+                queryFn: () => getListing(id),
+                staleTime: 60000
+            });
+            setPrefetchTimer(null);
+        }, 200);
+
+        setPrefetchTimer(timer);
+    };
+
+    const handleMouseLeave = () => {
+        if (prefetchTimer) {
+            clearTimeout(prefetchTimer);
+            setPrefetchTimer(null);
+        }
     };
 
     const handleWishlistToggle = async (e: React.MouseEvent) => {
@@ -92,9 +119,11 @@ const PropertyCard = ({
         <Link
             to={`/product/${id}`}
             className="block flex-shrink-0 w-full sm:w-[280px] group cursor-pointer"
-            onMouseEnter={prefetchDetails}
-            onFocus={prefetchDetails}
-            onTouchStart={prefetchDetails}
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
+            onFocus={handleMouseEnter}
+            onBlur={handleMouseLeave}
+            onTouchStart={handleMouseEnter}
         >
             <div className="flex flex-col h-full">
                 {/* Image Container */}

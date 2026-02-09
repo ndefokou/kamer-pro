@@ -7,6 +7,7 @@ import compression from 'vite-plugin-compression';
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
+  base: "/kamer-pro/",
   server: {
     host: "::",
     port: 8080,
@@ -56,7 +57,7 @@ export default defineConfig(({ mode }) => ({
             options: {
               fetchOptions: {
                 cache: 'no-store',
-              } as any,
+              } as unknown as RequestInit,
             },
           },
           {
@@ -67,7 +68,7 @@ export default defineConfig(({ mode }) => ({
               cacheName: 'image-cache',
               fetchOptions: {
                 cache: 'no-store',
-              } as any,
+              } as unknown as RequestInit,
               expiration: {
                 maxEntries: 200,
                 maxAgeSeconds: 60 * 60 * 24 * 7,
@@ -85,7 +86,7 @@ export default defineConfig(({ mode }) => ({
               cacheName: 'font-cache',
               fetchOptions: {
                 cache: 'no-store',
-              } as any,
+              } as unknown as RequestInit,
               expiration: {
                 maxEntries: 20,
                 maxAgeSeconds: 60 * 60 * 24 * 365,

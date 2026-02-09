@@ -1,10 +1,10 @@
-import { useState, useRef, useMemo, useCallback } from "react";
+import React, { useState, useRef, useMemo, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import { Heart, Star, Home as HomeIcon, Globe, Menu, User, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { getProducts, Product } from "@/api/client";
+import { getProducts, Product, getTowns, getListing } from "@/api/client";
 import MbokoSearch from "@/components/Search";
 import { getImageUrl } from "@/lib/utils";
 import OptimizedImage from "@/components/OptimizedImage";
@@ -27,7 +27,7 @@ import { PropertySectionSkeleton } from "@/components/PropertyCardSkeleton";
 import OfflineIndicator from "@/components/OfflineIndicator";
 
 // PropertySection component defined outside to prevent re-renders
-const PropertySection = ({ title, properties, city, inferCity }: { title: string; properties: Product[]; city?: string; inferCity: (p: Product) => string }) => {
+const PropertySection = React.memo(({ title, properties, city, inferCity }: { title: string; properties: Product[]; city?: string; inferCity: (p: Product) => string }) => {
     const { t } = useTranslation();
     const navigate = useNavigate();
     const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -122,23 +122,92 @@ const PropertySection = ({ title, properties, city, inferCity }: { title: string
             </div>
         </div>
     );
-};
+});
 
 const Dashboard = () => {
     const { t } = useTranslation();
     const navigate = useNavigate();
     const { user, logout } = useAuth();
+    const queryClient = useQueryClient();
     // Removed useWishlist hook since PropertyCard handles it internally
 
-    // For dashboard grouping, we successfully need a larger sample size to populate all cities
-    // even if network is slow, otherwise cities like Buea might be empty if latest 20 are all Douala
-    const recommendedLimit = 100; // Force 100 to fix grouping issue
-    const { data: properties, isLoading, error } = useQuery<Product[]>({
-        queryKey: ["products", recommendedLimit],
-        queryFn: () => getProducts({ limit: recommendedLimit }),
-        // staleTime: 5 * 60 * 1000, // 5 minutes - reduce refetches on slow networks
-        staleTime: 30 * 1000, // 30s for testing
+    // Use Infinite Query to load initial batch fast, then fetch more in background
+    const {
+        data,
+        isLoading,
+        error,
+        fetchNextPage,
+        hasNextPage,
+        isFetchingNextPage
+    } = useInfiniteQuery<Product[], Error>({
+        queryKey: ["products", 20], // Base limit for initial batch
+        initialPageParam: 0,
+        queryFn: ({ pageParam }) => getProducts({ limit: 20, offset: (pageParam as number) || 0 }, 'high'),
+        getNextPageParam: (lastPage, allPages) => (lastPage.length === 20 && allPages.length < 5 ? allPages.length * 20 : undefined),
+        staleTime: 30 * 1000,
     });
+
+    const properties = useMemo(() => {
+        if (!data?.pages) return [];
+        try {
+            return data.pages.flat().filter(Boolean) || [];
+        } catch (e) {
+            console.error("Error flattening properties:", e);
+            return [];
+        }
+    }, [data?.pages]);
+
+    // Background auto-loading: fetch next pages during idle time
+    useEffect(() => {
+        if (!hasNextPage || isFetchingNextPage) return;
+
+        const scheduleLoad = () => {
+            const timer = setTimeout(() => {
+                if ('requestIdleCallback' in window) {
+                    (window as any).requestIdleCallback(() => {
+                        // Pass 'low' priority if possible (depends on how fetchNextPage is implemented in React Query)
+                        // Actually React Query internally calls queryFn, but we can't easily change queryFn params here
+                        // Instead, our cachedGet background refresh already handles 'low' priority.
+                        // For the initial trigger of fetchNextPage, it will hit our scheduler because of getProducts.
+                        fetchNextPage();
+                    }, { timeout: 10000 });
+                } else {
+                    fetchNextPage();
+                }
+            }, 5000); // 5s delay between batches
+
+            return () => clearTimeout(timer);
+        };
+
+        return scheduleLoad();
+    }, [hasNextPage, isFetchingNextPage, fetchNextPage, data?.pages?.length]);
+
+    // Background prefetch for secondary data (towns) and top listing details
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            // Prefetch towns for search speed
+            queryClient.prefetchQuery({
+                queryKey: ["towns"],
+                queryFn: getTowns,
+                staleTime: 3600000
+            });
+
+            // Prefetch first 8 listings' details to make click-through instant
+            // We use a staggered approach to avoid network saturation
+            if (properties.length > 0) {
+                properties.slice(0, 8).forEach((p, index) => {
+                    setTimeout(() => {
+                        queryClient.prefetchQuery({
+                            queryKey: ["listing", p.listing.id],
+                            queryFn: () => getListing(p.listing.id, 'low'),
+                            staleTime: 60000
+                        });
+                    }, index * 1500); // 1.5s gap between prefetches
+                });
+            }
+        }, 8000); // Higher delay
+        return () => clearTimeout(timer);
+    }, [queryClient, properties.length]);
 
     console.log('Dashboard.tsx: properties', properties);
     console.log('Dashboard.tsx: isLoading', isLoading);
@@ -200,17 +269,17 @@ const Dashboard = () => {
         const map = new Map<string, { name: string; items: Product[] }>();
         const otherItemsNoKey: Product[] = [];
         console.log('Dashboard.tsx: processing properties for groups', properties);
-        if (properties) {
+        if (Array.isArray(properties) && properties.length > 0) {
             console.log('Dashboard.tsx: Sample of first 5 properties:', properties.slice(0, 5).map(p => ({
-                id: p.listing.id,
-                city: p.listing.city,
-                title: p.listing.title,
-                status: p.listing.status
+                id: p?.listing?.id,
+                city: p?.listing?.city,
+                title: p?.listing?.title,
+                status: p?.listing?.status
             })));
-            const bueaProps = properties.filter(p => p.listing.city?.toLowerCase().includes('buea'));
+            const bueaProps = properties.filter(p => p?.listing?.city?.toLowerCase().includes('buea'));
             console.log('Dashboard.tsx: Found Buea properties explicitly:', bueaProps.length, bueaProps);
         }
-        (properties || []).forEach((p) => {
+        (Array.isArray(properties) ? properties : []).forEach((p) => {
             if (!p?.listing) return;
             let raw = (p.listing.city || '').trim();
             if (!raw) raw = inferCity(p);
@@ -233,11 +302,11 @@ const Dashboard = () => {
             if (ib !== -1) return 1;
             return b.items.length - a.items.length;
         });
-        const bueaItems = groups.find(g => normalizeCity(g.name) === 'buea')?.items ?? [];
-        const nonPreferred = groups
-            .filter(g => !preferredOrder.includes(normalizeCity(g.name)) && normalizeCity(g.name) !== 'buea')
-            .flatMap(g => g.items);
-        return { grouped: groups, other: [...nonPreferred, ...otherItemsNoKey], buea: bueaItems };
+        const bueaItems = Array.isArray(groups) ? (groups.find(g => normalizeCity(g.name) === 'buea')?.items ?? []) : [];
+        const nonPreferred = Array.isArray(groups) ? groups
+            .filter(g => g && !preferredOrder.includes(normalizeCity(g.name)) && normalizeCity(g.name) !== 'buea')
+            .flatMap(g => g?.items || []) : [];
+        return { grouped: Array.isArray(groups) ? groups : [], other: [...nonPreferred, ...otherItemsNoKey], buea: bueaItems };
     }, [properties, preferredOrder, inferCity]);
 
     // toggleFavorite and handleLogout removed as they are handled elsewhere or not used in rendering

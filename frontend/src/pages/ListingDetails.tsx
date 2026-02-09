@@ -31,7 +31,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useWishlist } from '@/hooks/useWishlist';
 import { useTranslation } from 'react-i18next';
 import TranslatedText from '@/components/TranslatedText';
-import { useConnectionQuality } from '@/services/networkService';
+
 import { propertyTypes } from '@/data/propertyTypes';
 
 
@@ -120,36 +120,9 @@ const ListingDetails: React.FC = () => {
     const { toast } = useToast();
     const closeBtnRef = React.useRef<HTMLButtonElement>(null);
     const desktopCalRef = React.useRef<HTMLDivElement>(null);
-    const mapContainerRef = React.useRef<HTMLDivElement>(null);
 
-    const { isSlowConnection } = useConnectionQuality();
-    const [showMap, setShowMap] = React.useState(!isSlowConnection);
 
-    // Automatically load map when it comes into view
-    React.useEffect(() => {
-        if (showMap || !mapContainerRef.current) return;
 
-        const observer = new IntersectionObserver(
-            (entries) => {
-                entries.forEach((entry) => {
-                    if (entry.isIntersecting) {
-                        setShowMap(true);
-                        observer.disconnect();
-                    }
-                });
-            },
-            {
-                rootMargin: '100px', // Start loading 100px before the map comes into view
-                threshold: 0.1,
-            }
-        );
-
-        observer.observe(mapContainerRef.current);
-
-        return () => {
-            observer.disconnect();
-        };
-    }, [showMap]);
 
     const openMobileDatePicker = () => {
         try {
@@ -178,20 +151,18 @@ const ListingDetails: React.FC = () => {
         };
     }, []);
 
-    // Load reviews from backend
+    // Load reviews from backend using react-query for better performance and caching
+    const { data: reviewRows, isLoading: reviewsLoading } = useQuery({
+        queryKey: ['reviews', id],
+        queryFn: () => getListingReviews(id!),
+        enabled: !!id,
+    });
+
     React.useEffect(() => {
-        const load = async () => {
-            if (!id) return;
-            try {
-                const rows = await getListingReviews(id);
-                setReviews(rows.map(mapRowToReview));
-            } catch (e) {
-                // silent fail in UI
-                console.error('Failed to load reviews', e);
-            }
-        };
-        load();
-    }, [id, mapRowToReview]);
+        if (reviewRows) {
+            setReviews(reviewRows.map(mapRowToReview));
+        }
+    }, [reviewRows, mapRowToReview]);
 
     type ReviewFormData = Pick<Review, 'ratings' | 'comment' | 'timestamp'>;
     const handleReviewSubmit = async (reviewData: ReviewFormData) => {
@@ -223,7 +194,7 @@ const ListingDetails: React.FC = () => {
 
     const sortedPhotos = React.useMemo(() => {
         if (!product?.photos) return [];
-        return [...product.photos].sort((a, b) => (b.is_cover || 0) - (a.is_cover || 0));
+        return [...product.photos].sort((a, b) => Number(b.is_cover) - Number(a.is_cover));
     }, [product?.photos]);
 
     const disabledDays = React.useMemo(() => {
@@ -251,7 +222,7 @@ const ListingDetails: React.FC = () => {
     const hostName = (product.host_username || '').trim() || 'Host';
     const hostAvatar = product.host_avatar ?? localStorage.getItem('host_avatar') ?? undefined;
     const totalGuests = adults + children;
-    const isHost = Number(localStorage.getItem('userId')) === listing.host_id;
+    const isHost = Number(localStorage.getItem('userId')) === Number(listing.host_id);
     const currentUserId = Number(localStorage.getItem('userId') || '') || null;
 
     const isWishlisted = isInWishlist(listing.id);
@@ -565,7 +536,7 @@ const ListingDetails: React.FC = () => {
                         isOpen={isMessageModalOpen}
                         onClose={() => setIsMessageModalOpen(false)}
                         listingId={listing.id}
-                        hostId={listing.host_id}
+                        hostId={Number(listing.host_id)}
                         hostName={hostName} // TODO: Get actual host name
                     />
                 </Suspense>
@@ -574,7 +545,7 @@ const ListingDetails: React.FC = () => {
                     <ReportHostModal
                         isOpen={isReportModalOpen}
                         onClose={() => setIsReportModalOpen(false)}
-                        hostId={listing.host_id}
+                        hostId={Number(listing.host_id)}
                         listingId={listing.id}
                     />
                 </Suspense>
@@ -1043,27 +1014,18 @@ const ListingDetails: React.FC = () => {
                             </p>
                         )}
                     </div>
-                    <div ref={mapContainerRef} className="h-64 md:h-[400px] rounded-xl overflow-hidden z-0 relative">
-                        {showMap ? (
-                            <Suspense fallback={
-                                <div className="h-full w-full bg-slate-100 flex items-center justify-center">
-                                    <MapIcon className="h-8 w-8 text-slate-300 animate-pulse" />
-                                </div>
-                            }>
-                                <ListingMap
-                                    latitude={listing.latitude}
-                                    longitude={listing.longitude}
-                                    title={listing.title}
-                                />
-                            </Suspense>
-                        ) : (
+                    <div className="h-64 md:h-[400px] rounded-xl overflow-hidden z-0 relative">
+                        <Suspense fallback={
                             <div className="h-full w-full bg-slate-100 flex items-center justify-center">
-                                <div className="flex flex-col items-center gap-2">
-                                    <MapIcon className="h-8 w-8 text-slate-300" />
-                                    <p className="text-sm text-slate-400">{t('Scroll to load map...')}</p>
-                                </div>
+                                <MapIcon className="h-8 w-8 text-slate-300 animate-pulse" />
                             </div>
-                        )}
+                        }>
+                            <ListingMap
+                                latitude={listing.latitude}
+                                longitude={listing.longitude}
+                                title={listing.title}
+                            />
+                        </Suspense>
                     </div>
                 </div>
 

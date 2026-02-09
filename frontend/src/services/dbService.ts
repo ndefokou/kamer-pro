@@ -6,9 +6,9 @@ interface AppDB extends DBSchema {
         key: string;
         value: {
             id: string;
-            data: any;
+            data: unknown;
             timestamp: number;
-            ttl: number; // Time to live in milliseconds
+            ttl: number;
         };
         indexes: { 'by-timestamp': number };
     };
@@ -16,7 +16,7 @@ interface AppDB extends DBSchema {
         key: number;
         value: {
             id: number;
-            data: any;
+            data: unknown;
             timestamp: number;
             ttl: number;
         };
@@ -25,7 +25,7 @@ interface AppDB extends DBSchema {
         key: string;
         value: {
             id: string;
-            data: any;
+            data: unknown;
             timestamp: number;
             ttl: number;
         };
@@ -34,7 +34,7 @@ interface AppDB extends DBSchema {
         key: string;
         value: {
             id: string;
-            data: any;
+            data: unknown;
             timestamp: number;
             ttl: number;
         };
@@ -43,7 +43,7 @@ interface AppDB extends DBSchema {
         key: string;
         value: {
             listingId: string;
-            data: any[];
+            data: unknown[];
             timestamp: number;
             ttl: number;
         };
@@ -60,8 +60,8 @@ interface AppDB extends DBSchema {
     towns: {
         key: string;
         value: {
-            id: string; // use 'all' as key
-            data: any[];
+            id: string;
+            data: unknown[];
             timestamp: number;
             ttl: number;
         };
@@ -70,7 +70,7 @@ interface AppDB extends DBSchema {
         key: string;
         value: {
             id: string;
-            data: any;
+            data: unknown[];
             timestamp: number;
             ttl: number;
         };
@@ -157,7 +157,7 @@ class DatabaseService {
     }
 
     // Listings operations
-    async cacheListing(id: string, data: any, ttl: number = TTL.LISTINGS): Promise<void> {
+    async cacheListing(id: string, data: unknown, ttl: number = TTL.LISTINGS): Promise<void> {
         const db = await this.ensureDB();
         await db.put('listings', {
             id,
@@ -167,7 +167,7 @@ class DatabaseService {
         });
     }
 
-    async getCachedListing(id: string): Promise<any | null> {
+    async getCachedListing(id: string): Promise<unknown | null> {
         const db = await this.ensureDB();
         const cached = await db.get('listings', id);
 
@@ -180,29 +180,38 @@ class DatabaseService {
         return cached.data;
     }
 
-    async cacheListings(listings: Array<{ id: string;[key: string]: any }>, ttl: number = TTL.LISTINGS): Promise<void> {
+    async cacheListings(listings: unknown[], ttl: number = TTL.LISTINGS): Promise<void> {
         const db = await this.ensureDB();
         const tx = db.transaction('listings', 'readwrite');
         const now = Date.now();
 
-        for (const item of listings) {
-            if (!item?.id) continue;
+        for (const item of listings as Record<string, unknown>[]) {
+            const id = (item.id as string) || (item.listing ? (item.listing as Record<string, unknown>).id as string : undefined);
+            if (!id) continue;
 
-            const essentialData = {
-                id: item.id,
-                title: item.title,
-                price: item.price,
-                image_urls: item.image_urls,
-                location: item.location,
-                description: item.description,
-                rating: item.rating,
-                review_count: item.review_count,
-                created_at: item.created_at,
-                updated_at: item.updated_at
-            };
+            // Normalize data for storage
+            let essentialData: Record<string, unknown>;
+            if (item.listing) {
+                // It's a Product object
+                const listing = item.listing as Record<string, unknown>;
+                const photos = (item.photos as Array<Record<string, unknown>>) || [];
+                essentialData = {
+                    id,
+                    title: listing.title,
+                    price: listing.price_per_night,
+                    image_urls: photos.map(p => p.url),
+                    location: listing.city,
+                    description: listing.description,
+                    created_at: listing.created_at,
+                    updated_at: listing.updated_at
+                };
+            } else {
+                // It's already simplified or another format
+                essentialData = { ...item, id };
+            }
 
             await tx.store.put({
-                id: item.id,
+                id,
                 data: essentialData,
                 timestamp: now,
                 ttl,
@@ -211,7 +220,7 @@ class DatabaseService {
         await tx.done;
     }
 
-    async getAllCachedListings(): Promise<any[] | null> {
+    async getAllCachedListings(): Promise<unknown[] | null> {
         const db = await this.ensureDB();
         const all = await db.getAll('listings');
         const now = Date.now();
@@ -224,7 +233,7 @@ class DatabaseService {
     }
 
     // User operations
-    async cacheUser(id: number, data: any, ttl: number = TTL.USERS): Promise<void> {
+    async cacheUser(id: number, data: unknown, ttl: number = TTL.USERS): Promise<void> {
         const db = await this.ensureDB();
         await db.put('users', {
             id,
@@ -234,7 +243,7 @@ class DatabaseService {
         });
     }
 
-    async getCachedUser(id: number): Promise<any | null> {
+    async getCachedUser(id: number): Promise<unknown | null> {
         const db = await this.ensureDB();
         const cached = await db.get('users', id);
 
@@ -248,7 +257,7 @@ class DatabaseService {
     }
 
     // Message operations
-    async cacheConversation(id: string, data: any, ttl: number = TTL.MESSAGES): Promise<void> {
+    async cacheConversation(id: string, data: unknown, ttl: number = TTL.MESSAGES): Promise<void> {
         const db = await this.ensureDB();
         await db.put('messages', {
             id,
@@ -258,7 +267,7 @@ class DatabaseService {
         });
     }
 
-    async getCachedConversation(id: string): Promise<any | null> {
+    async getCachedConversation(id: string): Promise<unknown | null> {
         const db = await this.ensureDB();
         const cached = await db.get('messages', id);
 
@@ -272,7 +281,7 @@ class DatabaseService {
     }
 
     // Booking operations
-    async cacheBooking(id: string, data: any, ttl: number = TTL.BOOKINGS): Promise<void> {
+    async cacheBooking(id: string, data: unknown, ttl: number = TTL.BOOKINGS): Promise<void> {
         const db = await this.ensureDB();
         await db.put('bookings', {
             id,
@@ -282,7 +291,7 @@ class DatabaseService {
         });
     }
 
-    async getCachedBooking(id: string): Promise<any | null> {
+    async getCachedBooking(id: string): Promise<unknown | null> {
         const db = await this.ensureDB();
         const cached = await db.get('bookings', id);
 
@@ -295,28 +304,36 @@ class DatabaseService {
         return cached.data;
     }
 
-    async cacheBookings(bookings: Array<{ id: string;[key: string]: any }>, ttl: number = TTL.BOOKINGS): Promise<void> {
+    async cacheBookings(bookings: unknown[], ttl: number = TTL.BOOKINGS): Promise<void> {
         const db = await this.ensureDB();
         const tx = db.transaction('bookings', 'readwrite');
         const now = Date.now();
 
-        for (const booking of bookings) {
-            if (!booking?.id) continue;
+        for (const booking of bookings as Record<string, unknown>[]) {
+            const id = (booking.id as string) || (booking.booking ? (booking.booking as Record<string, unknown>).id as string : undefined);
+            if (!id) continue;
 
-            const essentialData = {
-                id: booking.id,
-                listing_id: booking.listing_id,
-                user_id: booking.user_id,
-                start_date: booking.start_date,
-                end_date: booking.end_date,
-                status: booking.status,
-                total_price: booking.total_price,
-                created_at: booking.created_at,
-                updated_at: booking.updated_at
-            };
+            let essentialData: Record<string, unknown>;
+            if (booking.booking) {
+                // BookingWithDetails
+                const b = booking.booking as Record<string, unknown>;
+                essentialData = {
+                    id,
+                    listing_id: b.listing_id,
+                    user_id: b.guest_id, // Note: backend uses guest_id
+                    start_date: b.check_in,
+                    end_date: b.check_out,
+                    status: b.status,
+                    total_price: b.total_price,
+                    created_at: b.created_at,
+                    updated_at: b.updated_at
+                };
+            } else {
+                essentialData = { ...booking, id } as Record<string, unknown>;
+            }
 
             await tx.store.put({
-                id: booking.id,
+                id,
                 data: essentialData,
                 timestamp: now,
                 ttl,
@@ -326,14 +343,14 @@ class DatabaseService {
     }
 
     // Review operations
-    async cacheReviews(listingId: string, reviews: Array<{ id: string;[key: string]: any }>, ttl: number = TTL.REVIEWS): Promise<void> {
+    async cacheReviews(listingId: string, reviews: unknown[], ttl: number = TTL.REVIEWS): Promise<void> {
         const db = await this.ensureDB();
-        const essentialReviews = reviews.map(review => ({
+        const essentialReviews = (reviews as Array<Record<string, unknown>>).map(review => ({
             id: review.id,
-            user_id: review.user_id,
+            user_id: review.guest_id || review.user_id,
             username: review.username,
-            avatar_url: review.avatar_url,
-            rating: review.rating,
+            avatar_url: review.avatar || review.avatar_url,
+            rating: review.ratings || review.rating,
             comment: review.comment,
             created_at: review.created_at
         }));
@@ -346,7 +363,7 @@ class DatabaseService {
         });
     }
 
-    async getCachedReviews(listingId: string): Promise<any[] | null> {
+    async getCachedReviews(listingId: string): Promise<unknown[] | null> {
         const db = await this.ensureDB();
         const cached = await db.get('reviews', listingId);
 
@@ -384,7 +401,7 @@ class DatabaseService {
     }
 
     // Towns operations
-    async cacheTowns(data: any[], ttl: number = TTL.TOWNS): Promise<void> {
+    async cacheTowns(data: unknown[], ttl: number = TTL.TOWNS): Promise<void> {
         const db = await this.ensureDB();
         await db.put('towns', {
             id: 'all',
@@ -394,7 +411,7 @@ class DatabaseService {
         });
     }
 
-    async getCachedTowns(): Promise<any[] | null> {
+    async getCachedTowns(): Promise<unknown[] | null> {
         const db = await this.ensureDB();
         const cached = await db.get('towns', 'all');
 
@@ -408,7 +425,7 @@ class DatabaseService {
     }
 
     // Conversation list operations
-    async cacheConversations(data: any[], ttl: number = TTL.CONVERSATIONS): Promise<void> {
+    async cacheConversations(data: unknown[], ttl: number = TTL.CONVERSATIONS): Promise<void> {
         const db = await this.ensureDB();
         await db.put('conversations', {
             id: 'list',
@@ -418,7 +435,7 @@ class DatabaseService {
         });
     }
 
-    async getCachedConversations(): Promise<any[] | null> {
+    async getCachedConversations(): Promise<unknown[] | null> {
         const db = await this.ensureDB();
         const cached = await db.get('conversations', 'list');
 
@@ -428,7 +445,7 @@ class DatabaseService {
             return null;
         }
 
-        return cached.data;
+        return cached.data as unknown[];
     }
 
     // Cleanup operations
@@ -443,13 +460,13 @@ class DatabaseService {
 
             for (const item of all) {
                 if (this.isExpired(item.timestamp, item.ttl)) {
-                    let key: any;
+                    let key: string | number;
                     if ('url' in item) {
-                        key = item.url;
+                        key = (item as { url: string }).url;
                     } else if ('listingId' in item) {
-                        key = item.listingId;
+                        key = (item as { listingId: string }).listingId;
                     } else {
-                        key = (item as any).id;
+                        key = (item as { id: string | number }).id;
                     }
                     await store.delete(key);
                 }
@@ -472,7 +489,7 @@ class DatabaseService {
         const db = await this.ensureDB();
         const names = Array.from(db.objectStoreNames) as string[];
         if (names.includes(storeName)) {
-            await db.clear(storeName as any);
+            await db.clear(storeName as "listings" | "users" | "messages" | "bookings" | "reviews" | "images" | "towns" | "conversations");
         }
     }
 

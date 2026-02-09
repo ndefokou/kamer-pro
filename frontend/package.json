@@ -11,7 +11,7 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "predeploy": "npm run build",
-    "deploy": "npm run deploy"
+    "deploy": "gh-pages -d dist"
   },
   "dependencies": {
     "@adorsys-gis/web-auth": "^1.2.0",

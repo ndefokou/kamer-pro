@@ -58,7 +58,7 @@ const BathroomEditor: React.FC = () => {
                 url: p.url,
                 caption: p.caption,
                 room_type: p.room_type,
-                is_cover: p.is_cover === 1,
+                is_cover: p.is_cover === 1 || p.is_cover === true,
                 display_order: idx
             }));
             await apiClient.post(`/listings/${id}/photos`, { photos: syncData });
@@ -121,7 +121,7 @@ const BathroomEditor: React.FC = () => {
                 url: p.url,
                 caption: p.caption,
                 room_type: p.room_type,
-                is_cover: p.is_cover === 1,
+                is_cover: p.is_cover === 1 || p.is_cover === true,
                 display_order: p.display_order
             }));
 

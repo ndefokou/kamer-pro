@@ -44,17 +44,14 @@ struct BookingRow {
 }
 
 #[get("/my")]
-pub async fn get_my_bookings(
-    pool: web::Data<PgPool>,
-    req: HttpRequest,
-) -> impl Responder {
+pub async fn get_my_bookings(pool: web::Data<PgPool>, req: HttpRequest) -> impl Responder {
     let user_id = match extract_user_id(&req) {
         Ok(id) => id,
         Err(response) => return response,
     };
 
     let query = r#"
-        SELECT 
+        SELECT
             b.id, b.listing_id, b.guest_id, b.check_in::TEXT as check_in, b.check_out::TEXT as check_out, b.guests, b.total_price, b.status, b.created_at::TEXT as created_at, b.updated_at::TEXT as updated_at,
             u.username as guest_name,
             u.email as guest_email,
@@ -72,9 +69,9 @@ pub async fn get_my_bookings(
     "#;
 
     match sqlx::query_as::<_, BookingRow>(query)
-    .bind(user_id)
-    .fetch_all(pool.get_ref())
-    .await
+        .bind(user_id)
+        .fetch_all(pool.get_ref())
+        .await
     {
         Ok(rows) => {
             let bookings: Vec<BookingWithDetails> = rows
@@ -199,11 +196,13 @@ pub async fn create_booking(
     let (price_per_night, instant_book, host_id, max_guests) = match listing_info_result {
         Ok(Some(info)) => info,
         Ok(None) => {
-            return HttpResponse::NotFound().json(serde_json::json!({ "error": "Listing not found" }));
+            return HttpResponse::NotFound()
+                .json(serde_json::json!({ "error": "Listing not found" }));
         }
         Err(e) => {
             log::error!("Failed to fetch listing info: {:?}", e);
-            return HttpResponse::InternalServerError().json(serde_json::json!({ "error": "Database error" }));
+            return HttpResponse::InternalServerError()
+                .json(serde_json::json!({ "error": "Database error" }));
         }
     };
 
@@ -253,8 +252,8 @@ pub async fn create_booking(
     // Check for overlapping bookings
     let overlap_count: i64 = sqlx::query_scalar(
         r#"
-        SELECT COUNT(*) FROM bookings 
-        WHERE listing_id = $1 
+        SELECT COUNT(*) FROM bookings
+        WHERE listing_id = $1
         AND status = 'confirmed'
         AND check_in < $2 AND check_out > $3
         "#,
@@ -294,11 +293,7 @@ pub async fn create_booking(
             .json(serde_json::json!({ "error": "Selected dates are unavailable" }));
     }
 
-    let status = if instant_book {
-        "confirmed"
-    } else {
-        "pending"
-    };
+    let status = if instant_book { "confirmed" } else { "pending" };
 
     let result = sqlx::query(
         r#"
@@ -435,7 +430,7 @@ pub async fn decline_booking(
             .bind(user_id)
             .fetch_optional(pool.get_ref())
             .await
-            .unwrap_or(None) 
+            .unwrap_or(None)
             {
                 Some(id) => id,
                 None => {
@@ -456,7 +451,7 @@ pub async fn decline_booking(
             // Send decline message
             let message_content = format!("Booking declined: {}", body.reason);
             let message_id = uuid::Uuid::new_v4().to_string();
-            
+
             let _ = sqlx::query(
                 "INSERT INTO messages (id, conversation_id, sender_id, content) VALUES ($1, $2, $3, $4)"
             )
@@ -468,13 +463,15 @@ pub async fn decline_booking(
             .await;
 
             // Update conversation timestamp
-            let _ = sqlx::query("UPDATE conversations SET updated_at = CURRENT_TIMESTAMP WHERE id = $1")
-                .bind(&conversation_id)
-                .execute(pool.get_ref())
-                .await;
+            let _ = sqlx::query(
+                "UPDATE conversations SET updated_at = CURRENT_TIMESTAMP WHERE id = $1",
+            )
+            .bind(&conversation_id)
+            .execute(pool.get_ref())
+            .await;
 
             HttpResponse::Ok().json(serde_json::json!({ "status": "declined" }))
-        },
+        }
         Err(e) => {
             log::error!("Failed to decline booking: {:?}", e);
             HttpResponse::InternalServerError()
@@ -492,7 +489,7 @@ pub async fn get_today_bookings(pool: web::Data<PgPool>, req: HttpRequest) -> im
     };
 
     let query = r#"
-        SELECT 
+        SELECT
             b.id, b.listing_id, b.guest_id, b.check_in::TEXT as check_in, b.check_out::TEXT as check_out, b.guests, b.total_price, b.status, b.created_at::TEXT as created_at, b.updated_at::TEXT as updated_at,
             u.username as guest_name,
             u.email as guest_email,
@@ -511,9 +508,9 @@ pub async fn get_today_bookings(pool: web::Data<PgPool>, req: HttpRequest) -> im
     "#;
 
     match sqlx::query_as::<_, BookingRow>(query)
-    .bind(user_id)
-    .fetch_all(pool.get_ref())
-    .await
+        .bind(user_id)
+        .fetch_all(pool.get_ref())
+        .await
     {
         Ok(rows) => {
             let bookings: Vec<BookingWithDetails> = rows
@@ -554,17 +551,14 @@ pub async fn get_today_bookings(pool: web::Data<PgPool>, req: HttpRequest) -> im
 
 /// GET /api/bookings/host/upcoming - Get upcoming reservations for host
 #[get("/host/upcoming")]
-pub async fn get_upcoming_bookings(
-    pool: web::Data<PgPool>,
-    req: HttpRequest,
-) -> impl Responder {
+pub async fn get_upcoming_bookings(pool: web::Data<PgPool>, req: HttpRequest) -> impl Responder {
     let user_id = match extract_user_id(&req) {
         Ok(id) => id,
         Err(response) => return response,
     };
 
     let query = r#"
-        SELECT 
+        SELECT
             b.id, b.listing_id, b.guest_id, b.check_in::TEXT as check_in, b.check_out::TEXT as check_out, b.guests, b.total_price, b.status, b.created_at::TEXT as created_at, b.updated_at::TEXT as updated_at,
             u.username as guest_name,
             u.email as guest_email,
@@ -584,9 +578,9 @@ pub async fn get_upcoming_bookings(
     "#;
 
     match sqlx::query_as::<_, BookingRow>(query)
-    .bind(user_id)
-    .fetch_all(pool.get_ref())
-    .await
+        .bind(user_id)
+        .fetch_all(pool.get_ref())
+        .await
     {
         Ok(rows) => {
             let bookings: Vec<BookingWithDetails> = rows
@@ -667,7 +661,7 @@ pub async fn cancel_booking(
     }
 
     if status == "cancelled" || status == "declined" {
-         return HttpResponse::BadRequest().json(serde_json::json!({
+        return HttpResponse::BadRequest().json(serde_json::json!({
             "error": "Booking is already cancelled or declined"
         }));
     }
@@ -679,14 +673,14 @@ pub async fn cancel_booking(
 
     match result {
         Ok(_) => {
-             // Get host_id
-             let host_id: i32 = sqlx::query_scalar("SELECT host_id FROM listings WHERE id = $1")
+            // Get host_id
+            let host_id: i32 = sqlx::query_scalar("SELECT host_id FROM listings WHERE id = $1")
                 .bind(&listing_id)
                 .fetch_one(pool.get_ref())
                 .await
                 .unwrap_or(0);
 
-             if host_id != 0 {
+            if host_id != 0 {
                 // Find or create conversation
                 let conversation_id = match sqlx::query_scalar::<_, String>(
                     "SELECT id FROM conversations WHERE listing_id = $1 AND guest_id = $2 AND host_id = $3"
@@ -696,7 +690,7 @@ pub async fn cancel_booking(
                 .bind(host_id)
                 .fetch_optional(pool.get_ref())
                 .await
-                .unwrap_or(None) 
+                .unwrap_or(None)
                 {
                     Some(id) => id,
                     None => {
@@ -717,7 +711,7 @@ pub async fn cancel_booking(
                 // Send cancel message
                 let message_content = "Booking cancelled by guest.";
                 let message_id = uuid::Uuid::new_v4().to_string();
-                
+
                 let _ = sqlx::query(
                     "INSERT INTO messages (id, conversation_id, sender_id, content) VALUES ($1, $2, $3, $4)"
                 )
@@ -729,14 +723,16 @@ pub async fn cancel_booking(
                 .await;
 
                 // Update conversation timestamp
-                let _ = sqlx::query("UPDATE conversations SET updated_at = CURRENT_TIMESTAMP WHERE id = $1")
-                    .bind(&conversation_id)
-                    .execute(pool.get_ref())
-                    .await;
-             }
+                let _ = sqlx::query(
+                    "UPDATE conversations SET updated_at = CURRENT_TIMESTAMP WHERE id = $1",
+                )
+                .bind(&conversation_id)
+                .execute(pool.get_ref())
+                .await;
+            }
 
             HttpResponse::Ok().json(serde_json::json!({ "status": "cancelled" }))
-        },
+        }
         Err(e) => {
             log::error!("Failed to cancel booking: {:?}", e);
             HttpResponse::InternalServerError()

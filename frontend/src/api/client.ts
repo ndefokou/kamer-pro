@@ -2,7 +2,28 @@ import axios, { AxiosRequestConfig, InternalAxiosRequestConfig } from "axios";
 import { decode as msgpackDecode } from "@msgpack/msgpack";
 import { dbService } from "../services/dbService";
 import { networkService } from "../services/networkService";
-import { queryClient } from "../App";
+import { queryClient } from "../lib/queryClient";
+import {
+  User,
+  Product,
+  ProductFilters,
+  TownCount,
+  ListingReview,
+  BookingWithDetails,
+  Conversation,
+  Message
+} from "@/types/api";
+
+export type {
+  User,
+  Product,
+  ProductFilters,
+  TownCount,
+  ListingReview,
+  BookingWithDetails,
+  Conversation,
+  Message
+};
 
 const getBaseUrl = () => {
   // Prefer explicit backend origin if provided; fall back to legacy VITE_API_URL, then to site-relative /api
@@ -124,7 +145,7 @@ apiClient.interceptors.response.use(
   (error) => {
     // Lightweight exponential backoff retries for GETs on flaky networks
     try {
-      const cfg = (error?.config || {}) as import('axios').AxiosRequestConfig & { __retryCount?: number };
+      const cfg = (error?.config || {}) as InternalAxiosRequestConfig & { __retryCount?: number };
       if (__shouldRetryGet(error)) {
         cfg.__retryCount = (cfg.__retryCount || 0) + 1;
         const quality = networkService.getCurrentInfo().quality;
@@ -167,16 +188,42 @@ interface CustomAxiosRequestConfig extends AxiosRequestConfig {
   skipCache?: boolean;
   forceNetwork?: boolean;
   params?: Record<string, unknown>;
+  priority?: 'high' | 'low';
 }
+
+// Network scheduler state
+let activeRequests = 0;
+const bgQueue: Array<() => void> = [];
+const MAX_CONCURRENT_BG = 2;
+const MAX_TOTAL_CONNECTIONS = 5; // Leave at least 1 for user/assets
+
+const runNextBg = () => {
+  if (bgQueue.length > 0 && activeRequests < MAX_CONCURRENT_BG) {
+    const next = bgQueue.shift();
+    if (next) next();
+  }
+};
 
 // Perform GET requesting compact binary (MessagePack) when available and decode response
 const getWithBinary = async (url: string, config?: CustomAxiosRequestConfig): Promise<unknown> => {
   const headers = {
     ...(config?.headers || {}),
     Accept: "application/json", // Force JSON for stability debugging
-    // Accept: "application/x-msgpack, application/msgpack, application/json", 
+    // Accept: "application/x-msgpack, application/msgpack, application/json",
   } as Record<string, string>;
 
+  const isLow = config?.priority === 'low';
+
+  // If low priority and too many active requests, queue it
+  if (isLow && activeRequests >= MAX_CONCURRENT_BG) {
+    return new Promise((resolve, reject) => {
+      bgQueue.push(() => {
+        getWithBinary(url, config).then(resolve).catch(reject);
+      });
+    });
+  }
+
+  activeRequests++;
   try {
     // Add cache-busting timestamp if skipCache or forceNetwork is set
     // This helps bypass browser/proxy caches for critical requests
@@ -197,24 +244,20 @@ const getWithBinary = async (url: string, config?: CustomAxiosRequestConfig): Pr
       return null;
     }
 
-    console.log(`getWithBinary: Success for ${url}. Data type: ${typeof response.data}. IsArray: ${Array.isArray(response.data)}`);
-    if (Array.isArray(response.data)) {
-      console.log(`getWithBinary: Array length: ${response.data.length}`);
-    }
-
     return response.data;
   } catch (error) {
     console.error('getWithBinary: Error fetching', url, error);
-    if (axios.isAxiosError(error) && error.response) {
-      return error.response.data;
-    }
     throw error;
+  } finally {
+    activeRequests--;
+    // Give browser a moment to breath before next BG task
+    setTimeout(runNextBg, 100);
   }
 };
 
 
 
-// Enhanced GET with caching that prioritizes Supabase
+// Enhanced GET with Network-First (Online) / Cache-Only (Offline) strategy
 const cachedGet = async <T = unknown>(url: string, config?: CustomAxiosRequestConfig): Promise<T> => {
   const cacheKey = createCacheKey(url, config?.params);
   const isOnline = navigator.onLine && networkService.getNetworkInfo().isOnline;
@@ -226,76 +269,44 @@ const cachedGet = async <T = unknown>(url: string, config?: CustomAxiosRequestCo
 
   const requestPromise = (async () => {
     try {
-      // When online, always try to fetch from Supabase first
+      // 1. If Online, always try Network first (ensures fresh data)
       if (isOnline) {
+        console.log('Online: Fetching fresh data from network:', url);
         try {
-          // Force network request by skipping cache
           const data = await getWithBinary(url, { ...config, skipCache: true });
 
-          // Cache the fresh data in the background for offline use
-          if (!config?.skipCache) {
+          // Update cache in the background for offline use
+          if (!config?.skipCache && data) {
             cacheResponse(url, data, config?.params).catch(console.error);
           }
 
           return data as T;
         } catch (networkError) {
-          console.warn('Supabase request failed, falling back to cache:', url, networkError);
-          // Continue to cache fallback
+          console.warn('Network request failed, attempting cache fallback:', url);
+          // Fall through to cache if network fails but we are "online"
         }
       }
 
-      // Try cache as fallback when offline or when Supabase request failed
+      // 2. If Offline or Network failed, try local cache
       const cached = await getCachedResponse(url, config?.params as Record<string, unknown> | undefined) as T | null;
-
       if (cached) {
-        // If we have cached data and we're offline, return it
-        if (!isOnline) {
-          console.log('Using cached data (offline mode):', url);
-          return cached;
-        }
-
-        // If we're online but the Supabase request failed, return cached data with a warning
-        console.warn('Using cached data (Supabase request failed):', url);
+        console.log('Using cached data (Offline or Network Failure):', url);
         return cached;
       }
 
-      // If we have no cache and we're offline, throw an error
+      // 3. No cache and either offline or network failed
       if (!isOnline) {
         throw new Error('You are currently offline and no cached data is available.');
       }
 
-      // This should only be reached if we're online but both Supabase and cache failed
       throw new Error('Unable to fetch data. Please check your connection and try again.');
 
     } catch (error) {
-      // If we have a network error but we're actually online, try one more time
-      if (isOnline && axios.isAxiosError(error) && !error.response) {
-        try {
-          console.log('Retrying Supabase request...');
-          const data = await getWithBinary(url, { ...config, skipCache: true });
-
-          // Update cache with the fresh data
-          if (!config?.skipCache) {
-            cacheResponse(url, data, config?.params).catch(console.error);
-          }
-
-          return data as T;
-        } catch (retryError) {
-          console.error('Retry failed:', retryError);
-
-          // If we still fail but have cached data, use it as a last resort
-          const cached = await getCachedResponse(url, config?.params as Record<string, unknown> | undefined) as T | null;
-          if (cached) {
-            console.warn('Using cached data after retry failure:', url);
-            return cached;
-          }
-
-          throw new Error('Unable to fetch data. Please check your connection and try again.');
-        }
-      }
+      // Root level error handling
       throw error;
     } finally {
-      pendingRequests.delete(cacheKey);
+      // Small delay before removing to allow microtask deduplication
+      setTimeout(() => pendingRequests.delete(cacheKey), 0);
     }
   })();
 
@@ -311,26 +322,26 @@ const cacheResponse = async (url: string, data: unknown, params?: Record<string,
 
     if (url.includes('/listings/') && !url.includes('/reviews') && !url.includes('/my-listings')) {
       // Single listing - only cache if it has essential data
-      const listing = data as any;
-      if (listing && listing.id) {
-        await dbService.cacheListing(listing.id, listing);
+      const listing = data as Product;
+      if (listing && listing.listing?.id) {
+        await dbService.cacheListing(listing.listing.id, listing);
       }
     } else if (url === '/listings' || url.includes('/listings/host/') || url === '/listings/my-listings') {
       // Multiple listings - only cache first page
       if (Array.isArray(data) && (!params?.offset || params.offset === 0)) {
         // Limit the number of listings to cache (first 20)
-        const listingsToCache = (data as any[]).slice(0, 20);
+        const listingsToCache = (data as Product[]).slice(0, 20);
         if (listingsToCache.length > 0) {
           await dbService.cacheListings(listingsToCache);
 
           // Only store minimal data in localStorage for critical listings
           if (url === '/listings' && !params?.search && !params?.location && !params?.category) {
-            const minimalListings = listingsToCache.map(({ id, title, price, image_urls, location }) => ({
-              id,
-              title,
-              price,
-              image_urls,
-              location
+            const minimalListings = listingsToCache.map(({ listing, photos }) => ({
+              id: listing.id,
+              title: listing.title,
+              price: listing.price_per_night,
+              image_urls: photos.map(p => p.url),
+              location: listing.city
             }));
             localStorage.setItem('critical_listings', JSON.stringify(minimalListings));
           }
@@ -338,7 +349,7 @@ const cacheResponse = async (url: string, data: unknown, params?: Record<string,
       }
     } else if (url.includes('/account/user/')) {
       // User data - only cache basic user info
-      const userData = data as any;
+      const userData = data as { id: number; email: string; username: string; avatar_url?: string };
       if (userData && userData.id) {
         const { id, email, username, avatar_url } = userData;
         await dbService.cacheUser(id, { id, email, username, avatar_url });
@@ -346,25 +357,25 @@ const cacheResponse = async (url: string, data: unknown, params?: Record<string,
     } else if (url.includes('/reviews')) {
       // Reviews - limit to first 10
       const listingId = url.split('/listings/')[1].split('/reviews')[0];
-      const reviews = Array.isArray(data) ? (data as any[]).slice(0, 10) : [];
+      const reviews = Array.isArray(data) ? (data as ListingReview[]).slice(0, 10) : [];
       if (reviews.length > 0) {
         await dbService.cacheReviews(listingId, reviews);
       }
     } else if (url.includes('/bookings') && Array.isArray(data)) {
       // Bookings - limit to first 10
-      const bookings = (data as any[]).slice(0, 10);
+      const bookings = (data as BookingWithDetails[]).slice(0, 10);
       if (bookings.length > 0) {
         await dbService.cacheBookings(bookings);
       }
     } else if (url === '/listings/towns' && Array.isArray(data)) {
       // Towns - limit to first 50
-      await dbService.cacheTowns((data as any[]).slice(0, 50));
+      await dbService.cacheTowns((data as TownCount[]).slice(0, 50));
     } else if (url === '/messages/conversations' && Array.isArray(data)) {
       // Conversations - limit to first 20
-      await dbService.cacheConversations((data as any[]).slice(0, 20));
+      await dbService.cacheConversations((data as Conversation[]).slice(0, 20));
     } else if (url.includes('/messages/conversations/')) {
       // Single conversation - limit messages to last 50
-      const conversation = data as any;
+      const conversation = data as { messages?: Message[] };
       if (conversation?.messages && Array.isArray(conversation.messages)) {
         const limitedConversation = {
           ...conversation,
@@ -430,80 +441,8 @@ export const removeRole = async (role: string) => {
 
 export default apiClient;
 
-export interface Product {
-  listing: {
-    id: string;
-    host_id: number;
-    status: string;
-    property_type?: string;
-    title?: string;
-    description?: string;
-    address?: string;
-    city?: string;
-    country?: string;
-    latitude?: number;
-    longitude?: number;
-    price_per_night?: number;
-    currency?: string;
-    cleaning_fee?: number;
-    max_guests?: number;
-    bedrooms?: number;
-    beds?: number;
-    bathrooms?: number;
-    instant_book?: number;
-    min_nights?: number;
-    max_nights?: number;
-    safety_devices?: string;
-    house_rules?: string;
-    created_at?: string;
-    updated_at?: string;
-    published_at?: string;
-    getting_around?: string;
-    scenic_views?: string;
-    cancellation_policy?: string;
-  };
-  amenities: string[];
-  host_avatar?: string | null;
-  host_username?: string | null;
-  photos: {
-    id: number;
-    listing_id: string;
-    url: string;
-    is_cover: number;
-    display_order: number;
-    uploaded_at?: string;
-  }[];
-  videos: {
-    id: number;
-    listing_id: string;
-    url: string;
-    uploaded_at?: string;
-  }[];
-  unavailable_dates?: {
-    check_in: string;
-    check_out: string;
-  }[];
-  contact_phone?: string | null;
-}
 
-export interface TownCount {
-  city: string;
-  count: number;
-}
-
-export interface ProductFilters {
-  search?: string;
-  category?: string;
-  location?: string;
-  min_price?: string;
-  max_price?: string;
-  guests?: number;
-  date?: string;
-  limit?: number;
-  offset?: number;
-}
-
-export const getProducts = async (filters: ProductFilters): Promise<Product[]> => {
+export const getProducts = async (filters: ProductFilters, priority?: 'high' | 'low'): Promise<Product[]> => {
   const params = { ...filters };
   if (params.min_price === "") delete params.min_price;
   if (params.max_price === "") delete params.max_price;
@@ -526,7 +465,7 @@ export const getProducts = async (filters: ProductFilters): Promise<Product[]> =
   if (typeof params.limit === 'number') queryParams.limit = params.limit;
   if (typeof params.offset === 'number') queryParams.offset = params.offset;
 
-  return await cachedGet<Product[]>("/listings", { params: queryParams });
+  return await cachedGet<Product[]>("/listings", { params: queryParams, priority });
 };
 
 export const getTowns = async (): Promise<TownCount[]> => {
@@ -550,8 +489,8 @@ export const getMyProducts = async () => {
   return await cachedGet<Product[]>("/listings/my-listings");
 };
 
-export const getListing = async (id: string): Promise<Product> => {
-  return await cachedGet<Product>(`/listings/${id}`);
+export const getListing = async (id: string, priority?: 'high' | 'low'): Promise<Product> => {
+  return await cachedGet<Product>(`/listings/${id}`, { priority });
 };
 
 // Force fresh fetch of a single listing, bypassing SWR/IndexedDB cache.
@@ -572,32 +511,9 @@ export const deleteListing = async (id: string) => {
   return response.data;
 };
 
-// Reviews API (listings)
-export interface ListingReview {
-  id: number;
-  listing_id: string;
-  guest_id: number;
-  ratings?: string | Record<string, number>;
-  comment?: string | null;
-  created_at?: string | null;
-  username?: string | null;
-  avatar?: string | null;
-}
-
-export const getListingReviews = async (listingId: string): Promise<ListingReview[]> => {
-  return await cachedGet<ListingReview[]>(`/listings/${listingId}/reviews`);
-};
-
-export const addListingReview = async (
-  listingId: string,
-  payload: { ratings: Record<string, number>; comment?: string },
-) => {
-  const response = await apiClient.post(`/listings/${listingId}/reviews`, payload);
-  return response.data as ListingReview;
-};
-
 // Account API
-export interface AccountUser {
+export interface AccountUser extends User {
+  bio?: string;
   id: number;
   username: string;
   email: string;
@@ -623,34 +539,7 @@ export const getHostListings = async (hostId: number): Promise<Product[]> => {
   return await cachedGet<Product[]>(`/listings/host/${hostId}`);
 };
 
-// Messaging API
-export interface Message {
-  id: string;
-  conversation_id: string;
-  sender_id: number;
-  content: string;
-  read_at?: string;
-  created_at: string;
-}
-
-export interface Conversation {
-  conversation: {
-    id: string;
-    listing_id: string;
-    guest_id: number;
-    host_id: number;
-    created_at: string;
-    updated_at: string;
-  };
-  last_message?: Message;
-  other_user: {
-    id: number;
-    name: string;
-    avatar?: string;
-  };
-  listing_title: string;
-  listing_image?: string;
-}
+// Message and Conversation types imported from @/types/api
 
 export const createConversation = async (listingId: string, hostId: number, message: string) => {
   const response = await apiClient.post("/messages/conversations", {
@@ -709,27 +598,7 @@ export const cancelBooking = async (bookingId: string) => {
   return response.data;
 };
 
-export type BookingStatus = 'pending' | 'confirmed' | 'declined' | 'cancelled';
-export interface BookingWithDetails {
-  booking: {
-    id: string;
-    listing_id: string;
-    guest_id: number;
-    check_in: string;
-    check_out: string;
-    guests: number;
-    total_price: number;
-    status: BookingStatus;
-    created_at?: string;
-    updated_at?: string;
-  };
-  guest_name: string;
-  guest_email: string;
-  listing_title: string;
-  listing_photo?: string | null;
-  listing_city?: string | null;
-  listing_country?: string | null;
-}
+// BookingWithDetails imported from @/types/api
 
 export const getMyBookings = async (): Promise<BookingWithDetails[]> => {
   return await cachedGet<BookingWithDetails[]>('/bookings/my');
@@ -778,5 +647,19 @@ export const deleteHost = async (hostId: number) => {
 
 export const getAdminReports = async (): Promise<AdminReport[]> => {
   const response = await apiClient.get("/admin/reports");
+  return response.data;
+};
+
+export const getListingReviews = async (listingId: string): Promise<ListingReview[]> => {
+  return await cachedGet<ListingReview[]>(`/listings/${listingId}/reviews`);
+};
+
+export interface CreateReviewData {
+  ratings: Record<string, number>;
+  comment: string;
+}
+
+export const addListingReview = async (listingId: string, reviewData: CreateReviewData): Promise<ListingReview> => {
+  const response = await apiClient.post(`/listings/${listingId}/reviews`, reviewData);
   return response.data;
 };

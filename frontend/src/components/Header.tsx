@@ -87,12 +87,12 @@ const Header: React.FC = () => {
                         <div className="flex items-center gap-2 cursor-pointer overflow-hidden" onClick={() => navigate("/")}>
                             <div className="relative h-10 w-10 shrink-0">
                                 <img
-                                    src="/logo.png"
+                                    src="/kamer-pro/logo.png"
                                     alt="Le Mboko"
                                     width={40}
                                     height={40}
-                                    loading="lazy"
-                                    decoding="async"
+                                    loading="eager"
+                                    decoding="sync"
                                     className="h-10 w-10 object-contain rounded-lg transition-opacity duration-300"
                                     onLoad={(e) => (e.currentTarget.style.opacity = '1')}
                                     style={{ opacity: 0 }}
@@ -101,7 +101,7 @@ const Header: React.FC = () => {
                                     M
                                 </div>
                             </div>
-                            <span className="text-xl font-bold text-primary truncate hidden sm:inline">Le Mboko</span>
+                            <span className="hidden md:block font-bold text-xl text-[#2F4F4F] tracking-tight">Le Mboko</span>
                         </div>
                     </div>
 
