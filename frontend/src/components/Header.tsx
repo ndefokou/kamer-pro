@@ -13,8 +13,6 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 
-import { getPublicPath } from '@/api/client';
-
 const Header: React.FC = () => {
     const { t } = useTranslation();
     const navigate = useNavigate();
@@ -89,13 +87,15 @@ const Header: React.FC = () => {
                         <div className="flex items-center gap-2 cursor-pointer overflow-hidden" onClick={() => navigate("/")}>
                             <div className="relative h-10 w-10 shrink-0">
                                 <img
-                                    src={getPublicPath("logo.png")}
+                                    src={`${import.meta.env.BASE_URL}logo.png`}
                                     alt="Le Mboko"
                                     width={40}
                                     height={40}
                                     loading="eager"
                                     decoding="sync"
-                                    className="h-10 w-10 object-contain rounded-lg"
+                                    className="h-10 w-10 object-contain rounded-lg transition-opacity duration-300"
+                                    onLoad={(e) => (e.currentTarget.style.opacity = '1')}
+                                    style={{ opacity: 0 }}
                                 />
                                 <div className="absolute inset-0 bg-primary text-white flex items-center justify-center rounded-lg font-bold text-xl select-none pointer-events-none" style={{ zIndex: -1 }}>
                                     M

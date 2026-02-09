@@ -1,6 +1,5 @@
 import React from 'react';
 import clsx from 'clsx';
-import { getPublicPath } from '@/api/client';
 
 interface LoadingProps {
   message?: React.ReactNode;
@@ -26,7 +25,7 @@ const Loading: React.FC<LoadingProps> = ({ message, fullScreen = false, classNam
         <div className="relative">
           <div className={clsx('rounded-full border-primary/30 border-t-primary animate-spin', sizeMap[size])} />
           <div className="absolute inset-0 flex items-center justify-center">
-            <img src={getPublicPath("logo.png")} alt="Logo" className="h-3.5 w-3.5 opacity-60" />
+            <img src={`${import.meta.env.BASE_URL}logo.png`} alt="Logo" className="h-3.5 w-3.5 opacity-60" />
           </div>
         </div>
         {message && <div className="text-sm">{message}</div>}

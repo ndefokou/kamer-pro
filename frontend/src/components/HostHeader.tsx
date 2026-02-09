@@ -7,7 +7,6 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/co
 import { useAuth } from '@/contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
-import { getPublicPath } from '@/api/client';
 
 const getInitials = (name: string) => {
     const n = name?.trim();
@@ -56,7 +55,7 @@ const HostHeader: React.FC = () => {
                             </Button>
                         )}
                         <div className="flex items-center gap-2 text-primary font-bold text-xl cursor-pointer" onClick={() => navigate('/')}>
-                            <img src={getPublicPath("logo.png")} alt="Le Mboko" className="h-10 w-10 object-contain rounded-lg" />
+                            <img src={`${import.meta.env.BASE_URL}logo.png`} alt="Le Mboko" className="h-10 w-10 object-contain rounded-lg" />
                         </div>
                     </div>
                     <nav className="hidden md:flex gap-8 text-sm font-medium">
@@ -105,7 +104,7 @@ const HostHeader: React.FC = () => {
                             <div className="flex items-center gap-3 border border-gray-300 rounded-full py-1.5 px-3 hover:shadow-md transition-shadow cursor-pointer">
                                 <Menu className="h-4 w-4 text-gray-700" />
                                 <Avatar className="h-8 w-8">
-                                    <AvatarImage src={user?.profile_picture_url || "/placeholder-user.jpg"} />
+                                    <AvatarImage src={user?.profile_picture_url || `${import.meta.env.BASE_URL}placeholder-user.jpg`} />
                                     <AvatarFallback className="bg-gray-700 text-white text-xs">{initials}</AvatarFallback>
                                 </Avatar>
                             </div>
@@ -117,7 +116,7 @@ const HostHeader: React.FC = () => {
                             <div className="mt-6 space-y-1">
                                 <div className="flex items-center gap-3 pb-4 border-b">
                                     <Avatar className="h-10 w-10">
-                                        <AvatarImage src={user?.profile_picture_url || "/placeholder-user.jpg"} />
+                                        <AvatarImage src={user?.profile_picture_url || `${import.meta.env.BASE_URL}placeholder-user.jpg`} />
                                         <AvatarFallback className="bg-gray-700 text-white text-sm">{initials}</AvatarFallback>
                                     </Avatar>
                                     <div className="font-semibold text-gray-900">{username || t('common.user', 'User')}</div>

@@ -9,7 +9,6 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Download } from 'lucide-react';
-import { getPublicPath } from '@/api/client';
 
 interface BeforeInstallPromptEvent extends Event {
     readonly platforms: string[];
@@ -97,7 +96,7 @@ export const PWAInstallPrompt = () => {
                 <div className="flex items-center justify-center py-6">
                     <div className="relative">
                         <img
-                            src={getPublicPath("logo.png")}
+                            src={`${import.meta.env.BASE_URL}logo.png`}
                             alt="Le Mboko Icon"
                             className="w-24 h-24 rounded-2xl shadow-xl border-4 border-white"
                         />
