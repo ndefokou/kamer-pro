@@ -1,0 +1,1 @@
+import{G as a}from"./index-DwPe7WlF.js";const t=async()=>(await a.get("/account/me")).data,c=async t=>(await a.get(`/account/user/${t}`)).data,s=async t=>(await a.put("/account/update",t)).data;export{c as a,t as g,s as u};

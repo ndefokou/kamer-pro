@@ -1,1 +1,0 @@
-import{r}from"./vendor-react-CPc5zwff.js";import{W as s}from"./index-Dd0d9_cy.js";const t=()=>{const t=r.useContext(s);if(void 0===t)throw new Error("useWishlist must be used within a WishlistProvider");return t};export{t as u};
