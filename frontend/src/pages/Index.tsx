@@ -111,10 +111,6 @@ const Index = () => {
     return ordered.map(g => [g.name, g.items] as [string, Product[]]);
   }, [allProducts]);
 
-  if (isLoading) {
-    return <div>Loading...</div>;
-  }
-
   if (error) {
     return <div>Error loading products</div>;
   }

@@ -332,13 +332,7 @@ const Dashboard = () => {
 
             {/* Main Content */}
             <main className="container mx-auto px-4 sm:px-6 pt-8 pb-2">
-                {isLoading ? (
-                    <>
-                        <PropertySectionSkeleton count={4} />
-                        <PropertySectionSkeleton count={4} />
-                        <PropertySectionSkeleton count={4} />
-                    </>
-                ) : error ? (
+                {error ? (
                     <div className="text-center py-20">
                         <p className="text-red-500">{t("Failed to load properties.")}</p>
                         <p className="text-sm text-muted-foreground mt-2">
@@ -347,35 +341,46 @@ const Dashboard = () => {
                     </div>
                 ) : (
                     <>
-                        {grouped
-                            .filter((g) => preferredOrder.includes(normalizeCity(g.name)))
-                            .sort((a, b) => preferredOrder.indexOf(normalizeCity(a.name)) - preferredOrder.indexOf(normalizeCity(b.name)))
-                            .map((g) => (
-                                <PropertySection
-                                    key={g.name || Math.random()}
-                                    title={t('StaysIn', { city: g.name })}
-                                    properties={g.items}
-                                    city={g.name}
-                                    inferCity={inferCity}
-                                />
-                            ))}
-                        {buea.length > 0 && (
-                            <PropertySection
-                                key="buea-section"
-                                title={t('StaysIn', { city: 'Buea' })}
-                                properties={buea}
-                                city="Buea"
-                                inferCity={inferCity}
-                            />
-                        )}
-                        {other.length > 0 && (
-                            <PropertySection
-                                key="other-locations"
-                                title={t('otherLocations')}
-                                properties={other}
-                                city="other"
-                                inferCity={inferCity}
-                            />
+                        {/* Show skeleton loaders only if no properties are loaded yet */}
+                        {isLoading && properties.length === 0 ? (
+                            <>
+                                <PropertySectionSkeleton count={4} />
+                                <PropertySectionSkeleton count={4} />
+                                <PropertySectionSkeleton count={4} />
+                            </>
+                        ) : (
+                            <>
+                                {grouped
+                                    .filter((g) => preferredOrder.includes(normalizeCity(g.name)))
+                                    .sort((a, b) => preferredOrder.indexOf(normalizeCity(a.name)) - preferredOrder.indexOf(normalizeCity(b.name)))
+                                    .map((g) => (
+                                        <PropertySection
+                                            key={g.name || Math.random()}
+                                            title={t('StaysIn', { city: g.name })}
+                                            properties={g.items}
+                                            city={g.name}
+                                            inferCity={inferCity}
+                                        />
+                                    ))}
+                                {buea.length > 0 && (
+                                    <PropertySection
+                                        key="buea-section"
+                                        title={t('StaysIn', { city: 'Buea' })}
+                                        properties={buea}
+                                        city="Buea"
+                                        inferCity={inferCity}
+                                    />
+                                )}
+                                {other.length > 0 && (
+                                    <PropertySection
+                                        key="other-locations"
+                                        title={t('otherLocations')}
+                                        properties={other}
+                                        city="other"
+                                        inferCity={inferCity}
+                                    />
+                                )}
+                            </>
                         )}
                     </>
                 )}

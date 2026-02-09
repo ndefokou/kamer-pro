@@ -81,7 +81,7 @@ const router = createBrowserRouter(
     { path: "*", element: <Suspense fallback={<div />}><NotFound /></Suspense> },
   ],
   {
-    basename: "/kamer-pro/",
+    basename: "/",
     // @ts-expect-error - hydrateFallbackElement is not in the type definition but is supported
     hydrateFallbackElement: (
       <div className="min-h-screen flex items-center justify-center">
