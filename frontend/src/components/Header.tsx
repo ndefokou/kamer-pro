@@ -91,8 +91,8 @@ const Header: React.FC = () => {
                                     alt="Le Mboko"
                                     width={40}
                                     height={40}
-                                    loading="lazy"
-                                    decoding="async"
+                                    loading="eager"
+                                    decoding="sync"
                                     className="h-10 w-10 object-contain rounded-lg transition-opacity duration-300"
                                     onLoad={(e) => (e.currentTarget.style.opacity = '1')}
                                     style={{ opacity: 0 }}
@@ -101,6 +101,7 @@ const Header: React.FC = () => {
                                     M
                                 </div>
                             </div>
+                            <span className="hidden md:block font-bold text-xl text-[#2F4F4F] tracking-tight">Le Mboko</span>
                         </div>
                     </div>
 

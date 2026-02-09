@@ -32,7 +32,7 @@ interface Listing {
     latitude: number;
     longitude: number;
     amenities: string[];
-    photos: { id: string; url: string; caption: string }[];
+    photos: { id: string; url: string; caption: string; is_cover?: boolean | number; room_type?: string }[];
     status: string;
     house_rules: string;
     safety_items: string[];

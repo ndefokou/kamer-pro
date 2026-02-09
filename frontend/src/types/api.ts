@@ -9,12 +9,6 @@ export interface User {
     role?: string;
 }
 
-export interface Photo {
-    id: string;
-    url: string;
-    is_main: boolean;
-}
-
 export interface Listing {
     id: string;
     title: string;
@@ -32,12 +26,49 @@ export interface Listing {
     created_at: string;
     updated_at: string;
     status: string;
+    latitude?: number;
+    longitude?: number;
+    max_guests?: number;
+    getting_around?: string;
+    scenic_views?: string;
+    safety_devices?: string;
+    house_rules?: string;
+    cancellation_policy?: string;
+}
+
+export interface ListingPhoto {
+    id: number;
+    listing_id: string;
+    url: string;
+    caption?: string;
+    room_type?: string;
+    is_cover: boolean;
+    display_order: number;
+    uploaded_at?: string;
+}
+
+export interface ListingVideo {
+    id: number;
+    listing_id: string;
+    url: string;
+    uploaded_at?: string;
+}
+
+export interface UnavailableDateRange {
+    check_in: string;
+    check_out: string;
 }
 
 export interface Product {
     listing: Listing;
-    photos: Photo[];
-    host?: User;
+    photos: ListingPhoto[];
+    amenities: string[];
+    videos: ListingVideo[];
+    safety_items: string[];
+    unavailable_dates: UnavailableDateRange[];
+    contact_phone?: string;
+    host_avatar?: string;
+    host_username?: string;
 }
 
 export interface ProductFilters {

@@ -14,6 +14,17 @@ import {
   Message
 } from "@/types/api";
 
+export type {
+  User,
+  Product,
+  ProductFilters,
+  TownCount,
+  ListingReview,
+  BookingWithDetails,
+  Conversation,
+  Message
+};
+
 const getBaseUrl = () => {
   // Prefer explicit backend origin if provided; fall back to legacy VITE_API_URL, then to site-relative /api
   const raw = (import.meta.env.VITE_BACKEND_URL as string | undefined)
@@ -177,7 +188,21 @@ interface CustomAxiosRequestConfig extends AxiosRequestConfig {
   skipCache?: boolean;
   forceNetwork?: boolean;
   params?: Record<string, unknown>;
+  priority?: 'high' | 'low';
 }
+
+// Network scheduler state
+let activeRequests = 0;
+const bgQueue: Array<() => void> = [];
+const MAX_CONCURRENT_BG = 2;
+const MAX_TOTAL_CONNECTIONS = 5; // Leave at least 1 for user/assets
+
+const runNextBg = () => {
+  if (bgQueue.length > 0 && activeRequests < MAX_CONCURRENT_BG) {
+    const next = bgQueue.shift();
+    if (next) next();
+  }
+};
 
 // Perform GET requesting compact binary (MessagePack) when available and decode response
 const getWithBinary = async (url: string, config?: CustomAxiosRequestConfig): Promise<unknown> => {
@@ -187,6 +212,18 @@ const getWithBinary = async (url: string, config?: CustomAxiosRequestConfig): Pr
     // Accept: "application/x-msgpack, application/msgpack, application/json",
   } as Record<string, string>;
 
+  const isLow = config?.priority === 'low';
+
+  // If low priority and too many active requests, queue it
+  if (isLow && activeRequests >= MAX_CONCURRENT_BG) {
+    return new Promise((resolve, reject) => {
+      bgQueue.push(() => {
+        getWithBinary(url, config).then(resolve).catch(reject);
+      });
+    });
+  }
+
+  activeRequests++;
   try {
     // Add cache-busting timestamp if skipCache or forceNetwork is set
     // This helps bypass browser/proxy caches for critical requests
@@ -207,24 +244,20 @@ const getWithBinary = async (url: string, config?: CustomAxiosRequestConfig): Pr
       return null;
     }
 
-    console.log(`getWithBinary: Success for ${url}. Data type: ${typeof response.data}. IsArray: ${Array.isArray(response.data)}`);
-    if (Array.isArray(response.data)) {
-      console.log(`getWithBinary: Array length: ${response.data.length}`);
-    }
-
     return response.data;
   } catch (error) {
     console.error('getWithBinary: Error fetching', url, error);
-    if (axios.isAxiosError(error) && error.response) {
-      return error.response.data;
-    }
     throw error;
+  } finally {
+    activeRequests--;
+    // Give browser a moment to breath before next BG task
+    setTimeout(runNextBg, 100);
   }
 };
 
 
 
-// Enhanced GET with caching that prioritizes Supabase
+// Enhanced GET with Network-First (Online) / Cache-Only (Offline) strategy
 const cachedGet = async <T = unknown>(url: string, config?: CustomAxiosRequestConfig): Promise<T> => {
   const cacheKey = createCacheKey(url, config?.params);
   const isOnline = navigator.onLine && networkService.getNetworkInfo().isOnline;
@@ -236,76 +269,44 @@ const cachedGet = async <T = unknown>(url: string, config?: CustomAxiosRequestCo
 
   const requestPromise = (async () => {
     try {
-      // When online, always try to fetch from Supabase first
+      // 1. If Online, always try Network first (ensures fresh data)
       if (isOnline) {
+        console.log('Online: Fetching fresh data from network:', url);
         try {
-          // Force network request by skipping cache
           const data = await getWithBinary(url, { ...config, skipCache: true });
 
-          // Cache the fresh data in the background for offline use
-          if (!config?.skipCache) {
+          // Update cache in the background for offline use
+          if (!config?.skipCache && data) {
             cacheResponse(url, data, config?.params).catch(console.error);
           }
 
           return data as T;
         } catch (networkError) {
-          console.warn('Supabase request failed, falling back to cache:', url, networkError);
-          // Continue to cache fallback
+          console.warn('Network request failed, attempting cache fallback:', url);
+          // Fall through to cache if network fails but we are "online"
         }
       }
 
-      // Try cache as fallback when offline or when Supabase request failed
+      // 2. If Offline or Network failed, try local cache
       const cached = await getCachedResponse(url, config?.params as Record<string, unknown> | undefined) as T | null;
-
       if (cached) {
-        // If we have cached data and we're offline, return it
-        if (!isOnline) {
-          console.log('Using cached data (offline mode):', url);
-          return cached;
-        }
-
-        // If we're online but the Supabase request failed, return cached data with a warning
-        console.warn('Using cached data (Supabase request failed):', url);
+        console.log('Using cached data (Offline or Network Failure):', url);
         return cached;
       }
 
-      // If we have no cache and we're offline, throw an error
+      // 3. No cache and either offline or network failed
       if (!isOnline) {
         throw new Error('You are currently offline and no cached data is available.');
       }
 
-      // This should only be reached if we're online but both Supabase and cache failed
       throw new Error('Unable to fetch data. Please check your connection and try again.');
 
     } catch (error) {
-      // If we have a network error but we're actually online, try one more time
-      if (isOnline && axios.isAxiosError(error) && !error.response) {
-        try {
-          console.log('Retrying Supabase request...');
-          const data = await getWithBinary(url, { ...config, skipCache: true });
-
-          // Update cache with the fresh data
-          if (!config?.skipCache) {
-            cacheResponse(url, data, config?.params).catch(console.error);
-          }
-
-          return data as T;
-        } catch (retryError) {
-          console.error('Retry failed:', retryError);
-
-          // If we still fail but have cached data, use it as a last resort
-          const cached = await getCachedResponse(url, config?.params as Record<string, unknown> | undefined) as T | null;
-          if (cached) {
-            console.warn('Using cached data after retry failure:', url);
-            return cached;
-          }
-
-          throw new Error('Unable to fetch data. Please check your connection and try again.');
-        }
-      }
+      // Root level error handling
       throw error;
     } finally {
-      pendingRequests.delete(cacheKey);
+      // Small delay before removing to allow microtask deduplication
+      setTimeout(() => pendingRequests.delete(cacheKey), 0);
     }
   })();
 
@@ -441,7 +442,7 @@ export const removeRole = async (role: string) => {
 export default apiClient;
 
 
-export const getProducts = async (filters: ProductFilters): Promise<Product[]> => {
+export const getProducts = async (filters: ProductFilters, priority?: 'high' | 'low'): Promise<Product[]> => {
   const params = { ...filters };
   if (params.min_price === "") delete params.min_price;
   if (params.max_price === "") delete params.max_price;
@@ -464,7 +465,7 @@ export const getProducts = async (filters: ProductFilters): Promise<Product[]> =
   if (typeof params.limit === 'number') queryParams.limit = params.limit;
   if (typeof params.offset === 'number') queryParams.offset = params.offset;
 
-  return await cachedGet<Product[]>("/listings", { params: queryParams });
+  return await cachedGet<Product[]>("/listings", { params: queryParams, priority });
 };
 
 export const getTowns = async (): Promise<TownCount[]> => {
@@ -488,8 +489,8 @@ export const getMyProducts = async () => {
   return await cachedGet<Product[]>("/listings/my-listings");
 };
 
-export const getListing = async (id: string): Promise<Product> => {
-  return await cachedGet<Product>(`/listings/${id}`);
+export const getListing = async (id: string, priority?: 'high' | 'low'): Promise<Product> => {
+  return await cachedGet<Product>(`/listings/${id}`, { priority });
 };
 
 // Force fresh fetch of a single listing, bypassing SWR/IndexedDB cache.

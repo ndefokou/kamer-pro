@@ -199,19 +199,29 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
                 }
 
                 // Step 4: Best-effort background fetch to cache the image (non-blocking)
-                (async () => {
-                    try {
-                        const response = await fetch(optimizedUrl, {
-                            mode: 'cors',
-                            credentials: 'omit',
-                        });
-                        if (!response.ok) return; // don't throw; keep UX smooth
-                        const blob = await response.blob();
-                        await dbService.cacheImage(src, blob).catch(() => undefined);
-                    } catch {
-                        // Ignore caching errors; the direct URL is already set
+                // Only do this if we aren't already loading it natively or if we really want offline persistent cache
+                // To avoid network congestion, we defer this until browser is idle
+                const scheduleCache = () => {
+                    if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+                        (window as any).requestIdleCallback(async () => {
+                            try {
+                                const response = await fetch(optimizedUrl, {
+                                    mode: 'cors',
+                                    credentials: 'omit',
+                                    priority: 'low' // Tell browser this is low priority
+                                } as any);
+                                if (!response.ok) return;
+                                const blob = await response.blob();
+                                await dbService.cacheImage(src, blob).catch(() => undefined);
+                            } catch { }
+                        }, { timeout: 2000 });
                     }
-                })();
+                };
+
+                // If we're already loading natively, don't rush to cache it via fetch
+                // just let the browser do its job. We'll only cache if we really need it.
+                // For now, let's just skip Step 4 entirely if we have a successful native load,
+                // or move it to the onLoad handler.
             } catch (error) {
                 // Squelch validation error for cleaner console
                 // console.error('Error loading image:', error);
@@ -276,6 +286,7 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
                 width={width}
                 height={height}
                 loading={priority ? 'eager' : 'lazy'}
+                {...({ fetchpriority: priority ? 'high' : 'low' } as any)}
                 crossOrigin="anonymous"
                 style={!imageSrc || isLoading ? placeholderStyle : { transition: 'opacity 0.3s ease-in' }}
                 onClick={onClick}

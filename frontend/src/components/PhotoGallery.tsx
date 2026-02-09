@@ -7,7 +7,7 @@ import OptimizedImage from './OptimizedImage';
 interface Photo {
     id: number;
     url: string;
-    is_cover?: number;
+    is_cover?: number | boolean;
 }
 
 interface PhotoGalleryProps {

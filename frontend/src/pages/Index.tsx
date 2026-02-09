@@ -21,29 +21,56 @@ const Index = () => {
   } = useInfiniteQuery<Product[], Error>({
     queryKey: ["products"],
     initialPageParam: 0,
-    // Use a large limit so we typically get everything in one page
-    queryFn: ({ pageParam }) => getProducts({ limit: 1000, offset: (pageParam as number) || 0 }),
-    getNextPageParam: (lastPage, allPages) => (lastPage.length === 1000 ? allPages.length * 1000 : undefined),
+    // Use a reasonable limit for better performance
+    queryFn: ({ pageParam }) => getProducts({ limit: 40, offset: (pageParam as number) || 0 }, 'high'),
+    getNextPageParam: (lastPage, allPages) => (lastPage.length === 40 ? allPages.length * 40 : undefined),
   });
 
-  // Auto-load all pages so all listings are visible by default
+  // Background auto-loading: fetch next pages during idle time to avoid network pressure
   useEffect(() => {
-    if (hasNextPage && !isFetchingNextPage) {
-      fetchNextPage();
-    }
+    if (!hasNextPage || isFetchingNextPage) return;
+
+    const scheduleLoad = () => {
+      // Small cooldown to ensure UI is stable
+      const timer = setTimeout(() => {
+        if ('requestIdleCallback' in window) {
+          (window as any).requestIdleCallback(() => {
+            fetchNextPage();
+          }, { timeout: 10000 });
+        } else {
+          // Fallback for browsers without requestIdleCallback
+          fetchNextPage();
+        }
+      }, 5000);
+
+      return () => clearTimeout(timer);
+    };
+
+    return scheduleLoad();
   }, [hasNextPage, isFetchingNextPage, fetchNextPage, data?.pages?.length]);
 
   const { data: towns } = useQuery<TownCount[]>({
     queryKey: ["towns"],
     queryFn: getTowns,
+    // Delay towns fetch slightly to prioritize listings
+    staleTime: 3600000,
   });
 
   const navigate = useNavigate();
 
-  const allProducts = useMemo(() => ((data?.pages?.flat() as Product[]) || []), [data?.pages]);
+  const allProducts = useMemo(() => {
+    if (!data?.pages) return [];
+    try {
+      return data.pages.flat().filter(Boolean) || [];
+    } catch (e) {
+      console.error("Index: Error flattening properties:", e);
+      return [];
+    }
+  }, [data?.pages]);
 
   const groupedByCity = useMemo(() => {
     const map = new Map<string, { name: string; items: Product[] }>();
+    if (!Array.isArray(allProducts)) return [];
     for (const p of allProducts) {
       if (!p?.listing) continue;
 
@@ -131,24 +158,20 @@ const Index = () => {
           </section>
         ))}
 
-        {/* All Listings */}
-        <section className="py-12">
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6">
-            {allProducts.map((product) => (
-              <PropertyCard
-                key={product.listing.id}
-                id={product.listing.id}
-                name={product.listing.title ?? "Untitled"}
-                location={product.listing.city || inferCity(product) || "Unknown"}
-                price={product.listing.price_per_night ?? 0}
-                images={product.photos.map((photo) => ({ image_url: photo.url }))}
-                propertyType={product.listing.property_type}
-              />
-            ))}
-          </div>
-          <div className="flex justify-center mt-6" />
-        </section>
       </div>
+
+      {hasNextPage && (
+        <div className="flex justify-center pb-12 mt-8">
+          <Button
+            onClick={() => fetchNextPage()}
+            disabled={isFetchingNextPage}
+            variant="outline"
+            className="min-w-[200px]"
+          >
+            {isFetchingNextPage ? t('common.loading', 'Loading...') : t('common.loadMore', 'Load More')}
+          </Button>
+        </div>
+      )}
     </div>
   );
 };

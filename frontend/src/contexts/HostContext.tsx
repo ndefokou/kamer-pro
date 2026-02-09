@@ -10,7 +10,7 @@ import { useAuth } from './AuthContext';
 
 interface Photo {
     url: string;
-    is_cover: number;
+    is_cover: number | boolean;
 }
 
 interface Video {
@@ -328,10 +328,10 @@ export const HostProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 amenities: data.amenities || [],
                 photos: data.photos?.map((p: Photo) => p.url) || [],
                 videos: data.videos?.map((v: Video) => v.url) || [],
-                coverPhotoIndex: data.photos?.findIndex((p: Photo) => p.is_cover === 1) || 0,
+                coverPhotoIndex: data.photos?.findIndex((p: Photo) => p.is_cover === 1 || p.is_cover === true) || 0,
                 title: listingData.title || '',
                 description: listingData.description || '',
-                instantBook: listingData.instant_book === 1,
+                instantBook: listingData.instant_book === 1 || listingData.instant_book === true,
                 minNights: listingData.min_nights || 1,
                 maxNights: listingData.max_nights,
                 maxGuests: listingData.max_guests,

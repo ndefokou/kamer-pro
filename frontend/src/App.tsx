@@ -12,6 +12,7 @@ const Dashboard = lazy(() => import("./pages/Dashboard"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { PWAInstallPrompt } from "./components/PWAInstallPrompt";
+import ErrorBoundary, { RouteErrorElement } from "./components/ErrorBoundary";
 import { networkService } from "@/services/networkService";
 import { cachePolicyService } from "@/services/cachePolicyService";
 
@@ -20,10 +21,21 @@ import { queryClient } from "@/lib/queryClient";
 
 const router = createBrowserRouter(
   [
-    { path: "/", element: <Suspense fallback={<div />}><Dashboard /></Suspense> },
-    { path: "/marketplace", lazy: async () => ({ Component: (await import("./pages/SearchResults")).default }) },
-    { path: "/hosts/:id", lazy: async () => ({ Component: (await import("./pages/HostProfile")).default }) },
-    { path: "/product/:id", lazy: async () => ({ Component: (await import("./pages/ListingDetails")).default }) },
+    {
+      path: "/",
+      element: <Suspense fallback={<div />}><Dashboard /></Suspense>,
+      errorElement: <RouteErrorElement />
+    },
+    {
+      path: "/marketplace",
+      lazy: async () => ({ Component: (await import("./pages/SearchResults")).default }),
+      errorElement: <RouteErrorElement />
+    },
+    {
+      path: "/product/:id",
+      lazy: async () => ({ Component: (await import("./pages/ListingDetails")).default }),
+      errorElement: <RouteErrorElement />
+    },
     { path: "/messages", lazy: async () => ({ Component: (await import("./pages/Messages")).default }) },
     { path: "/bookings", element: <ProtectedRoute />, children: [{ index: true, lazy: async () => ({ Component: (await import("./pages/MyBookings")).default }) }] },
     { path: "/login", lazy: async () => ({ Component: (await import("./pages/Login")).default }) },
@@ -96,10 +108,12 @@ const App = () => (
           <MessagingProvider>
             <HostProvider>
               <TooltipProvider>
-                <Toaster />
-                <Sonner />
-                <PWAInstallPrompt />
-                <RouterProvider router={router} />
+                <ErrorBoundary>
+                  <Toaster />
+                  <Sonner />
+                  <PWAInstallPrompt />
+                  <RouterProvider router={router} />
+                </ErrorBoundary>
               </TooltipProvider>
             </HostProvider>
           </MessagingProvider>
