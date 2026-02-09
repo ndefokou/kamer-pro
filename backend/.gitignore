@@ -1,8 +1,0 @@
-# Rust build artifacts
-/target/
-
-# Development database
-dev.sqlite3
-
-# Environment variables
-.env

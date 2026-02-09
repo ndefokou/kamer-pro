@@ -1,9 +1,15 @@
 {
+  "Stays": "Stays",
+  "Become a host": "Become a host",
+  "per night": "per night",
   "marketplace": "Find a Home",
   "nav": {
     "reservations": "Reservations",
     "listings": "Listings",
-    "messages": "Messages"
+    "messages": "Messages",
+    "favorites": "Favorites",
+    "calendar": "Calendar",
+    "profile": "Profile"
   },
   "common": {
     "back": "Back",
@@ -20,6 +26,9 @@
     "approve": "Approve",
     "decline": "Decline",
     "guests": "guests",
+    "guest_count": "{{count}} guest",
+    "guest_count_other": "{{count}} guests",
+    "perNight": "per night",
     "searching": "Searching...",
     "noResults": "No results found",
     "zero": "0",
@@ -28,9 +37,60 @@
     "savePhotosCount": "Save {{count}} {{unit}}",
     "total": "Total",
     "share": "Share",
-    "seeAll": "See all"
+    "seeAll": "See all",
+    "search": "Search",
+    "suggestions": "Suggestions",
+    "nearby": "Nearby",
+    "destination": "Destination",
+    "close": "Close",
+    "clearAll": "Clear all",
+    "next": "Next",
+    "dates": "Dates",
+    "flexible": "Flexible",
+    "flexibleOptions": {
+      "anytime": "anytime",
+      "months": "{{count}} months",
+      "months_one": "1 month",
+      "duration": {
+        "weekend": "A weekend",
+        "week": "A week",
+        "month": "A month"
+      },
+      "summary": "{{duration}} in {{months}}"
+    },
+    "exactDates": "Exact dates",
+    "who": "Who?",
+    "when": "When?",
+    "startSearch": "Start my search",
+    "adults": "Adults",
+    "children": "Children",
+    "infants": "Infants",
+    "pets": "Pets",
+    "howLong": "How long would you like to stay?",
+    "daysMin": [
+      "Su",
+      "Mo",
+      "Tu",
+      "We",
+      "Th",
+      "Fr",
+      "Sa"
+    ],
+    "months": [
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December"
+    ]
   },
-  "logout": "Logout",
   "login": "Login",
   "wishlist": "Wishlist",
   "my firm": "My Firm",
@@ -39,6 +99,15 @@
   "user": "User",
   "discover products": "Explore",
   "Explore": "Explore",
+  "Favorites": "Favorites",
+  "Reservations": "Reservations",
+  "Calendar": "Calendar",
+  "Messages": "Messages",
+  "Profile": "Profile",
+  "Traveling with a service animal?": "Traveling with a service animal?",
+  "Age 13+": "Age 13+",
+  "Ages 2-12": "Ages 2-12",
+  "Guest favorite": "Guest favorite",
   "Loading stays...": "Loading stays...",
   "Search": "Search",
   "category": "Property category",
@@ -78,6 +147,19 @@
   "delete": "Delete",
   "loading": "Loading...",
   "product not found": "Product not found",
+  "Success": "Success",
+  "Already reviewed": "Already reviewed",
+  "You can only review this listing once.": "You can only review this listing once.",
+  "Login required": "Login required",
+  "Please log in to write a review.": "Please log in to write a review.",
+  "Failed to submit review": "Failed to submit review",
+  "Please try again later.": "Please try again later.",
+  "Thank you for your feedback!": "Thank you for your feedback!",
+  "guestAccess": "Guest access",
+  "guestInteraction": "Guest interaction",
+  "otherNotes": "Other notes",
+  "otherDetails": "Other details",
+  "propertyDetails": "Property details",
   "choose your role": "Choose Your Role",
   "how would you like to use MboaMaison": "How would you like to use Le Mboko?",
   "buyer": "Buyer",
@@ -95,6 +177,120 @@
   "connect with local buyers": "Connect with local buyers",
   "continue as seller": "Continue in my company",
   "connect buyers and sellers": "Connect buyers and sellers in Yaoundé",
+  "dashboard": {
+    "seo": {
+      "description": "Discover the best stays and products across Cameroon. Filter by price, location, and property type to find your perfect match."
+    }
+  },
+  "search": {
+    "start_research": "Start your research",
+    "stays_count": "{{count}} stays",
+    "stay_count": "{{count}} stay",
+    "stays_in": "Stays in {{location}}",
+    "in": "in",
+    "loading": "Loading stays...",
+    "no_results": "No stays found matching your criteria.",
+    "clear_filters": "Clear filters",
+    "load_more": "Load more",
+    "loading_more": "Loading...",
+    "across_cameroon": "across Cameroon",
+    "browse_available": "Browse {{count}} available stays {{location}}",
+    "cameroon": "Cameroon",
+    "suggestions_list": {
+      "Centre": {
+        "name": "Centre",
+        "desc": "Region • Yaounde and surroundings"
+      },
+      "Littoral": {
+        "name": "Littoral",
+        "desc": "Region • Douala and surroundings"
+      },
+      "South": {
+        "name": "South",
+        "desc": "Region • Kribi, Ebolowa"
+      },
+      "Southwest": {
+        "name": "Southwest",
+        "desc": "Region • Buea, Limbe, Tiko"
+      },
+      "Northwest": {
+        "name": "Northwest",
+        "desc": "Region • Bamenda"
+      },
+      "West": {
+        "name": "West",
+        "desc": "Region • Bafoussam, Dschang"
+      },
+      "Adamawa": {
+        "name": "Adamawa",
+        "desc": "Region • Ngaoundere"
+      },
+      "North": {
+        "name": "North",
+        "desc": "Region • Garoua"
+      },
+      "Far North": {
+        "name": "Far North",
+        "desc": "Region • Maroua"
+      },
+      "East": {
+        "name": "East",
+        "desc": "Region • Bertoua"
+      }
+    }
+  },
+  "poi": {
+    "restaurant": "Restaurant",
+    "cafe": "Cafe",
+    "fast_food": "Fast Food",
+    "bar": "Bar",
+    "pub": "Pub",
+    "pharmacy": "Pharmacy",
+    "hospital": "Hospital",
+    "bank": "Bank",
+    "atm": "ATM",
+    "fuel": "Fuel",
+    "school": "School",
+    "university": "University",
+    "library": "Library",
+    "supermarket": "Supermarket",
+    "mall": "Mall",
+    "department_store": "Department Store",
+    "convenience": "Convenience Store",
+    "bakery": "Bakery",
+    "fitness_centre": "Fitness Centre",
+    "sports_centre": "Sports Centre",
+    "park": "Park",
+    "hotel": "Hotel",
+    "guest_house": "Guest House",
+    "attraction": "Tourist Attraction",
+    "station": "Station",
+    "bus_stop": "Bus Stop"
+  },
+  "auth": {
+    "logout": "Logout",
+    "welcome": "Welcome",
+    "loginSubtitle": "Login or create an account to become a host",
+    "login": "Login",
+    "register": "Register",
+    "email": "Email",
+    "password": "Password",
+    "username": "Username",
+    "phoneLabel": "Phone (WhatsApp)",
+    "confirmPassword": "Confirm Password",
+    "signIn": "Sign in",
+    "signingIn": "Signing in...",
+    "createAccount": "Create account",
+    "creatingAccount": "Creating account...",
+    "agreeTerms": "By continuing you agree to our Terms and Privacy Policy.",
+    "loginRequired": "Login required",
+    "enterEmailPassword": "Please enter email and password",
+    "fillAllFields": "Please fill in all fields",
+    "passwordsDoNotMatch": "Passwords do not match",
+    "loginFailed": "Login failed",
+    "registrationFailed": "Registration failed",
+    "becomeHostDesc": "Become a host and earn extra income easily."
+  },
   "sign in": "Sign In",
   "sign up": "Sign Up",
   "create account": "Create Account",
@@ -103,9 +299,6 @@
   "username": "Username",
   "your username": "your_username",
   "host": {
-    "common": {
-      "perNight": "per night"
-    },
     "dashboard": {
       "table": {
         "listing": "Listing",
@@ -178,8 +371,25 @@
       "save": "Save",
       "description": {
         "help": "Your description should share what makes your place special.",
-        "placeholder": "Add a description"
+        "placeholder": "Add a description",
+        "listingDescription": "Listing description",
+        "propertyDetails": "Your property",
+        "guestAccess": "Guest access",
+        "guestInteraction": "Interaction with guests",
+        "otherDetails": "Other details to note",
+        "placeholderDetailed": {
+          "listingDescription": "Describe your place...",
+          "propertyDetails": "Share a general description of your property's rooms and spaces so guests know what to expect.",
+          "guestAccess": "Describe what areas guests can access...",
+          "guestInteraction": "Describe how you'll interact with guests...",
+          "otherDetails": "Add any other important details..."
+        },
+        "availableCharacters": "{{count}}/500 available"
       },
+      "guests": {
+        "howMany": "How many guests can fit comfortably in your space?"
+      },
+      "selectSection": "Select a section to edit",
       "pricing": {
         "help": "These settings apply to all nights, unless you customize them by date.",
         "learnMore": "Learn more",
@@ -220,13 +430,86 @@
         "monthsInAdvance": "{{count}} months in advance",
         "monthsInAdvance_one": "{{count}} month in advance"
       },
-      "guests": {
-        "howMany": "How many guests can fit comfortably in your space?"
-      },
       "amenities": {
+        "categories": {
+          "Basics": "Basics",
+          "Bathroom": "Bathroom",
+          "Bedroom and laundry": "Bedroom and laundry",
+          "Entertainment": "Entertainment",
+          "Heating and cooling": "Heating and cooling",
+          "Home safety": "Home safety",
+          "Internet and office": "Internet and office",
+          "Kitchen and dining": "Kitchen and dining",
+          "Location features": "Location features",
+          "Outdoor": "Outdoor",
+          "Parking and facilities": "Parking and facilities",
+          "Services": "Services"
+        },
         "help": "You've added these to your listing so far.",
         "none": "No amenities added yet",
-        "add": "Add amenities"
+        "add": "Add amenities",
+        "wifi": "Wifi",
+        "workspace": "Dedicated workspace",
+        "pocket_wifi": "Pocket wifi",
+        "tv": "TV",
+        "piano": "Piano",
+        "sound_system": "Sound system",
+        "record_player": "Record player",
+        "ping_pong_table": "Ping pong table",
+        "pool_table": "Pool table",
+        "game_console": "Game console",
+        "kitchen": "Kitchen",
+        "coffee_maker": "Coffee maker",
+        "refrigerator": "Refrigerator",
+        "microwave": "Microwave",
+        "dishwasher": "Dishwasher",
+        "toaster": "Toaster",
+        "blender": "Blender",
+        "stove": "Stove",
+        "oven": "Oven",
+        "trash_compactor": "Trash compactor",
+        "wine_glasses": "Wine glasses",
+        "rice_maker": "Rice maker",
+        "washer": "Washer",
+        "dryer": "Dryer",
+        "iron": "Iron",
+        "room_darkening_shades": "Room-darkening shades",
+        "safe": "Safe",
+        "private_living_room": "Private living room",
+        "parking": "Free parking on premises",
+        "paid_parking": "Paid parking on premises",
+        "gym": "Gym",
+        "pool": "Pool",
+        "hottub": "Hot tub",
+        "paid_parking_off_premises": "Paid parking off premises",
+        "sauna": "Sauna",
+        "air_conditioning": "Air conditioning",
+        "heating": "Heating",
+        "portable_fans": "Portable fans",
+        "fireplace": "Indoor fireplace",
+        "smoke_alarm": "Smoke alarm",
+        "carbon_monoxide_alarm": "Carbon monoxide alarm",
+        "fire_extinguisher": "Fire extinguisher",
+        "first_aid_kit": "First aid kit",
+        "security_cameras": "Security cameras",
+        "lock_on_bedroom": "Lock on bedroom door",
+        "table_corner_guards": "Table corner guards",
+        "window_guards": "Window guards",
+        "outlet_covers": "Outlet covers",
+        "bbq": "BBQ grill",
+        "patio": "Patio or balcony",
+        "sun_loungers": "Sun loungers",
+        "outdoor_shower": "Outdoor shower",
+        "garden": "Backyard",
+        "beach_access": "Beach access",
+        "lake_access": "Lake access",
+        "ski_in_ski_out": "Ski-in/Ski-out",
+        "waterfront": "Waterfront",
+        "resort_access": "Resort access",
+        "private_entrance": "Private entrance",
+        "breakfast": "Breakfast",
+        "cleaning": "Cleaning available during stay",
+        "luggage_dropoff": "Luggage dropoff allowed"
       },
       "location": {
         "help": "Your exact address will only be shared with confirmed guests.",
@@ -464,7 +747,9 @@
       "declineHelp": "Please provide a reason for declining this booking. This message will be sent to the guest.",
       "declinePlaceholder": "e.g., The dates are no longer available...",
       "declining": "Declining...",
-      "declineCta": "Decline Booking"
+      "declineCta": "Decline Booking",
+      "whatsappGreeting": "Hello {{name}}! I'm your host for your upcoming stay.",
+      "declineWhatsapp": "Hello {{name}}, unfortunately I have to decline your booking for the following reason: {{reason}}"
     }
   },
   "messages": {
@@ -550,6 +835,27 @@
     "buea": "Buea"
   },
   "your wishlist is empty": "Your wishlist is empty",
+  "myBookings": {
+    "title": "My reservations",
+    "seoDescription": "View and manage your {{count}} reservations on Le Mboko.",
+    "status": {
+      "confirmed": "Confirmed",
+      "pending": "Pending",
+      "cancelled": "Cancelled",
+      "declined": "Declined"
+    },
+    "viewListing": "View listing",
+    "cancel": "Cancel",
+    "cancelConfirm": "Are you sure you want to cancel this reservation?",
+    "cancelSuccess": "Reservation cancelled",
+    "cancelError": "Failed to cancel reservation",
+    "empty": {
+      "title": "No reservations yet",
+      "description": "Browse the marketplace and find your first stay.",
+      "button": "Explore stays"
+    },
+    "total": "Total: {{price}}"
+  },
   "save items you love to your wishlist": "Save items you love to your wishlist",
   "browse products": "Browse Products",
   "my wishlist": "My Wishlist",
@@ -575,7 +881,6 @@
   "property name": "Property Name",
   "enter your property nameceholder": "e.g. Modern Apartment in the City Center",
   "enter the property description": "Provide a detailed description of your property...",
-  "propertyDetails": "Property Details",
   "property status": "Property Status",
   "select a category": "Select a category",
   "select a condition": "Select a condition",
@@ -630,17 +935,78 @@
     "actions": {
       "goHome": "Go Home",
       "reserve": "Reserve",
-      "close": "Close"
+      "close": "Close",
+      "share": "Share",
+      "save": "Save",
+      "showAllPhotos": "Show all photos",
+      "clearDates": "Clear dates",
+      "writeReview": "Write a Review",
+      "messageHost": "Message Host",
+      "reportHost": "Report this host"
     },
     "details": {
-      "clearDates": "Clear dates",
+      "untitled": "Listing Details",
+      "photos": "Photos",
+      "seoDescription": "View details for this stay on Le Mboko.",
+      "about": "About this place",
+      "offers": "What this place offers",
+      "showAllAmenities": "Show all {{count}} amenities",
+      "nightsInCity": "{{count}} nights in {{city}}",
+      "selectCheckIn": "Select check-in date",
+      "addDatesPricing": "Add your travel dates for exact pricing",
+      "location": "Where you'll be",
+      "exactLocation": "Exact location provided after booking",
+      "gettingAround": "Getting around",
+      "scenicViews": "Scenic views",
+      "thingsToKnow": "Things to know",
+      "houseRules": "House rules",
       "safetyProperty": "Safety & property",
+      "cancellationPolicy": "Cancellation policy",
       "flexibleCancellation": "Flexible cancellation policy",
-      "selectDates": "Select dates"
+      "noPhotos": "No photos available",
+      "guestFavorite": "Guest favorite",
+      "new": "New",
+      "maxGuests": "{{count}} guests maximum",
+      "unitCount": {
+        "guests": "{{count}} guests",
+        "bedrooms": "{{count}} bedrooms",
+        "beds": "{{count}} beds",
+        "baths": "{{count}} baths"
+      },
+      "houseRulesProps": {
+        "smokingAllowed": "Smoking, vaping, e-cigarettes allowed",
+        "quietHoursEnforced": "Quiet hours enforced",
+        "quietHoursNotEnforced": "Quiet hours not enforced",
+        "photographyAllowed": "Commercial photography and filming allowed",
+        "photographyNotAllowed": "No commercial photography or filming"
+      }
+    },
+    "booking": {
+      "checkIn": "Check-in",
+      "checkout": "Checkout",
+      "addDate": "Add date",
+      "guests": "Guests",
+      "guestCount": "{{count}} guest",
+      "guestCount_other": "{{count}} guests",
+      "noCharge": "You won't be charged yet",
+      "selectDates": "Select dates",
+      "adults": "Adults",
+      "serviceFee": "Service fee",
+      "total": "Total"
     },
     "reviews": {
       "noReviewsYet": "No reviews yet",
-      "writeReview": "Write a Review"
+      "rating": "Rating",
+      "count": "{{count}} reviews",
+      "count_one": "1 review",
+      "categories": {
+        "cleanliness": "Cleanliness",
+        "accuracy": "Accuracy",
+        "checkin": "Check-in",
+        "communication": "Communication",
+        "location": "Location",
+        "value": "Value"
+      }
     },
     "host": {
       "meet": "Meet your Host",
@@ -655,7 +1021,141 @@
       "reportCta": "Report this host"
     }
   },
-  "StaysIn": " stays · {{city}}",
+  "StaysIn": "Stays in {{city}}",
   "seeAll": "See all",
-  "other Locations": "Other locations"
+  "otherLocations": "Other locations",
+  "footer": {
+    "sections": {
+      "assistance": {
+        "title": "Assistance",
+        "helpCenter": "Help Center",
+        "airCover": "AirCover",
+        "safety": "Safety"
+      },
+      "community": {
+        "title": "Community",
+        "mbokoOrg": "Mboko.org",
+        "features": "Features"
+      },
+      "hosting": {
+        "title": "Hosting",
+        "tryHosting": "Try Hosting",
+        "airCoverHost": "AirCover for Hosts",
+        "resources": "Resources"
+      },
+      "about": {
+        "title": "About",
+        "newsroom": "Newsroom",
+        "careers": "Careers",
+        "investors": "Investors"
+      }
+    },
+    "bottom": {
+      "copyright": "© 2026 Le Mboko, Inc.",
+      "privacy": "Privacy",
+      "terms": "Terms",
+      "sitemap": "Sitemap",
+      "language": "English (US)"
+    }
+  },
+  "propertyTypes": {
+    "apartment": {
+      "label": "Apartment",
+      "desc": "A home in a multi-unit building"
+    },
+    "house": {
+      "label": "House",
+      "desc": "A detached single-family home"
+    },
+    "villa": {
+      "label": "Villa",
+      "desc": "A luxury, independent property"
+    },
+    "studio": {
+      "label": "Studio",
+      "desc": "A one-room living space"
+    },
+    "room": {
+      "label": "Room",
+      "desc": "A private room in a shared property"
+    }
+  },
+  "amenities": {
+    "categories": {
+      "Basics": "Basics",
+      "Bathroom": "Bathroom",
+      "Bedroom and laundry": "Bedroom and laundry",
+      "Entertainment": "Entertainment",
+      "Heating and cooling": "Heating and cooling",
+      "Home safety": "Home safety",
+      "Internet and office": "Internet and office",
+      "Kitchen and dining": "Kitchen and dining",
+      "Location features": "Location features",
+      "Outdoor": "Outdoor",
+      "Parking and facilities": "Parking and facilities",
+      "Services": "Services"
+    },
+    "wifi": "Wifi",
+    "workspace": "Dedicated workspace",
+    "pocket_wifi": "Pocket wifi",
+    "tv": "TV",
+    "piano": "Piano",
+    "sound_system": "Sound system",
+    "record_player": "Record player",
+    "ping_pong_table": "Ping pong table",
+    "pool_table": "Pool table",
+    "game_console": "Game console",
+    "kitchen": "Kitchen",
+    "coffee_maker": "Coffee maker",
+    "refrigerator": "Refrigerator",
+    "microwave": "Microwave",
+    "dishwasher": "Dishwasher",
+    "toaster": "Toaster",
+    "blender": "Blender",
+    "stove": "Stove",
+    "oven": "Oven",
+    "trash_compactor": "Trash compactor",
+    "wine_glasses": "Wine glasses",
+    "rice_maker": "Rice maker",
+    "washer": "Washer",
+    "dryer": "Dryer",
+    "iron": "Iron",
+    "room_darkening_shades": "Room-darkening shades",
+    "safe": "Safe",
+    "private_living_room": "Private living room",
+    "parking": "Free parking on premises",
+    "paid_parking": "Paid parking on premises",
+    "gym": "Gym",
+    "pool": "Pool",
+    "hottub": "Hot tub",
+    "paid_parking_off_premises": "Paid parking off premises",
+    "sauna": "Sauna",
+    "air_conditioning": "Air conditioning",
+    "heating": "Heating",
+    "portable_fans": "Portable fans",
+    "fireplace": "Indoor fireplace",
+    "smoke_alarm": "Smoke alarm",
+    "carbon_monoxide_alarm": "Carbon monoxide alarm",
+    "fire_extinguisher": "Fire extinguisher",
+    "first_aid_kit": "First aid kit",
+    "security_cameras": "Security cameras",
+    "lock_on_bedroom": "Lock on bedroom door",
+    "table_corner_guards": "Table corner guards",
+    "window_guards": "Window guards",
+    "outlet_covers": "Outlet covers",
+    "bbq": "BBQ grill",
+    "patio": "Patio or balcony",
+    "sun_loungers": "Sun loungers",
+    "outdoor_shower": "Outdoor shower",
+    "garden": "Backyard",
+    "beach_access": "Beach access",
+    "lake_access": "Lake access",
+    "ski_in_ski_out": "Ski-in/Ski-out",
+    "waterfront": "Waterfront",
+    "resort_access": "Resort access",
+    "private_entrance": "Private entrance",
+    "breakfast": "Breakfast",
+    "cleaning": "Cleaning available during stay",
+    "luggage_dropoff": "Luggage dropoff allowed"
+  }
 }

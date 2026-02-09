@@ -1,1 +1,0 @@
-const o=(t,n)=>{if(!t)return!1;let e=t.replace(/\D/g,"");!t.startsWith("+")&&!e.startsWith("237")&&(e=`237${e}`);const r=`https://wa.me/${e}${n?`?text=${encodeURIComponent(n)}`:""}`;return window.open(r,"_blank","noopener,noreferrer"),!0};export{o};
