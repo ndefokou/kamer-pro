@@ -326,7 +326,7 @@ const MbokoSearch = () => {
                         {t('common.clearAll')}
                     </button>
                     <button
-                        className="bg-[#E91E63] text-white px-8 py-3 rounded-lg font-bold text-lg flex items-center gap-2"
+                        className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-lg font-bold text-lg flex items-center gap-2 transition-colors"
                         onClick={runSearch}
                     >
                         <Search className="h-5 w-5" />

@@ -5,7 +5,7 @@ interface QueuedRequest {
     id: string;
     url: string;
     method: 'POST' | 'PUT' | 'DELETE' | 'PATCH';
-    data: any;
+    data: unknown;
     headers?: Record<string, string>;
     timestamp: number;
     retryCount: number;
@@ -63,7 +63,7 @@ class RequestQueueService {
     enqueue(
         url: string,
         method: 'POST' | 'PUT' | 'DELETE' | 'PATCH',
-        data: any,
+        data: unknown,
         headers?: Record<string, string>,
         maxRetries: number = MAX_RETRIES
     ): string {

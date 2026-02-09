@@ -15,25 +15,8 @@ import { PWAInstallPrompt } from "./components/PWAInstallPrompt";
 import { networkService } from "@/services/networkService";
 import { cachePolicyService } from "@/services/cachePolicyService";
 
-export const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 120000,
-      gcTime: 600000,
-      refetchOnWindowFocus: false,
-      retry: (failureCount, _error) => {
-        try {
-          const q = networkService.getCurrentInfo().quality;
-          const max = q === 'poor' ? 0 : q === 'moderate' ? 1 : 2;
-          return failureCount < max;
-        } catch {
-          return failureCount < 2;
-        }
-      },
-      retryDelay: (attemptIndex) => Math.min(500 * 2 ** attemptIndex, 3000),
-    },
-  },
-});
+import { queryClient } from "@/lib/queryClient";
+
 
 const router = createBrowserRouter(
   [
@@ -86,6 +69,7 @@ const router = createBrowserRouter(
     { path: "*", element: <Suspense fallback={<div />}><NotFound /></Suspense> },
   ],
   {
+    basename: "/kamer-pro/",
     // @ts-expect-error - hydrateFallbackElement is not in the type definition but is supported
     hydrateFallbackElement: (
       <div className="min-h-screen flex items-center justify-center">

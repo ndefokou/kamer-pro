@@ -85,11 +85,7 @@ const Navbar = () => {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link to="/marketplace" className="flex items-center space-x-2">
-            <img src="/logo.png" alt="Le Mboko" className="h-8 w-8 object-contain rounded-lg" />
-            <span className="text-xl font-bold hidden sm:inline">
-              Le Mboko
-            </span>
-            <span className="text-xl font-bold sm:hidden">LM</span>
+            <img src="/kamer-pro/logo.png" alt="Le Mboko" className="h-8 w-8 object-contain rounded-lg" />
           </Link>
 
           {/* Search Bar */}

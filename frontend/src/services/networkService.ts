@@ -13,6 +13,16 @@ export interface NetworkInfo {
     saveData?: boolean;
 }
 
+interface NetworkConnection extends EventTarget {
+    readonly effectiveType?: string;
+    readonly downlink?: number;
+    readonly rtt?: number;
+    readonly saveData?: boolean;
+    readonly type?: string;
+    addEventListener(type: 'change', listener: (this: NetworkConnection, ev: Event) => void, options?: boolean | AddEventListenerOptions): void;
+    removeEventListener(type: 'change', listener: (this: NetworkConnection, ev: Event) => void, options?: boolean | AddEventListenerOptions): void;
+}
+
 class NetworkService {
     private listeners: Set<(info: NetworkInfo) => void> = new Set();
     private currentInfo: NetworkInfo = this.getNetworkInfo();
@@ -30,11 +40,13 @@ class NetworkService {
         }
     }
 
-    private getConnection(): any {
+    private getConnection(): NetworkConnection | null {
+        const nav = navigator as unknown as Record<string, NetworkConnection | undefined>;
         return (
-            (navigator as any).connection ||
-            (navigator as any).mozConnection ||
-            (navigator as any).webkitConnection
+            nav.connection ||
+            nav.mozConnection ||
+            nav.webkitConnection ||
+            null
         );
     }
 

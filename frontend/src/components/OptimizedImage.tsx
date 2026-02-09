@@ -15,6 +15,104 @@ interface OptimizedImageProps {
     onClick?: React.MouseEventHandler<HTMLImageElement>;
 }
 
+// Check WebP support
+const supportsWebP = (): boolean => {
+    if (typeof document === 'undefined') return false;
+    const canvas = document.createElement('canvas');
+    if (canvas.getContext && canvas.getContext('2d')) {
+        return canvas.toDataURL('image/webp').indexOf('data:image/webp') === 0;
+    }
+    return false;
+};
+
+// Generate tiny blur-up placeholder URL (< 1KB)
+const getBlurDataUrl = (originalUrl: string, supabaseTransformEnabled: boolean): string => {
+    if (!originalUrl || originalUrl.startsWith('data:') || originalUrl.startsWith('blob:')) {
+        return '';
+    }
+
+    try {
+        const url = new URL(originalUrl, window.location.origin);
+
+        // Supabase Storage image render endpoint (only if enabled)
+        const isSupabase = url.hostname.includes('supabase.co') && url.pathname.includes('/storage/v1/object/public/');
+        if (isSupabase && supabaseTransformEnabled) {
+            const supa = new URL(url.toString());
+            // Correct path: /storage/v1/render/image/public/<bucket>/<path>
+            supa.pathname = supa.pathname.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/');
+            supa.searchParams.set('width', '20');
+            supa.searchParams.set('quality', '10');
+            supa.searchParams.set('resize', 'contain');
+            if (supportsWebP()) {
+                supa.searchParams.set('format', 'webp');
+            }
+            return supa.toString();
+        }
+
+        url.searchParams.set('w', '20');
+        url.searchParams.set('q', '10');
+        url.searchParams.set('blur', '10');
+        if (supportsWebP()) {
+            url.searchParams.set('fm', 'webp');
+        }
+        return url.toString();
+    } catch {
+        return '';
+    }
+};
+
+// Generate optimized image URL with responsive sizes
+const getOptimizedUrl = (originalUrl: string, targetQuality: string, targetWidth?: number): string => {
+    if (!originalUrl) return '';
+
+    // If it's already a data URL or blob, return as is
+    if (originalUrl.startsWith('data:') || originalUrl.startsWith('blob:')) {
+        return originalUrl;
+    }
+
+    // For external URLs, try to add quality parameters
+    try {
+        const url = new URL(originalUrl, window.location.origin);
+
+        let imageWidth = targetWidth;
+        if (!imageWidth) {
+            if (targetQuality === 'low') {
+                imageWidth = 400;
+            } else if (targetQuality === 'medium') {
+                imageWidth = 800;
+            } else {
+                imageWidth = 1200;
+            }
+        }
+
+        url.searchParams.set('w', imageWidth.toString());
+        url.searchParams.set('q', targetQuality === 'low' ? '30' : targetQuality === 'medium' ? '60' : '80');
+        if (supportsWebP()) {
+            url.searchParams.set('fm', 'webp');
+        }
+        return url.toString();
+    } catch {
+        // If URL parsing fails, return original
+        return originalUrl;
+    }
+};
+
+// Generate srcset for responsive images
+const getSrcSet = (originalUrl: string, targetQuality: string): string => {
+    if (!originalUrl || originalUrl.startsWith('data:') || originalUrl.startsWith('blob:')) {
+        return '';
+    }
+
+    try {
+        const sizes = targetQuality === 'low' ? [400, 600] : [400, 800, 1200];
+        return sizes
+            .map(size => `${getOptimizedUrl(originalUrl, targetQuality, size)} ${size}w`)
+            .join(', ');
+    } catch {
+        return '';
+    }
+};
+
 export const OptimizedImage: React.FC<OptimizedImageProps> = ({
     src,
     alt,
@@ -33,132 +131,12 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
     const [hasError, setHasError] = useState(false);
     const [isInView, setIsInView] = useState(priority);
     const imgRef = useRef<HTMLImageElement>(null);
-    const { recommendedImageQuality, isSlowConnection } = useConnectionQuality();
-    const supabaseTransformEnabled = (import.meta as any).env?.VITE_SUPABASE_TRANSFORM_ENABLED === 'true';
+    const { recommendedImageQuality } = useConnectionQuality();
+    const supabaseTransformEnabled = import.meta.env.VITE_SUPABASE_TRANSFORM_ENABLED === 'true';
 
     // Determine image quality based on network
     const effectiveQuality = quality || recommendedImageQuality;
 
-    // Generate tiny blur-up placeholder URL (< 1KB)
-    const getBlurDataUrl = (originalUrl: string): string => {
-        if (!originalUrl || originalUrl.startsWith('data:') || originalUrl.startsWith('blob:')) {
-            return '';
-        }
-
-        try {
-            const url = new URL(originalUrl, window.location.origin);
-
-            // Supabase Storage image render endpoint (only if enabled)
-            const isSupabase = url.hostname.includes('supabase.co') && url.pathname.includes('/storage/v1/object/public/');
-            if (isSupabase && supabaseTransformEnabled) {
-                const supa = new URL(url.toString());
-                // Correct path: /storage/v1/render/image/public/<bucket>/<path>
-                supa.pathname = supa.pathname.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/');
-                supa.searchParams.set('width', '20');
-                supa.searchParams.set('quality', '10');
-                supa.searchParams.set('resize', 'contain');
-                if (supportsWebP()) {
-                    supa.searchParams.set('format', 'webp');
-                }
-                return supa.toString();
-            }
-
-            url.searchParams.set('w', '20');
-            url.searchParams.set('q', '10');
-            url.searchParams.set('blur', '10');
-            if (supportsWebP()) {
-                url.searchParams.set('fm', 'webp');
-            }
-            return url.toString();
-        } catch {
-            return '';
-        }
-    };
-
-    // Generate optimized image URL with responsive sizes
-    const getOptimizedUrl = (originalUrl: string, targetQuality: string, targetWidth?: number): string => {
-        if (!originalUrl) return '';
-
-        // If it's already a data URL or blob, return as is
-        if (originalUrl.startsWith('data:') || originalUrl.startsWith('blob:')) {
-            return originalUrl;
-        }
-
-        // For external URLs, try to add quality parameters
-        try {
-            const url = new URL(originalUrl, window.location.origin);
-
-            let imageWidth = targetWidth;
-            if (!imageWidth) {
-                if (targetQuality === 'low') {
-                    imageWidth = 400;
-                } else if (targetQuality === 'medium') {
-                    imageWidth = 800;
-                } else {
-                    imageWidth = 1200;
-                }
-            }
-
-            // const isSupabase = url.hostname.includes('supabase.co') && (url.pathname.includes('/storage/v1/object/public/') || url.pathname.includes('/storage/v1/render/image/public/'));
-
-            // Disable Supabase Image Transformation for now as it causes 400 Bad Request
-            // (likely due to project tier restrictions or configuration)
-            /*
-            if (isSupabase) {
-                const supa = new URL(url.toString());
-                // Handle both /object/public/ and /render/image/public/
-                if (supa.pathname.includes('/storage/v1/object/')) {
-                    supa.pathname = supa.pathname.replace('/storage/v1/object/', '/storage/v1/render/image/');
-                }
-
-                // Only add params if we are firmly in the render/image endpoint now
-                if (supa.pathname.includes('/storage/v1/render/image/')) {
-                    supa.searchParams.set('width', imageWidth.toString());
-                    supa.searchParams.set('quality', targetQuality === 'low' ? '30' : targetQuality === 'medium' ? '60' : '80');
-                    if (supportsWebP()) {
-                        supa.searchParams.set('format', 'webp');
-                    }
-                }
-                return supa.toString();
-            }
-            */
-
-            url.searchParams.set('w', imageWidth.toString());
-            url.searchParams.set('q', targetQuality === 'low' ? '30' : targetQuality === 'medium' ? '60' : '80');
-            if (supportsWebP()) {
-                url.searchParams.set('fm', 'webp');
-            }
-            return url.toString();
-        } catch {
-            // If URL parsing fails, return original
-            return originalUrl;
-        }
-    };
-
-    // Generate srcset for responsive images
-    const getSrcSet = (originalUrl: string, targetQuality: string): string => {
-        if (!originalUrl || originalUrl.startsWith('data:') || originalUrl.startsWith('blob:')) {
-            return '';
-        }
-
-        try {
-            const sizes = targetQuality === 'low' ? [400, 600] : [400, 800, 1200];
-            return sizes
-                .map(size => `${getOptimizedUrl(originalUrl, targetQuality, size)} ${size}w`)
-                .join(', ');
-        } catch {
-            return '';
-        }
-    };
-
-    // Check WebP support
-    const supportsWebP = (): boolean => {
-        const canvas = document.createElement('canvas');
-        if (canvas.getContext && canvas.getContext('2d')) {
-            return canvas.toDataURL('image/webp').indexOf('data:image/webp') === 0;
-        }
-        return false;
-    };
 
     // Intersection Observer for lazy loading
     useEffect(() => {
@@ -198,7 +176,7 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
                 setHasError(false);
 
                 // Step 1: Load tiny blur placeholder immediately
-                const blurUrl = getBlurDataUrl(src);
+                const blurUrl = getBlurDataUrl(src, supabaseTransformEnabled);
                 if (blurUrl && isMounted) {
                     setBlurDataUrl(blurUrl);
                 }
@@ -256,7 +234,7 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
                 URL.revokeObjectURL(imageSrc);
             }
         };
-    }, [isInView, src, effectiveQuality]);
+    }, [isInView, src, effectiveQuality, onLoad, onError, supabaseTransformEnabled]);
 
 
     // Placeholder styles with blur effect

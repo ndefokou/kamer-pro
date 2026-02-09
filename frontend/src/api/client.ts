@@ -2,7 +2,17 @@ import axios, { AxiosRequestConfig, InternalAxiosRequestConfig } from "axios";
 import { decode as msgpackDecode } from "@msgpack/msgpack";
 import { dbService } from "../services/dbService";
 import { networkService } from "../services/networkService";
-import { queryClient } from "../App";
+import { queryClient } from "../lib/queryClient";
+import {
+  User,
+  Product,
+  ProductFilters,
+  TownCount,
+  ListingReview,
+  BookingWithDetails,
+  Conversation,
+  Message
+} from "@/types/api";
 
 const getBaseUrl = () => {
   // Prefer explicit backend origin if provided; fall back to legacy VITE_API_URL, then to site-relative /api
@@ -124,7 +134,7 @@ apiClient.interceptors.response.use(
   (error) => {
     // Lightweight exponential backoff retries for GETs on flaky networks
     try {
-      const cfg = (error?.config || {}) as import('axios').AxiosRequestConfig & { __retryCount?: number };
+      const cfg = (error?.config || {}) as InternalAxiosRequestConfig & { __retryCount?: number };
       if (__shouldRetryGet(error)) {
         cfg.__retryCount = (cfg.__retryCount || 0) + 1;
         const quality = networkService.getCurrentInfo().quality;
@@ -174,7 +184,7 @@ const getWithBinary = async (url: string, config?: CustomAxiosRequestConfig): Pr
   const headers = {
     ...(config?.headers || {}),
     Accept: "application/json", // Force JSON for stability debugging
-    // Accept: "application/x-msgpack, application/msgpack, application/json", 
+    // Accept: "application/x-msgpack, application/msgpack, application/json",
   } as Record<string, string>;
 
   try {
@@ -311,26 +321,26 @@ const cacheResponse = async (url: string, data: unknown, params?: Record<string,
 
     if (url.includes('/listings/') && !url.includes('/reviews') && !url.includes('/my-listings')) {
       // Single listing - only cache if it has essential data
-      const listing = data as any;
-      if (listing && listing.id) {
-        await dbService.cacheListing(listing.id, listing);
+      const listing = data as Product;
+      if (listing && listing.listing?.id) {
+        await dbService.cacheListing(listing.listing.id, listing);
       }
     } else if (url === '/listings' || url.includes('/listings/host/') || url === '/listings/my-listings') {
       // Multiple listings - only cache first page
       if (Array.isArray(data) && (!params?.offset || params.offset === 0)) {
         // Limit the number of listings to cache (first 20)
-        const listingsToCache = (data as any[]).slice(0, 20);
+        const listingsToCache = (data as Product[]).slice(0, 20);
         if (listingsToCache.length > 0) {
           await dbService.cacheListings(listingsToCache);
 
           // Only store minimal data in localStorage for critical listings
           if (url === '/listings' && !params?.search && !params?.location && !params?.category) {
-            const minimalListings = listingsToCache.map(({ id, title, price, image_urls, location }) => ({
-              id,
-              title,
-              price,
-              image_urls,
-              location
+            const minimalListings = listingsToCache.map(({ listing, photos }) => ({
+              id: listing.id,
+              title: listing.title,
+              price: listing.price_per_night,
+              image_urls: photos.map(p => p.url),
+              location: listing.city
             }));
             localStorage.setItem('critical_listings', JSON.stringify(minimalListings));
           }
@@ -338,7 +348,7 @@ const cacheResponse = async (url: string, data: unknown, params?: Record<string,
       }
     } else if (url.includes('/account/user/')) {
       // User data - only cache basic user info
-      const userData = data as any;
+      const userData = data as { id: number; email: string; username: string; avatar_url?: string };
       if (userData && userData.id) {
         const { id, email, username, avatar_url } = userData;
         await dbService.cacheUser(id, { id, email, username, avatar_url });
@@ -346,25 +356,25 @@ const cacheResponse = async (url: string, data: unknown, params?: Record<string,
     } else if (url.includes('/reviews')) {
       // Reviews - limit to first 10
       const listingId = url.split('/listings/')[1].split('/reviews')[0];
-      const reviews = Array.isArray(data) ? (data as any[]).slice(0, 10) : [];
+      const reviews = Array.isArray(data) ? (data as ListingReview[]).slice(0, 10) : [];
       if (reviews.length > 0) {
         await dbService.cacheReviews(listingId, reviews);
       }
     } else if (url.includes('/bookings') && Array.isArray(data)) {
       // Bookings - limit to first 10
-      const bookings = (data as any[]).slice(0, 10);
+      const bookings = (data as BookingWithDetails[]).slice(0, 10);
       if (bookings.length > 0) {
         await dbService.cacheBookings(bookings);
       }
     } else if (url === '/listings/towns' && Array.isArray(data)) {
       // Towns - limit to first 50
-      await dbService.cacheTowns((data as any[]).slice(0, 50));
+      await dbService.cacheTowns((data as TownCount[]).slice(0, 50));
     } else if (url === '/messages/conversations' && Array.isArray(data)) {
       // Conversations - limit to first 20
-      await dbService.cacheConversations((data as any[]).slice(0, 20));
+      await dbService.cacheConversations((data as Conversation[]).slice(0, 20));
     } else if (url.includes('/messages/conversations/')) {
       // Single conversation - limit messages to last 50
-      const conversation = data as any;
+      const conversation = data as { messages?: Message[] };
       if (conversation?.messages && Array.isArray(conversation.messages)) {
         const limitedConversation = {
           ...conversation,
@@ -430,78 +440,6 @@ export const removeRole = async (role: string) => {
 
 export default apiClient;
 
-export interface Product {
-  listing: {
-    id: string;
-    host_id: number;
-    status: string;
-    property_type?: string;
-    title?: string;
-    description?: string;
-    address?: string;
-    city?: string;
-    country?: string;
-    latitude?: number;
-    longitude?: number;
-    price_per_night?: number;
-    currency?: string;
-    cleaning_fee?: number;
-    max_guests?: number;
-    bedrooms?: number;
-    beds?: number;
-    bathrooms?: number;
-    instant_book?: number;
-    min_nights?: number;
-    max_nights?: number;
-    safety_devices?: string;
-    house_rules?: string;
-    created_at?: string;
-    updated_at?: string;
-    published_at?: string;
-    getting_around?: string;
-    scenic_views?: string;
-    cancellation_policy?: string;
-  };
-  amenities: string[];
-  host_avatar?: string | null;
-  host_username?: string | null;
-  photos: {
-    id: number;
-    listing_id: string;
-    url: string;
-    is_cover: number;
-    display_order: number;
-    uploaded_at?: string;
-  }[];
-  videos: {
-    id: number;
-    listing_id: string;
-    url: string;
-    uploaded_at?: string;
-  }[];
-  unavailable_dates?: {
-    check_in: string;
-    check_out: string;
-  }[];
-  contact_phone?: string | null;
-}
-
-export interface TownCount {
-  city: string;
-  count: number;
-}
-
-export interface ProductFilters {
-  search?: string;
-  category?: string;
-  location?: string;
-  min_price?: string;
-  max_price?: string;
-  guests?: number;
-  date?: string;
-  limit?: number;
-  offset?: number;
-}
 
 export const getProducts = async (filters: ProductFilters): Promise<Product[]> => {
   const params = { ...filters };
@@ -572,32 +510,9 @@ export const deleteListing = async (id: string) => {
   return response.data;
 };
 
-// Reviews API (listings)
-export interface ListingReview {
-  id: number;
-  listing_id: string;
-  guest_id: number;
-  ratings?: string | Record<string, number>;
-  comment?: string | null;
-  created_at?: string | null;
-  username?: string | null;
-  avatar?: string | null;
-}
-
-export const getListingReviews = async (listingId: string): Promise<ListingReview[]> => {
-  return await cachedGet<ListingReview[]>(`/listings/${listingId}/reviews`);
-};
-
-export const addListingReview = async (
-  listingId: string,
-  payload: { ratings: Record<string, number>; comment?: string },
-) => {
-  const response = await apiClient.post(`/listings/${listingId}/reviews`, payload);
-  return response.data as ListingReview;
-};
-
 // Account API
-export interface AccountUser {
+export interface AccountUser extends User {
+  bio?: string;
   id: number;
   username: string;
   email: string;
@@ -623,34 +538,7 @@ export const getHostListings = async (hostId: number): Promise<Product[]> => {
   return await cachedGet<Product[]>(`/listings/host/${hostId}`);
 };
 
-// Messaging API
-export interface Message {
-  id: string;
-  conversation_id: string;
-  sender_id: number;
-  content: string;
-  read_at?: string;
-  created_at: string;
-}
-
-export interface Conversation {
-  conversation: {
-    id: string;
-    listing_id: string;
-    guest_id: number;
-    host_id: number;
-    created_at: string;
-    updated_at: string;
-  };
-  last_message?: Message;
-  other_user: {
-    id: number;
-    name: string;
-    avatar?: string;
-  };
-  listing_title: string;
-  listing_image?: string;
-}
+// Message and Conversation types imported from @/types/api
 
 export const createConversation = async (listingId: string, hostId: number, message: string) => {
   const response = await apiClient.post("/messages/conversations", {
@@ -709,27 +597,7 @@ export const cancelBooking = async (bookingId: string) => {
   return response.data;
 };
 
-export type BookingStatus = 'pending' | 'confirmed' | 'declined' | 'cancelled';
-export interface BookingWithDetails {
-  booking: {
-    id: string;
-    listing_id: string;
-    guest_id: number;
-    check_in: string;
-    check_out: string;
-    guests: number;
-    total_price: number;
-    status: BookingStatus;
-    created_at?: string;
-    updated_at?: string;
-  };
-  guest_name: string;
-  guest_email: string;
-  listing_title: string;
-  listing_photo?: string | null;
-  listing_city?: string | null;
-  listing_country?: string | null;
-}
+// BookingWithDetails imported from @/types/api
 
 export const getMyBookings = async (): Promise<BookingWithDetails[]> => {
   return await cachedGet<BookingWithDetails[]>('/bookings/my');
@@ -778,5 +646,19 @@ export const deleteHost = async (hostId: number) => {
 
 export const getAdminReports = async (): Promise<AdminReport[]> => {
   const response = await apiClient.get("/admin/reports");
+  return response.data;
+};
+
+export const getListingReviews = async (listingId: string): Promise<ListingReview[]> => {
+  return await cachedGet<ListingReview[]>(`/listings/${listingId}/reviews`);
+};
+
+export interface CreateReviewData {
+  ratings: Record<string, number>;
+  comment: string;
+}
+
+export const addListingReview = async (listingId: string, reviewData: CreateReviewData): Promise<ListingReview> => {
+  const response = await apiClient.post(`/listings/${listingId}/reviews`, reviewData);
   return response.data;
 };
