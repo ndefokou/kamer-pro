@@ -3,8 +3,8 @@
 FROM rust:1.83-alpine3.20 AS builder
 WORKDIR /usr/src/app
 
-# Install build dependencies for Alpine
-RUN apk add --no-cache musl-dev openssl-dev pkgconfig
+# Install build dependencies for Alpine (including static OpenSSL for musl)
+RUN apk add --no-cache musl-dev openssl-dev openssl-libs-static pkgconfig
 
 # Switch to nightly toolchain so Cargo supports crates that opt into edition2024
 RUN rustup default nightly
@@ -30,9 +30,6 @@ RUN --mount=type=cache,target=/usr/local/cargo/registry \
 # Now copy the rest of the application files
 COPY . .
 
-# Ensure public directory exists
-RUN mkdir -p public/uploads
-
 # Build the application
 RUN --mount=type=cache,target=/usr/local/cargo/registry \
     --mount=type=cache,target=/usr/src/app/target \
@@ -50,9 +47,6 @@ RUN apk add --no-cache openssl ca-certificates curl libgcc postgresql-client su-
 COPY --from=builder /usr/src/app/backend .
 RUN chmod +x backend
 COPY --from=builder /usr/src/app/migrations /app/migrations
-COPY --from=builder /usr/src/app/public /app/public
-
-RUN mkdir -p /app/data && mkdir -p /app/public/uploads
 
 # Create a non-root user
 RUN adduser -D -s /bin/sh appuser

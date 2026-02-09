@@ -1,6 +1,5 @@
 use crate::routes::listings::ListingWithDetails;
 use actix_cors::Cors;
-use actix_files as fs;
 use actix_web::{
     middleware::{Compress, DefaultHeaders},
     web, App, HttpServer,
@@ -46,9 +45,7 @@ async fn main() -> std::io::Result<()> {
         database_url.push_str(&format!("{}statement_cache_capacity=0", separator));
     }
 
-    // Ensure the uploads directory exists (idempotent)
-    let uploads_dir = std::path::Path::new("public").join("uploads");
-    std::fs::create_dir_all(&uploads_dir).expect("Failed to create uploads directory");
+    // Note: File uploads are handled via S3 storage, no local directory needed
 
     // Keep pool very small by default to avoid Supabase session limits
     let max_conns: u32 = env::var("DATABASE_MAX_CONNECTIONS")
@@ -145,8 +142,6 @@ async fn main() -> std::io::Result<()> {
             s3::S3Storage::new().unwrap_or_else(|_| panic!("S3 storage initialization failed"))
         }
     };
-
-    let uploads_dir_clone = uploads_dir.clone();
 
     // Initialize listing cache (key: query string, value: results)
     // Capacity: 500 unique queries (increased from 100), TTL: 15 minutes (increased from 5)
@@ -266,21 +261,7 @@ async fn main() -> std::io::Result<()> {
                             .service(routes::admin::get_reports),
                     ),
             )
-            // Serve static files from /uploads route with strong caching
-            .service(
-                web::scope("/uploads")
-                    .wrap(DefaultHeaders::new().add((
-                        "Cache-Control",
-                        "public, max-age=600, stale-while-revalidate=600",
-                    )))
-                    .service(
-                        fs::Files::new("/", uploads_dir_clone.clone())
-                            .use_etag(true)
-                            .use_last_modified(true)
-                            .prefer_utf8(true)
-                            .show_files_listing(),
-                    ),
-            )
+        // Note: File uploads are served directly from S3, no local /uploads route needed
     });
 
     if !fast_start {
