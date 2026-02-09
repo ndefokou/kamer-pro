@@ -1,5 +1,5 @@
 export interface TranslateOptions {
-  source?: string; 
+  source?: string;
   endpoint?: string;
   apiKey?: string;
   ttlMs?: number;
@@ -21,7 +21,12 @@ function cacheKey(text: string, target: string, source?: string) {
 export async function translateText(text: string, target: string, opts: TranslateOptions = {}): Promise<string> {
   try {
     const source = opts.source ?? 'auto';
-    const endpoint = opts.endpoint ?? (import.meta?.env?.VITE_TRANSLATE_ENDPOINT as string) ?? '/api/translate';
+    const defaultEndpoint = `${import.meta.env.VITE_BACKEND_URL || '/api'}/translate`.replace('//', '/');
+    // Using a more robust default that accounts for subpaths if no VITE_BACKEND_URL is set
+    const { getBackendUrl } = await import('@/api/client');
+    const computedEndpoint = `${getBackendUrl()}/api/translate`;
+
+    const endpoint = opts.endpoint ?? (import.meta?.env?.VITE_TRANSLATE_ENDPOINT as string) ?? computedEndpoint;
     const apiKey = opts.apiKey ?? (import.meta?.env?.VITE_TRANSLATE_API_KEY as string) ?? undefined;
     const ttlMs = opts.ttlMs ?? DEFAULT_TTL;
 

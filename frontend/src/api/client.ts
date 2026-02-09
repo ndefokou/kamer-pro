@@ -25,6 +25,13 @@ export type {
   Message
 };
 
+export const getPublicPath = (path: string) => {
+  const isKamerPro = window.location.pathname.includes("/kamer-pro");
+  const prefix = isKamerPro ? "/kamer-pro" : "";
+  const cleanPath = path.startsWith("/") ? path : `/${path}`;
+  return `${prefix}${cleanPath}`;
+};
+
 const getBaseUrl = () => {
   // Prefer explicit backend origin if provided; fall back to legacy VITE_API_URL, then to site-relative /api
   const raw = (import.meta.env.VITE_BACKEND_URL as string | undefined)
@@ -38,10 +45,12 @@ const getBaseUrl = () => {
     return `${prefix}/api`;
   }
 
-  // Remove trailing slash if present to avoid double slashes
   const clean = raw.endsWith("/") ? raw.slice(0, -1) : raw;
-  // If it's already ending with /api, keep it; otherwise append /api
   return clean.endsWith("/api") ? clean : `${clean}/api`;
+};
+
+export const getBackendUrl = () => {
+  return getBaseUrl().replace(/\/api$/, "");
 };
 
 const apiClient = axios.create({

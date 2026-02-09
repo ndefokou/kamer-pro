@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
-import apiClient from "@/api/client";
+import apiClient, { getPublicPath } from "@/api/client";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import {
@@ -85,7 +85,7 @@ const Navbar = () => {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link to="/marketplace" className="flex items-center space-x-2">
-            <img src="logo.png" alt="Le Mboko" className="h-8 w-8 object-contain rounded-lg" />
+            <img src={getPublicPath("logo.png")} alt="Le Mboko" className="h-8 w-8 object-contain rounded-lg" />
           </Link>
 
           {/* Search Bar */}

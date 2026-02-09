@@ -7,6 +7,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/co
 import { useAuth } from '@/contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
+import { getPublicPath } from '@/api/client';
 
 const getInitials = (name: string) => {
     const n = name?.trim();
@@ -55,7 +56,7 @@ const HostHeader: React.FC = () => {
                             </Button>
                         )}
                         <div className="flex items-center gap-2 text-primary font-bold text-xl cursor-pointer" onClick={() => navigate('/')}>
-                            <img src="logo.png" alt="Le Mboko" className="h-10 w-10 object-contain rounded-lg" />
+                            <img src={getPublicPath("logo.png")} alt="Le Mboko" className="h-10 w-10 object-contain rounded-lg" />
                         </div>
                     </div>
                     <nav className="hidden md:flex gap-8 text-sm font-medium">
