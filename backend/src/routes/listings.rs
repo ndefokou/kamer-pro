@@ -692,11 +692,13 @@ async fn get_listing_with_details(
     .bind(listing.host_id)
     .fetch_optional(pool);
 
-    let amenities_rows = amenities_fut.await?;
-    let photos = photos_fut.await?;
-    let videos = videos_fut.await?;
-    let unavailable_dates = unavailable_fut.await?;
-    let profile_row = profile_fut.await?;
+    let (amenities_rows, photos, videos, unavailable_dates, profile_row) = tokio::try_join!(
+        amenities_fut,
+        photos_fut,
+        videos_fut,
+        unavailable_fut,
+        profile_fut
+    )?;
 
     let amenities: Vec<String> = amenities_rows.into_iter().map(|a| a.amenity_type).collect();
     let (host_username, contact_phone, host_avatar): (
@@ -1273,12 +1275,59 @@ pub async fn get_my_listings(
         });
     }
 
-    let resp = HttpResponse::Ok().json(out);
+    // Content negotiation + ETag for better caching over slow networks
+    let accept = req
+        .headers()
+        .get(actix_web::http::header::ACCEPT)
+        .and_then(|h| h.to_str().ok())
+        .unwrap_or("");
+
+    if accept.contains("application/x-msgpack") || accept.contains("application/msgpack") {
+        if let Ok(bytes) = rmp_serde::to_vec(&out) {
+            let etag = format!("\"{}\"", hex::encode(Sha1::digest(&bytes)));
+            if let Some(tag) = req.headers().get(actix_web::http::header::IF_NONE_MATCH) {
+                if tag.to_str().ok() == Some(etag.as_str()) {
+                    log::info!(
+                        "get_my_listings latency_ms={} (304)",
+                        started.elapsed().as_millis()
+                    );
+                    return HttpResponse::NotModified().finish();
+                }
+            }
+            log::info!(
+                "get_my_listings latency_ms={}",
+                started.elapsed().as_millis()
+            );
+            return HttpResponse::Ok()
+                .insert_header((
+                    actix_web::http::header::CONTENT_TYPE,
+                    "application/x-msgpack",
+                ))
+                .insert_header((actix_web::http::header::ETAG, etag))
+                .insert_header(("Cache-Control", "private, max-age=0, must-revalidate"))
+                .body(bytes);
+        }
+    }
+
+    let json = serde_json::to_vec(&out).unwrap_or_default();
+    let etag = format!("\"{}\"", hex::encode(Sha1::digest(&json)));
+    if let Some(tag) = req.headers().get(actix_web::http::header::IF_NONE_MATCH) {
+        if tag.to_str().ok() == Some(etag.as_str()) {
+            log::info!(
+                "get_my_listings latency_ms={} (304)",
+                started.elapsed().as_millis()
+            );
+            return HttpResponse::NotModified().finish();
+        }
+    }
     log::info!(
         "get_my_listings latency_ms={}",
         started.elapsed().as_millis()
     );
-    resp
+    HttpResponse::Ok()
+        .insert_header((actix_web::http::header::ETAG, etag))
+        .insert_header(("Cache-Control", "private, max-age=0, must-revalidate"))
+        .body(json)
 }
 
 /// POST /api/listings/:id/publish - Publish listing

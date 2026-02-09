@@ -9,6 +9,6 @@ pub mod wishlist;
 
 pub mod account;
 pub mod admin;
+pub mod aggregate;
 pub mod reports;
 pub mod translate;
-pub mod aggregate;

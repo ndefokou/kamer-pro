@@ -71,77 +71,6 @@ pub struct UpdateSettingsRequest {
 
 use crate::middleware::auth::extract_user_id_from_token;
 
-async fn ensure_calendar_schema(pool: &PgPool) -> Result<(), sqlx::Error> {
-    sqlx::query(
-        r#"
-        CREATE TABLE IF NOT EXISTS calendar_pricing (
-            id SERIAL PRIMARY KEY,
-            listing_id TEXT NOT NULL,
-            date DATE NOT NULL,
-            price DOUBLE PRECISION NOT NULL,
-            is_available BOOLEAN DEFAULT TRUE,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (listing_id) REFERENCES listings(id) ON DELETE CASCADE,
-            UNIQUE(listing_id, date)
-        )
-        "#,
-    )
-    .execute(pool)
-    .await?;
-
-    sqlx::query(
-        "CREATE INDEX IF NOT EXISTS idx_calendar_pricing_listing_id ON calendar_pricing(listing_id)",
-    )
-    .execute(pool)
-    .await?;
-
-    sqlx::query(
-        "CREATE INDEX IF NOT EXISTS idx_calendar_pricing_date ON calendar_pricing(date)",
-    )
-    .execute(pool)
-    .await?;
-
-    sqlx::query(
-        r#"
-        CREATE TABLE IF NOT EXISTS listing_settings (
-            id SERIAL PRIMARY KEY,
-            listing_id TEXT NOT NULL UNIQUE,
-            base_price DOUBLE PRECISION,
-            weekend_price DOUBLE PRECISION,
-            smart_pricing_enabled BOOLEAN DEFAULT FALSE,
-            weekly_discount DOUBLE PRECISION DEFAULT 0,
-            monthly_discount DOUBLE PRECISION DEFAULT 0,
-            min_nights INTEGER DEFAULT 1,
-            max_nights INTEGER DEFAULT 365,
-            advance_notice TEXT DEFAULT 'same_day',
-            same_day_cutoff_time TEXT DEFAULT '12:00',
-            preparation_time TEXT DEFAULT 'none',
-            availability_window INTEGER DEFAULT 12,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (listing_id) REFERENCES listings(id) ON DELETE CASCADE
-        )
-        "#,
-    )
-    .execute(pool)
-    .await?;
-
-    sqlx::query(
-        "CREATE INDEX IF NOT EXISTS idx_listing_settings_listing_id ON listing_settings(listing_id)",
-    )
-    .execute(pool)
-    .await?;
-
-    sqlx::query(
-        "CREATE INDEX IF NOT EXISTS idx_calendar_pricing_listing_avail_date ON calendar_pricing(listing_id, is_available, date)",
-    )
-    .execute(pool)
-    .await?;
-
-    Ok(())
-}
-
 fn extract_user_id(req: &HttpRequest) -> Result<i32, HttpResponse> {
     if let Some(auth_header) = req.headers().get("Authorization") {
         if let Ok(auth_str) = auth_header.to_str() {
@@ -204,12 +133,6 @@ pub async fn get_calendar(
     path: web::Path<String>,
     query: web::Query<CalendarQuery>,
 ) -> impl Responder {
-    if let Err(e) = ensure_calendar_schema(pool.get_ref()).await {
-        log::error!("Failed to ensure calendar schema: {:?}", e);
-        return HttpResponse::InternalServerError().json(serde_json::json!({
-            "error": "Failed to initialize calendar schema"
-        }));
-    }
     let user_id = match extract_user_id(&req) {
         Ok(id) => id,
         Err(response) => return response,
@@ -269,12 +192,6 @@ pub async fn update_calendar_dates(
     path: web::Path<String>,
     body: web::Json<UpdateCalendarDatesRequest>,
 ) -> impl Responder {
-    if let Err(e) = ensure_calendar_schema(pool.get_ref()).await {
-        log::error!("Failed to ensure calendar schema: {:?}", e);
-        return HttpResponse::InternalServerError().json(serde_json::json!({
-            "error": "Failed to initialize calendar schema"
-        }));
-    }
     let user_id = match extract_user_id(&req) {
         Ok(id) => id,
         Err(response) => return response,
@@ -379,12 +296,6 @@ pub async fn get_settings(
     req: HttpRequest,
     path: web::Path<String>,
 ) -> impl Responder {
-    if let Err(e) = ensure_calendar_schema(pool.get_ref()).await {
-        log::error!("Failed to ensure calendar schema: {:?}", e);
-        return HttpResponse::InternalServerError().json(serde_json::json!({
-            "error": "Failed to initialize calendar schema"
-        }));
-    }
     let user_id = match extract_user_id(&req) {
         Ok(id) => id,
         Err(response) => return response,
@@ -454,12 +365,6 @@ pub async fn update_settings(
     path: web::Path<String>,
     body: web::Json<UpdateSettingsRequest>,
 ) -> impl Responder {
-    if let Err(e) = ensure_calendar_schema(pool.get_ref()).await {
-        log::error!("Failed to ensure calendar schema: {:?}", e);
-        return HttpResponse::InternalServerError().json(serde_json::json!({
-            "error": "Failed to initialize calendar schema"
-        }));
-    }
     let user_id = match extract_user_id(&req) {
         Ok(id) => id,
         Err(response) => return response,
