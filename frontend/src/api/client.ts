@@ -1,5 +1,4 @@
 import axios, { AxiosRequestConfig, InternalAxiosRequestConfig } from "axios";
-import { decode as msgpackDecode } from "@msgpack/msgpack";
 import { dbService } from "../services/dbService";
 import { networkService } from "../services/networkService";
 import { queryClient } from "../lib/queryClient";
@@ -67,11 +66,42 @@ const createCacheKey = (url: string, params?: Record<string, unknown>): string =
 
 // Request interceptor to add Authorization header
 apiClient.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem("token");
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+  async (config) => {
+    // Try to get Supabase session token first
+    try {
+      const { supabase } = await import('@/supabaseClient');
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (session?.access_token) {
+        try {
+          const parts = session.access_token.split('.');
+          if (parts.length >= 2) {
+            const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+            console.group('Auth: Request Interceptor');
+            console.log('Source: Supabase Session');
+            console.log('ISS:', payload.iss);
+            console.log('AUD:', payload.aud);
+            console.log('SUB:', payload.sub);
+            console.groupEnd();
+          }
+        } catch (e) {
+          console.debug('Auth: Sending Bearer Token (Payload hidden)');
+        }
+
+        config.headers.Authorization = `Bearer ${session.access_token}`;
+        return config;
+      }
+    } catch (error) {
+      console.warn('Auth: Failed to retrieve Supabase session', error);
     }
+
+    // Fallback to localStorage token for backward compatibility (legacy)
+    const legacyToken = localStorage.getItem("token");
+    if (legacyToken) {
+      console.debug('Using Legacy Token from localStorage', { prefix: legacyToken.substring(0, 10) });
+      config.headers.Authorization = `Bearer ${legacyToken}`;
+    }
+
     return config;
   },
   (error) => {

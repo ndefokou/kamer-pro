@@ -127,7 +127,7 @@ const PropertySection = React.memo(({ title, properties, city, inferCity }: { ti
 const Dashboard = () => {
     const { t } = useTranslation();
     const navigate = useNavigate();
-    const { user, logout } = useAuth();
+    const { user, signOut } = useAuth();
     const queryClient = useQueryClient();
     // Removed useWishlist hook since PropertyCard handles it internally
 

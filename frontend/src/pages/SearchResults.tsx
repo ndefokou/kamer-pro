@@ -30,7 +30,7 @@ const SearchResults = () => {
     const { t } = useTranslation();
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
-    const { user, logout } = useAuth();
+    const { user, signOut } = useAuth();
     const { addToWishlist, removeFromWishlistByProduct, isInWishlist } = useWishlist();
 
     // Get search params
@@ -252,7 +252,7 @@ const SearchResults = () => {
     };
 
     const handleLogout = async () => {
-        await logout();
+        await signOut();
         navigate('/');
     };
 

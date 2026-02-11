@@ -41,7 +41,7 @@ const Navbar = () => {
   const { wishlistCount } = useWishlist();
   const { unreadCount } = useMessaging();
   const username = localStorage.getItem("username");
-  const { user, logout } = useAuth();
+  const { user, signOut } = useAuth();
   const isAuth = !!user;
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -62,7 +62,7 @@ const Navbar = () => {
 
   const handleLogout = async () => {
     try {
-      await logout();
+      await signOut();
     } finally {
       setIsMobileMenuOpen(false);
       navigate("/");

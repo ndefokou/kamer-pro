@@ -39,6 +39,7 @@ const router = createBrowserRouter(
     { path: "/messages", lazy: async () => ({ Component: (await import("./pages/Messages")).default }) },
     { path: "/bookings", element: <ProtectedRoute />, children: [{ index: true, lazy: async () => ({ Component: (await import("./pages/MyBookings")).default }) }] },
     { path: "/login", lazy: async () => ({ Component: (await import("./pages/Login")).default }) },
+    { path: "/auth/callback", lazy: async () => ({ Component: (await import("./pages/AuthCallback")).default }) },
     { path: "/wishlist", lazy: async () => ({ Component: (await import("./pages/Wishlist")).default }) },
     { path: "/calendar", lazy: async () => ({ Component: (await import("./pages/Calendar")).default }) },
     {

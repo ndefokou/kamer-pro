@@ -10,23 +10,13 @@ pub struct DashboardSummary {
     pub upcoming_bookings: i64,
 }
 
-fn extract_user_id(req: &HttpRequest) -> Option<i32> {
-    if let Some(auth_header) = req.headers().get("Authorization") {
-        if let Ok(auth_str) = auth_header.to_str() {
-            if let Some(token) = auth_str.strip_prefix("Bearer ") {
-                return crate::middleware::auth::extract_user_id_from_token(token).ok();
-            }
-        }
-    }
-    if let Some(cookie) = req.cookie("session") {
-        return crate::middleware::auth::extract_user_id_from_token(cookie.value()).ok();
-    }
-    None
-}
+// Local extract_user_id removed in favor of crate::middleware::auth::extract_user_id
 
 #[get("/v1/dashboard-summary")]
 pub async fn dashboard_summary(pool: web::Data<PgPool>, req: HttpRequest) -> HttpResponse {
-    let Some(user_id) = extract_user_id(&req) else {
+    let user_id = crate::middleware::auth::extract_user_id(&req, pool.get_ref()).await.ok();
+    
+    let Some(user_id) = user_id else {
         // Anonymous users get empty summary (cacheable)
         let body = DashboardSummary::default();
         let json = match serde_json::to_vec(&body) {

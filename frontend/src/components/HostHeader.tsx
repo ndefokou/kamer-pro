@@ -19,15 +19,15 @@ const getInitials = (name: string) => {
 const HostHeader: React.FC = () => {
     const navigate = useNavigate();
     const location = useLocation();
-    const { user, logout } = useAuth();
+    const { user, signOut } = useAuth();
     const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
     const { t } = useTranslation();
 
-    const username = user?.username || '';
+    const username = user?.user_metadata?.username || user?.email?.split('@')[0] || '';
     const initials = getInitials(username || 'User');
 
     const handleLogout = async () => {
-        await logout();
+        await signOut();
         setIsUserMenuOpen(false);
         navigate('/');
     };
@@ -104,7 +104,7 @@ const HostHeader: React.FC = () => {
                             <div className="flex items-center gap-3 border border-gray-300 rounded-full py-1.5 px-3 hover:shadow-md transition-shadow cursor-pointer">
                                 <Menu className="h-4 w-4 text-gray-700" />
                                 <Avatar className="h-8 w-8">
-                                    <AvatarImage src={user?.profile_picture_url || "/placeholder-user.jpg"} />
+                                    <AvatarImage src={user?.user_metadata?.profile_picture_url || "/placeholder-user.jpg"} />
                                     <AvatarFallback className="bg-gray-700 text-white text-xs">{initials}</AvatarFallback>
                                 </Avatar>
                             </div>
@@ -116,7 +116,7 @@ const HostHeader: React.FC = () => {
                             <div className="mt-6 space-y-1">
                                 <div className="flex items-center gap-3 pb-4 border-b">
                                     <Avatar className="h-10 w-10">
-                                        <AvatarImage src={user?.profile_picture_url || "/placeholder-user.jpg"} />
+                                        <AvatarImage src={user?.user_metadata?.profile_picture_url || "/placeholder-user.jpg"} />
                                         <AvatarFallback className="bg-gray-700 text-white text-sm">{initials}</AvatarFallback>
                                     </Avatar>
                                     <div className="font-semibold text-gray-900">{username || t('common.user', 'User')}</div>

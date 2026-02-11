@@ -28,7 +28,7 @@ pub struct AddToWishlistRequest {
 
 #[get("")]
 async fn get_wishlist(pool: web::Data<PgPool>, req: HttpRequest) -> impl Responder {
-    let user_id = match extract_user_id(&req) {
+    let user_id = match extract_user_id(&req, pool.get_ref()).await {
         Ok(id) => id,
         Err(_) => {
             return HttpResponse::Unauthorized().json(serde_json::json!({
@@ -75,7 +75,7 @@ pub async fn add_to_wishlist(
     req: HttpRequest,
     body: web::Json<AddToWishlistRequest>,
 ) -> impl Responder {
-    let user_id = match extract_user_id(&req) {
+    let user_id = match extract_user_id(&req, pool.get_ref()).await {
         Ok(id) => id,
         Err(_) => {
             return HttpResponse::Unauthorized().json(serde_json::json!({
@@ -165,7 +165,7 @@ pub async fn remove_from_wishlist(
     req: HttpRequest,
     path: web::Path<i32>,
 ) -> impl Responder {
-    let user_id = match extract_user_id(&req) {
+    let user_id = match extract_user_id(&req, pool.get_ref()).await {
         Ok(id) => id,
         Err(_) => {
             return HttpResponse::Unauthorized().json(serde_json::json!({
@@ -200,7 +200,7 @@ pub async fn remove_from_wishlist_by_product(
     req: HttpRequest,
     path: web::Path<String>,
 ) -> impl Responder {
-    let user_id = match extract_user_id(&req) {
+    let user_id = match extract_user_id(&req, pool.get_ref()).await {
         Ok(id) => id,
         Err(_) => {
             return HttpResponse::Unauthorized().json(serde_json::json!({
@@ -235,7 +235,7 @@ pub async fn check_wishlist(
     req: HttpRequest,
     path: web::Path<String>,
 ) -> impl Responder {
-    let user_id = match extract_user_id(&req) {
+    let user_id = match extract_user_id(&req, pool.get_ref()).await {
         Ok(id) => id,
         Err(_) => {
             return HttpResponse::Unauthorized().json(serde_json::json!({

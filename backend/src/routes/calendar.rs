@@ -69,33 +69,7 @@ pub struct UpdateSettingsRequest {
 // Helper Functions
 // ============================================================================
 
-use crate::middleware::auth::extract_user_id_from_token;
-
-fn extract_user_id(req: &HttpRequest) -> Result<i32, HttpResponse> {
-    if let Some(auth_header) = req.headers().get("Authorization") {
-        if let Ok(auth_str) = auth_header.to_str() {
-            if let Some(token) = auth_str.strip_prefix("Bearer ") {
-                return extract_user_id_from_token(token).map_err(|e| {
-                    log::error!("Failed to extract user ID from token: {:?}", e);
-                    HttpResponse::Unauthorized().json(serde_json::json!({
-                        "error": "Invalid or expired token"
-                    }))
-                });
-            }
-        }
-    }
-    if let Some(cookie) = req.cookie("session") {
-        return extract_user_id_from_token(cookie.value()).map_err(|e| {
-            log::error!("Failed to extract user ID from cookie: {:?}", e);
-            HttpResponse::Unauthorized().json(serde_json::json!({
-                "error": "Invalid or expired token"
-            }))
-        });
-    }
-    Err(HttpResponse::Unauthorized().json(serde_json::json!({
-        "error": "Missing or invalid authorization header"
-    })))
-}
+// Local extract_user_id removed in favor of crate::middleware::auth::extract_user_id
 
 async fn verify_listing_ownership(
     pool: &PgPool,
@@ -133,9 +107,9 @@ pub async fn get_calendar(
     path: web::Path<String>,
     query: web::Query<CalendarQuery>,
 ) -> impl Responder {
-    let user_id = match extract_user_id(&req) {
+    let user_id = match crate::middleware::auth::extract_user_id(&req, pool.get_ref()).await {
         Ok(id) => id,
-        Err(response) => return response,
+        Err(err) => return HttpResponse::from_error(err),
     };
 
     let listing_id = path.into_inner();
@@ -192,9 +166,9 @@ pub async fn update_calendar_dates(
     path: web::Path<String>,
     body: web::Json<UpdateCalendarDatesRequest>,
 ) -> impl Responder {
-    let user_id = match extract_user_id(&req) {
+    let user_id = match crate::middleware::auth::extract_user_id(&req, pool.get_ref()).await {
         Ok(id) => id,
-        Err(response) => return response,
+        Err(err) => return HttpResponse::from_error(err),
     };
 
     let listing_id = path.into_inner();
@@ -296,9 +270,9 @@ pub async fn get_settings(
     req: HttpRequest,
     path: web::Path<String>,
 ) -> impl Responder {
-    let user_id = match extract_user_id(&req) {
+    let user_id = match crate::middleware::auth::extract_user_id(&req, pool.get_ref()).await {
         Ok(id) => id,
-        Err(response) => return response,
+        Err(err) => return HttpResponse::from_error(err),
     };
 
     let listing_id = path.into_inner();
@@ -365,9 +339,9 @@ pub async fn update_settings(
     path: web::Path<String>,
     body: web::Json<UpdateSettingsRequest>,
 ) -> impl Responder {
-    let user_id = match extract_user_id(&req) {
+    let user_id = match crate::middleware::auth::extract_user_id(&req, pool.get_ref()).await {
         Ok(id) => id,
-        Err(response) => return response,
+        Err(err) => return HttpResponse::from_error(err),
     };
 
     let listing_id = path.into_inner();

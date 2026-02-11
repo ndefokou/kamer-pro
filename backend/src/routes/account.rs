@@ -2,31 +2,7 @@ use actix_web::{get, put, web, HttpRequest, HttpResponse, Responder};
 use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
 
-use crate::middleware::auth::extract_user_id_from_token;
-
-fn extract_user_id(req: &HttpRequest) -> Result<i32, HttpResponse> {
-    if let Some(auth_header) = req.headers().get("Authorization") {
-        if let Ok(auth_str) = auth_header.to_str() {
-            if let Some(token) = auth_str.strip_prefix("Bearer ") {
-                return extract_user_id_from_token(token).map_err(|_| {
-                    HttpResponse::Unauthorized().json(serde_json::json!({
-                        "error": "Invalid or expired token"
-                    }))
-                });
-            }
-        }
-    }
-    if let Some(cookie) = req.cookie("session") {
-        return extract_user_id_from_token(cookie.value()).map_err(|_| {
-            HttpResponse::Unauthorized().json(serde_json::json!({
-                "error": "Invalid or expired token"
-            }))
-        });
-    }
-    Err(HttpResponse::Unauthorized().json(serde_json::json!({
-        "error": "Missing or invalid authorization header"
-    })))
-}
+// Local extract_user_id removed in favor of crate::middleware::auth::extract_user_id
 
 #[derive(Serialize, sqlx::FromRow, Debug, Clone)]
 struct UserRow {
@@ -69,7 +45,7 @@ pub struct AccountResponse {
 
 #[get("/me")]
 pub async fn get_me(req: HttpRequest, pool: web::Data<PgPool>) -> impl Responder {
-    let user_id = match extract_user_id(&req) {
+    let user_id = match crate::middleware::auth::extract_user_id(&req, pool.get_ref()).await {
         Ok(id) => id,
         Err(_) => {
             return HttpResponse::Ok().json(AccountResponse {
@@ -178,9 +154,9 @@ pub async fn update_account(
     pool: web::Data<PgPool>,
     body: web::Json<UpdateAccountRequest>,
 ) -> impl Responder {
-    let user_id = match extract_user_id(&req) {
+    let user_id = match crate::middleware::auth::extract_user_id(&req, pool.get_ref()).await {
         Ok(id) => id,
-        Err(resp) => return resp,
+        Err(err) => return HttpResponse::from_error(err),
     };
 
     // Update username/email if provided

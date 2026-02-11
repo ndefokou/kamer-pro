@@ -17,10 +17,10 @@ const Header: React.FC = () => {
     const { t } = useTranslation();
     const navigate = useNavigate();
     const location = useLocation();
-    const { user, logout } = useAuth();
+    const { user, signOut } = useAuth();
 
     const handleLogout = async () => {
-        await logout();
+        await signOut();
         navigate('/');
     };
 

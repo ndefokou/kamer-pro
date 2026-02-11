@@ -176,9 +176,9 @@ pub async fn add_review(
     path: web::Path<String>,
     body: web::Json<CreateReviewRequest>,
 ) -> impl Responder {
-    let user_id = match extract_user_id(&req) {
+    let user_id = match crate::middleware::auth::extract_user_id(&req, pool.get_ref()).await {
         Ok(id) => id,
-        Err(response) => return response,
+        Err(err) => return HttpResponse::from_error(err),
     };
 
     let listing_id = path.into_inner();
@@ -609,33 +609,7 @@ pub async fn get_towns(pool: web::Data<PgPool>) -> impl Responder {
 // Helper Functions
 // ============================================================================
 
-use crate::middleware::auth::extract_user_id_from_token;
-
-fn extract_user_id(req: &HttpRequest) -> Result<i32, HttpResponse> {
-    if let Some(auth_header) = req.headers().get("Authorization") {
-        if let Ok(auth_str) = auth_header.to_str() {
-            if let Some(token) = auth_str.strip_prefix("Bearer ") {
-                return extract_user_id_from_token(token).map_err(|e| {
-                    log::error!("Failed to extract user ID from token: {:?}", e);
-                    HttpResponse::Unauthorized().json(serde_json::json!({
-                        "error": "Invalid or expired token"
-                    }))
-                });
-            }
-        }
-    }
-    if let Some(cookie) = req.cookie("session") {
-        return extract_user_id_from_token(cookie.value()).map_err(|e| {
-            log::error!("Failed to extract user ID from cookie: {:?}", e);
-            HttpResponse::Unauthorized().json(serde_json::json!({
-                "error": "Invalid or expired token"
-            }))
-        });
-    }
-    Err(HttpResponse::Unauthorized().json(serde_json::json!({
-        "error": "Missing or invalid authorization header"
-    })))
-}
+// Local extract_user_id removed in favor of crate::middleware::auth::extract_user_id
 
 async fn get_listing_with_details(
     pool: &PgPool,
@@ -774,9 +748,9 @@ pub async fn create_listing(
     body: web::Json<CreateListingRequest>,
 ) -> impl Responder {
     let started = std::time::Instant::now();
-    let user_id = match extract_user_id(&req) {
+    let user_id = match crate::middleware::auth::extract_user_id(&req, pool.get_ref()).await {
         Ok(id) => id,
-        Err(response) => return response,
+        Err(err) => return HttpResponse::from_error(err),
     };
 
     // Ensure user exists: attempt insert and ignore if already present
@@ -952,9 +926,9 @@ pub async fn update_listing(
     body: web::Json<UpdateListingRequest>,
 ) -> impl Responder {
     let started = std::time::Instant::now();
-    let user_id = match extract_user_id(&req) {
+    let user_id = match crate::middleware::auth::extract_user_id(&req, pool.get_ref()).await {
         Ok(id) => id,
-        Err(response) => return response,
+        Err(err) => return HttpResponse::from_error(err),
     };
 
     let listing_id = path.into_inner();
@@ -1111,9 +1085,9 @@ pub async fn delete_listing(
     req: HttpRequest,
     path: web::Path<String>,
 ) -> impl Responder {
-    let user_id = match extract_user_id(&req) {
+    let user_id = match crate::middleware::auth::extract_user_id(&req, pool.get_ref()).await {
         Ok(id) => id,
-        Err(response) => return response,
+        Err(err) => return HttpResponse::from_error(err),
     };
 
     let listing_id = path.into_inner();
@@ -1162,9 +1136,9 @@ pub async fn get_my_listings(
     req: HttpRequest,
     query: web::Query<PageParams>,
 ) -> impl Responder {
-    let user_id = match extract_user_id(&req) {
+    let user_id = match crate::middleware::auth::extract_user_id(&req, pool.get_ref()).await {
         Ok(id) => id,
-        Err(response) => return response,
+        Err(err) => return HttpResponse::from_error(err),
     };
     let started = std::time::Instant::now();
     let mut qb: sqlx::QueryBuilder<sqlx::Postgres> =
@@ -1340,9 +1314,9 @@ pub async fn publish_listing(
     path: web::Path<String>,
 ) -> impl Responder {
     let started = std::time::Instant::now();
-    let user_id = match extract_user_id(&req) {
+    let user_id = match crate::middleware::auth::extract_user_id(&req, pool.get_ref()).await {
         Ok(id) => id,
-        Err(response) => return response,
+        Err(err) => return HttpResponse::from_error(err),
     };
 
     let listing_id = path.into_inner();
@@ -1440,9 +1414,9 @@ pub async fn unpublish_listing(
     path: web::Path<String>,
 ) -> impl Responder {
     let started = std::time::Instant::now();
-    let user_id = match extract_user_id(&req) {
+    let user_id = match crate::middleware::auth::extract_user_id(&req, pool.get_ref()).await {
         Ok(id) => id,
-        Err(response) => return response,
+        Err(err) => return HttpResponse::from_error(err),
     };
 
     let listing_id = path.into_inner();
@@ -1513,9 +1487,9 @@ pub async fn add_amenities(
     path: web::Path<String>,
     body: web::Json<AddAmenitiesRequest>,
 ) -> impl Responder {
-    let user_id = match extract_user_id(&req) {
+    let user_id = match crate::middleware::auth::extract_user_id(&req, pool.get_ref()).await {
         Ok(id) => id,
-        Err(response) => return response,
+        Err(err) => return HttpResponse::from_error(err),
     };
 
     let listing_id = path.into_inner();
@@ -1576,9 +1550,9 @@ pub async fn sync_photos(
     path: web::Path<String>,
     body: web::Json<SyncPhotosRequest>,
 ) -> impl Responder {
-    let user_id = match extract_user_id(&req) {
+    let user_id = match crate::middleware::auth::extract_user_id(&req, pool.get_ref()).await {
         Ok(id) => id,
-        Err(response) => return response,
+        Err(err) => return HttpResponse::from_error(err),
     };
 
     let listing_id = path.into_inner();
@@ -1671,9 +1645,9 @@ pub async fn add_video(
     path: web::Path<String>,
     body: web::Json<AddVideoRequest>,
 ) -> impl Responder {
-    let user_id = match extract_user_id(&req) {
+    let user_id = match crate::middleware::auth::extract_user_id(&req, pool.get_ref()).await {
         Ok(id) => id,
-        Err(response) => return response,
+        Err(err) => return HttpResponse::from_error(err),
     };
 
     let listing_id = path.into_inner();
