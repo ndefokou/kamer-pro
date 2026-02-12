@@ -53,7 +53,7 @@ const Header: React.FC = () => {
                 </>
             ) : (
                 <>
-                    <DropdownMenuItem onClick={() => navigate('/login?tab=register&redirect=/host/intro')} className="md:flex flex-col items-start gap-1 cursor-pointer hidden">
+                    <DropdownMenuItem onClick={() => navigate('/login?tab=register&redirect=/host/dashboard')} className="md:flex flex-col items-start gap-1 cursor-pointer hidden">
                         <div className="font-semibold">{t("Become a host")}</div>
                         <div className="text-xs text-gray-500">{t("auth.becomeHostDesc")}</div>
                     </DropdownMenuItem>
@@ -117,7 +117,7 @@ const Header: React.FC = () => {
                     <div className="flex items-center gap-2 md:gap-4 shrink-0">
                         <button
                             className="text-sm font-semibold hover:bg-gray-100 px-2 sm:px-4 py-3 rounded-full transition-colors whitespace-nowrap"
-                            onClick={() => navigate(user ? '/host/dashboard' : '/login?tab=register&redirect=/host/intro')}
+                            onClick={() => navigate(user ? '/host/dashboard' : '/login?tab=register&redirect=/host/dashboard')}
                         >
                             {t("Become a host")}
                         </button>

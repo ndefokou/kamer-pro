@@ -285,7 +285,7 @@ const SearchResults = () => {
                 </>
             ) : (
                 <>
-                    <DropdownMenuItem onClick={() => navigate('/login?tab=register&redirect=/host/intro')} className="font-semibold">
+                    <DropdownMenuItem onClick={() => navigate('/login?tab=register&redirect=/host/dashboard')} className="font-semibold">
                         {t("Become a host")}
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
