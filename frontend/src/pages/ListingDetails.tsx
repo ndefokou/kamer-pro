@@ -1,5 +1,5 @@
 import React, { Suspense, lazy } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { getListing, createBooking, getListingReviews, addListingReview, ListingReview } from '@/api/client';
 import { Button } from '@/components/ui/button';
@@ -53,6 +53,7 @@ interface Review {
 const ListingDetails: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
+    const location = useLocation();
     const { addToWishlist, removeFromWishlistByProduct, isInWishlist } = useWishlist();
 
     const { data: product, isLoading, error, refetch } = useQuery({
@@ -184,8 +185,8 @@ const ListingDetails: React.FC = () => {
             }
             if (status === 401) {
                 toast({ title: t('Login required'), description: t('Please log in to write a review.'), variant: 'destructive' });
-                const current = `${window.location.pathname}${window.location.search}`;
-                window.location.href = `/login?redirect=${encodeURIComponent(current || '/')}`;
+                const current = `${location.pathname}${location.search}`;
+                navigate(`/login?redirect=${encodeURIComponent(current || '/')}`);
                 return;
             }
             toast({ title: t('Failed to submit review'), description: t('Please try again later.'), variant: 'destructive' });
@@ -409,7 +410,8 @@ const ListingDetails: React.FC = () => {
                 description: 'Please create an account or log in to reserve a listing.',
                 variant: 'destructive'
             });
-            window.location.href = `/login?tab=register&redirect=${encodeURIComponent('/')}`;
+            const currentPath = `${location.pathname}${location.search}`;
+            navigate(`/login?tab=register&redirect=${encodeURIComponent(currentPath)}`);
             return;
         }
 

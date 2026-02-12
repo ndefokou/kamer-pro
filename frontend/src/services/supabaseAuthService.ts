@@ -13,7 +13,19 @@ export interface SignUpMetadata {
     [key: string]: unknown
 }
 
+
+/**
+ * Helper to construct the correct redirect URL accounting for the base path
+ */
+const getRedirectUrl = (path: string = '/auth/callback') => {
+    // import.meta.env.BASE_URL is provided by Vite and includes the base path (e.g., '/kamer-pro/')
+    const baseUrl = (import.meta.env.BASE_URL || '/').replace(/\/$/, '');
+    const origin = window.location.origin;
+    return `${origin}${baseUrl}${path}`;
+};
+
 export class SupabaseAuthService {
+
     /**
      * Sign up with email and password
      */
@@ -27,7 +39,7 @@ export class SupabaseAuthService {
             password,
             options: {
                 data: metadata || {},
-                emailRedirectTo: `${window.location.origin}/auth/callback`,
+                emailRedirectTo: getRedirectUrl(),
             },
         })
 
@@ -61,7 +73,7 @@ export class SupabaseAuthService {
         const { error } = await supabase.auth.signInWithOAuth({
             provider: 'google',
             options: {
-                redirectTo: `${window.location.origin}/auth/callback`,
+                redirectTo: getRedirectUrl(),
                 queryParams: {
                     access_type: 'offline',
                     prompt: 'consent',
@@ -133,7 +145,7 @@ export class SupabaseAuthService {
      */
     async resetPassword(email: string): Promise<{ error: AuthError | null }> {
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
-            redirectTo: `${window.location.origin}/reset-password`,
+            redirectTo: getRedirectUrl('/reset-password'),
         })
         return { error }
     }

@@ -108,6 +108,8 @@ const Login = () => {
     setLoading(true);
     setError(null);
     try {
+      // Save redirect destination to sessionStorage for AuthCallback to pick up
+      sessionStorage.setItem("auth_redirect", redirectTo);
       await signInWithGoogle();
       // OAuth redirect will happen automatically
     } catch (err: unknown) {
