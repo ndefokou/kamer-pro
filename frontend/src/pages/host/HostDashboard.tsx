@@ -46,7 +46,7 @@ const getInitials = (name: string) => {
 const HostDashboard: React.FC = () => {
     const navigate = useNavigate();
     const { t } = useTranslation();
-    const { user, logout } = useAuth();
+    const { user, signOut } = useAuth();
     const { resetDraft } = useHost();
     const [listings, setListings] = useState<Listing[]>([]);
     const [loading, setLoading] = useState(true);
@@ -56,7 +56,7 @@ const HostDashboard: React.FC = () => {
     const [deleteId, setDeleteId] = useState<string | null>(null);
     const [deleting, setDeleting] = useState(false);
 
-    const username = user?.username || '';
+    const username = user?.user_metadata?.username || user?.email?.split('@')[0] || '';
     const initials = getInitials(username || 'User');
 
     useEffect(() => {
@@ -101,7 +101,7 @@ const HostDashboard: React.FC = () => {
     // Calendar view removed
 
     const handleLogout = async () => {
-        await logout();
+        await signOut();
         setIsUserMenuOpen(false);
         navigate('/');
     };

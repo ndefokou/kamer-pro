@@ -1,18 +1,15 @@
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback, useRef } from 'react';
-import apiClient from '@/api/client';
-
-interface User {
-  id: string | number;
-  username: string;
-  email: string;
-  profile_picture_url?: string;
-}
+import { supabaseAuthService } from '@/services/supabaseAuthService';
+import type { User, Session } from '@supabase/supabase-js';
 
 interface AuthContextType {
   user: User | null;
+  session: Session | null;
   loading: boolean;
-  login: () => Promise<void>;
-  logout: () => Promise<void>;
+  signIn: (email: string, password: string) => Promise<void>;
+  signUp: (email: string, password: string, metadata?: { username?: string; phone?: string }) => Promise<{ user: any; session: any; error: any }>;
+  signInWithGoogle: () => Promise<void>;
+  signOut: () => Promise<void>;
   checkSession: () => Promise<void>;
 }
 
@@ -20,60 +17,122 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const unsubscribeRef = useRef<(() => void) | null>(null);
 
   const checkSession = useCallback(async () => {
     try {
-      const response = await apiClient.get('/account/me');
-      // The backend returns { user: {...}, profile: {...} } or { user: null, profile: null } when unauthenticated
-      const data = response.data;
-      const userData = data && typeof data === 'object' && 'user' in data ? data.user : data;
-      if (userData && userData.id) {
-        setUser(userData);
-        localStorage.setItem('userId', userData.id.toString());
+      const { session: currentSession, error } = await supabaseAuthService.getSession();
+
+      if (error) {
+        console.error('Session check error:', error);
+        setUser(null);
+        setSession(null);
+        return;
+      }
+
+      if (currentSession?.user) {
+        setUser(currentSession.user);
+        setSession(currentSession);
+
+        // Store user info in localStorage for backward compatibility
+        localStorage.setItem('userId', currentSession.user.id);
+        localStorage.setItem('username', currentSession.user.user_metadata?.username || currentSession.user.email?.split('@')[0] || '');
+
+        // Remove legacy token to ensure apiClient stops using it
+        localStorage.removeItem('token');
       } else {
         setUser(null);
+        setSession(null);
         localStorage.removeItem('userId');
+        localStorage.removeItem('username');
         localStorage.removeItem('token');
       }
     } catch (error) {
-      // If 401 or other error, user is not logged in
+      console.error('Session check failed:', error);
       setUser(null);
-      localStorage.removeItem('userId');
-      localStorage.removeItem('token');
+      setSession(null);
     } finally {
       setLoading(false);
     }
   }, []);
 
-  const hasCheckedRef = useRef(false);
+  const hasInitializedRef = useRef(false);
+
   useEffect(() => {
-    if (hasCheckedRef.current) return;
-    hasCheckedRef.current = true;
+    if (hasInitializedRef.current) return;
+    hasInitializedRef.current = true;
+
+    // Initial session check
     checkSession();
+
+    // Subscribe to auth state changes
+    const unsubscribe = supabaseAuthService.onAuthStateChange((newUser, newSession) => {
+      setUser(newUser);
+      setSession(newSession);
+
+      if (newUser) {
+        localStorage.setItem('userId', newUser.id);
+        localStorage.setItem('username', newUser.user_metadata?.username || newUser.email?.split('@')[0] || '');
+      } else {
+        localStorage.removeItem('userId');
+        localStorage.removeItem('username');
+        localStorage.removeItem('token');
+      }
+
+      setLoading(false);
+    });
+
+    unsubscribeRef.current = unsubscribe;
+
+    return () => {
+      if (unsubscribeRef.current) {
+        unsubscribeRef.current();
+      }
+    };
   }, [checkSession]);
 
-  const login = async () => {
-    await checkSession();
+  const signIn = async (email: string, password: string) => {
+    const { error } = await supabaseAuthService.signInWithEmail(email, password);
+    if (error) {
+      throw error;
+    }
+    // Session will be updated via onAuthStateChange
   };
 
-  const logout = async () => {
+  const signUp = async (email: string, password: string, metadata?: { username?: string; phone?: string }) => {
+    const { user, session, error } = await supabaseAuthService.signUpWithEmail(email, password, metadata);
+    if (error) {
+      throw error;
+    }
+    return { user, session, error };
+  };
+
+  const signInWithGoogle = async () => {
+    const { error } = await supabaseAuthService.signInWithGoogle();
+    if (error) {
+      throw error;
+    }
+    // OAuth redirect will happen automatically
+  };
+
+  const signOut = async () => {
     try {
-      await apiClient.post('/auth/logout');
+      await supabaseAuthService.signOut();
     } catch (error) {
-      console.error('Logout failed', error);
+      console.error('Sign out failed', error);
     } finally {
       setUser(null);
+      setSession(null);
       localStorage.removeItem('token');
       localStorage.removeItem('userId');
       localStorage.removeItem('username');
-      // Optional: Redirect to home or login page if needed, 
-      // but usually the component calling logout handles navigation
     }
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, checkSession }}>
+    <AuthContext.Provider value={{ user, session, loading, signIn, signUp, signInWithGoogle, signOut, checkSession }}>
       {children}
     </AuthContext.Provider>
   );

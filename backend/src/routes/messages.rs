@@ -1,4 +1,3 @@
-use crate::middleware::auth::extract_user_id_from_token;
 use actix_web::{get, post, web, HttpRequest, HttpResponse, Responder};
 use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
@@ -61,31 +60,7 @@ pub struct SendMessageRequest {
 // Helper Functions
 // ============================================================================
 
-fn extract_user_id(req: &HttpRequest) -> Result<i32, HttpResponse> {
-    if let Some(auth_header) = req.headers().get("Authorization") {
-        if let Ok(auth_str) = auth_header.to_str() {
-            if let Some(token) = auth_str.strip_prefix("Bearer ") {
-                return extract_user_id_from_token(token).map_err(|e| {
-                    log::error!("Failed to extract user ID from token: {:?}", e);
-                    HttpResponse::Unauthorized().json(serde_json::json!({
-                        "error": "Invalid or expired token"
-                    }))
-                });
-            }
-        }
-    }
-    if let Some(cookie) = req.cookie("session") {
-        return extract_user_id_from_token(cookie.value()).map_err(|e| {
-            log::error!("Failed to extract user ID from cookie: {:?}", e);
-            HttpResponse::Unauthorized().json(serde_json::json!({
-                "error": "Invalid or expired token"
-            }))
-        });
-    }
-    Err(HttpResponse::Unauthorized().json(serde_json::json!({
-        "error": "Missing or invalid authorization header"
-    })))
-}
+// Local extract_user_id removed in favor of crate::middleware::auth::extract_user_id
 
 // ============================================================================
 // API Endpoints
@@ -98,9 +73,9 @@ pub async fn create_conversation(
     req: HttpRequest,
     body: web::Json<CreateConversationRequest>,
 ) -> impl Responder {
-    let user_id = match extract_user_id(&req) {
+    let user_id = match crate::middleware::auth::extract_user_id(&req, pool.get_ref()).await {
         Ok(id) => id,
-        Err(response) => return response,
+        Err(err) => return HttpResponse::from_error(err),
     };
 
     // Check if conversation already exists
@@ -204,9 +179,9 @@ struct ConversationRow {
 /// GET /api/messages/conversations - Get all conversations for user
 #[get("/conversations")]
 pub async fn get_conversations(pool: web::Data<PgPool>, req: HttpRequest) -> impl Responder {
-    let user_id = match extract_user_id(&req) {
+    let user_id = match crate::middleware::auth::extract_user_id(&req, pool.get_ref()).await {
         Ok(id) => id,
-        Err(response) => return response,
+        Err(err) => return HttpResponse::from_error(err),
     };
 
     let query = r#"
@@ -300,9 +275,9 @@ pub async fn get_messages(
     req: HttpRequest,
     path: web::Path<String>,
 ) -> impl Responder {
-    let user_id = match extract_user_id(&req) {
+    let user_id = match crate::middleware::auth::extract_user_id(&req, pool.get_ref()).await {
         Ok(id) => id,
-        Err(response) => return response,
+        Err(err) => return HttpResponse::from_error(err),
     };
 
     let conversation_id = path.into_inner();
@@ -355,9 +330,9 @@ pub async fn send_message(
     req: HttpRequest,
     body: web::Json<SendMessageRequest>,
 ) -> impl Responder {
-    let user_id = match extract_user_id(&req) {
+    let user_id = match crate::middleware::auth::extract_user_id(&req, pool.get_ref()).await {
         Ok(id) => id,
-        Err(response) => return response,
+        Err(err) => return HttpResponse::from_error(err),
     };
 
     // Verify participation
@@ -418,9 +393,9 @@ pub async fn send_message(
 /// GET /api/messages/unread-count - Get unread message count
 #[get("/unread-count")]
 pub async fn get_unread_count(pool: web::Data<PgPool>, req: HttpRequest) -> impl Responder {
-    let user_id = match extract_user_id(&req) {
+    let user_id = match crate::middleware::auth::extract_user_id(&req, pool.get_ref()).await {
         Ok(id) => id,
-        Err(response) => return response,
+        Err(err) => return HttpResponse::from_error(err),
     };
 
     let count: i64 = sqlx::query_scalar(

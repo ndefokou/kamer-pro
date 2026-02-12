@@ -30,7 +30,7 @@ const SearchResults = () => {
     const { t } = useTranslation();
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
-    const { user, logout } = useAuth();
+    const { user, signOut } = useAuth();
     const { addToWishlist, removeFromWishlistByProduct, isInWishlist } = useWishlist();
 
     // Get search params
@@ -91,10 +91,16 @@ const SearchResults = () => {
     const filteredProperties = useMemo(() => {
         const properties = ((data?.pages?.flat() as Product[]) || []);
         const locNorm = normalizeCity(location);
+
+        // Determine if the search location is a specific managed entity
+        const isKnownCity = (Object.keys(knownCities) as Array<keyof typeof knownCities>).includes(locNorm as any);
+        const isRegion = (Object.keys(regions) as Array<keyof typeof regions>).includes(locNorm as any);
+
         return properties.filter((p) => {
+            if (!p?.listing) return false;
+
             // Filter by location (accent-insensitive + inference)
             if (locNorm) {
-                if (!p?.listing) return false;
                 if (locNorm === 'other') {
                     const inferredKey = normalizeCity(inferCity(p));
                     const explicitKey = normalizeCity(p.listing.city || "");
@@ -102,18 +108,26 @@ const SearchResults = () => {
                     if (key && (preferredOrder.includes(key) || key === 'buea')) {
                         return false;
                     }
-                } else if ((Object.keys(regions) as Array<keyof typeof regions>).includes(locNorm as keyof typeof regions)) {
+                } else if (isRegion) {
                     const allowed = regions[locNorm as keyof typeof regions].map((c) => normalizeCity(c));
                     const cityNorm = normalizeCity(p.listing.city || "");
                     const inferredNorm = normalizeCity(inferCity(p));
                     const key = cityNorm || inferredNorm;
                     if (!key || !allowed.includes(key)) return false;
-                } else if (locNorm === 'buea') {
-                    // Specific check for Buea to match Dashboard behavior
-                    const inferredNorm = normalizeCity(inferCity(p));
+                } else if (isKnownCity) {
+                    // Stricter matching for known cities to avoid overlap
                     const cityNorm = normalizeCity(p.listing.city || "");
-                    if (inferredNorm !== 'buea' && cityNorm !== 'buea') return false;
+                    const inferredName = inferCity(p);
+                    const inferredNorm = normalizeCity(inferredName);
+
+                    // Match if listing city is exactly the searched city,
+                    // or if it's inferred to be that city.
+                    const isExactCityMatch = cityNorm === locNorm;
+                    const isInferredMatch = inferredNorm === locNorm;
+
+                    if (!isExactCityMatch && !isInferredMatch) return false;
                 } else {
+                    // Fallback for general text search
                     const cityNorm = normalizeCity(p.listing.city || "");
                     const addrNorm = normalizeCity(p.listing.address || "");
                     const titleNorm = normalizeCity(p.listing.title || "");
@@ -132,12 +146,9 @@ const SearchResults = () => {
                 return false;
             }
 
-            // Date filtering would go here if we had availability data in the product list
-            // For now, we assume available
-
             return true;
         });
-    }, [data?.pages, location, guests, inferCity, preferredOrder, regions]);
+    }, [data?.pages, location, guests]);
 
     const groupedByCity = useMemo(() => {
         const map = new Map<string, { name: string; items: Product[] }>();
@@ -252,7 +263,7 @@ const SearchResults = () => {
     };
 
     const handleLogout = async () => {
-        await logout();
+        await signOut();
         navigate('/');
     };
 
@@ -321,7 +332,7 @@ const SearchResults = () => {
                                     onClick={() => navigate(`/marketplace?search=${encodeURIComponent(t.city)}${guests > 0 ? `&guests=${guests}` : ''}`)}
                                     className={`px-3 py-1.5 rounded-full border text-sm whitespace-nowrap ${t.city.toLowerCase() === location.toLowerCase() ? 'bg-black text-white border-black' : 'bg-white text-gray-800 border-gray-200 hover:border-black'}`}
                                 >
-                                    {t.city} <span className="text-gray-500">({t.count})</span>
+                                    {t.city}
                                 </button>
                             ))}
                         </div>

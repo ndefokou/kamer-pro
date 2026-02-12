@@ -10,6 +10,7 @@ import { getImageUrl } from '@/lib/utils';
 import OptimizedImage from '@/components/OptimizedImage';
 import Loading from '@/components/Loading';
 import CalendarGrid from '@/components/host/CalendarGrid';
+import { useAuth } from '@/contexts/AuthContext';
 import PriceSettingsModal from '@/components/host/PriceSettingsModal';
 import AvailabilitySettingsModal from '../../components/host/AvailabilitySettingsModal';
 
@@ -51,6 +52,7 @@ interface ListingSettings {
 const HostCalendar: React.FC = () => {
     const navigate = useNavigate();
     const { t } = useTranslation();
+    const { user, signOut } = useAuth();
     const [searchParams] = useSearchParams();
     const listingId = searchParams.get('listing') || '';
 
@@ -409,11 +411,8 @@ const HostCalendar: React.FC = () => {
                                     <div className="pt-3 mt-2 border-t">
                                         <button
                                             className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 text-red-600"
-                                            onClick={() => {
-                                                localStorage.removeItem('token');
-                                                localStorage.removeItem('username');
-                                                localStorage.removeItem('userId');
-                                                localStorage.removeItem('email');
+                                            onClick={async () => {
+                                                await signOut();
                                                 setIsUserMenuOpen(false);
                                                 navigate('/');
                                             }}
