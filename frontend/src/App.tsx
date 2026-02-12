@@ -40,6 +40,11 @@ const router = createBrowserRouter(
       lazy: async () => ({ Component: (await import("./pages/ListingDetails")).default }),
       errorElement: <RouteErrorElement />
     },
+    {
+      path: "/hosts/:id",
+      lazy: async () => ({ Component: (await import("./pages/HostProfile")).default }),
+      errorElement: <RouteErrorElement />
+    },
     { path: "/messages", lazy: async () => ({ Component: (await import("./pages/Messages")).default }) },
     { path: "/bookings", element: <ProtectedRoute />, children: [{ index: true, lazy: async () => ({ Component: (await import("./pages/MyBookings")).default }) }] },
     { path: "/login", lazy: async () => ({ Component: (await import("./pages/Login")).default }) },

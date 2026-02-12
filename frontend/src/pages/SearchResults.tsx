@@ -1,4 +1,4 @@
-import { Suspense, lazy, useMemo, useEffect } from "react";
+import { Suspense, lazy, useMemo, useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { Home as HomeIcon, Map as MapIcon } from "lucide-react";
@@ -32,6 +32,7 @@ const SearchResults = () => {
     const [searchParams] = useSearchParams();
     const { user, signOut } = useAuth();
     const { addToWishlist, removeFromWishlistByProduct, isInWishlist } = useWishlist();
+    const [showMap, setShowMap] = useState(false);
 
     // Get search params
     const location = searchParams.get("search") || "";
@@ -309,9 +310,9 @@ const SearchResults = () => {
             <Header />
 
             {/* Main Content */}
-            <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
+            <div className="flex-1 flex flex-col md:flex-row overflow-hidden relative">
                 {/* Listings List (Left) */}
-                <div className="w-full md:w-[60%] lg:w-[55%] xl:w-[50%] overflow-y-auto p-6">
+                <div className={`${showMap ? 'hidden' : 'block'} w-full md:block md:w-[60%] lg:w-[55%] xl:w-[50%] overflow-y-auto p-6`}>
                     <div className="mb-4">
                         <p className="text-sm text-gray-500">
                             {filteredProperties.length === 1
@@ -383,24 +384,36 @@ const SearchResults = () => {
                 </div>
 
                 {/* Map (Right) */}
-                {!isSlowConnection && (
-                    <div className="hidden md:block w-[40%] lg:w-[45%] xl:w-[50%] h-[calc(100vh-80px)] sticky top-20">
-                        <Suspense fallback={
-                            <div className="h-full w-full bg-slate-100 flex items-center justify-center">
-                                <div className="flex flex-col items-center gap-2">
-                                    <MapIcon className="h-8 w-8 text-slate-300 animate-pulse" />
-                                    <span className="text-sm text-slate-400">{t("Loading map...")}</span>
-                                </div>
+                <div className={`${showMap ? 'block' : 'hidden'} md:block w-full md:w-[40%] lg:w-[45%] xl:w-[50%] h-[calc(100vh-80px)] md:sticky top-20`}>
+                    <Suspense fallback={
+                        <div className="h-full w-full bg-slate-100 flex items-center justify-center">
+                            <div className="flex flex-col items-center gap-2">
+                                <MapIcon className="h-8 w-8 text-slate-300 animate-pulse" />
+                                <span className="text-sm text-slate-400">{t("Loading map...")}</span>
                             </div>
-                        }>
-                            <SearchMap
-                                mapPoints={mapPoints}
-                                singlePoint={singlePoint}
-                                fallbackCenter={fallbackCenter}
-                            />
-                        </Suspense>
-                    </div>
-                )}
+                        </div>
+                    }>
+                        <SearchMap
+                            mapPoints={mapPoints}
+                            singlePoint={singlePoint}
+                            fallbackCenter={fallbackCenter}
+                        />
+                    </Suspense>
+                </div>
+
+                {/* Mobile Toggle Button */}
+                <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-40 md:hidden">
+                    <Button
+                        onClick={() => setShowMap(!showMap)}
+                        className="rounded-full shadow-2xl bg-black hover:bg-black/90 text-white px-6 py-6 flex items-center gap-2 transition-transform active:scale-95"
+                    >
+                        {showMap ? (
+                            <><HomeIcon className="h-4 w-4" /> {t("search.show_list", "Show list")}</>
+                        ) : (
+                            <><MapIcon className="h-4 w-4" /> {t("search.show_map", "Show map")}</>
+                        )}
+                    </Button>
+                </div>
             </div>
         </div>
     );

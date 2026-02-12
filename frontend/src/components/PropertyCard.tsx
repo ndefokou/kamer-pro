@@ -207,12 +207,6 @@ const PropertyCard = ({
 
                     <p className="text-sm text-muted-foreground line-clamp-1">
                         {name}
-                        {propertyType && (
-                            <>
-                                {" • "}
-                                <TranslatedText as="span" text={propertyTypes.find(t => t.id === propertyType)?.label || propertyType} />
-                            </>
-                        )}
                     </p>
 
                     <div className="flex items-baseline gap-1 mt-1">
