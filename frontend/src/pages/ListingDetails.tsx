@@ -818,11 +818,13 @@ const ListingDetails: React.FC = () => {
                                 </Button>
                             </div>
 
-                            <ReviewModal
-                                isOpen={isReviewModalOpen}
-                                onClose={() => setIsReviewModalOpen(false)}
-                                onSubmit={handleReviewSubmit}
-                            />
+                            <Suspense fallback={null}>
+                                <ReviewModal
+                                    isOpen={isReviewModalOpen}
+                                    onClose={() => setIsReviewModalOpen(false)}
+                                    onSubmit={handleReviewSubmit}
+                                />
+                            </Suspense>
 
                             {reviews.length > 0 && (
                                 <>

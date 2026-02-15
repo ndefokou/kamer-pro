@@ -178,8 +178,17 @@ pub async fn add_review(
 ) -> impl Responder {
     let user_id = match crate::middleware::auth::extract_user_id(&req, pool.get_ref()).await {
         Ok(id) => id,
-        Err(err) => return HttpResponse::from_error(err),
+        Err(err) => {
+            log::error!("add_review: Auth failed: {:?}", err);
+            return HttpResponse::from_error(err);
+        }
     };
+
+    log::info!(
+        "add_review: User {} attempting to review listing {}",
+        user_id,
+        path.as_str()
+    );
 
     let listing_id = path.into_inner();
     // Prevent duplicate review from the same user for the same listing

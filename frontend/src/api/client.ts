@@ -568,6 +568,10 @@ export interface AccountResponse {
   profile?: AccountProfile | null;
 }
 
+export const getMe = async (): Promise<AccountResponse> => {
+  return await cachedGet<AccountResponse>('/account/me');
+};
+
 export const getUserById = async (id: number): Promise<AccountResponse> => {
   return await cachedGet<AccountResponse>(`/account/user/${id}`);
 };

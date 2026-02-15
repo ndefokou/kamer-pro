@@ -37,7 +37,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setSession(currentSession);
 
         // Store user info in localStorage for backward compatibility
-        localStorage.setItem('userId', currentSession.user.id);
+        try {
+          const { getMe } = await import('@/api/client');
+          const { user: backendUser } = await getMe();
+          if (backendUser?.id) {
+            localStorage.setItem('userId', backendUser.id.toString());
+          }
+        } catch (e) {
+          console.error('Failed to sync backend user', e);
+        }
         localStorage.setItem('username', currentSession.user.user_metadata?.username || currentSession.user.email?.split('@')[0] || '');
 
         // Remove legacy token to ensure apiClient stops using it
@@ -68,12 +76,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     checkSession();
 
     // Subscribe to auth state changes
-    const unsubscribe = supabaseAuthService.onAuthStateChange((newUser, newSession) => {
+    const unsubscribe = supabaseAuthService.onAuthStateChange(async (newUser, newSession) => {
       setUser(newUser);
       setSession(newSession);
 
       if (newUser) {
-        localStorage.setItem('userId', newUser.id);
+        // Fetch backend user ID (integer) to support legacy components
+        try {
+          const { getMe } = await import('@/api/client');
+          const { user: backendUser } = await getMe();
+          if (backendUser?.id) {
+            localStorage.setItem('userId', backendUser.id.toString());
+          }
+        } catch (e) {
+          console.error('Failed to sync backend user', e);
+        }
         localStorage.setItem('username', newUser.user_metadata?.username || newUser.email?.split('@')[0] || '');
       } else {
         localStorage.removeItem('userId');
