@@ -172,7 +172,8 @@ const PhotoGallery: React.FC<PhotoGalleryProps> = ({ isOpen, onClose, photos, in
                                 src={getImageUrl(photo.url)}
                                 alt={`Photo ${index + 1}`}
                                 className="w-full rounded-lg hover:opacity-95 transition-opacity"
-                                quality="medium"
+                                quality="low"
+                                priority={index < 6}
                             />
                             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors rounded-lg" />
                         </div>

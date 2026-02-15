@@ -470,57 +470,107 @@ pub async fn get_today_bookings(pool: web::Data<PgPool>, req: HttpRequest) -> im
             up.phone as guest_phone,
             l.title as listing_title,
             l.city as listing_city,
-            l.country as listing_country,
-            (SELECT url FROM listing_photos WHERE listing_id = b.listing_id ORDER BY is_cover DESC, display_order LIMIT 1) as listing_photo
+            l.country as listing_country
         FROM bookings b
         INNER JOIN listings l ON b.listing_id = l.id
         INNER JOIN users u ON b.guest_id = u.id
         LEFT JOIN user_profiles up ON u.id = up.user_id
         WHERE l.host_id = $1
-        AND (DATE(b.check_in) = DATE('now') OR b.status = 'pending')
+        AND (b.check_in = CURRENT_DATE OR b.status = 'pending')
         ORDER BY CASE WHEN b.status = 'pending' THEN 0 ELSE 1 END, b.check_in ASC
     "#;
 
-    match sqlx::query_as::<_, BookingRow>(query)
+    let bookings = match sqlx::query_as::<_, BookingRowSmall>(query)
         .bind(user_id)
         .fetch_all(pool.get_ref())
         .await
     {
-        Ok(rows) => {
-            let bookings: Vec<BookingWithDetails> = rows
-                .into_iter()
-                .map(|row| BookingWithDetails {
-                    booking: Booking {
-                        id: row.id,
-                        listing_id: row.listing_id,
-                        guest_id: row.guest_id,
-                        check_in: row.check_in,
-                        check_out: row.check_out,
-                        guests: row.guests,
-                        total_price: row.total_price,
-                        status: row.status,
-                        created_at: row.created_at,
-                        updated_at: row.updated_at,
-                    },
-                    guest_name: row.guest_name,
-                    guest_email: row.guest_email,
-                    guest_phone: row.guest_phone,
-                    listing_title: row.listing_title,
-                    listing_city: row.listing_city,
-                    listing_country: row.listing_country,
-                    listing_photo: row.listing_photo,
-                })
-                .collect();
-
-            HttpResponse::Ok().json(bookings)
-        }
+        Ok(rows) => rows,
         Err(e) => {
             log::error!("Failed to fetch today's bookings: {:?}", e);
-            HttpResponse::InternalServerError().json(serde_json::json!({
+            return HttpResponse::InternalServerError().json(serde_json::json!({
                 "error": format!("Database error: {}", e)
-            }))
+            }));
         }
+    };
+
+    if bookings.is_empty() {
+        return HttpResponse::Ok().json(Vec::<BookingWithDetails>::new());
     }
+
+    // Batch fetch photos
+    let listing_ids: Vec<String> = bookings.iter().map(|b| b.listing_id.clone()).collect();
+    let photos = fetch_batch_photos(pool.get_ref(), &listing_ids).await;
+
+    let result: Vec<BookingWithDetails> = bookings
+        .into_iter()
+        .map(|row| {
+            let photo = photos.get(&row.listing_id).cloned();
+            BookingWithDetails {
+                booking: Booking {
+                    id: row.id,
+                    listing_id: row.listing_id,
+                    guest_id: row.guest_id,
+                    check_in: row.check_in,
+                    check_out: row.check_out,
+                    guests: row.guests,
+                    total_price: row.total_price,
+                    status: row.status,
+                    created_at: row.created_at,
+                    updated_at: row.updated_at,
+                },
+                guest_name: row.guest_name,
+                guest_email: row.guest_email,
+                guest_phone: row.guest_phone,
+                listing_title: row.listing_title,
+                listing_city: row.listing_city,
+                listing_country: row.listing_country,
+                listing_photo: photo,
+            }
+        })
+        .collect();
+
+    HttpResponse::Ok().json(result)
+}
+
+#[derive(Debug, sqlx::FromRow)]
+struct BookingRowSmall {
+    id: String,
+    listing_id: String,
+    guest_id: i32,
+    check_in: String,
+    check_out: String,
+    guests: i32,
+    total_price: f64,
+    status: String,
+    created_at: Option<String>,
+    updated_at: Option<String>,
+    guest_name: String,
+    guest_email: String,
+    guest_phone: Option<String>,
+    listing_title: String,
+    listing_city: Option<String>,
+    listing_country: Option<String>,
+}
+
+async fn fetch_batch_photos(
+    pool: &PgPool,
+    listing_ids: &[String],
+) -> std::collections::HashMap<String, String> {
+    let query = r#"
+        SELECT DISTINCT ON (listing_id) listing_id, url
+        FROM listing_photos
+        WHERE listing_id = ANY($1)
+        ORDER BY listing_id, is_cover DESC, display_order, id
+    "#;
+
+    let rows = sqlx::query_as::<_, (String, String)>(query)
+        .bind(listing_ids)
+        .fetch_all(pool)
+        .await
+        .unwrap_or_default();
+
+    rows.into_iter().collect()
 }
 
 /// GET /api/bookings/host/upcoming - Get upcoming reservations for host
@@ -539,58 +589,68 @@ pub async fn get_upcoming_bookings(pool: web::Data<PgPool>, req: HttpRequest) ->
             up.phone as guest_phone,
             l.title as listing_title,
             l.city as listing_city,
-            l.country as listing_country,
-            (SELECT url FROM listing_photos WHERE listing_id = b.listing_id ORDER BY is_cover DESC, display_order LIMIT 1) as listing_photo
+            l.country as listing_country
         FROM bookings b
         INNER JOIN listings l ON b.listing_id = l.id
         INNER JOIN users u ON b.guest_id = u.id
         LEFT JOIN user_profiles up ON u.id = up.user_id
         WHERE l.host_id = $1
-        AND DATE(b.check_in) > DATE('now')
+        AND b.check_in > CURRENT_DATE
         AND b.status != 'pending'
         ORDER BY b.check_in ASC
     "#;
 
-    match sqlx::query_as::<_, BookingRow>(query)
+    let bookings = match sqlx::query_as::<_, BookingRowSmall>(query)
         .bind(user_id)
         .fetch_all(pool.get_ref())
         .await
     {
-        Ok(rows) => {
-            let bookings: Vec<BookingWithDetails> = rows
-                .into_iter()
-                .map(|row| BookingWithDetails {
-                    booking: Booking {
-                        id: row.id,
-                        listing_id: row.listing_id,
-                        guest_id: row.guest_id,
-                        check_in: row.check_in,
-                        check_out: row.check_out,
-                        guests: row.guests,
-                        total_price: row.total_price,
-                        status: row.status,
-                        created_at: row.created_at,
-                        updated_at: row.updated_at,
-                    },
-                    guest_name: row.guest_name,
-                    guest_email: row.guest_email,
-                    guest_phone: row.guest_phone,
-                    listing_title: row.listing_title,
-                    listing_city: row.listing_city,
-                    listing_country: row.listing_country,
-                    listing_photo: row.listing_photo,
-                })
-                .collect();
-
-            HttpResponse::Ok().json(bookings)
-        }
+        Ok(rows) => rows,
         Err(e) => {
             log::error!("Failed to fetch upcoming bookings: {:?}", e);
-            HttpResponse::InternalServerError().json(serde_json::json!({
+            return HttpResponse::InternalServerError().json(serde_json::json!({
                 "error": format!("Database error: {}", e)
-            }))
+            }));
         }
+    };
+
+    if bookings.is_empty() {
+        return HttpResponse::Ok().json(Vec::<BookingWithDetails>::new());
     }
+
+    // Batch fetch photos
+    let listing_ids: Vec<String> = bookings.iter().map(|b| b.listing_id.clone()).collect();
+    let photos = fetch_batch_photos(pool.get_ref(), &listing_ids).await;
+
+    let result: Vec<BookingWithDetails> = bookings
+        .into_iter()
+        .map(|row| {
+            let photo = photos.get(&row.listing_id).cloned();
+            BookingWithDetails {
+                booking: Booking {
+                    id: row.id,
+                    listing_id: row.listing_id,
+                    guest_id: row.guest_id,
+                    check_in: row.check_in,
+                    check_out: row.check_out,
+                    guests: row.guests,
+                    total_price: row.total_price,
+                    status: row.status,
+                    created_at: row.created_at,
+                    updated_at: row.updated_at,
+                },
+                guest_name: row.guest_name,
+                guest_email: row.guest_email,
+                guest_phone: row.guest_phone,
+                listing_title: row.listing_title,
+                listing_city: row.listing_city,
+                listing_country: row.listing_country,
+                listing_photo: photo,
+            }
+        })
+        .collect();
+
+    HttpResponse::Ok().json(result)
 }
 
 /// POST /api/bookings/{id}/cancel - Cancel a booking

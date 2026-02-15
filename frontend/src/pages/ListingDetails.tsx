@@ -25,7 +25,7 @@ import { DEFAULT_HOUSE_RULES, type HouseRules } from '@/components/host/HouseRul
 const ShareModal = lazy(() => import('@/components/ShareModal'));
 const MessageHostModal = lazy(() => import('@/components/MessageHostModal'));
 const ReportHostModal = lazy(() => import('@/components/ReportHostModal'));
-const PhotoGallery = lazy(() => import('@/components/PhotoGallery'));
+import PhotoGallery from '@/components/PhotoGallery';
 import SEO from '@/components/SEO';
 import { useToast } from '@/hooks/use-toast';
 import { useWishlist } from '@/hooks/useWishlist';
@@ -552,14 +552,12 @@ const ListingDetails: React.FC = () => {
                     />
                 </Suspense>
 
-                <Suspense fallback={null}>
-                    <PhotoGallery
-                        isOpen={isPhotoGalleryOpen}
-                        onClose={() => setIsPhotoGalleryOpen(false)}
-                        photos={sortedPhotos}
-                        initialPhotoIndex={initialPhotoIndex}
-                    />
-                </Suspense>
+                <PhotoGallery
+                    isOpen={isPhotoGalleryOpen}
+                    onClose={() => setIsPhotoGalleryOpen(false)}
+                    photos={sortedPhotos}
+                    initialPhotoIndex={initialPhotoIndex}
+                />
 
                 {/* Photo Gallery */}
                 <div className="mb-8 rounded-xl overflow-hidden shadow-sm">

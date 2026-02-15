@@ -1,6 +1,7 @@
 use actix_web::{get, put, web, HttpRequest, HttpResponse, Responder};
 use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
+use sha1::Digest;
 use sqlx::PgPool;
 
 // ============================================================================
@@ -148,7 +149,21 @@ pub async fn get_calendar(
         .fetch_all(pool.get_ref())
         .await
     {
-        Ok(pricing) => HttpResponse::Ok().json(pricing),
+        Ok(pricing) => {
+            let json = serde_json::to_vec(&pricing).unwrap_or_default();
+            let etag = format!("\"{}\"", hex::encode(sha1::Sha1::digest(&json)));
+
+            if let Some(tag) = req.headers().get(actix_web::http::header::IF_NONE_MATCH) {
+                if tag.to_str().ok() == Some(etag.as_str()) {
+                    return HttpResponse::NotModified().finish();
+                }
+            }
+
+            HttpResponse::Ok()
+                .insert_header((actix_web::http::header::ETAG, etag))
+                .insert_header(("Cache-Control", "private, max-age=0, must-revalidate"))
+                .json(pricing)
+        }
         Err(e) => {
             log::error!("Failed to fetch calendar data: {:?}", e);
             HttpResponse::InternalServerError().json(serde_json::json!({
