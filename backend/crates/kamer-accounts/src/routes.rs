@@ -2,7 +2,7 @@ use actix_web::{get, put, web, HttpRequest, HttpResponse, Responder};
 use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
 
-// Local extract_user_id removed in favor of crate::middleware::auth::extract_user_id
+// Local extract_user_id removed in favor of kamer_auth::extract_user_id
 
 #[derive(Serialize, sqlx::FromRow, Debug, Clone)]
 struct UserRow {
@@ -45,7 +45,7 @@ pub struct AccountResponse {
 
 #[get("/me")]
 pub async fn get_me(req: HttpRequest, pool: web::Data<PgPool>) -> impl Responder {
-    let user_id = match crate::middleware::auth::extract_user_id(&req, pool.get_ref()).await {
+    let user_id = match kamer_auth::extract_user_id(&req, pool.get_ref()).await {
         Ok(id) => id,
         Err(_) => {
             return HttpResponse::Ok().json(AccountResponse {
@@ -154,7 +154,7 @@ pub async fn update_account(
     pool: web::Data<PgPool>,
     body: web::Json<UpdateAccountRequest>,
 ) -> impl Responder {
-    let user_id = match crate::middleware::auth::extract_user_id(&req, pool.get_ref()).await {
+    let user_id = match kamer_auth::extract_user_id(&req, pool.get_ref()).await {
         Ok(id) => id,
         Err(err) => return HttpResponse::from_error(err),
     };

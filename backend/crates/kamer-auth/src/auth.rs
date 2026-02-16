@@ -1,11 +1,11 @@
-use actix_web::error::{ErrorUnauthorized};
+use crate::jwks;
+use crate::supabase_auth::{get_or_create_local_user, SupabaseClaims};
+use actix_web::error::ErrorUnauthorized;
 use actix_web::{Error, HttpRequest};
+use base64::{engine::general_purpose, Engine as _};
+use jsonwebtoken::{decode, Algorithm, DecodingKey, Validation};
 use sqlx::PgPool;
-use crate::middleware::supabase_auth::{get_or_create_local_user, SupabaseClaims};
-use crate::middleware::jwks;
-use jsonwebtoken::{decode, DecodingKey, Validation, Algorithm};
 use std::env;
-use base64::{Engine as _, engine::general_purpose};
 
 pub fn extract_user_id_from_token(token: &str) -> Result<i32, Error> {
     // Extract user_id from token format: "token_{uuid}_{user_id}"
@@ -47,8 +47,9 @@ pub async fn extract_user_id(req: &HttpRequest, pool: &PgPool) -> Result<i32, Er
                         let jwt_secret = env::var("SUPABASE_JWT_SECRET")
                             .map_err(|_| ErrorUnauthorized("SUPABASE_JWT_SECRET not configured"))?;
                         let jwt_secret = jwt_secret.trim();
-                        
-                        if let Ok(decoded) = general_purpose::STANDARD.decode(jwt_secret.as_bytes()) {
+
+                        if let Ok(decoded) = general_purpose::STANDARD.decode(jwt_secret.as_bytes())
+                        {
                             DecodingKey::from_secret(&decoded)
                         } else {
                             DecodingKey::from_secret(jwt_secret.as_bytes())
@@ -57,19 +58,19 @@ pub async fn extract_user_id(req: &HttpRequest, pool: &PgPool) -> Result<i32, Er
 
                     let mut validation = Validation::new(header.alg);
                     validation.validate_exp = true;
-                    validation.set_audience(&["authenticated"]); 
-                    
-                    match decode::<SupabaseClaims>(
-                        token,
-                        &decoding_key,
-                        &validation,
-                    ) {
+                    validation.set_audience(&["authenticated"]);
+
+                    match decode::<SupabaseClaims>(token, &decoding_key, &validation) {
                         Ok(token_data) => {
                             let claims = token_data.claims;
                             if let Some(email) = claims.email {
-                                return get_or_create_local_user(pool, &claims.sub, &email, None).await;
+                                return get_or_create_local_user(pool, &claims.sub, &email, None)
+                                    .await;
                             } else {
-                                log::error!("Supabase token missing email claim for sub: {}", claims.sub);
+                                log::error!(
+                                    "Supabase token missing email claim for sub: {}",
+                                    claims.sub
+                                );
                             }
                         }
                         Err(e) => {
@@ -79,7 +80,7 @@ pub async fn extract_user_id(req: &HttpRequest, pool: &PgPool) -> Result<i32, Er
                 } else {
                     log::error!("Failed to decode JWT header");
                 }
-                
+
                 // Final fallback
                 return extract_user_id_from_token(token);
             }

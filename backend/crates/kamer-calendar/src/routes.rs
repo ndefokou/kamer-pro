@@ -70,7 +70,7 @@ pub struct UpdateSettingsRequest {
 // Helper Functions
 // ============================================================================
 
-// Local extract_user_id removed in favor of crate::middleware::auth::extract_user_id
+// Local extract_user_id removed in favor of kamer_auth::extract_user_id
 
 async fn verify_listing_ownership(
     pool: &PgPool,
@@ -108,7 +108,7 @@ pub async fn get_calendar(
     path: web::Path<String>,
     query: web::Query<CalendarQuery>,
 ) -> impl Responder {
-    let user_id = match crate::middleware::auth::extract_user_id(&req, pool.get_ref()).await {
+    let user_id = match kamer_auth::extract_user_id(&req, pool.get_ref()).await {
         Ok(id) => id,
         Err(err) => return HttpResponse::from_error(err),
     };
@@ -181,7 +181,7 @@ pub async fn update_calendar_dates(
     path: web::Path<String>,
     body: web::Json<UpdateCalendarDatesRequest>,
 ) -> impl Responder {
-    let user_id = match crate::middleware::auth::extract_user_id(&req, pool.get_ref()).await {
+    let user_id = match kamer_auth::extract_user_id(&req, pool.get_ref()).await {
         Ok(id) => id,
         Err(err) => return HttpResponse::from_error(err),
     };
@@ -285,7 +285,7 @@ pub async fn get_settings(
     req: HttpRequest,
     path: web::Path<String>,
 ) -> impl Responder {
-    let user_id = match crate::middleware::auth::extract_user_id(&req, pool.get_ref()).await {
+    let user_id = match kamer_auth::extract_user_id(&req, pool.get_ref()).await {
         Ok(id) => id,
         Err(err) => return HttpResponse::from_error(err),
     };
@@ -354,7 +354,7 @@ pub async fn update_settings(
     path: web::Path<String>,
     body: web::Json<UpdateSettingsRequest>,
 ) -> impl Responder {
-    let user_id = match crate::middleware::auth::extract_user_id(&req, pool.get_ref()).await {
+    let user_id = match kamer_auth::extract_user_id(&req, pool.get_ref()).await {
         Ok(id) => id,
         Err(err) => return HttpResponse::from_error(err),
     };

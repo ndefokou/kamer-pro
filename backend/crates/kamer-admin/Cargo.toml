@@ -1,0 +1,17 @@
+[package]
+name = "kamer-admin"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+kamer-core = { path = "../kamer-core" }
+kamer-db = { path = "../kamer-db" }
+kamer-auth = { path = "../kamer-auth" }
+
+actix-web = { workspace = true }
+sqlx = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+chrono = { workspace = true }
+uuid = { workspace = true }
+log = { workspace = true }

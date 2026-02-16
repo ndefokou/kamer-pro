@@ -10,11 +10,11 @@ pub struct DashboardSummary {
     pub upcoming_bookings: i64,
 }
 
-// Local extract_user_id removed in favor of crate::middleware::auth::extract_user_id
+// Local extract_user_id removed in favor of kamer_auth::extract_user_id
 
 #[get("/v1/dashboard-summary")]
 pub async fn dashboard_summary(pool: web::Data<PgPool>, req: HttpRequest) -> HttpResponse {
-    let user_id = crate::middleware::auth::extract_user_id(&req, pool.get_ref()).await.ok();
+    let user_id = kamer_auth::extract_user_id(&req, pool.get_ref()).await.ok();
     
     let Some(user_id) = user_id else {
         // Anonymous users get empty summary (cacheable)

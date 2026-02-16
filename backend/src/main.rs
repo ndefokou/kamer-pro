@@ -1,10 +1,10 @@
-use crate::routes::listings::ListingWithDetails;
 use actix_cors::Cors;
 use actix_web::{
     middleware::{Compress, DefaultHeaders},
     web, App, HttpServer,
 };
 use dotenv::dotenv;
+use kamer_listings::ListingWithDetails;
 use moka::future::Cache;
 use sqlx::postgres::{PgConnectOptions, PgPoolOptions};
 use sqlx::Executor;
@@ -12,9 +12,6 @@ use std::env;
 use std::str::FromStr;
 use std::time::{Duration, Instant};
 
-mod middleware;
-mod routes;
-mod s3;
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     let start = Instant::now();
@@ -44,8 +41,6 @@ async fn main() -> std::io::Result<()> {
         let separator = if database_url.contains('?') { "&" } else { "?" };
         database_url.push_str(&format!("{}statement_cache_capacity=0", separator));
     }
-
-    // Note: File uploads are handled via S3 storage, no local directory needed
 
     // Keep pool very small by default to avoid Supabase session limits
     let max_conns: u32 = env::var("DATABASE_MAX_CONNECTIONS")
@@ -127,7 +122,7 @@ async fn main() -> std::io::Result<()> {
     if !fast_start {
         println!("Initializing S3 storage in background...");
     }
-    let s3_storage = match s3::S3Storage::new() {
+    let s3_storage = match kamer_storage::S3Storage::new() {
         Ok(storage) => {
             if !fast_start {
                 println!("S3 storage initialized successfully.");
@@ -139,19 +134,20 @@ async fn main() -> std::io::Result<()> {
             eprintln!("Warning: Failed to initialize S3 storage: {}", e);
             eprintln!("Image uploads may not work. Please check S3 configuration.");
             // Create a dummy storage that will fail gracefully on use
-            s3::S3Storage::new().unwrap_or_else(|_| panic!("S3 storage initialization failed"))
+            kamer_storage::S3Storage::new()
+                .unwrap_or_else(|_| panic!("S3 storage initialization failed"))
         }
     };
 
     // Initialize listing cache (key: query string, value: results)
-    // Capacity: 500 unique queries (increased from 100), TTL: 15 minutes (increased from 5)
+    // Capacity: 500 unique queries, TTL: 15 minutes
     let listing_cache: Cache<String, Vec<ListingWithDetails>> = Cache::builder()
         .max_capacity(500)
         .time_to_live(Duration::from_secs(900))
         .build();
 
     // Initialize single listing cache (key: listing ID, value: listing details)
-    // Capacity: 2000 items (increased from 500), TTL: 15 minutes (increased from 5)
+    // Capacity: 2000 items, TTL: 15 minutes
     let single_listing_cache: Cache<String, ListingWithDetails> = Cache::builder()
         .max_capacity(2000)
         .time_to_live(Duration::from_secs(900))
@@ -173,95 +169,8 @@ async fn main() -> std::io::Result<()> {
             .service(
                 web::scope("/api")
                     .wrap(DefaultHeaders::new().add(("X-Robots-Tag", "noindex, nofollow")))
-                    .service(routes::aggregate::dashboard_summary)
-                    .service(
-                        web::scope("/auth")
-                            .service(routes::auth::registration_start)
-                            .service(routes::auth::registration_complete)
-                            .service(routes::auth::authentication_start)
-                            .service(routes::auth::authentication_complete)
-                            .service(routes::auth::simple_register)
-                            .service(routes::auth::simple_login)
-                            .service(routes::auth::logout),
-                    )
-                    .service(
-                        web::scope("/roles")
-                            .service(routes::roles::get_user_role)
-                            .service(routes::roles::set_user_role),
-                    )
-                    .service(
-                        web::scope("/listings")
-                            .service(routes::listings::get_all_listings)
-                            .service(routes::listings::get_towns)
-                            .service(routes::listings::get_host_listings)
-                            .service(routes::listings::get_reviews)
-                            .service(routes::listings::add_review)
-                            .service(routes::listings::create_listing)
-                            .service(routes::listings::get_my_listings)
-                            .service(routes::listings::get_listing)
-                            .service(routes::listings::update_listing)
-                            .service(routes::listings::delete_listing)
-                            .service(routes::listings::publish_listing)
-                            .service(routes::listings::unpublish_listing)
-                            .service(routes::listings::add_amenities)
-                            .service(routes::listings::sync_photos)
-                            .service(routes::listings::add_video),
-                    )
-                    .service(
-                        web::scope("/upload")
-                            .service(routes::upload::upload_images)
-                            .service(routes::upload::upload_images_standalone),
-                    )
-                    .service(
-                        web::scope("/messages")
-                            .service(routes::messages::create_conversation)
-                            .service(routes::messages::get_conversations)
-                            .service(routes::messages::get_messages)
-                            .service(routes::messages::send_message)
-                            .service(routes::messages::get_unread_count)
-                            .service(routes::messages::get_message_templates),
-                    )
-                    .service(
-                        web::scope("/account")
-                            .service(routes::account::get_me)
-                            .service(routes::account::get_user_by_id)
-                            .service(routes::account::update_account),
-                    )
-                    .service(
-                        web::scope("/wishlist")
-                            .service(routes::wishlist::get_wishlist)
-                            .service(routes::wishlist::add_to_wishlist)
-                            .service(routes::wishlist::remove_from_wishlist)
-                            .service(routes::wishlist::remove_from_wishlist_by_product)
-                            .service(routes::wishlist::check_wishlist),
-                    )
-                    .service(
-                        web::scope("/bookings")
-                            .service(routes::bookings::create_booking)
-                            .service(routes::bookings::get_today_bookings)
-                            .service(routes::bookings::get_upcoming_bookings)
-                            .service(routes::bookings::get_my_bookings)
-                            .service(routes::bookings::approve_booking)
-                            .service(routes::bookings::decline_booking)
-                            .service(routes::bookings::cancel_booking),
-                    )
-                    .service(
-                        web::scope("/calendar")
-                            .service(routes::calendar::get_calendar)
-                            .service(routes::calendar::update_calendar_dates)
-                            .service(routes::calendar::get_settings)
-                            .service(routes::calendar::update_settings),
-                    )
-                    .service(web::scope("/reports").service(routes::reports::create_report))
-                    .service(routes::translate::translate_text)
-                    .service(
-                        web::scope("/admin")
-                            .service(routes::admin::get_hosts)
-                            .service(routes::admin::delete_host)
-                            .service(routes::admin::get_reports),
-                    ),
+                    .configure(kamer_api::configure_routes),
             )
-        // Note: File uploads are served directly from S3, no local /uploads route needed
     });
 
     if !fast_start {

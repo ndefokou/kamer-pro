@@ -176,7 +176,7 @@ pub async fn add_review(
     path: web::Path<String>,
     body: web::Json<CreateReviewRequest>,
 ) -> impl Responder {
-    let user_id = match crate::middleware::auth::extract_user_id(&req, pool.get_ref()).await {
+    let user_id = match kamer_auth::extract_user_id(&req, pool.get_ref()).await {
         Ok(id) => id,
         Err(err) => {
             log::error!("add_review: Auth failed: {:?}", err);
@@ -618,7 +618,7 @@ pub async fn get_towns(pool: web::Data<PgPool>) -> impl Responder {
 // Helper Functions
 // ============================================================================
 
-// Local extract_user_id removed in favor of crate::middleware::auth::extract_user_id
+// Local extract_user_id removed in favor of kamer_auth::extract_user_id
 
 async fn get_listing_with_details(
     pool: &PgPool,
@@ -757,7 +757,7 @@ pub async fn create_listing(
     body: web::Json<CreateListingRequest>,
 ) -> impl Responder {
     let started = std::time::Instant::now();
-    let user_id = match crate::middleware::auth::extract_user_id(&req, pool.get_ref()).await {
+    let user_id = match kamer_auth::extract_user_id(&req, pool.get_ref()).await {
         Ok(id) => id,
         Err(err) => return HttpResponse::from_error(err),
     };
@@ -935,7 +935,7 @@ pub async fn update_listing(
     body: web::Json<UpdateListingRequest>,
 ) -> impl Responder {
     let started = std::time::Instant::now();
-    let user_id = match crate::middleware::auth::extract_user_id(&req, pool.get_ref()).await {
+    let user_id = match kamer_auth::extract_user_id(&req, pool.get_ref()).await {
         Ok(id) => id,
         Err(err) => return HttpResponse::from_error(err),
     };
@@ -1094,7 +1094,7 @@ pub async fn delete_listing(
     req: HttpRequest,
     path: web::Path<String>,
 ) -> impl Responder {
-    let user_id = match crate::middleware::auth::extract_user_id(&req, pool.get_ref()).await {
+    let user_id = match kamer_auth::extract_user_id(&req, pool.get_ref()).await {
         Ok(id) => id,
         Err(err) => return HttpResponse::from_error(err),
     };
@@ -1145,7 +1145,7 @@ pub async fn get_my_listings(
     req: HttpRequest,
     query: web::Query<PageParams>,
 ) -> impl Responder {
-    let user_id = match crate::middleware::auth::extract_user_id(&req, pool.get_ref()).await {
+    let user_id = match kamer_auth::extract_user_id(&req, pool.get_ref()).await {
         Ok(id) => id,
         Err(err) => return HttpResponse::from_error(err),
     };
@@ -1323,7 +1323,7 @@ pub async fn publish_listing(
     path: web::Path<String>,
 ) -> impl Responder {
     let started = std::time::Instant::now();
-    let user_id = match crate::middleware::auth::extract_user_id(&req, pool.get_ref()).await {
+    let user_id = match kamer_auth::extract_user_id(&req, pool.get_ref()).await {
         Ok(id) => id,
         Err(err) => return HttpResponse::from_error(err),
     };
@@ -1423,7 +1423,7 @@ pub async fn unpublish_listing(
     path: web::Path<String>,
 ) -> impl Responder {
     let started = std::time::Instant::now();
-    let user_id = match crate::middleware::auth::extract_user_id(&req, pool.get_ref()).await {
+    let user_id = match kamer_auth::extract_user_id(&req, pool.get_ref()).await {
         Ok(id) => id,
         Err(err) => return HttpResponse::from_error(err),
     };
@@ -1496,7 +1496,7 @@ pub async fn add_amenities(
     path: web::Path<String>,
     body: web::Json<AddAmenitiesRequest>,
 ) -> impl Responder {
-    let user_id = match crate::middleware::auth::extract_user_id(&req, pool.get_ref()).await {
+    let user_id = match kamer_auth::extract_user_id(&req, pool.get_ref()).await {
         Ok(id) => id,
         Err(err) => return HttpResponse::from_error(err),
     };
@@ -1559,7 +1559,7 @@ pub async fn sync_photos(
     path: web::Path<String>,
     body: web::Json<SyncPhotosRequest>,
 ) -> impl Responder {
-    let user_id = match crate::middleware::auth::extract_user_id(&req, pool.get_ref()).await {
+    let user_id = match kamer_auth::extract_user_id(&req, pool.get_ref()).await {
         Ok(id) => id,
         Err(err) => return HttpResponse::from_error(err),
     };
@@ -1654,7 +1654,7 @@ pub async fn add_video(
     path: web::Path<String>,
     body: web::Json<AddVideoRequest>,
 ) -> impl Responder {
-    let user_id = match crate::middleware::auth::extract_user_id(&req, pool.get_ref()).await {
+    let user_id = match kamer_auth::extract_user_id(&req, pool.get_ref()).await {
         Ok(id) => id,
         Err(err) => return HttpResponse::from_error(err),
     };

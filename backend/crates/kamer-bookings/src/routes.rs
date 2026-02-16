@@ -45,7 +45,7 @@ struct BookingRow {
 
 #[get("/my")]
 pub async fn get_my_bookings(pool: web::Data<PgPool>, req: HttpRequest) -> impl Responder {
-    let user_id = match crate::middleware::auth::extract_user_id(&req, pool.get_ref()).await {
+    let user_id = match kamer_auth::extract_user_id(&req, pool.get_ref()).await {
         Ok(id) => id,
         Err(err) => return HttpResponse::from_error(err),
     };
@@ -139,7 +139,7 @@ pub struct DeclineBookingRequest {
 // Helper Functions
 // ============================================================================
 
-// Local extract_user_id removed in favor of crate::middleware::auth::extract_user_id
+// Local extract_user_id removed in favor of kamer_auth::extract_user_id
 
 // ============================================================================
 // API Endpoints
@@ -152,7 +152,7 @@ pub async fn create_booking(
     req: HttpRequest,
     booking_data: web::Json<CreateBookingRequest>,
 ) -> impl Responder {
-    let user_id = match crate::middleware::auth::extract_user_id(&req, pool.get_ref()).await {
+    let user_id = match kamer_auth::extract_user_id(&req, pool.get_ref()).await {
         Ok(id) => id,
         Err(err) => return HttpResponse::from_error(err),
     };
@@ -307,7 +307,7 @@ pub async fn approve_booking(
     req: HttpRequest,
     path: web::Path<String>,
 ) -> impl Responder {
-    let user_id = match crate::middleware::auth::extract_user_id(&req, pool.get_ref()).await {
+    let user_id = match kamer_auth::extract_user_id(&req, pool.get_ref()).await {
         Ok(id) => id,
         Err(err) => return HttpResponse::from_error(err),
     };
@@ -358,7 +358,7 @@ pub async fn decline_booking(
     path: web::Path<String>,
     body: web::Json<DeclineBookingRequest>,
 ) -> impl Responder {
-    let user_id = match crate::middleware::auth::extract_user_id(&req, pool.get_ref()).await {
+    let user_id = match kamer_auth::extract_user_id(&req, pool.get_ref()).await {
         Ok(id) => id,
         Err(err) => return HttpResponse::from_error(err),
     };
@@ -457,7 +457,7 @@ pub async fn decline_booking(
 /// GET /api/bookings/host/today - Get today's reservations for host
 #[get("/host/today")]
 pub async fn get_today_bookings(pool: web::Data<PgPool>, req: HttpRequest) -> impl Responder {
-    let user_id = match crate::middleware::auth::extract_user_id(&req, pool.get_ref()).await {
+    let user_id = match kamer_auth::extract_user_id(&req, pool.get_ref()).await {
         Ok(id) => id,
         Err(err) => return HttpResponse::from_error(err),
     };
@@ -576,7 +576,7 @@ async fn fetch_batch_photos(
 /// GET /api/bookings/host/upcoming - Get upcoming reservations for host
 #[get("/host/upcoming")]
 pub async fn get_upcoming_bookings(pool: web::Data<PgPool>, req: HttpRequest) -> impl Responder {
-    let user_id = match crate::middleware::auth::extract_user_id(&req, pool.get_ref()).await {
+    let user_id = match kamer_auth::extract_user_id(&req, pool.get_ref()).await {
         Ok(id) => id,
         Err(err) => return HttpResponse::from_error(err),
     };
@@ -660,7 +660,7 @@ pub async fn cancel_booking(
     req: HttpRequest,
     path: web::Path<String>,
 ) -> impl Responder {
-    let user_id = match crate::middleware::auth::extract_user_id(&req, pool.get_ref()).await {
+    let user_id = match kamer_auth::extract_user_id(&req, pool.get_ref()).await {
         Ok(id) => id,
         Err(err) => return HttpResponse::from_error(err),
     };

@@ -36,7 +36,7 @@ struct UploadResponse {
 #[post("/images")]
 pub async fn upload_images_standalone(
     mut payload: Multipart,
-    s3: web::Data<crate::s3::S3Storage>,
+    s3: web::Data<kamer_storage::S3Storage>,
 ) -> Result<HttpResponse, Error> {
     let mut file_urls = Vec::new();
 

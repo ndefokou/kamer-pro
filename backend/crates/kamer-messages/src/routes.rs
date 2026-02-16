@@ -60,7 +60,7 @@ pub struct SendMessageRequest {
 // Helper Functions
 // ============================================================================
 
-// Local extract_user_id removed in favor of crate::middleware::auth::extract_user_id
+// Local extract_user_id removed in favor of kamer_auth::extract_user_id
 
 // ============================================================================
 // API Endpoints
@@ -73,7 +73,7 @@ pub async fn create_conversation(
     req: HttpRequest,
     body: web::Json<CreateConversationRequest>,
 ) -> impl Responder {
-    let user_id = match crate::middleware::auth::extract_user_id(&req, pool.get_ref()).await {
+    let user_id = match kamer_auth::extract_user_id(&req, pool.get_ref()).await {
         Ok(id) => id,
         Err(err) => return HttpResponse::from_error(err),
     };
@@ -179,7 +179,7 @@ struct ConversationRow {
 /// GET /api/messages/conversations - Get all conversations for user
 #[get("/conversations")]
 pub async fn get_conversations(pool: web::Data<PgPool>, req: HttpRequest) -> impl Responder {
-    let user_id = match crate::middleware::auth::extract_user_id(&req, pool.get_ref()).await {
+    let user_id = match kamer_auth::extract_user_id(&req, pool.get_ref()).await {
         Ok(id) => id,
         Err(err) => return HttpResponse::from_error(err),
     };
@@ -275,7 +275,7 @@ pub async fn get_messages(
     req: HttpRequest,
     path: web::Path<String>,
 ) -> impl Responder {
-    let user_id = match crate::middleware::auth::extract_user_id(&req, pool.get_ref()).await {
+    let user_id = match kamer_auth::extract_user_id(&req, pool.get_ref()).await {
         Ok(id) => id,
         Err(err) => return HttpResponse::from_error(err),
     };
@@ -330,7 +330,7 @@ pub async fn send_message(
     req: HttpRequest,
     body: web::Json<SendMessageRequest>,
 ) -> impl Responder {
-    let user_id = match crate::middleware::auth::extract_user_id(&req, pool.get_ref()).await {
+    let user_id = match kamer_auth::extract_user_id(&req, pool.get_ref()).await {
         Ok(id) => id,
         Err(err) => return HttpResponse::from_error(err),
     };
@@ -393,7 +393,7 @@ pub async fn send_message(
 /// GET /api/messages/unread-count - Get unread message count
 #[get("/unread-count")]
 pub async fn get_unread_count(pool: web::Data<PgPool>, req: HttpRequest) -> impl Responder {
-    let user_id = match crate::middleware::auth::extract_user_id(&req, pool.get_ref()).await {
+    let user_id = match kamer_auth::extract_user_id(&req, pool.get_ref()).await {
         Ok(id) => id,
         Err(err) => return HttpResponse::from_error(err),
     };

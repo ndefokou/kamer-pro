@@ -2,7 +2,7 @@ use actix_web::{delete, get, post, web, HttpRequest, HttpResponse, Responder};
 use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
 
-use crate::middleware::auth::extract_user_id;
+use kamer_auth::extract_user_id;
 
 #[derive(Debug, Serialize, Deserialize, sqlx::FromRow)]
 pub struct WishlistItem {

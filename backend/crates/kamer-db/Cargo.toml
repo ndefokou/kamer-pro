@@ -1,0 +1,13 @@
+[package]
+name = "kamer-db"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+kamer-core = { path = "../kamer-core" }
+
+sqlx = { workspace = true }
+serde = { workspace = true }
+chrono = { workspace = true }
+uuid = { workspace = true }
+tokio = { workspace = true }

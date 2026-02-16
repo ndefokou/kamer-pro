@@ -1,4 +1,4 @@
-use crate::routes::reports::Report;
+use crate::reports::Report;
 use actix_web::{delete, get, web, HttpRequest, HttpResponse, Responder};
 use serde::Serialize;
 use sqlx::PgPool;
@@ -12,7 +12,7 @@ pub struct Host {
     pub listing_count: i32,
 }
 
-// Local extract_user_id removed in favor of crate::middleware::auth::extract_user_id
+// Local extract_user_id removed in favor of kamer_auth::extract_user_id
 
 async fn is_admin(pool: &PgPool, user_id: i32) -> bool {
     let count: i64 =
@@ -26,7 +26,7 @@ async fn is_admin(pool: &PgPool, user_id: i32) -> bool {
 
 #[get("/hosts")]
 pub async fn get_hosts(pool: web::Data<PgPool>, req: HttpRequest) -> impl Responder {
-    let user_id = match crate::middleware::auth::extract_user_id(&req, pool.get_ref()).await {
+    let user_id = match kamer_auth::extract_user_id(&req, pool.get_ref()).await {
         Ok(id) => id,
         Err(err) => return HttpResponse::from_error(err),
     };
@@ -63,7 +63,7 @@ pub async fn delete_host(
     req: HttpRequest,
     path: web::Path<i32>,
 ) -> impl Responder {
-    let user_id = match crate::middleware::auth::extract_user_id(&req, pool.get_ref()).await {
+    let user_id = match kamer_auth::extract_user_id(&req, pool.get_ref()).await {
         Ok(id) => id,
         Err(err) => return HttpResponse::from_error(err),
     };
@@ -164,7 +164,7 @@ pub async fn delete_host(
 
 #[get("/reports")]
 pub async fn get_reports(pool: web::Data<PgPool>, req: HttpRequest) -> impl Responder {
-    let user_id = match crate::middleware::auth::extract_user_id(&req, pool.get_ref()).await {
+    let user_id = match kamer_auth::extract_user_id(&req, pool.get_ref()).await {
         Ok(id) => id,
         Err(err) => return HttpResponse::from_error(err),
     };

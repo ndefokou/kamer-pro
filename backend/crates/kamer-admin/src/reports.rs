@@ -20,7 +20,7 @@ pub struct Report {
     pub created_at: Option<String>,
 }
 
-// Local extract_user_id removed in favor of crate::middleware::auth::extract_user_id
+// Local extract_user_id removed in favor of kamer_auth::extract_user_id
 
 #[post("")]
 pub async fn create_report(
@@ -28,7 +28,7 @@ pub async fn create_report(
     req: HttpRequest,
     report_data: web::Json<CreateReportRequest>,
 ) -> impl Responder {
-    let user_id = match crate::middleware::auth::extract_user_id(&req, pool.get_ref()).await {
+    let user_id = match kamer_auth::extract_user_id(&req, pool.get_ref()).await {
         Ok(id) => id,
         Err(err) => return HttpResponse::from_error(err),
     };
