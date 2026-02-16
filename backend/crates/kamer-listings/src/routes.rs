@@ -1138,6 +1138,14 @@ pub async fn delete_listing(
     }
 }
 
+#[derive(Debug, Serialize, Deserialize, sqlx::FromRow, Clone)]
+pub struct ListingWithProfile {
+    #[sqlx(flatten)]
+    pub listing: Listing,
+    pub contact_phone: Option<String>,
+    pub host_avatar: Option<String>,
+}
+
 /// GET /api/listings/my-listings - Get my listings (paginated, lightweight)
 #[get("/my-listings")]
 pub async fn get_my_listings(
@@ -1151,9 +1159,9 @@ pub async fn get_my_listings(
     };
     let started = std::time::Instant::now();
     let mut qb: sqlx::QueryBuilder<sqlx::Postgres> =
-        sqlx::QueryBuilder::new("SELECT * FROM listings WHERE host_id = ");
+        sqlx::QueryBuilder::new("SELECT l.*, up.phone as contact_phone, up.avatar as host_avatar FROM listings l LEFT JOIN user_profiles up ON up.user_id = l.host_id WHERE l.host_id = ");
     qb.push_bind(user_id);
-    qb.push(" ORDER BY created_at DESC");
+    qb.push(" ORDER BY l.created_at DESC");
 
     let mut limit = query.limit.unwrap_or(50);
     if limit < 1 {
@@ -1171,7 +1179,7 @@ pub async fn get_my_listings(
     }
 
     let listings = match qb
-        .build_query_as::<Listing>()
+        .build_query_as::<ListingWithProfile>()
         .fetch_all(pool.get_ref())
         .await
     {
@@ -1188,7 +1196,7 @@ pub async fn get_my_listings(
     }
 
     // Batch top photos per listing
-    let ids: Vec<String> = listings.iter().map(|l| l.id.clone()).collect();
+    let ids: Vec<String> = listings.iter().map(|l| l.listing.id.clone()).collect();
     let photo_rows = match sqlx::query_as::<_, ListingPhoto>(
         r#"
         WITH ranked AS (
@@ -1220,40 +1228,24 @@ pub async fn get_my_listings(
         photos_map.entry(p.listing_id.clone()).or_default().push(p);
     }
 
-    // Fetch host profile once
-    let profile_row = sqlx::query("SELECT phone, avatar FROM user_profiles WHERE user_id = $1")
-        .bind(user_id)
-        .fetch_optional(pool.get_ref())
-        .await
-        .ok()
-        .flatten();
-    let (contact_phone, host_avatar): (Option<String>, Option<String>) =
-        if let Some(row) = profile_row {
-            (
-                sqlx::Row::get(&row, "phone"),
-                sqlx::Row::get(&row, "avatar"),
-            )
-        } else {
-            (None, None)
-        };
-
     let mut out: Vec<ListingWithDetails> = Vec::with_capacity(listings.len());
     for l in listings {
-        let sid = l.id.clone();
+        let sid = l.listing.id.clone();
         let safety_items: Vec<String> = l
+            .listing
             .safety_devices
             .as_ref()
             .and_then(|s| serde_json::from_str(s).ok())
             .unwrap_or_default();
         out.push(ListingWithDetails {
-            listing: l,
+            listing: l.listing,
             amenities: Vec::new(),
             photos: photos_map.remove(&sid).unwrap_or_default(),
             videos: Vec::new(),
             safety_items,
             unavailable_dates: Vec::new(),
-            contact_phone: contact_phone.clone(),
-            host_avatar: host_avatar.clone(),
+            contact_phone: l.contact_phone,
+            host_avatar: l.host_avatar,
             host_username: None,
         });
     }

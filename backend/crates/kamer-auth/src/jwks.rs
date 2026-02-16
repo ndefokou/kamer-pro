@@ -1,13 +1,13 @@
-use serde::{Deserialize, Serialize};
+use jsonwebtoken::{jwk::Jwk as JsonWebKey, DecodingKey};
 use moka::future::Cache;
-use jsonwebtoken::{DecodingKey, jwk::Jwk as JsonWebKey};
-use std::time::Duration;
 use once_cell::sync::Lazy;
+use serde::{Deserialize, Serialize};
 use std::env;
+use std::time::Duration;
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct JwksResponse {
-    pub keys: Vec<serde_json::Value>, // Keep as Raw values so jsonwebtoken can parse them
+    pub keys: Vec<serde_json::Value>,
 }
 
 pub static KEY_CACHE: Lazy<Cache<String, DecodingKey>> = Lazy::new(|| {
@@ -31,15 +31,20 @@ pub async fn get_decoding_key(kid: &str) -> Option<DecodingKey> {
                 // Parse the JWK using jsonwebtoken's own struct
                 if let Ok(jwk) = serde_json::from_value::<JsonWebKey>(jwk_value.clone()) {
                     let current_kid = jwk.common.key_id.clone().unwrap_or_default();
-                    
+
                     // Native decoding from JWK (Available in jsonwebtoken 9)
                     if let Ok(decoding_key) = DecodingKey::from_jwk(&jwk) {
-                        KEY_CACHE.insert(current_kid.clone(), decoding_key.clone()).await;
+                        KEY_CACHE
+                            .insert(current_kid.clone(), decoding_key.clone())
+                            .await;
                         if current_kid == kid {
                             found_key = Some(decoding_key);
                         }
                     } else {
-                        log::error!("Failed to create DecodingKey from JWK for kid: {}", current_kid);
+                        log::error!(
+                            "Failed to create DecodingKey from JWK for kid: {}",
+                            current_kid
+                        );
                     }
                 }
             }
@@ -54,14 +59,23 @@ pub async fn get_decoding_key(kid: &str) -> Option<DecodingKey> {
 }
 
 async fn fetch_jwks() -> Result<JwksResponse, Box<dyn std::error::Error>> {
-    let supabase_url = env::var("SUPABASE_PUBLIC_URL")
-        .or_else(|_| env::var("SUPABASE_URL"))?;
+    let supabase_url = env::var("SUPABASE_PUBLIC_URL").or_else(|_| env::var("SUPABASE_URL"))?;
     // The correct endpoint discovered via .well-known
-    let url = format!("{}/auth/v1/.well-known/jwks.json", supabase_url.trim_end_matches('/'));
-    
+    let url = format!(
+        "{}/auth/v1/.well-known/jwks.json",
+        supabase_url.trim_end_matches('/')
+    );
+
     log::debug!("Fetching JWKS from {}", url);
-    let client = reqwest::Client::new();
-    let response = client.get(&url).send().await?.json::<JwksResponse>().await?;
-    
+    let client = reqwest::Client::builder()
+        .timeout(Duration::from_secs(10))
+        .build()?;
+    let response = client
+        .get(&url)
+        .send()
+        .await?
+        .json::<JwksResponse>()
+        .await?;
+
     Ok(response)
 }

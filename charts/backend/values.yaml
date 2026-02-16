@@ -37,13 +37,13 @@ backend:
                 name: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}'
           env:
             # Database
-            DATABASE_MAX_CONNECTIONS: "2"
-            DATABASE_ACQUIRE_TIMEOUT_MS: "20000"
+            DATABASE_MAX_CONNECTIONS: "20"
+            DATABASE_ACQUIRE_TIMEOUT_MS: "5000"
             MIGRATE_ON_START: "true"
             FAST_START: "false"
             SKIP_DB_WAIT: "false"
             RUN_MIGRATIONS: "true"
-            SERVER_WORKERS: "2 "
+            SERVER_WORKERS: "2"
             # S3 Storage
             SUPABASE_BUCKET: "images"
             S3_REGION: "eu-west-2"

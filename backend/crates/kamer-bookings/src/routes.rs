@@ -470,11 +470,18 @@ pub async fn get_today_bookings(pool: web::Data<PgPool>, req: HttpRequest) -> im
             up.phone as guest_phone,
             l.title as listing_title,
             l.city as listing_city,
-            l.country as listing_country
+            l.country as listing_country,
+            p.url as listing_photo
         FROM bookings b
         INNER JOIN listings l ON b.listing_id = l.id
         INNER JOIN users u ON b.guest_id = u.id
         LEFT JOIN user_profiles up ON u.id = up.user_id
+        LEFT JOIN LATERAL (
+            SELECT url FROM listing_photos 
+            WHERE listing_id = l.id 
+            ORDER BY is_cover DESC, display_order, id 
+            LIMIT 1
+        ) p ON true
         WHERE l.host_id = $1
         AND (b.check_in = CURRENT_DATE OR b.status = 'pending')
         ORDER BY CASE WHEN b.status = 'pending' THEN 0 ELSE 1 END, b.check_in ASC
@@ -498,35 +505,28 @@ pub async fn get_today_bookings(pool: web::Data<PgPool>, req: HttpRequest) -> im
         return HttpResponse::Ok().json(Vec::<BookingWithDetails>::new());
     }
 
-    // Batch fetch photos
-    let listing_ids: Vec<String> = bookings.iter().map(|b| b.listing_id.clone()).collect();
-    let photos = fetch_batch_photos(pool.get_ref(), &listing_ids).await;
-
     let result: Vec<BookingWithDetails> = bookings
         .into_iter()
-        .map(|row| {
-            let photo = photos.get(&row.listing_id).cloned();
-            BookingWithDetails {
-                booking: Booking {
-                    id: row.id,
-                    listing_id: row.listing_id,
-                    guest_id: row.guest_id,
-                    check_in: row.check_in,
-                    check_out: row.check_out,
-                    guests: row.guests,
-                    total_price: row.total_price,
-                    status: row.status,
-                    created_at: row.created_at,
-                    updated_at: row.updated_at,
-                },
-                guest_name: row.guest_name,
-                guest_email: row.guest_email,
-                guest_phone: row.guest_phone,
-                listing_title: row.listing_title,
-                listing_city: row.listing_city,
-                listing_country: row.listing_country,
-                listing_photo: photo,
-            }
+        .map(|row| BookingWithDetails {
+            booking: Booking {
+                id: row.id,
+                listing_id: row.listing_id,
+                guest_id: row.guest_id,
+                check_in: row.check_in,
+                check_out: row.check_out,
+                guests: row.guests,
+                total_price: row.total_price,
+                status: row.status,
+                created_at: row.created_at,
+                updated_at: row.updated_at,
+            },
+            guest_name: row.guest_name,
+            guest_email: row.guest_email,
+            guest_phone: row.guest_phone,
+            listing_title: row.listing_title,
+            listing_city: row.listing_city,
+            listing_country: row.listing_country,
+            listing_photo: row.listing_photo,
         })
         .collect();
 
@@ -551,26 +551,7 @@ struct BookingRowSmall {
     listing_title: String,
     listing_city: Option<String>,
     listing_country: Option<String>,
-}
-
-async fn fetch_batch_photos(
-    pool: &PgPool,
-    listing_ids: &[String],
-) -> std::collections::HashMap<String, String> {
-    let query = r#"
-        SELECT DISTINCT ON (listing_id) listing_id, url
-        FROM listing_photos
-        WHERE listing_id = ANY($1)
-        ORDER BY listing_id, is_cover DESC, display_order, id
-    "#;
-
-    let rows = sqlx::query_as::<_, (String, String)>(query)
-        .bind(listing_ids)
-        .fetch_all(pool)
-        .await
-        .unwrap_or_default();
-
-    rows.into_iter().collect()
+    listing_photo: Option<String>,
 }
 
 /// GET /api/bookings/host/upcoming - Get upcoming reservations for host
@@ -589,11 +570,18 @@ pub async fn get_upcoming_bookings(pool: web::Data<PgPool>, req: HttpRequest) ->
             up.phone as guest_phone,
             l.title as listing_title,
             l.city as listing_city,
-            l.country as listing_country
+            l.country as listing_country,
+            p.url as listing_photo
         FROM bookings b
         INNER JOIN listings l ON b.listing_id = l.id
         INNER JOIN users u ON b.guest_id = u.id
         LEFT JOIN user_profiles up ON u.id = up.user_id
+        LEFT JOIN LATERAL (
+            SELECT url FROM listing_photos 
+            WHERE listing_id = l.id 
+            ORDER BY is_cover DESC, display_order, id 
+            LIMIT 1
+        ) p ON true
         WHERE l.host_id = $1
         AND b.check_in > CURRENT_DATE
         AND b.status != 'pending'
@@ -618,38 +606,30 @@ pub async fn get_upcoming_bookings(pool: web::Data<PgPool>, req: HttpRequest) ->
         return HttpResponse::Ok().json(Vec::<BookingWithDetails>::new());
     }
 
-    // Batch fetch photos
-    let listing_ids: Vec<String> = bookings.iter().map(|b| b.listing_id.clone()).collect();
-    let photos = fetch_batch_photos(pool.get_ref(), &listing_ids).await;
-
     let result: Vec<BookingWithDetails> = bookings
         .into_iter()
-        .map(|row| {
-            let photo = photos.get(&row.listing_id).cloned();
-            BookingWithDetails {
-                booking: Booking {
-                    id: row.id,
-                    listing_id: row.listing_id,
-                    guest_id: row.guest_id,
-                    check_in: row.check_in,
-                    check_out: row.check_out,
-                    guests: row.guests,
-                    total_price: row.total_price,
-                    status: row.status,
-                    created_at: row.created_at,
-                    updated_at: row.updated_at,
-                },
-                guest_name: row.guest_name,
-                guest_email: row.guest_email,
-                guest_phone: row.guest_phone,
-                listing_title: row.listing_title,
-                listing_city: row.listing_city,
-                listing_country: row.listing_country,
-                listing_photo: photo,
-            }
+        .map(|row| BookingWithDetails {
+            booking: Booking {
+                id: row.id,
+                listing_id: row.listing_id,
+                guest_id: row.guest_id,
+                check_in: row.check_in,
+                check_out: row.check_out,
+                guests: row.guests,
+                total_price: row.total_price,
+                status: row.status,
+                created_at: row.created_at,
+                updated_at: row.updated_at,
+            },
+            guest_name: row.guest_name,
+            guest_email: row.guest_email,
+            guest_phone: row.guest_phone,
+            listing_title: row.listing_title,
+            listing_city: row.listing_city,
+            listing_country: row.listing_country,
+            listing_photo: row.listing_photo,
         })
         .collect();
-
     HttpResponse::Ok().json(result)
 }
 
