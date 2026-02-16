@@ -1,0 +1,31 @@
+apiVersion: v2
+name: backend
+description: A Helm chart for the Kamer-pro backend service
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+
+sources:
+  - https://github.com/ndefokou/kamer-pro
+
+maintainers:
+  - name: Tcheutchoua Ndefokou Arthur
+    email: tcheutchouaarthur38@gmail.com
+
+dependencies:
+  - name: common
+    version: "1.x.x"
+    repository: https://charts.bitnami.com/bitnami
+    tags:
+      - common
+      - bitnami-common
+  - name: app-template
+    version: "4.0.1"
+    repository: https://bjw-s-labs.github.io/helm-charts
+    alias: backend
+    tags:
+      - bjw
+      - app
+
+annotations:
+  category: Application

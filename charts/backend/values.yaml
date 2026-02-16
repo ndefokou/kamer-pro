@@ -1,0 +1,102 @@
+global:
+  domain: api.mboko.camer.digital
+  version: latest
+
+backend:
+  defaultPodOptions:
+    securityContext:
+      runAsUser: 1001
+      runAsGroup: 1001
+
+  controllers:
+    main:
+      type: deployment
+      replicas: 1
+      pod:
+        labels:
+          app.kubernetes.io/name: backend
+      labels:
+        app.kubernetes.io/component: backend
+      containers:
+        main:
+          image:
+            repository: kamer-pro/backend
+            tag: "{{ .Values.global.version }}"
+            pullPolicy: IfNotPresent
+
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+
+          envFrom:
+            - secretRef:
+                name: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}'
+          env:
+            # Database
+            DATABASE_MAX_CONNECTIONS: "2"
+            DATABASE_ACQUIRE_TIMEOUT_MS: "20000"
+            MIGRATE_ON_START: "true"
+            FAST_START: "false"
+            SKIP_DB_WAIT: "false"
+            RUN_MIGRATIONS: "true"
+            SERVER_WORKERS: "2 "
+            # S3 Storage
+            SUPABASE_BUCKET: "images"
+            S3_REGION: "eu-west-2"
+
+          probes:
+            # Using standard ports for now, will need verification
+            liveness:
+              enabled: true
+              custom: true
+              spec:
+                httpGet:
+                  path: /health
+                  port: 8082
+                initialDelaySeconds: 5
+                periodSeconds: 10
+
+  service:
+    main:
+      enabled: true
+      type: ClusterIP
+      controller: main
+      ports:
+        http:
+          enabled: true
+          port: 8082
+          targetPort: 8082
+
+  persistence:
+    # Adding persistence placeholder if needed in future
+    config:
+      enabled: false
+      type: emptyDir
+
+  ingress:
+    main:
+      enabled: true
+      className: nginx
+      hosts:
+        - host: "{{ .Values.global.domain }}"
+          paths:
+            - path: /
+              pathType: Prefix
+              service:
+                identifier: main
+                port: http
+
+  secrets:
+    main:
+      enabled: true
+      stringData:
+        DATABASE_URL: "postgresql://postgres.bfxkhdjgdohrziavdorf:tnarthur%40022005@aws-0-us-west-2.pooler.supabase.com:5432/postgres"
+        SUPABASE_PUBLIC_URL: "https://bfxkhdjgdohrziavdorf.supabase.co"
+        S3_ENDPOINT: "https://bfxkhdjgdohrziavdorf.supabase.co/storage/v1/s3"
+        S3_ACCESS_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        S3_SECRET_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        JWT_SECRET: "gB0GBlpiHi6bTMHgUc60Mlc8Goo0r6tawe1s+O56bt9d5IYSILRnLbkDMlzvuhO11BT/1f9Gi76wF7Ld/dPvbg=="
