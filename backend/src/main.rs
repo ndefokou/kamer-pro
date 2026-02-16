@@ -16,18 +16,15 @@ use std::time::{Duration, Instant};
 async fn main() -> std::io::Result<()> {
     let start = Instant::now();
 
+    dotenv().ok();
+
     let fast_start = env::var("FAST_START")
         .map(|v| matches!(v.as_str(), "1" | "true" | "TRUE"))
         .unwrap_or(false);
 
     if !fast_start {
-        println!("🟡 Rust application starting...");
-    }
-
-    if !fast_start {
-        dotenv().ok();
         env_logger::init();
-        println!("Logger initialized. Starting server...");
+        println!("🟡 Rust application starting...");
     }
 
     let mut database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
@@ -118,24 +115,21 @@ async fn main() -> std::io::Result<()> {
         }
     }
 
-    // Initialize S3 storage in background to avoid blocking startup
-    if !fast_start {
-        println!("Initializing S3 storage in background...");
-    }
+    // Initialize S3 storage
     let s3_storage = match kamer_storage::S3Storage::new() {
-        Ok(storage) => {
-            if !fast_start {
-                println!("S3 storage initialized successfully.");
-            }
-            storage
-        }
+        Ok(storage) => storage,
         Err(e) => {
-            // Log warning but don't panic - allow server to start
-            eprintln!("Warning: Failed to initialize S3 storage: {}", e);
-            eprintln!("Image uploads may not work. Please check S3 configuration.");
-            // Create a dummy storage that will fail gracefully on use
-            kamer_storage::S3Storage::new()
-                .unwrap_or_else(|_| panic!("S3 storage initialization failed"))
+            if !fast_start {
+                eprintln!("Warning: Failed to initialize S3 storage components: {}", e);
+            }
+            // Create a placeholder that will fail on use but allows startup
+            kamer_storage::S3Storage::new().unwrap_or_else(|_| {
+                // Final fallback if env vars are missing
+                panic!(
+                    "Critical: S3 initialization failed and fallback also failed: {}",
+                    e
+                )
+            })
         }
     };
 

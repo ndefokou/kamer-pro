@@ -11,33 +11,24 @@ pub struct S3Storage {
 }
 
 impl S3Storage {
-    /// Initialize Supabase storage client
+    /// Initialize Supabase storage client (fast initialization)
     pub fn new() -> Result<Self, String> {
-        let bucket = env::var("SUPABASE_BUCKET")
-            .map_err(|_| "SUPABASE_BUCKET environment variable not set")?;
+        let bucket = env::var("SUPABASE_BUCKET").unwrap_or_default();
 
-        // roject URL (e.g. https://xyz.supabase.co)
-        let mut project_url = env::var("SUPABASE_PUBLIC_URL")
-            .map_err(|_| "SUPABASE_PUBLIC_URL environment variable not set")?;
+        let mut project_url = env::var("SUPABASE_PUBLIC_URL").unwrap_or_default();
 
-        // Clean up URL: remove /storage/v1... suffix if present to get base project URL
         if let Some(idx) = project_url.find("/storage/v1") {
             project_url = project_url[..idx].to_string();
         }
 
-        // Remove trailing slash
         if project_url.ends_with('/') {
             project_url.pop();
         }
 
-        // euse S3_ACCESS_KEY or S3_SECRET_KEY as the service key since
-        // check for SUPABASE_SERVICE_KEY
         let service_key = env::var("S3_SECRET_KEY")
             .or_else(|_| env::var("S3_ACCESS_KEY"))
             .or_else(|_| env::var("SUPABASE_SERVICE_KEY"))
-            .map_err(|_| {
-                "No service key found (checked S3_SECRET_KEY, S3_ACCESS_KEY, SUPABASE_SERVICE_KEY)"
-            })?;
+            .unwrap_or_default();
 
         let client = Client::new();
 

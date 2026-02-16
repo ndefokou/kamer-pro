@@ -87,3 +87,9 @@ num_cpus = { workspace = true }
 
 [dev-dependencies]
 cargo-watch = "8.5.2"
+
+[profile.dev]
+opt-level = 0
+debug = 1 # Reduces debug info size, significantly speeds up linking
+split-debuginfo = "unpacked" # macOS/Linux specific optimization for faster linking
+incremental = true
