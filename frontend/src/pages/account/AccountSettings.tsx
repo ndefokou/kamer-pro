@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { ChevronLeft } from "lucide-react";
 import type { AccountProfile, AccountMeResponse, UpdateAccountData } from "@/services/accountService";
-import { getAccountMe, updateAccount } from "@/services/accountService";
+import { getAccountMe, updateAccount, uploadAvatar } from "@/services/accountService";
 import Header from "@/components/Header";
 import SEO from "@/components/SEO";
 import MobileNav from "@/components/MobileNav";
@@ -170,20 +170,7 @@ const AccountSettings = () => {
     const file = e.target.files?.[0];
     if (file) {
       try {
-        const formData = new FormData();
-        formData.append('file', file);
-
-        // Upload to the standalone images endpoint
-        const response = await fetch('/api/images', {
-          method: 'POST',
-          body: formData,
-          // No Content-Type header, browser sets it with boundary
-        });
-
-        if (!response.ok) throw new Error('Failed to upload image');
-
-        const result = await response.json();
-        const urls = result.urls as string[];
+        const { urls } = await uploadAvatar(file);
 
         if (urls && urls.length > 0) {
           const avatarUrl = urls[0];
@@ -191,7 +178,7 @@ const AccountSettings = () => {
         }
       } catch (err) {
         console.error("Avatar upload failed:", err);
-        // Could set an error state here specifically for avatar
+        setError("Failed to upload avatar. Please try again.");
       }
     }
   };

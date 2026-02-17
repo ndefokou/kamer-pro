@@ -67,3 +67,15 @@ export const updateAccount = async (data: UpdateAccountData) => {
   const res = await apiClient.put("/account/update", data);
   return res.data;
 };
+
+export const uploadAvatar = async (file: File): Promise<{ urls: string[] }> => {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const res = await apiClient.post("/images", formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+  return res.data;
+};
