@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Marker, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
 import { useTranslation } from "react-i18next";
+import { useConnectionQuality } from "@/services/networkService";
 
 type Poi = {
   id: string;
@@ -15,6 +16,7 @@ type Poi = {
 const NearbyPOI = () => {
   const { t } = useTranslation();
   const map = useMap();
+  const { isSlowConnection } = useConnectionQuality();
   const [pois, setPois] = useState<Poi[]>([]);
   const timer = useRef<number | null>(null);
   const lastQueryKey = useRef<string>("");
@@ -80,7 +82,12 @@ const NearbyPOI = () => {
 
     const run = () => {
       const zoom = map.getZoom();
-      if (zoom < 12) {
+      const isMobile = window.innerWidth < 768;
+
+      // Higher zoom threshold for mobile or slow connections to reduce load
+      const minZoom = (isSlowConnection || isMobile) ? 14 : 12;
+
+      if (zoom < minZoom || isSlowConnection) {
         setPois([]);
         return;
       }
@@ -105,7 +112,7 @@ const NearbyPOI = () => {
   node["public_transport"="station"](${bbox});
   node["highway"="bus_stop"](${bbox});
 );
-out center 200;`;
+out center ${isMobile ? 50 : 200};`;
 
       fetchWithRetry("https://overpass-api.de/api/interpreter", {
         method: "POST",

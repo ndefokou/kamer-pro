@@ -80,6 +80,7 @@ const HostLocationMap = ({ initialPosition, mapCenter, mapZoom, position, setPos
         <MapContainer
             center={initialPosition}
             zoom={mapZoom}
+            preferCanvas={true}
             style={{ height: '100%', width: '100%' }}
         >
             <TileLayer

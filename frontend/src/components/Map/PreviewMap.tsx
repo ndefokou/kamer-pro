@@ -89,6 +89,7 @@ const PreviewMap = ({ latitude, longitude, title, selectedCategory }: PreviewMap
             center={[lat, lng]}
             zoom={13}
             scrollWheelZoom={false}
+            preferCanvas={true}
             className="h-full w-full"
         >
             <TileLayer

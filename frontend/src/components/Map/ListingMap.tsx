@@ -32,6 +32,7 @@ const ListingMap = ({ latitude, longitude, title }: ListingMapProps) => {
             center={[lat, lng]}
             zoom={13}
             scrollWheelZoom={false}
+            preferCanvas={true}
             className="h-full w-full"
         >
             <TileLayer
