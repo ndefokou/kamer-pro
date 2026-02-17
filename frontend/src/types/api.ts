@@ -97,6 +97,8 @@ export interface ListingReview {
     created_at?: string | null;
     username?: string | null;
     avatar?: string | null;
+    preferred_first_name?: string | null;
+    legal_name?: string | null;
 }
 
 export interface Booking {

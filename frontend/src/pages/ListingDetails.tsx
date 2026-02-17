@@ -139,10 +139,13 @@ const ListingDetails: React.FC = () => {
             if (row.ratings && typeof row.ratings === 'string') parsedRatings = JSON.parse(row.ratings);
             if (row.ratings && typeof row.ratings === 'object') parsedRatings = row.ratings as Record<string, number>;
         } catch { /* keep defaults */ }
+
+        const reviewerName = row.preferred_first_name || row.legal_name || row.username || 'Guest';
+
         return {
             id: Number(row.id),
             user: {
-                name: row.username || 'Guest',
+                name: reviewerName,
                 avatar: row.avatar || 'https://github.com/shadcn.png',
             },
             guestId: Number(row.guest_id),
