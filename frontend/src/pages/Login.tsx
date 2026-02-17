@@ -58,7 +58,7 @@ const Login = () => {
       }
 
       await signIn(loginEmail.trim(), loginPassword);
-      navigate(redirectTo, { replace: true });
+      console.log("Sign in successful, waiting for user state update...");
     } catch (err: unknown) {
       const message = (err as { message?: string })?.message || t("auth.loginFailed");
       setError(message);
@@ -94,7 +94,7 @@ const Login = () => {
       if (result?.user && !result?.session) {
         setVerificationRequired(true);
       } else {
-        navigate(redirectTo, { replace: true });
+        console.log("Sign up successful, waiting for session/user...");
       }
     } catch (err: unknown) {
       const message = (err as { message?: string })?.message || t("auth.registrationFailed");

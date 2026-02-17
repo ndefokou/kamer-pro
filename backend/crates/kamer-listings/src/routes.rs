@@ -99,7 +99,9 @@ pub async fn get_reviews(
     let query = r#"
         SELECT r.id, r.listing_id, r.guest_id, r.ratings, r.comment, r.created_at,
                u.username as username,
-               p.avatar as avatar
+               p.avatar as avatar,
+               p.preferred_first_name as preferred_first_name,
+               p.legal_name as legal_name
         FROM reviews r
         LEFT JOIN users u ON u.id = r.guest_id
         LEFT JOIN user_profiles p ON p.user_id = r.guest_id
@@ -246,7 +248,9 @@ pub async fn add_review(
     let select = r#"
         SELECT r.id, r.listing_id, r.guest_id, r.ratings, r.comment, r.created_at,
                u.username as username,
-               p.avatar as avatar
+               p.avatar as avatar,
+               p.preferred_first_name as preferred_first_name,
+               p.legal_name as legal_name
         FROM reviews r
         LEFT JOIN users u ON u.id = r.guest_id
         LEFT JOIN user_profiles p ON p.user_id = r.guest_id
@@ -499,6 +503,8 @@ pub struct ReviewRow {
     pub created_at: Option<chrono::NaiveDateTime>,
     pub username: Option<String>,
     pub avatar: Option<String>,
+    pub preferred_first_name: Option<String>,
+    pub legal_name: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -598,6 +604,7 @@ pub async fn get_towns(pool: web::Data<PgPool>) -> impl Responder {
          GROUP BY city
          ORDER BY count DESC",
     )
+    .persistent(false)
     .fetch_all(pool.get_ref())
     .await;
 
@@ -627,6 +634,7 @@ async fn get_listing_with_details(
     // Get listing
     let listing = sqlx::query_as::<_, Listing>("SELECT * FROM listings WHERE id = $1")
         .bind(listing_id)
+        .persistent(false)
         .fetch_one(pool)
         .await?;
 
@@ -635,17 +643,20 @@ async fn get_listing_with_details(
         "SELECT * FROM listing_amenities WHERE listing_id = $1",
     )
     .bind(listing_id)
+    .persistent(false)
     .fetch_all(pool);
 
     let photos_fut = sqlx::query_as::<_, ListingPhoto>(
         "SELECT id, listing_id, url, caption, room_type, COALESCE(is_cover, FALSE) as is_cover, COALESCE(display_order, 0) as display_order, uploaded_at FROM listing_photos WHERE listing_id = $1 ORDER BY is_cover DESC, display_order, id",
     )
     .bind(listing_id)
+    .persistent(false)
     .fetch_all(pool);
 
     let videos_fut =
         sqlx::query_as::<_, ListingVideo>("SELECT * FROM listing_videos WHERE listing_id = $1")
             .bind(listing_id)
+            .persistent(false)
             .fetch_all(pool);
 
     // Optimized unavailable dates query with date range limit (1 year ahead)
@@ -667,12 +678,14 @@ async fn get_listing_with_details(
         "#,
     )
     .bind(listing_id)
+    .persistent(false)
     .fetch_all(pool);
 
     let profile_fut = sqlx::query(
         "SELECT u.username as username, p.phone as phone, p.avatar as avatar FROM users u LEFT JOIN user_profiles p ON p.user_id = u.id WHERE u.id = $1",
     )
     .bind(listing.host_id)
+    .persistent(false)
     .fetch_optional(pool);
 
     let (amenities_rows, photos, videos, unavailable_dates, profile_row) = tokio::try_join!(
@@ -1180,6 +1193,7 @@ pub async fn get_my_listings(
 
     let listings = match qb
         .build_query_as::<ListingWithProfile>()
+        .persistent(false)
         .fetch_all(pool.get_ref())
         .await
     {
@@ -1825,6 +1839,7 @@ pub async fn get_all_listings(
 
     let listings_res = query_builder
         .build_query_as::<Listing>()
+        .persistent(false)
         .fetch_all(pool.get_ref())
         .await;
 

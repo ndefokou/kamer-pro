@@ -25,6 +25,7 @@ import { DEFAULT_HOUSE_RULES, type HouseRules } from '@/components/host/HouseRul
 const ShareModal = lazy(() => import('@/components/ShareModal'));
 const MessageHostModal = lazy(() => import('@/components/MessageHostModal'));
 const ReportHostModal = lazy(() => import('@/components/ReportHostModal'));
+const AmenitiesModal = lazy(() => import('@/components/AmenitiesModal'));
 import PhotoGallery from '@/components/PhotoGallery';
 import SEO from '@/components/SEO';
 import { useToast } from '@/hooks/use-toast';
@@ -112,6 +113,7 @@ const ListingDetails: React.FC = () => {
     const [isMessageModalOpen, setIsMessageModalOpen] = React.useState(false);
     const [isReportModalOpen, setIsReportModalOpen] = React.useState(false);
     const [isPhotoGalleryOpen, setIsPhotoGalleryOpen] = React.useState(false);
+    const [isAmenitiesModalOpen, setIsAmenitiesModalOpen] = React.useState(false);
     const { t, i18n } = useTranslation();
     const localeSelection = i18n.language === 'fr' ? fr : enUS;
     const locale = i18n.language?.startsWith('fr') ? 'fr-FR' : 'en-US';
@@ -140,13 +142,13 @@ const ListingDetails: React.FC = () => {
             if (row.ratings && typeof row.ratings === 'object') parsedRatings = row.ratings as Record<string, number>;
         } catch { /* keep defaults */ }
 
-        const reviewerName = row.preferred_first_name || row.legal_name || row.username || 'Guest';
+        const reviewerName = (row.preferred_first_name || '').trim() || (row.legal_name || '').trim() || row.username || 'Guest';
 
         return {
             id: Number(row.id),
             user: {
                 name: reviewerName,
-                avatar: row.avatar || 'https://github.com/shadcn.png',
+                avatar: row.avatar || undefined,
             },
             guestId: Number(row.guest_id),
             ratings: parsedRatings,
@@ -213,7 +215,7 @@ const ListingDetails: React.FC = () => {
         return <Loading fullScreen message={t('common.loading', 'Loading...')} />;
     }
 
-    if (error || !product) {
+    if (error || !product || !product.listing) {
         return (
             <div className="min-h-screen flex flex-col items-center justify-center gap-4">
                 <h1 className="text-2xl font-bold">{t('listing.errors.notFound')}</h1>
@@ -224,9 +226,9 @@ const ListingDetails: React.FC = () => {
 
     const { listing, amenities } = product;
     const hostName = (product.host_username || '').trim() || 'Host';
-    const hostAvatar = product.host_avatar ?? localStorage.getItem('host_avatar') ?? undefined;
+    const hostAvatar = product.host_avatar ?? undefined;
     const totalGuests = adults + children;
-    const isHost = Number(localStorage.getItem('userId')) === Number(listing.host_id);
+    const isHost = listing?.host_id ? Number(localStorage.getItem('userId')) === Number(listing.host_id) : false;
     const currentUserId = Number(localStorage.getItem('userId') || '') || null;
 
     const isWishlisted = isInWishlist(listing.id);
@@ -555,6 +557,14 @@ const ListingDetails: React.FC = () => {
                     />
                 </Suspense>
 
+                <Suspense fallback={null}>
+                    <AmenitiesModal
+                        isOpen={isAmenitiesModalOpen}
+                        onClose={() => setIsAmenitiesModalOpen(false)}
+                        amenities={amenities}
+                    />
+                </Suspense>
+
                 <PhotoGallery
                     isOpen={isPhotoGalleryOpen}
                     onClose={() => setIsPhotoGalleryOpen(false)}
@@ -699,7 +709,11 @@ const ListingDetails: React.FC = () => {
                                 })}
                             </div>
                             {amenities.length > 10 && (
-                                <Button variant="outline" className="mt-6">
+                                <Button
+                                    variant="outline"
+                                    className="mt-6"
+                                    onClick={() => setIsAmenitiesModalOpen(true)}
+                                >
                                     {t('listing.details.showAllAmenities', { count: amenities.length })}
                                 </Button>
                             )}

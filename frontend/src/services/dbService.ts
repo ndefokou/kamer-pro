@@ -349,7 +349,9 @@ class DatabaseService {
             id: review.id,
             user_id: review.guest_id || review.user_id,
             username: review.username,
-            avatar_url: review.avatar || review.avatar_url,
+            avatar: review.avatar || review.avatar_url,
+            preferred_first_name: review.preferred_first_name,
+            legal_name: review.legal_name,
             rating: review.ratings || review.rating,
             comment: review.comment,
             created_at: review.created_at

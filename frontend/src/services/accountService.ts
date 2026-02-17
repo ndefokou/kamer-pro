@@ -13,17 +13,18 @@ export interface AccountProfile {
   phone?: string | null;
   residential_address?: string | null;
   mailing_address?: string | null;
-  identity_verified?: number | null;
+  identity_verified?: boolean | null;
   language?: string | null;
   currency?: string | null;
-  notify_email?: number | null;
-  notify_sms?: number | null;
+  notify_email?: boolean | null;
+  notify_sms?: boolean | null;
   privacy_profile_visibility?: string | null;
   tax_id?: string | null;
   payout_method?: string | null;
-  travel_for_work?: number | null;
+  travel_for_work?: boolean | null;
   location?: string | null;
   languages_spoken?: string | null;
+  avatar?: string | null;
 }
 
 export interface AccountMeResponse {
@@ -59,6 +60,7 @@ export type UpdateAccountData = Partial<{
   travel_for_work: boolean;
   location: string;
   languages_spoken: string;
+  avatar: string;
 }>;
 
 export const updateAccount = async (data: UpdateAccountData) => {

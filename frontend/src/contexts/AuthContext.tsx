@@ -111,24 +111,47 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [checkSession]);
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabaseAuthService.signInWithEmail(email, password);
-    if (error) {
+    setLoading(true);
+    try {
+      const { user: newUser, session: newSession, error } = await supabaseAuthService.signInWithEmail(email, password);
+      if (error) throw error;
+
+      if (newUser && newSession) {
+        setUser(newUser);
+        setSession(newSession);
+        // Syncing with backend will happen via useEffect, or we could trigger it here
+      }
+    } catch (error) {
+      setLoading(false);
       throw error;
     }
-    // Session will be updated via onAuthStateChange
+    // onAuthStateChange will also fire, but we update state immediately to avoid race conditions
   };
 
   const signUp = async (email: string, password: string, metadata?: { username?: string; phone?: string }) => {
-    const { user, session, error } = await supabaseAuthService.signUpWithEmail(email, password, metadata);
-    if (error) {
+    setLoading(true);
+    try {
+      const { user: newUser, session: newSession, error } = await supabaseAuthService.signUpWithEmail(email, password, metadata);
+      if (error) throw error;
+
+      if (newUser) {
+        setUser(newUser);
+        setSession(newSession);
+      }
+      return { user: newUser, session: newSession, error };
+    } catch (error) {
+      setLoading(false);
       throw error;
     }
-    return { user, session, error };
   };
 
   const signInWithGoogle = async () => {
-    const { error } = await supabaseAuthService.signInWithGoogle();
-    if (error) {
+    setLoading(true);
+    try {
+      const { error } = await supabaseAuthService.signInWithGoogle();
+      if (error) throw error;
+    } catch (error) {
+      setLoading(false);
       throw error;
     }
     // OAuth redirect will happen automatically

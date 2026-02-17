@@ -24,17 +24,18 @@ struct ProfileRow {
     phone: Option<String>,
     residential_address: Option<String>,
     mailing_address: Option<String>,
-    identity_verified: Option<i32>,
+    identity_verified: Option<bool>,
     language: Option<String>,
     currency: Option<String>,
     created_at: Option<String>,
     updated_at: Option<String>,
-    notify_email: Option<i32>,
-    notify_sms: Option<i32>,
+    notify_email: Option<bool>,
+    notify_sms: Option<bool>,
     privacy_profile_visibility: Option<String>,
     tax_id: Option<String>,
     payout_method: Option<String>,
-    travel_for_work: Option<i32>,
+    travel_for_work: Option<bool>,
+    avatar: Option<String>,
 }
 
 #[derive(Serialize)]
@@ -47,11 +48,11 @@ pub struct AccountResponse {
 pub async fn get_me(req: HttpRequest, pool: web::Data<PgPool>) -> impl Responder {
     let user_id = match kamer_auth::extract_user_id(&req, pool.get_ref()).await {
         Ok(id) => id,
-        Err(_) => {
-            return HttpResponse::Ok().json(AccountResponse {
-                user: None,
-                profile: None,
-            })
+        Err(err) => {
+            return HttpResponse::Unauthorized().json(serde_json::json!({
+                "error": "Unauthorized",
+                "message": err.to_string()
+            }))
         }
     };
 
@@ -72,7 +73,7 @@ pub async fn get_me(req: HttpRequest, pool: web::Data<PgPool>) -> impl Responder
     };
 
     let profile: Result<ProfileRow, _> = sqlx::query_as(
-        "SELECT user_id, legal_name, preferred_first_name, phone, residential_address, mailing_address, identity_verified, language, currency, created_at::TEXT, updated_at::TEXT, notify_email, notify_sms, privacy_profile_visibility, tax_id, payout_method, travel_for_work FROM user_profiles WHERE user_id = $1",
+        "SELECT user_id, legal_name, preferred_first_name, phone, residential_address, mailing_address, identity_verified, language, currency, created_at::TEXT, updated_at::TEXT, notify_email, notify_sms, privacy_profile_visibility, tax_id, payout_method, travel_for_work, avatar FROM user_profiles WHERE user_id = $1",
     )
     .bind(user_id)
     .fetch_one(pool.get_ref())
@@ -146,6 +147,7 @@ pub struct UpdateAccountRequest {
     tax_id: Option<String>,
     payout_method: Option<String>,
     travel_for_work: Option<bool>,
+    avatar: Option<String>,
 }
 
 #[put("/update")]
@@ -180,23 +182,24 @@ pub async fn update_account(
     }
 
     // Upsert profile
-    let _ = sqlx::query(
-        "INSERT INTO user_profiles (user_id, legal_name, preferred_first_name, phone, residential_address, mailing_address, language, currency, notify_email, notify_sms, privacy_profile_visibility, tax_id, payout_method, travel_for_work, updated_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, CURRENT_TIMESTAMP)
+    let result = sqlx::query(
+        "INSERT INTO user_profiles (user_id, legal_name, preferred_first_name, phone, residential_address, mailing_address, language, currency, notify_email, notify_sms, privacy_profile_visibility, tax_id, payout_method, travel_for_work, avatar, updated_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, CURRENT_TIMESTAMP)
          ON CONFLICT(user_id) DO UPDATE SET
-           legal_name=excluded.legal_name,
-           preferred_first_name=excluded.preferred_first_name,
-           phone=excluded.phone,
-           residential_address=excluded.residential_address,
-           mailing_address=excluded.mailing_address,
-           language=excluded.language,
-           currency=excluded.currency,
-           notify_email=excluded.notify_email,
-           notify_sms=excluded.notify_sms,
-           privacy_profile_visibility=excluded.privacy_profile_visibility,
-           tax_id=excluded.tax_id,
-           payout_method=excluded.payout_method,
-           travel_for_work=excluded.travel_for_work,
+           legal_name=COALESCE(excluded.legal_name, user_profiles.legal_name),
+           preferred_first_name=COALESCE(excluded.preferred_first_name, user_profiles.preferred_first_name),
+           phone=COALESCE(excluded.phone, user_profiles.phone),
+           residential_address=COALESCE(excluded.residential_address, user_profiles.residential_address),
+           mailing_address=COALESCE(excluded.mailing_address, user_profiles.mailing_address),
+           language=COALESCE(excluded.language, user_profiles.language),
+           currency=COALESCE(excluded.currency, user_profiles.currency),
+           notify_email=COALESCE(excluded.notify_email, user_profiles.notify_email),
+           notify_sms=COALESCE(excluded.notify_sms, user_profiles.notify_sms),
+           privacy_profile_visibility=COALESCE(excluded.privacy_profile_visibility, user_profiles.privacy_profile_visibility),
+           tax_id=COALESCE(excluded.tax_id, user_profiles.tax_id),
+           payout_method=COALESCE(excluded.payout_method, user_profiles.payout_method),
+           travel_for_work=COALESCE(excluded.travel_for_work, user_profiles.travel_for_work),
+           avatar=COALESCE(excluded.avatar, user_profiles.avatar),
            updated_at=CURRENT_TIMESTAMP",
     )
     .bind(user_id)
@@ -207,14 +210,23 @@ pub async fn update_account(
     .bind(&body.mailing_address)
     .bind(&body.language)
     .bind(&body.currency)
-    .bind(body.notify_email.map(|b| if b { 1 } else { 0 }))
-    .bind(body.notify_sms.map(|b| if b { 1 } else { 0 }))
+    .bind(body.notify_email)
+    .bind(body.notify_sms)
     .bind(&body.privacy_profile_visibility)
     .bind(&body.tax_id)
     .bind(&body.payout_method)
-    .bind(body.travel_for_work.map(|b| if b { 1 } else { 0 }))
+    .bind(body.travel_for_work)
+    .bind(&body.avatar)
     .execute(pool.get_ref())
     .await;
+
+    if let Err(e) = result {
+        eprintln!("Error updating profile: {:?}", e);
+        return HttpResponse::InternalServerError().json(serde_json::json!({
+            "error": "Failed to update profile",
+            "details": e.to_string()
+        }));
+    }
 
     HttpResponse::Ok().json(serde_json::json!({"status":"ok"}))
 }

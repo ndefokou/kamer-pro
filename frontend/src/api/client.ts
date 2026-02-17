@@ -4,6 +4,7 @@ import { networkService } from "../services/networkService";
 import { queryClient } from "../lib/queryClient";
 import {
   User,
+  Listing,
   Product,
   ProductFilters,
   TownCount,
@@ -446,9 +447,16 @@ const getCachedResponse = async (url: string, params?: Record<string, unknown>):
     if (url.includes('/listings/') && !url.includes('/reviews') && !url.includes('/my-listings')) {
       // Single listing
       const id = url.split('/listings/')[1].split('/')[0];
-      const cached = await dbService.getCachedListing(id) as CachedListing | null;
-      // Only return if it's a valid listing with essential data
-      if (cached && cached.id && cached.title && cached.price !== undefined) {
+      const cached = await dbService.getCachedListing(id) as (CachedListing | Product) | null;
+
+      if (!cached) return null;
+
+      // Handle both flattened CachedListing and full Product object
+      // Verification logic: a valid product must have at least an id and title
+      const listing = (cached as Product).listing || (cached as CachedListing);
+      const price = (listing as CachedListing).price ?? (listing as Listing).price_per_night;
+
+      if (listing && (listing.id === id || !listing.id) && listing.title && price !== undefined) {
         return cached;
       }
       return null;

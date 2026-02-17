@@ -108,8 +108,10 @@ const AccountSettings = () => {
         const savedAvatar = localStorage.getItem('host_avatar');
 
         if (me.profile) {
-          if (savedLocation) me.profile.location = savedLocation;
-          if (savedLanguages) me.profile.languages_spoken = savedLanguages;
+          // Identify if we need to sync any legacy local data one last time?
+          // For now, let's just rely on backend data. 
+          // If the user had "unsaved" local changes they might be lost, but 
+          // the instruction was to fix the issue where data wasn't showing up (implying backend is source of truth).
         }
 
         setData(me);
@@ -151,41 +153,46 @@ const AccountSettings = () => {
 
   if (loading) return <Loading fullScreen message="Loading account..." />;
   if (!data) return <div className="p-6">{error || "Unable to load account."}</div>;
+  if (!data.user) return <div className="p-6">Error: Incomplete user data received.</div>;
+
 
   const p: AccountProfile = data.profile || ({} as AccountProfile);
 
   const save = async (
     patch: UpdateAccountData
   ) => {
-    // Persist to localStorage for demo purposes
-    if (patch.location !== undefined) localStorage.setItem('host_location', patch.location);
-    if (patch.languages_spoken !== undefined) localStorage.setItem('host_languages', patch.languages_spoken);
-
     await updateAccount(patch);
     const fresh = await getAccountMe();
-
-    // Re-apply local data
-    const savedLocation = localStorage.getItem('host_location');
-    const savedLanguages = localStorage.getItem('host_languages');
-    if (fresh.profile) {
-      if (savedLocation) fresh.profile.location = savedLocation;
-      if (savedLanguages) fresh.profile.languages_spoken = savedLanguages;
-    }
-
     setData(fresh);
   };
 
-  const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64String = reader.result as string;
-        localStorage.setItem('host_avatar', base64String);
-        // Force update to show new avatar immediately (in a real app, we'd upload to server)
-        window.location.reload();
-      };
-      reader.readAsDataURL(file);
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        // Upload to the standalone images endpoint
+        const response = await fetch('/api/images', {
+          method: 'POST',
+          body: formData,
+          // No Content-Type header, browser sets it with boundary
+        });
+
+        if (!response.ok) throw new Error('Failed to upload image');
+
+        const result = await response.json();
+        const urls = result.urls as string[];
+
+        if (urls && urls.length > 0) {
+          const avatarUrl = urls[0];
+          await save({ avatar: avatarUrl });
+        }
+      } catch (err) {
+        console.error("Avatar upload failed:", err);
+        // Could set an error state here specifically for avatar
+      }
     }
   };
 
@@ -236,8 +243,8 @@ const AccountSettings = () => {
                 <div>
                   <div className="text-sm text-gray-500">Profile Picture</div>
                   <div className="mt-2">
-                    {localStorage.getItem('host_avatar') ? (
-                      <img src={localStorage.getItem('host_avatar')!} alt="Profile" className="h-16 w-16 rounded-full object-cover" />
+                    {p.avatar ? (
+                      <img src={p.avatar} alt="Profile" className="h-16 w-16 rounded-full object-cover" />
                     ) : (
                       <div className="h-16 w-16 rounded-full bg-gray-200 flex items-center justify-center text-gray-500">No Img</div>
                     )}

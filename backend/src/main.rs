@@ -7,7 +7,6 @@ use dotenv::dotenv;
 use kamer_listings::ListingWithDetails;
 use moka::future::Cache;
 use sqlx::postgres::{PgConnectOptions, PgPoolOptions};
-use sqlx::Executor;
 use std::env;
 use std::str::FromStr;
 use std::time::{Duration, Instant};
@@ -27,17 +26,7 @@ async fn main() -> std::io::Result<()> {
         println!("🟡 Rust application starting...");
     }
 
-    let mut database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-
-    if !database_url.contains("prepare_threshold") {
-        let separator = if database_url.contains('?') { "&" } else { "?" };
-        database_url.push_str(&format!("{}prepare_threshold=0", separator));
-    }
-
-    if !database_url.contains("statement_cache_capacity") {
-        let separator = if database_url.contains('?') { "&" } else { "?" };
-        database_url.push_str(&format!("{}statement_cache_capacity=0", separator));
-    }
+    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
 
     // Keep pool very small by default to avoid Supabase session limits
     let max_conns: u32 = env::var("DATABASE_MAX_CONNECTIONS")
@@ -77,12 +66,6 @@ async fn main() -> std::io::Result<()> {
         .max_connections(max_conns)
         .min_connections(0)
         .acquire_timeout(Duration::from_millis(acquire_timeout_ms))
-        .after_connect(|conn, _meta| {
-            Box::pin(async move {
-                conn.execute("DEALLOCATE ALL").await?;
-                Ok(())
-            })
-        })
         .connect_lazy_with(connection_options);
 
     // Optionally run migrations on startup when explicitly enabled.

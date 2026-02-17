@@ -55,13 +55,14 @@ async fn get_wishlist(pool: web::Data<PgPool>, req: HttpRequest) -> impl Respond
         "#,
     )
     .bind(user_id)
+    .persistent(false)
     .fetch_all(pool.get_ref())
     .await;
 
     match result {
         Ok(items) => HttpResponse::Ok().json(items),
         Err(e) => {
-            eprintln!("Failed to fetch wishlist: {}", e);
+            log::error!("Failed to fetch wishlist for user {}: {:?}", user_id, e);
             HttpResponse::InternalServerError().json(serde_json::json!({
                 "error": "Failed to fetch wishlist"
             }))
@@ -88,6 +89,7 @@ pub async fn add_to_wishlist(
     let listing_exists: Result<Option<String>, _> =
         sqlx::query_scalar("SELECT id FROM listings WHERE id = $1")
             .bind(&body.product_id)
+            .persistent(false)
             .fetch_optional(pool.get_ref())
             .await;
 
@@ -109,6 +111,7 @@ pub async fn add_to_wishlist(
     let user_exists: Result<Option<i32>, _> =
         sqlx::query_scalar("SELECT id FROM users WHERE id = $1")
             .bind(user_id)
+            .persistent(false)
             .fetch_optional(pool.get_ref())
             .await;
 
@@ -131,6 +134,7 @@ pub async fn add_to_wishlist(
         sqlx::query_scalar("SELECT id FROM wishlist WHERE user_id = $1 AND product_id = $2")
             .bind(user_id)
             .bind(&body.product_id)
+            .persistent(false)
             .fetch_optional(pool.get_ref())
             .await;
 
@@ -143,6 +147,7 @@ pub async fn add_to_wishlist(
     let result = sqlx::query("INSERT INTO wishlist (user_id, product_id) VALUES ($1, $2)")
         .bind(user_id)
         .bind(&body.product_id)
+        .persistent(false)
         .execute(pool.get_ref())
         .await;
 
@@ -178,6 +183,7 @@ pub async fn remove_from_wishlist(
     let result = sqlx::query("DELETE FROM wishlist WHERE id = $1 AND user_id = $2")
         .bind(wishlist_item_id)
         .bind(user_id)
+        .persistent(false)
         .execute(pool.get_ref())
         .await;
 
@@ -213,6 +219,7 @@ pub async fn remove_from_wishlist_by_product(
     let result = sqlx::query("DELETE FROM wishlist WHERE product_id = $1 AND user_id = $2")
         .bind(product_id)
         .bind(user_id)
+        .persistent(false)
         .execute(pool.get_ref())
         .await;
 
@@ -249,6 +256,7 @@ pub async fn check_wishlist(
         sqlx::query_scalar("SELECT id FROM wishlist WHERE user_id = $1 AND product_id = $2")
             .bind(user_id)
             .bind(product_id.clone())
+            .persistent(false)
             .fetch_optional(pool.get_ref())
             .await;
 

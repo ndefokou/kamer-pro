@@ -57,6 +57,27 @@ const NearbyPOI = () => {
     });
 
   useEffect(() => {
+    const controller = new AbortController();
+
+    const fetchWithRetry = async (url: string, options: RequestInit, retries = 3, backoff = 1000) => {
+      try {
+        const response = await fetch(url, options);
+        if (!response.ok) {
+          if (response.status === 429 || response.status >= 500) {
+            throw new Error(`Retryable error: ${response.status}`);
+          }
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return await response.json();
+      } catch (error: any) {
+        if (retries > 0 && error.message.includes('Retryable')) {
+          await new Promise(resolve => setTimeout(resolve, backoff));
+          return fetchWithRetry(url, options, retries - 1, backoff * 2);
+        }
+        throw error;
+      }
+    };
+
     const run = () => {
       const zoom = map.getZoom();
       if (zoom < 12) {
@@ -73,6 +94,7 @@ const NearbyPOI = () => {
       lastQueryKey.current = key;
 
       const bbox = `${south},${west},${north},${east}`;
+      // Increased timeout in query to 25s, max results 200
       const q = `
 [out:json][timeout:25];
 (
@@ -85,12 +107,12 @@ const NearbyPOI = () => {
 );
 out center 200;`;
 
-      fetch("https://overpass-api.de/api/interpreter", {
+      fetchWithRetry("https://overpass-api.de/api/interpreter", {
         method: "POST",
         body: q,
         headers: { "Content-Type": "text/plain;charset=UTF-8" },
+        signal: controller.signal
       })
-        .then((r) => r.json())
         .then((data) => {
           type OverpassNode = { type: string; id: number | string; lat?: number; lon?: number; tags?: Record<string, string> };
           const elements: OverpassNode[] = Array.isArray(data?.elements) ? (data.elements as OverpassNode[]) : [];
@@ -113,14 +135,21 @@ out center 200;`;
             out.push({ id: String(el.id), lat: el.lat, lon: el.lon, name, emoji, type: base });
             if (out.length >= 200) break;
           }
-          setPois(out);
+          if (!controller.signal.aborted) {
+            setPois(out);
+          }
         })
-        .catch(() => { });
+        .catch((err) => {
+          if (err.name !== 'AbortError') {
+            console.warn("Overpass API failed:", err);
+          }
+        });
     };
 
     const onMove = () => {
       if (timer.current) window.clearTimeout(timer.current);
-      timer.current = window.setTimeout(run, 600) as unknown as number;
+      // Debounce increased to 1s to reduce load
+      timer.current = window.setTimeout(run, 1000) as unknown as number;
     };
 
     run();
@@ -128,6 +157,7 @@ out center 200;`;
     return () => {
       map.off("moveend", onMove);
       if (timer.current) window.clearTimeout(timer.current);
+      controller.abort();
     };
   }, [map, emojiFor]);
 
