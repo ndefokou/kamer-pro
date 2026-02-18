@@ -13,12 +13,6 @@ maintainers:
     email: tcheutchouaarthur38@gmail.com
 
 dependencies:
-  - name: common
-    version: "1.x.x"
-    repository: https://charts.bitnami.com/bitnami
-    tags:
-      - common
-      - bitnami-common
   - name: app-template
     version: "4.0.1"
     repository: https://bjw-s-labs.github.io/helm-charts
