@@ -80,7 +80,7 @@ backend:
   ingress:
     main:
       enabled: true
-      className: nginx
+      className: traefik
       hosts:
         - host: "{{ .Values.global.domain }}"
           paths:
