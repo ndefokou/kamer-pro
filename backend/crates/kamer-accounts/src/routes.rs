@@ -36,6 +36,9 @@ struct ProfileRow {
     payout_method: Option<String>,
     travel_for_work: Option<bool>,
     avatar: Option<String>,
+    location: Option<String>,
+    languages_spoken: Option<String>,
+    pub bio: Option<String>,
 }
 
 #[derive(Serialize)]
@@ -73,7 +76,7 @@ pub async fn get_me(req: HttpRequest, pool: web::Data<PgPool>) -> impl Responder
     };
 
     let profile: Result<ProfileRow, _> = sqlx::query_as(
-        "SELECT user_id, legal_name, preferred_first_name, phone, residential_address, mailing_address, identity_verified, language, currency, created_at::TEXT, updated_at::TEXT, notify_email, notify_sms, privacy_profile_visibility, tax_id, payout_method, travel_for_work, avatar FROM user_profiles WHERE user_id = $1",
+        "SELECT user_id, legal_name, preferred_first_name, phone, residential_address, mailing_address, identity_verified, language, currency, created_at::TEXT, updated_at::TEXT, notify_email, notify_sms, privacy_profile_visibility, tax_id, payout_method, travel_for_work, avatar, location, languages_spoken, bio FROM user_profiles WHERE user_id = $1",
     )
     .bind(user_id)
     .fetch_one(pool.get_ref())
@@ -111,7 +114,7 @@ pub async fn get_user_by_id(path: web::Path<i32>, pool: web::Data<PgPool>) -> im
     };
 
     let profile: Result<ProfileRow, _> = sqlx::query_as(
-        "SELECT user_id, legal_name, preferred_first_name, phone, residential_address, mailing_address, identity_verified, language, currency, created_at::TEXT, updated_at::TEXT, notify_email, notify_sms, privacy_profile_visibility, tax_id, payout_method, travel_for_work FROM user_profiles WHERE user_id = $1",
+        "SELECT user_id, legal_name, preferred_first_name, phone, residential_address, mailing_address, identity_verified, language, currency, created_at::TEXT, updated_at::TEXT, notify_email, notify_sms, privacy_profile_visibility, tax_id, payout_method, travel_for_work, avatar, location, languages_spoken FROM user_profiles WHERE user_id = $1",
     )
     .bind(user_id)
     .fetch_one(pool.get_ref())
@@ -148,6 +151,9 @@ pub struct UpdateAccountRequest {
     payout_method: Option<String>,
     travel_for_work: Option<bool>,
     avatar: Option<String>,
+    location: Option<String>,
+    languages_spoken: Option<String>,
+    bio: Option<String>,
 }
 
 #[put("/update")]
@@ -183,8 +189,8 @@ pub async fn update_account(
 
     // Upsert profile
     let result = sqlx::query(
-        "INSERT INTO user_profiles (user_id, legal_name, preferred_first_name, phone, residential_address, mailing_address, language, currency, notify_email, notify_sms, privacy_profile_visibility, tax_id, payout_method, travel_for_work, avatar, updated_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, CURRENT_TIMESTAMP)
+        "INSERT INTO user_profiles (user_id, legal_name, preferred_first_name, phone, residential_address, mailing_address, language, currency, notify_email, notify_sms, privacy_profile_visibility, tax_id, payout_method, travel_for_work, avatar, location, languages_spoken, bio, updated_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, CURRENT_TIMESTAMP)
          ON CONFLICT(user_id) DO UPDATE SET
            legal_name=COALESCE(excluded.legal_name, user_profiles.legal_name),
            preferred_first_name=COALESCE(excluded.preferred_first_name, user_profiles.preferred_first_name),
@@ -200,6 +206,9 @@ pub async fn update_account(
            payout_method=COALESCE(excluded.payout_method, user_profiles.payout_method),
            travel_for_work=COALESCE(excluded.travel_for_work, user_profiles.travel_for_work),
            avatar=COALESCE(excluded.avatar, user_profiles.avatar),
+           location=COALESCE(excluded.location, user_profiles.location),
+           languages_spoken=COALESCE(excluded.languages_spoken, user_profiles.languages_spoken),
+           bio=COALESCE(excluded.bio, user_profiles.bio),
            updated_at=CURRENT_TIMESTAMP",
     )
     .bind(user_id)
@@ -217,6 +226,9 @@ pub async fn update_account(
     .bind(&body.payout_method)
     .bind(body.travel_for_work)
     .bind(&body.avatar)
+    .bind(&body.location)
+    .bind(&body.languages_spoken)
+    .bind(&body.bio)
     .execute(pool.get_ref())
     .await;
 

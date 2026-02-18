@@ -33,7 +33,7 @@ const EditableRow = ({ label, value, placeholder, type = "text", onSave }: Edita
   return (
     <div className="py-4">
       <div className="flex items-start justify-between">
-        <div>
+        <div className="flex-1 mr-4">
           <div className="text-sm text-gray-500">{label}</div>
           {!editing ? (
             <div className="font-medium text-gray-900">{value || "Not provided"}</div>
@@ -42,6 +42,41 @@ const EditableRow = ({ label, value, placeholder, type = "text", onSave }: Edita
               <Input value={temp} onChange={(e) => setTemp(e.target.value)} placeholder={placeholder} type={type} className="max-w-md" />
               <Button size="sm" onClick={async () => { await onSave(temp.trim()); setEditing(false); }}>Save</Button>
               <Button size="sm" variant="ghost" onClick={() => { setTemp(value || ""); setEditing(false); }}>Cancel</Button>
+            </div>
+          )}
+        </div>
+        {!editing && (
+          <button onClick={() => setEditing(true)} className="text-sm font-medium text-gray-900 hover:underline">{value ? "Edit" : "Add"}</button>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const EditableTextAreaRow = ({ label, value, placeholder, onSave }: { label: string; value?: string | null; placeholder?: string; onSave: (val: string) => Promise<void> | void; }) => {
+  const [editing, setEditing] = useState(false);
+  const [temp, setTemp] = useState(value || "");
+  useEffect(() => setTemp(value || ""), [value]);
+
+  return (
+    <div className="py-4">
+      <div className="flex items-start justify-between">
+        <div className="flex-1 mr-4">
+          <div className="text-sm text-gray-500">{label}</div>
+          {!editing ? (
+            <div className="font-medium text-gray-900 whitespace-pre-wrap">{value || "Not provided"}</div>
+          ) : (
+            <div className="mt-2 space-y-2">
+              <textarea
+                value={temp}
+                onChange={(e) => setTemp(e.target.value)}
+                placeholder={placeholder}
+                className="w-full min-h-[100px] p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
+              />
+              <div className="flex items-center gap-2">
+                <Button size="sm" onClick={async () => { await onSave(temp.trim()); setEditing(false); }}>Save</Button>
+                <Button size="sm" variant="ghost" onClick={() => { setTemp(value || ""); setEditing(false); }}>Cancel</Button>
+              </div>
             </div>
           )}
         </div>
@@ -101,19 +136,6 @@ const AccountSettings = () => {
     (async () => {
       try {
         const me = await getAccountMe();
-
-        // Load locally saved data if API data is missing
-        const savedLocation = localStorage.getItem('host_location');
-        const savedLanguages = localStorage.getItem('host_languages');
-        const savedAvatar = localStorage.getItem('host_avatar');
-
-        if (me.profile) {
-          // Identify if we need to sync any legacy local data one last time?
-          // For now, let's just rely on backend data. 
-          // If the user had "unsaved" local changes they might be lost, but 
-          // the instruction was to fix the issue where data wasn't showing up (implying backend is source of truth).
-        }
-
         setData(me);
         setError(null);
       } catch (err: unknown) {
@@ -258,6 +280,8 @@ const AccountSettings = () => {
               <EditableRow label="Where I live" value={p.location || undefined} onSave={(val) => save({ location: val })} />
               <Separator />
               <EditableRow label="Languages I speak" value={p.languages_spoken || undefined} onSave={(val) => save({ languages_spoken: val })} />
+              <Separator />
+              <EditableTextAreaRow label="About me (Bio)" value={p.bio || undefined} onSave={(val) => save({ bio: val })} />
 
             </div>
 

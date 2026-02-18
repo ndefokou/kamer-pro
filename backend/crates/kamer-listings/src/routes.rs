@@ -354,21 +354,29 @@ pub async fn get_host_listings(
     }
 
     // Fetch host profile once
-    let profile_row = sqlx::query("SELECT phone, avatar FROM user_profiles WHERE user_id = $1")
+    let profile_row = sqlx::query("SELECT phone, avatar, location, languages_spoken, bio FROM user_profiles WHERE user_id = $1")
         .bind(host_id)
         .fetch_optional(pool.get_ref())
         .await
         .ok()
         .flatten();
-    let (contact_phone, host_avatar): (Option<String>, Option<String>) =
-        if let Some(row) = profile_row {
-            (
-                sqlx::Row::get(&row, "phone"),
-                sqlx::Row::get(&row, "avatar"),
-            )
-        } else {
-            (None, None)
-        };
+    let (contact_phone, host_avatar, host_location, host_languages, host_bio): (
+        Option<String>,
+        Option<String>,
+        Option<String>,
+        Option<String>,
+        Option<String>,
+    ) = if let Some(row) = profile_row {
+        (
+            sqlx::Row::get(&row, "phone"),
+            sqlx::Row::get(&row, "avatar"),
+            sqlx::Row::get(&row, "location"),
+            sqlx::Row::get(&row, "languages_spoken"),
+            sqlx::Row::get(&row, "bio"),
+        )
+    } else {
+        (None, None, None, None, None)
+    };
 
     let mut out: Vec<ListingWithDetails> = Vec::with_capacity(listings.len());
     for l in listings {
@@ -388,6 +396,11 @@ pub async fn get_host_listings(
             contact_phone: contact_phone.clone(),
             host_avatar: host_avatar.clone(),
             host_username: None,
+            host_legal_name: None,
+            host_preferred_name: None,
+            host_location: host_location.clone(),
+            host_languages: host_languages.clone(),
+            host_bio: host_bio.clone(),
         });
     }
 
@@ -466,6 +479,16 @@ pub struct ListingWithDetails {
     pub host_avatar: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub host_username: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub host_legal_name: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub host_preferred_name: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub host_location: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub host_languages: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub host_bio: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, sqlx::FromRow, Clone)]
@@ -682,7 +705,7 @@ async fn get_listing_with_details(
     .fetch_all(pool);
 
     let profile_fut = sqlx::query(
-        "SELECT u.username as username, p.phone as phone, p.avatar as avatar FROM users u LEFT JOIN user_profiles p ON p.user_id = u.id WHERE u.id = $1",
+        "SELECT u.username as username, p.legal_name as legal_name, p.preferred_first_name as preferred_first_name, p.phone as phone, p.avatar as avatar, p.location as location, p.languages_spoken as languages_spoken, p.bio as bio FROM users u LEFT JOIN user_profiles p ON p.user_id = u.id WHERE u.id = $1",
     )
     .bind(listing.host_id)
     .persistent(false)
@@ -697,18 +720,37 @@ async fn get_listing_with_details(
     )?;
 
     let amenities: Vec<String> = amenities_rows.into_iter().map(|a| a.amenity_type).collect();
-    let (host_username, contact_phone, host_avatar): (
+    let (
+        host_username,
+        host_legal_name,
+        host_preferred_name,
+        contact_phone,
+        host_avatar,
+        host_location,
+        host_languages,
+        host_bio,
+    ): (
+        Option<String>,
+        Option<String>,
+        Option<String>,
+        Option<String>,
+        Option<String>,
         Option<String>,
         Option<String>,
         Option<String>,
     ) = if let Some(row) = profile_row {
         (
             sqlx::Row::get(&row, "username"),
+            sqlx::Row::get(&row, "legal_name"),
+            sqlx::Row::get(&row, "preferred_first_name"),
             sqlx::Row::get(&row, "phone"),
             sqlx::Row::get(&row, "avatar"),
+            sqlx::Row::get(&row, "location"),
+            sqlx::Row::get(&row, "languages_spoken"),
+            sqlx::Row::get(&row, "bio"),
         )
     } else {
-        (None, None, None)
+        (None, None, None, None, None, None, None, None)
     };
 
     // Parse safety items
@@ -728,6 +770,11 @@ async fn get_listing_with_details(
         contact_phone,
         host_avatar,
         host_username,
+        host_legal_name,
+        host_preferred_name,
+        host_location,
+        host_languages,
+        host_bio,
     })
 }
 
@@ -1157,6 +1204,12 @@ pub struct ListingWithProfile {
     pub listing: Listing,
     pub contact_phone: Option<String>,
     pub host_avatar: Option<String>,
+    pub host_username: Option<String>,
+    pub host_legal_name: Option<String>,
+    pub host_preferred_name: Option<String>,
+    pub host_location: Option<String>,
+    pub host_languages: Option<String>,
+    pub host_bio: Option<String>,
 }
 
 /// GET /api/listings/my-listings - Get my listings (paginated, lightweight)
@@ -1172,7 +1225,7 @@ pub async fn get_my_listings(
     };
     let started = std::time::Instant::now();
     let mut qb: sqlx::QueryBuilder<sqlx::Postgres> =
-        sqlx::QueryBuilder::new("SELECT l.*, up.phone as contact_phone, up.avatar as host_avatar FROM listings l LEFT JOIN user_profiles up ON up.user_id = l.host_id WHERE l.host_id = ");
+        sqlx::QueryBuilder::new("SELECT l.*, up.phone as contact_phone, up.avatar as host_avatar, u.username as host_username, up.legal_name as host_legal_name, up.preferred_first_name as host_preferred_name, up.location as host_location, up.languages_spoken as host_languages, up.bio as host_bio FROM listings l LEFT JOIN user_profiles up ON up.user_id = l.host_id LEFT JOIN users u ON u.id = l.host_id WHERE l.host_id = ");
     qb.push_bind(user_id);
     qb.push(" ORDER BY l.created_at DESC");
 
@@ -1260,7 +1313,12 @@ pub async fn get_my_listings(
             unavailable_dates: Vec::new(),
             contact_phone: l.contact_phone,
             host_avatar: l.host_avatar,
-            host_username: None,
+            host_username: l.host_username,
+            host_legal_name: l.host_legal_name,
+            host_preferred_name: l.host_preferred_name,
+            host_location: l.host_location,
+            host_languages: l.host_languages,
+            host_bio: l.host_bio,
         });
     }
 
@@ -1908,6 +1966,11 @@ pub async fn get_all_listings(
             contact_phone: None,
             host_avatar: None,
             host_username: None,
+            host_legal_name: None,
+            host_preferred_name: None,
+            host_location: None,
+            host_languages: None,
+            host_bio: None,
         });
     }
 

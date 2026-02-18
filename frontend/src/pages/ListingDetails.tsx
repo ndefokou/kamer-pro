@@ -225,7 +225,7 @@ const ListingDetails: React.FC = () => {
     }
 
     const { listing, amenities } = product;
-    const hostName = (product.host_username || '').trim() || 'Host';
+    const hostName = (product.host_preferred_name || '').trim() || (product.host_legal_name || '').trim() || (product.host_username || '').trim() || 'Host';
     const hostAvatar = product.host_avatar ?? undefined;
     const totalGuests = adults + children;
     const isHost = listing?.host_id ? Number(localStorage.getItem('userId')) === Number(listing.host_id) : false;
@@ -1132,20 +1132,20 @@ const ListingDetails: React.FC = () => {
 
                             <div className="pt-4">
                                 <h4 className="text-lg font-semibold mb-2">{t('listing.host.aboutTitle')}</h4>
-                                {localStorage.getItem('host_location') && (
+                                {product.host_location && (
                                     <div className="flex items-center gap-2 mb-2 text-gray-700">
                                         <MapIcon className="h-5 w-5" />
-                                        <span>{t('listing.host.livesIn', { location: localStorage.getItem('host_location') })}</span>
+                                        <span>{t('listing.host.livesIn', { location: product.host_location })}</span>
                                     </div>
                                 )}
-                                {localStorage.getItem('host_languages') && (
+                                {product.host_languages && (
                                     <div className="flex items-center gap-2 mb-4 text-gray-700">
                                         <MessageSquare className="h-5 w-5" />
-                                        <span>{t('listing.host.speaks', { langs: localStorage.getItem('host_languages') })}</span>
+                                        <span>{t('listing.host.speaks', { langs: product.host_languages })}</span>
                                     </div>
                                 )}
                                 <p className="text-muted-foreground mb-6">
-                                    {t('listing.host.bioDefault')}
+                                    {product.host_bio || t('listing.host.bioDefault')}
                                 </p>
                                 <Button
                                     variant="outline"

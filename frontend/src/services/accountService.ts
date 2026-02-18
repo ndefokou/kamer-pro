@@ -24,6 +24,7 @@ export interface AccountProfile {
   travel_for_work?: boolean | null;
   location?: string | null;
   languages_spoken?: string | null;
+  bio?: string | null;
   avatar?: string | null;
 }
 
@@ -60,6 +61,7 @@ export type UpdateAccountData = Partial<{
   travel_for_work: boolean;
   location: string;
   languages_spoken: string;
+  bio: string;
   avatar: string;
 }>;
 
@@ -72,7 +74,7 @@ export const uploadAvatar = async (file: File): Promise<{ urls: string[] }> => {
   const formData = new FormData();
   formData.append('file', file);
 
-  const res = await apiClient.post("/images", formData, {
+  const res = await apiClient.post("/upload/images", formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
     },

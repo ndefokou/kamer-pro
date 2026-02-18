@@ -69,6 +69,11 @@ export interface Product {
     contact_phone?: string;
     host_avatar?: string;
     host_username?: string;
+    host_legal_name?: string;
+    host_preferred_name?: string;
+    host_location?: string;
+    host_languages?: string;
+    host_bio?: string;
 }
 
 export interface ProductFilters {
