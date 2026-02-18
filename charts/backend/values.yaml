@@ -13,10 +13,8 @@ backend:
       type: deployment
       replicas: 1
       pod:
-        labels:
-          app.kubernetes.io/name: backend
-      labels:
-        app.kubernetes.io/component: backend
+        labels: {}
+      labels: {}
       containers:
         main:
           image:
