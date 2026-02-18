@@ -12,6 +12,20 @@ RUN rustup default nightly
 # Copy dependency manifests first to leverage Docker cache
 COPY Cargo.toml Cargo.lock ./
 
+# Copy workspace member manifests
+COPY crates/kamer-accounts/Cargo.toml crates/kamer-accounts/Cargo.toml
+COPY crates/kamer-admin/Cargo.toml crates/kamer-admin/Cargo.toml
+COPY crates/kamer-api/Cargo.toml crates/kamer-api/Cargo.toml
+COPY crates/kamer-auth/Cargo.toml crates/kamer-auth/Cargo.toml
+COPY crates/kamer-bookings/Cargo.toml crates/kamer-bookings/Cargo.toml
+COPY crates/kamer-calendar/Cargo.toml crates/kamer-calendar/Cargo.toml
+COPY crates/kamer-core/Cargo.toml crates/kamer-core/Cargo.toml
+COPY crates/kamer-db/Cargo.toml crates/kamer-db/Cargo.toml
+COPY crates/kamer-listings/Cargo.toml crates/kamer-listings/Cargo.toml
+COPY crates/kamer-messages/Cargo.toml crates/kamer-messages/Cargo.toml
+COPY crates/kamer-storage/Cargo.toml crates/kamer-storage/Cargo.toml
+COPY crates/kamer-wishlist/Cargo.toml crates/kamer-wishlist/Cargo.toml
+
 # Create a cargo config file with more resilient network settings
 RUN mkdir .cargo && \
     echo '[net]' > .cargo/config.toml && \
@@ -21,8 +35,20 @@ RUN mkdir .cargo && \
     echo 'timeout = 600' >> .cargo/config.toml && \
     echo 'multiplexing = false' >> .cargo/config.toml
 
-# Create a dummy main.rs to build only dependencies
-RUN mkdir src && echo "fn main() {}" > src/main.rs
+# Create dummy source files for all crates to build only dependencies
+RUN mkdir -p src && echo "fn main() {}" > src/main.rs && \
+    mkdir -p crates/kamer-accounts/src && touch crates/kamer-accounts/src/lib.rs && \
+    mkdir -p crates/kamer-admin/src && touch crates/kamer-admin/src/lib.rs && \
+    mkdir -p crates/kamer-api/src && touch crates/kamer-api/src/lib.rs && \
+    mkdir -p crates/kamer-auth/src && touch crates/kamer-auth/src/lib.rs && \
+    mkdir -p crates/kamer-bookings/src && touch crates/kamer-bookings/src/lib.rs && \
+    mkdir -p crates/kamer-calendar/src && touch crates/kamer-calendar/src/lib.rs && \
+    mkdir -p crates/kamer-core/src && touch crates/kamer-core/src/lib.rs && \
+    mkdir -p crates/kamer-db/src && touch crates/kamer-db/src/lib.rs && \
+    mkdir -p crates/kamer-listings/src && touch crates/kamer-listings/src/lib.rs && \
+    mkdir -p crates/kamer-messages/src && touch crates/kamer-messages/src/lib.rs && \
+    mkdir -p crates/kamer-storage/src && touch crates/kamer-storage/src/lib.rs && \
+    mkdir -p crates/kamer-wishlist/src && touch crates/kamer-wishlist/src/lib.rs
 RUN --mount=type=cache,target=/usr/local/cargo/registry \
     --mount=type=cache,target=/usr/src/app/target \
     cargo build --release --locked
