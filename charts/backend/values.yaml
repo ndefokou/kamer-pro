@@ -18,7 +18,7 @@ backend:
       containers:
         main:
           image:
-            repository: kamer-pro/backend
+            repository: ghcr.io/ndefokou/kamer-pro/backend
             tag: "{{ .Values.global.version }}"
             pullPolicy: IfNotPresent
 
