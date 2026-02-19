@@ -32,7 +32,7 @@ backend:
 
           envFrom:
             - secretRef:
-                name: mboko-backend-main
+                name: le-mboko-main
           env:
             # Database
             DATABASE_MAX_CONNECTIONS: "20"
