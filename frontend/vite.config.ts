@@ -17,14 +17,14 @@ export default defineConfig(({ mode }) => ({
         changeOrigin: true,
         timeout: 300000,
         proxyTimeout: 300000,
-        configure: (proxy, _options) => {
-          proxy.on('error', (err, _req, _res) => {
+        configure: (proxy: any, _options: any) => {
+          proxy.on('error', (err: any, _req: any, _res: any) => {
             console.log('proxy error', err);
           });
-          proxy.on('proxyReq', (proxyReq, req, _res) => {
+          proxy.on('proxyReq', (proxyReq: any, req: any, _res: any) => {
             console.log('Sending Request to the Target:', req.method, req.url);
           });
-          proxy.on('proxyRes', (proxyRes, req, _res) => {
+          proxy.on('proxyRes', (proxyRes: any, req: any, _res: any) => {
             console.log('Received Response from the Target:', proxyRes.statusCode, req.url);
           });
         },
@@ -40,7 +40,7 @@ export default defineConfig(({ mode }) => ({
       threshold: 1024,
     }),
     VitePWA({
-      registerType: "autoUpdate",
+      registerType: "prompt", // Changed from autoUpdate to prompt for more control
       devOptions: {
         enabled: true,
       },
@@ -104,6 +104,7 @@ export default defineConfig(({ mode }) => ({
         ],
         navigateFallback: '/index.html',
         navigateFallbackDenylist: [/\/api(\/|$)/, /supabase\.co/, /camer\.digital/],
+        directoryIndex: '/',
       },
       manifest: {
         name: "leMboko",
