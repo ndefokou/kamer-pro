@@ -1,0 +1,102 @@
+---
+# Source: mboko-frontend/charts/frontend/templates/common.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: mboko-frontend
+  labels:
+    app.kubernetes.io/instance: mboko-frontend
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: mboko-frontend
+    app.kubernetes.io/service: mboko-frontend
+    helm.sh/chart: frontend-4.0.1
+  namespace: default
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: 80
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/controller: main
+    app.kubernetes.io/instance: mboko-frontend
+    app.kubernetes.io/name: mboko-frontend
+---
+# Source: mboko-frontend/charts/frontend/templates/common.yaml
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mboko-frontend
+  labels:
+    app.kubernetes.io/controller: main
+    app.kubernetes.io/instance: mboko-frontend
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: mboko-frontend
+    helm.sh/chart: frontend-4.0.1
+  namespace: default
+spec:
+  revisionHistoryLimit: 3
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/controller: main
+      app.kubernetes.io/name: mboko-frontend
+      app.kubernetes.io/instance: mboko-frontend
+  template:
+    metadata:
+      labels: 
+        app.kubernetes.io/controller: main
+        app.kubernetes.io/instance: mboko-frontend
+        app.kubernetes.io/name: mboko-frontend
+    spec: 
+      enableServiceLinks: false
+      serviceAccountName: default
+      automountServiceAccountToken: true
+      securityContext: 
+        fsGroup: 101
+        runAsGroup: 101
+        runAsUser: 101
+      hostIPC: false
+      hostNetwork: false
+      hostPID: false
+      dnsPolicy: ClusterFirst
+      containers: 
+        - image: ghcr.io/ndefokou/kamer-pro/frontend:latest
+          imagePullPolicy: Always
+          name: main
+          resources:
+            limits:
+              cpu: 100m
+              memory: 64Mi
+            requests:
+              cpu: 10m
+              memory: 32Mi
+---
+# Source: mboko-frontend/charts/frontend/templates/common.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: mboko-frontend
+  labels:
+    app.kubernetes.io/instance: mboko-frontend
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: mboko-frontend
+    helm.sh/chart: frontend-4.0.1
+  namespace: default
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: "mboko.camer.digital"
+      http:
+        paths:
+          - path: "/"
+            pathType: Prefix
+            backend:
+              service:
+                name: mboko-frontend
+                port:
+                  number: 80
