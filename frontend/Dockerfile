@@ -22,6 +22,11 @@ RUN npm run build
 FROM nginx:stable-alpine
 COPY --from=builder /app/dist /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf
-RUN chown -R nginx:nginx /usr/share/nginx/html
+
+# Fix permissions for non-root execution (UID 101)
+RUN touch /var/run/nginx.pid && \
+    chown -R nginx:nginx /var/run/nginx.pid /var/cache/nginx /var/log/nginx /etc/nginx/conf.d
+
+USER nginx
 EXPOSE 8080
 CMD ["nginx", "-g", "daemon off;"]
