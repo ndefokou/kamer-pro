@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - deploy-app
+      - main
     paths:
       - "frontend/**"
       - ".github/workflows/deploy-frontend-cluster.yml"
@@ -40,7 +41,7 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
-            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/deploy-app' }}
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/deploy-app' || github.ref == 'refs/heads/main' }}
             type=sha
 
       - name: Build and push Docker image

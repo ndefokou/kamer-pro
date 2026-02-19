@@ -164,7 +164,7 @@ const Dashboard = () => {
         const scheduleLoad = () => {
             const timer = setTimeout(() => {
                 if ('requestIdleCallback' in window) {
-                    (window as any).requestIdleCallback(() => {
+                    (window as unknown as { requestIdleCallback: (callback: () => void, options?: { timeout: number }) => void }).requestIdleCallback(() => {
                         // Pass 'low' priority if possible (depends on how fetchNextPage is implemented in React Query)
                         // Actually React Query internally calls queryFn, but we can't easily change queryFn params here
                         // Instead, our cachedGet background refresh already handles 'low' priority.
@@ -207,7 +207,7 @@ const Dashboard = () => {
             }
         }, 8000); // Higher delay
         return () => clearTimeout(timer);
-    }, [queryClient, properties.length]);
+    }, [queryClient, properties]);
 
     console.log('Dashboard.tsx: properties', properties);
     console.log('Dashboard.tsx: isLoading', isLoading);
@@ -265,7 +265,7 @@ const Dashboard = () => {
         return '';
     }, [preferredOrder, knownCities]);
 
-    const { grouped, other, buea } = useMemo(() => {
+    const groupedMap = useMemo(() => {
         const map = new Map<string, { name: string; items: Product[] }>();
         const otherItemsNoKey: Product[] = [];
         console.log('Dashboard.tsx: processing properties for groups', properties);
@@ -294,7 +294,13 @@ const Dashboard = () => {
             entry.items.push(p);
             map.set(key, entry);
         });
-        const groups = Array.from(map.values()).sort((a, b) => {
+        return map;
+    }, [properties, inferCity]);
+
+    const { grouped, other, buea } = useMemo(() => {
+        const map = groupedMap;
+        // Sort: Yaounde, Douala, Kribi, then by item count desc
+        const ordered = Array.from(map.values()).sort((a, b) => {
             const ia = preferredOrder.indexOf(normalizeCity(a.name));
             const ib = preferredOrder.indexOf(normalizeCity(b.name));
             if (ia !== -1 && ib !== -1) return ia - ib;
@@ -302,12 +308,14 @@ const Dashboard = () => {
             if (ib !== -1) return 1;
             return b.items.length - a.items.length;
         });
-        const bueaItems = Array.isArray(groups) ? (groups.find(g => normalizeCity(g.name) === 'buea')?.items ?? []) : [];
-        const nonPreferred = Array.isArray(groups) ? groups
-            .filter(g => g && !preferredOrder.includes(normalizeCity(g.name)) && normalizeCity(g.name) !== 'buea')
-            .flatMap(g => g?.items || []) : [];
-        return { grouped: Array.isArray(groups) ? groups : [], other: [...nonPreferred, ...otherItemsNoKey], buea: bueaItems };
-    }, [properties, preferredOrder, inferCity]);
+
+        const bueaItems = ordered.find(g => normalizeCity(g.name) === 'buea')?.items ?? [];
+        const nonPreferred = ordered
+            .filter(g => !preferredOrder.includes(normalizeCity(g.name)) && normalizeCity(g.name) !== 'buea')
+            .flatMap(g => g.items);
+
+        return { grouped: ordered, other: nonPreferred, buea: bueaItems };
+    }, [groupedMap, preferredOrder]);
 
     // toggleFavorite and handleLogout removed as they are handled elsewhere or not used in rendering
 

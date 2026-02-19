@@ -71,8 +71,9 @@ const NearbyPOI = () => {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         return await response.json();
-      } catch (error: any) {
-        if (retries > 0 && error.message.includes('Retryable')) {
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        if (retries > 0 && message.includes('Retryable')) {
           await new Promise(resolve => setTimeout(resolve, backoff));
           return fetchWithRetry(url, options, retries - 1, backoff * 2);
         }
@@ -166,7 +167,7 @@ out center ${isMobile ? 50 : 200};`;
       if (timer.current) window.clearTimeout(timer.current);
       controller.abort();
     };
-  }, [map, emojiFor]);
+  }, [map, emojiFor, isSlowConnection]);
 
   return (
     <>

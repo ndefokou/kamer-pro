@@ -335,9 +335,6 @@ const cachedGet = async <T = unknown>(url: string, config?: CustomAxiosRequestCo
 
       throw new Error('Unable to fetch data. Please check your connection and try again.');
 
-    } catch (error) {
-      // Root level error handling
-      throw error;
     } finally {
       // Small delay before removing to allow microtask deduplication
       setTimeout(() => pendingRequests.delete(cacheKey), 0);

@@ -7,7 +7,7 @@ interface AuthContextType {
   session: Session | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string, metadata?: { username?: string; phone?: string }) => Promise<{ user: any; session: any; error: any }>;
+  signUp: (email: string, password: string, metadata?: { username?: string; phone?: string }) => Promise<{ user: User | null; session: Session | null; error: import('@supabase/supabase-js').AuthError | null }>;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
   checkSession: () => Promise<void>;

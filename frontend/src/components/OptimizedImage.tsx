@@ -203,17 +203,19 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
                 // To avoid network congestion, we defer this until browser is idle
                 const scheduleCache = () => {
                     if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
-                        (window as any).requestIdleCallback(async () => {
+                        (window as unknown as { requestIdleCallback: (callback: () => void, options: { timeout: number }) => void }).requestIdleCallback(async () => {
                             try {
+                                // @ts-ignore - priority/fetchpriority is not yet in standard Fetch types
                                 const response = await fetch(optimizedUrl, {
                                     mode: 'cors',
-                                    credentials: 'omit',
-                                    priority: 'low' // Tell browser this is low priority
-                                } as any);
+                                    credentials: 'omit'
+                                });
                                 if (!response.ok) return;
                                 const blob = await response.blob();
                                 await dbService.cacheImage(src, blob).catch(() => undefined);
-                            } catch { }
+                            } catch (err) {
+                                console.debug('Failed to background cache image', err);
+                            }
                         }, { timeout: 2000 });
                     }
                 };
@@ -239,10 +241,6 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
 
         return () => {
             isMounted = false;
-            // Clean up object URL
-            if (imageSrc && imageSrc.startsWith('blob:')) {
-                URL.revokeObjectURL(imageSrc);
-            }
         };
     }, [isInView, src, effectiveQuality, onLoad, onError, supabaseTransformEnabled]);
 
@@ -286,14 +284,14 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
                 width={width}
                 height={height}
                 loading={priority ? 'eager' : 'lazy'}
-                {...({ fetchpriority: priority ? 'high' : 'low' } as any)}
+                {...({ fetchpriority: priority ? 'high' : 'low' } as React.ImgHTMLAttributes<HTMLImageElement>)}
                 crossOrigin="anonymous"
                 style={!imageSrc || isLoading ? placeholderStyle : { transition: 'opacity 0.3s ease-in' }}
                 onClick={onClick}
                 onLoad={() => {
                     setIsLoading(false);
                 }}
-                onError={(e) => {
+                onError={() => {
                     // If image fails to load and we haven't tried the original src yet
                     if (imageSrc !== src && src) {
                         console.warn('Image load failed, trying original src:', src);
