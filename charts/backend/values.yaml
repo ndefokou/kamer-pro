@@ -1,5 +1,5 @@
 global:
-  domain: api.mboko.camer.digital
+  domain: mboko-api.camer.digital
   version: latest
 
 backend:
