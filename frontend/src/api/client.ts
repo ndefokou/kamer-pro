@@ -31,11 +31,7 @@ const getBaseUrl = () => {
     || (import.meta.env.VITE_API_URL as string | undefined);
 
   if (!raw) {
-    // If no backend URL is provided, assume /api relative to the current deployment
-    const isGitHubPages = window.location.hostname.includes("github.io") ||
-      window.location.pathname.startsWith("/kamer-pro");
-    const prefix = isGitHubPages ? "/kamer-pro" : "";
-    return `${prefix}/api`;
+    return "/api";
   }
 
   // Remove trailing slash if present to avoid double slashes
