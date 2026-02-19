@@ -3,6 +3,7 @@ use actix_web::web;
 /// Configure all API routes
 pub fn configure_routes(cfg: &mut web::ServiceConfig) {
     cfg.service(crate::aggregate::dashboard_summary)
+        .service(crate::aggregate::health_check)
         .service(
             web::scope("/auth")
                 .service(kamer_auth::registration_start)

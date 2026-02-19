@@ -32,7 +32,7 @@ backend:
 
           envFrom:
             - secretRef:
-                name: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}'
+                name: mboko-backend-main
           env:
             # Database
             DATABASE_MAX_CONNECTIONS: "20"
@@ -53,7 +53,7 @@ backend:
               custom: true
               spec:
                 httpGet:
-                  path: /health
+                  path: /api/health
                   port: 8082
                 initialDelaySeconds: 5
                 periodSeconds: 10

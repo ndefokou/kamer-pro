@@ -26,7 +26,15 @@ async fn main() -> std::io::Result<()> {
         println!("🟡 Rust application starting...");
     }
 
-    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+    let database_url = match env::var("DATABASE_URL") {
+        Ok(url) => url,
+        Err(_) => {
+            eprintln!("CRITICAL ERROR: DATABASE_URL environment variable is not set!");
+            eprintln!("This is often caused by an incorrect secret reference in the Helm chart.");
+            eprintln!("Check that 'mboko-backend-main' exists and contains DATABASE_URL.");
+            std::process::exit(1);
+        }
+    };
 
     // Keep pool very small by default to avoid Supabase session limits
     let max_conns: u32 = env::var("DATABASE_MAX_CONNECTIONS")
