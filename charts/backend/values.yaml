@@ -4,9 +4,7 @@ global:
 
 backend:
   defaultPodOptions:
-    securityContext:
-      runAsUser: 1001
-      runAsGroup: 1001
+    securityContext: {}
 
   controllers:
     main:
