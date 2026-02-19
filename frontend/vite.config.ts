@@ -102,7 +102,7 @@ export default defineConfig(({ mode }) => ({
             },
           },
         ],
-        navigateFallback: '/index.html',
+        navigateFallback: null,
         navigateFallbackDenylist: [/\/api(\/|$)/, /supabase\.co/, /camer\.digital/],
         directoryIndex: '/',
       },
