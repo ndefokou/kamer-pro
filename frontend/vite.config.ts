@@ -148,23 +148,14 @@ export default defineConfig(({ mode }) => ({
   ].filter(Boolean),
   build: {
     rollupOptions: {
-      output: {
-        manualChunks: {
-          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
-          'vendor-ui': ['@radix-ui/react-accordion', '@radix-ui/react-dialog', 'lucide-react', 'sonner'],
-          'vendor-utils': ['axios', 'date-fns', 'i18next', 'zod'],
-          'vendor-maps': ['leaflet', 'react-leaflet'],
-          'vendor-charts': ['recharts'],
-        },
-      },
     },
-    chunkSizeWarningLimit: 1000,
+    chunkSizeWarningLimit: 2000,
     cssCodeSplit: true,
     sourcemap: false,
     minify: 'terser',
     terserOptions: {
       compress: {
-        drop_console: true,
+        drop_console: false,
         drop_debugger: true,
       },
     },
