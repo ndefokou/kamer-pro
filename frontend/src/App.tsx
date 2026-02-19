@@ -18,11 +18,7 @@ import { cachePolicyService } from "@/services/cachePolicyService";
 
 import { queryClient } from "@/lib/queryClient";
 
-// Detect if running on GitHub Pages subpath
-const isGitHubPages =
-  window.location.hostname.includes("github.io") ||
-  window.location.pathname.includes("/kamer-pro/");
-const basename = isGitHubPages ? "/kamer-pro" : "/";
+const basename = "/";
 const router = createBrowserRouter(
   [
     {

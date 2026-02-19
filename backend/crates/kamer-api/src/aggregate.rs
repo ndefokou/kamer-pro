@@ -15,7 +15,7 @@ pub struct DashboardSummary {
 #[get("/v1/dashboard-summary")]
 pub async fn dashboard_summary(pool: web::Data<PgPool>, req: HttpRequest) -> HttpResponse {
     let user_id = kamer_auth::extract_user_id(&req, pool.get_ref()).await.ok();
-    
+
     let Some(user_id) = user_id else {
         // Anonymous users get empty summary (cacheable)
         let body = DashboardSummary::default();
@@ -100,4 +100,9 @@ pub async fn dashboard_summary(pool: web::Data<PgPool>, req: HttpRequest) -> Htt
         .insert_header((actix_web::http::header::ETAG, etag))
         .insert_header(("Cache-Control", "public, max-age=60"))
         .json(summary)
+}
+
+#[get("/health")]
+pub async fn health_check() -> HttpResponse {
+    HttpResponse::Ok().json(serde_json::json!({ "status": "ok" }))
 }

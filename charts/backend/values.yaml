@@ -1,28 +1,27 @@
 global:
-  domain: api.mboko.camer.digital
+  domain: mboko-api.camer.digital
   version: latest
 
 backend:
   defaultPodOptions:
     securityContext:
-      runAsUser: 1001
-      runAsGroup: 1001
+      runAsUser: 1000
+      runAsGroup: 1000
+      fsGroup: 1000
 
   controllers:
     main:
       type: deployment
       replicas: 1
       pod:
-        labels:
-          app.kubernetes.io/name: backend
-      labels:
-        app.kubernetes.io/component: backend
+        labels: {}
+      labels: {}
       containers:
         main:
           image:
-            repository: kamer-pro/backend
+            repository: ghcr.io/ndefokou/kamer-pro/backend
             tag: "{{ .Values.global.version }}"
-            pullPolicy: IfNotPresent
+            pullPolicy: Always
 
           resources:
             requests:
@@ -34,7 +33,7 @@ backend:
 
           envFrom:
             - secretRef:
-                name: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}'
+                name: le-mboko
           env:
             # Database
             DATABASE_MAX_CONNECTIONS: "20"
@@ -55,7 +54,7 @@ backend:
               custom: true
               spec:
                 httpGet:
-                  path: /health
+                  path: /api/health
                   port: 8082
                 initialDelaySeconds: 5
                 periodSeconds: 10
@@ -80,7 +79,7 @@ backend:
   ingress:
     main:
       enabled: true
-      className: nginx
+      className: traefik
       hosts:
         - host: "{{ .Values.global.domain }}"
           paths:

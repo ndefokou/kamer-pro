@@ -1,0 +1,53 @@
+global:
+  domain: mboko.camer.digital
+  version: latest
+
+frontend:
+  defaultPodOptions:
+    securityContext:
+      runAsUser: 101
+      runAsGroup: 101
+      fsGroup: 101
+
+  controllers:
+    main:
+      type: deployment
+      replicas: 1
+      containers:
+        main:
+          image:
+            repository: ghcr.io/ndefokou/kamer-pro/frontend
+            tag: "{{ .Values.global.version }}"
+            pullPolicy: Always
+
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 100m
+              memory: 64Mi
+
+  service:
+    main:
+      enabled: true
+      type: ClusterIP
+      controller: main
+      ports:
+        http:
+          enabled: true
+          port: 80
+          targetPort: 8080
+
+  ingress:
+    main:
+      enabled: true
+      className: traefik
+      hosts:
+        - host: "{{ .Values.global.domain }}"
+          paths:
+            - path: /
+              pathType: Prefix
+              service:
+                identifier: main
+                port: http

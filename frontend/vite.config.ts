@@ -7,7 +7,7 @@ import compression from 'vite-plugin-compression';
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
-  base: (mode === "production" && process.env.GITHUB_ACTIONS === "true") ? "/kamer-pro/" : "/",
+  base: "/",
   server: {
     host: "::",
     port: 8080,
@@ -52,7 +52,15 @@ export default defineConfig(({ mode }) => ({
         cleanupOutdatedCaches: true,
         runtimeCaching: [
           {
-            urlPattern: ({ url }) => url.pathname.startsWith('/api'),
+            // Never cache backend API calls or Supabase requests
+            urlPattern: ({ url }) => {
+              // Handles root-relative /api and subpath /kamer-pro/api
+              const isPathApi = url.pathname.includes('/api/') || url.pathname.endsWith('/api');
+              // Handles cross-origin backends: production API and Supabase
+              const isKnownBackend =
+                url.hostname.includes('camer.digital') || url.hostname.includes('supabase.co');
+              return isPathApi || isKnownBackend;
+            },
             handler: 'NetworkOnly',
             options: {
               fetchOptions: {
@@ -95,7 +103,7 @@ export default defineConfig(({ mode }) => ({
           },
         ],
         navigateFallback: '/index.html',
-        navigateFallbackDenylist: [/^\/api/],
+        navigateFallbackDenylist: [/\/api(\/|$)/, /supabase\.co/, /camer\.digital/],
       },
       manifest: {
         name: "leMboko",
