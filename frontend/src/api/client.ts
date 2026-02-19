@@ -26,18 +26,7 @@ export type {
 };
 
 const getBaseUrl = () => {
-  // Prefer explicit backend origin if provided; fall back to legacy VITE_API_URL, then to site-relative /api
-  const raw = (import.meta.env.VITE_BACKEND_URL as string | undefined)
-    || (import.meta.env.VITE_API_URL as string | undefined);
-
-  if (!raw) {
-    return "/api";
-  }
-
-  // Remove trailing slash if present to avoid double slashes
-  const clean = raw.endsWith("/") ? raw.slice(0, -1) : raw;
-  // If it's already ending with /api, keep it; otherwise append /api
-  return clean.endsWith("/api") ? clean : `${clean}/api`;
+  return "/api";
 };
 
 const apiClient = axios.create({
