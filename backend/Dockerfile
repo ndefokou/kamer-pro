@@ -67,7 +67,10 @@ RUN chmod +x backend
 COPY --from=builder /usr/src/app/migrations /app/migrations
 
 # Create a non-root user
-RUN adduser -D -s /bin/sh appuser
+RUN adduser -D -u 1000 appuser
+
+# Ensure public/uploads directory exists
+RUN mkdir -p /app/public/uploads
 
 # Change ownership of the app directory to appuser
 RUN chown -R appuser:appuser /app

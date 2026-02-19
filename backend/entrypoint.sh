@@ -32,18 +32,6 @@ case "$DATABASE_URL" in
     ;;
 esac
 
-# Ensure uploads directory exists and has correct permissions
-echo "Setting up directories and permissions..."
-mkdir -p /app/public/uploads
-
-# Only attempt chown if running as root
-if [ "$(id -u)" = "0" ]; then
-  chown -R appuser:appuser /app/public
-  echo "Permissions set successfully."
-else
-  echo "Not running as root, skipping chown..."
-fi
-
 # Migrations are now handled INTERNALLY by the application when MIGRATE_ON_START=true
 if [ "$RUN_MIGRATIONS" = "true" ]; then
   echo "RUN_MIGRATIONS=true: enabling internal migrations via MIGRATE_ON_START=true"
@@ -57,11 +45,4 @@ ldd /app/backend || echo "ldd failed or not available"
 echo "--- DEBUG END ---"
 
 echo "--- Starting application ---"
-# Only use su-exec if we are currently root
-if [ "$(id -u)" = "0" ]; then
-  echo "Dropping privileges to appuser..."
-  exec su-exec appuser ./backend
-else
-  echo "Already running as non-root, starting application directly..."
-  exec ./backend
-fi
+exec ./backend
