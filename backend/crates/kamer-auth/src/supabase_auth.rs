@@ -1,5 +1,5 @@
+use actix_web::error::ErrorUnauthorized;
 use actix_web::{dev::ServiceRequest, Error, HttpMessage};
-use actix_web::error::{ErrorUnauthorized};
 use jsonwebtoken::{decode, Algorithm, DecodingKey, Validation};
 use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
@@ -7,7 +7,7 @@ use std::env;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct SupabaseClaims {
-    pub sub: String,  // User ID (UUID)
+    pub sub: String, // User ID (UUID)
     pub email: Option<String>,
     pub phone: Option<String>,
     pub app_metadata: Option<serde_json::Value>,
@@ -16,10 +16,10 @@ pub struct SupabaseClaims {
     pub aal: Option<String>,
     pub amr: Option<Vec<serde_json::Value>>,
     pub session_id: Option<String>,
-    pub exp: usize,  // Expiration time
-    pub iat: usize,  // Issued at
-    pub iss: Option<String>,  // Issuer
-    pub aud: Option<String>,  // Audience
+    pub exp: usize,          // Expiration time
+    pub iat: usize,          // Issued at
+    pub iss: Option<String>, // Issuer
+    pub aud: Option<String>, // Audience
 }
 
 #[derive(Debug, Clone)]
@@ -53,7 +53,7 @@ pub async fn validate_supabase_token(req: &ServiceRequest) -> Result<Authenticat
     // Decode and validate the JWT
     let mut validation = Validation::new(Algorithm::HS256);
     validation.validate_exp = true;
-    
+
     // Optionally validate issuer and audience
     if let Ok(supabase_url) = env::var("SUPABASE_URL") {
         validation.set_issuer(&[&supabase_url]);
@@ -158,16 +158,18 @@ pub async fn get_or_create_local_user(
 
     // 3. Create a new user if not found
     let name = username.unwrap_or_else(|| email.split('@').next().unwrap_or("user"));
-    let result = sqlx::query("INSERT INTO users (username, email, supabase_id) VALUES ($1, $2, $3) RETURNING id")
-        .bind(name)
-        .bind(email)
-        .bind(supabase_uuid)
-        .fetch_one(pool)
-        .await
-        .map_err(|e| {
-            eprintln!("Failed to create local user for Supabase auth: {}", e);
-            actix_web::error::ErrorInternalServerError("Database error during user sync")
-        })?;
+    let result = sqlx::query(
+        "INSERT INTO users (username, email, supabase_id) VALUES ($1, $2, $3) RETURNING id",
+    )
+    .bind(name)
+    .bind(email)
+    .bind(supabase_uuid)
+    .fetch_one(pool)
+    .await
+    .map_err(|e| {
+        eprintln!("Failed to create local user for Supabase auth: {}", e);
+        actix_web::error::ErrorInternalServerError("Database error during user sync")
+    })?;
 
     let id: i32 = sqlx::Row::get(&result, "id");
     Ok(id)

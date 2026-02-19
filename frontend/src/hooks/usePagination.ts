@@ -174,7 +174,7 @@ interface BatchRequestOptions {
 }
 
 export class BatchRequestManager<T, R> {
-    private queue: Array<{ data: T; resolve: (value: R) => void; reject: (error: any) => void }> = [];
+    private queue: Array<{ data: T; resolve: (value: R) => void; reject: (error: Error | string | unknown) => void }> = [];
     private timer: NodeJS.Timeout | null = null;
     private maxBatchSize: number;
     private debounceMs: number;

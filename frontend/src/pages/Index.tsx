@@ -34,7 +34,7 @@ const Index = () => {
       // Small cooldown to ensure UI is stable
       const timer = setTimeout(() => {
         if ('requestIdleCallback' in window) {
-          (window as any).requestIdleCallback(() => {
+          (window as unknown as { requestIdleCallback: (callback: () => void, options?: { timeout: number }) => void }).requestIdleCallback(() => {
             fetchNextPage();
           }, { timeout: 10000 });
         } else {

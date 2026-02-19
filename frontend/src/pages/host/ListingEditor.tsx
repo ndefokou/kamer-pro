@@ -168,8 +168,8 @@ const ListingEditor: React.FC = () => {
             const syncData = updatedPhotos.map((p, idx) => ({
                 url: p.url,
                 caption: p.caption,
-                room_type: (p as any).room_type || null,
-                is_cover: (p as any).is_cover === 1 || (p as any).is_cover === true,
+                room_type: p.room_type || null,
+                is_cover: p.is_cover === 1 || p.is_cover === true,
                 display_order: idx
             }));
 
@@ -193,13 +193,13 @@ const ListingEditor: React.FC = () => {
             const syncData = updatedPhotos.map((p, idx) => ({
                 url: p.url,
                 caption: p.caption,
-                room_type: (p as any).room_type || null,
+                room_type: p.room_type || null,
                 is_cover: p.id === photoId,
                 display_order: idx
             }));
 
             await apiClient.post(`/listings/${id}/photos`, { photos: syncData });
-            setListing({ ...listing, photos: updatedPhotos as any });
+            setListing({ ...listing, photos: updatedPhotos });
             toast({ title: t('common.updated', 'Updated'), description: t('host.editor.coverPhotoUpdated', 'Cover photo has been updated.') });
         } catch (error) {
             console.error('Failed to set cover photo:', error);
@@ -217,8 +217,8 @@ const ListingEditor: React.FC = () => {
             const syncData = updatedPhotos.map((p, idx) => ({
                 url: p.url,
                 caption: p.caption,
-                room_type: (p as any).room_type || null,
-                is_cover: (p as any).is_cover === 1 || (p as any).is_cover === true,
+                room_type: p.room_type || null,
+                is_cover: p.is_cover === 1 || p.is_cover === true,
                 display_order: idx
             }));
 
@@ -586,12 +586,12 @@ const ListingEditor: React.FC = () => {
                                                                     className="rounded-full bg-white text-black hover:bg-gray-100"
                                                                     onClick={(e) => { e.stopPropagation(); handleSetCover(photo.id); }}
                                                                 >
-                                                                    <Star className={`h-4 w-4 mr-1 ${((photo as any).is_cover === 1 || (photo as any).is_cover === true) ? 'fill-yellow-400 text-yellow-400' : ''}`} />
-                                                                    {((photo as any).is_cover === 1 || (photo as any).is_cover === true) ? t('host.editor.cover', 'Cover') : t('host.editor.setAsCover', 'Set as cover')}
+                                                                    <Star className={`h-4 w-4 mr-1 ${((photo).is_cover === 1 || (photo).is_cover === true) ? 'fill-yellow-400 text-yellow-400' : ''}`} />
+                                                                    {((photo).is_cover === 1 || (photo).is_cover === true) ? t('host.editor.cover', 'Cover') : t('host.editor.setAsCover', 'Set as cover')}
                                                                 </Button>
                                                             </div>
                                                         </div>
-                                                        {((photo as any).is_cover === 1 || (photo as any).is_cover === true) && (
+                                                        {((photo).is_cover === 1 || (photo).is_cover === true) && (
                                                             <div className="absolute top-3 left-3 bg-white text-black px-2 py-1 rounded text-xs font-semibold shadow-sm">
                                                                 {t('host.editor.cover', 'Cover')}
                                                             </div>
@@ -702,12 +702,12 @@ const ListingEditor: React.FC = () => {
                                                                     className="rounded-full bg-white text-black hover:bg-gray-100"
                                                                     onClick={(e) => { e.stopPropagation(); handleSetCover(photo.id); }}
                                                                 >
-                                                                    <Star className={`h-4 w-4 mr-1 ${((photo as any).is_cover === 1 || (photo as any).is_cover === true) ? 'fill-yellow-400 text-yellow-400' : ''}`} />
-                                                                    {((photo as any).is_cover === 1 || (photo as any).is_cover === true) ? t('host.editor.cover', 'Cover') : t('host.editor.setAsCover', 'Set as cover')}
+                                                                    <Star className={`h-4 w-4 mr-1 ${((photo).is_cover === 1 || (photo).is_cover === true) ? 'fill-yellow-400 text-yellow-400' : ''}`} />
+                                                                    {((photo).is_cover === 1 || (photo).is_cover === true) ? t('host.editor.cover', 'Cover') : t('host.editor.setAsCover', 'Set as cover')}
                                                                 </Button>
                                                             </div>
                                                         </div>
-                                                        {((photo as any).is_cover === 1 || (photo as any).is_cover === true) && (
+                                                        {((photo).is_cover === 1 || (photo).is_cover === true) && (
                                                             <div className="absolute top-3 left-3 bg-white text-black px-2 py-1 rounded text-xs font-semibold shadow-sm">
                                                                 {t('host.editor.cover', 'Cover')}
                                                             </div>

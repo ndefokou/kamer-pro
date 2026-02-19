@@ -67,7 +67,7 @@ const Messages: React.FC = () => {
             // Select first conversation by default if none selected
             setSelectedConversationId(conversations[0].conversation.id);
         }
-    }, [conversationIdParam, conversations]);
+    }, [conversationIdParam, conversations, selectedConversationId]);
 
     const handleSendMessage = (e: React.FormEvent) => {
         e.preventDefault();

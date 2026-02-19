@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ChevronLeft, X, Trash2 } from 'lucide-react';
@@ -26,38 +26,39 @@ const BathroomEditor: React.FC = () => {
     const [uploading, setUploading] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    useEffect(() => {
-        fetchPhotos();
-    }, [id]);
-
-    const fetchPhotos = async () => {
+    const fetchPhotos = useCallback(async () => {
         try {
             const response = await apiClient.get(`/listings/${id}`);
             const listing = response.data;
 
             // Filter bathroom photos
-            const bathroom = listing.photos?.filter((p: any) =>
+            const photos = (listing.photos || []) as Array<{ id: string; url: string; caption: string; room_type?: string }>;
+            const bathroom = photos.filter((p) =>
                 p.caption?.toLowerCase().includes('bathroom') ||
                 p.room_type === 'bathroom'
-            ) || [];
+            );
 
             setBathroomPhotos(bathroom);
         } catch (error) {
             console.error('Failed to fetch photos:', error);
         }
-    };
+    }, [id]);
+
+    useEffect(() => {
+        fetchPhotos();
+    }, [id, fetchPhotos]);
 
     const handleDeleteExistingPhoto = async (photoId: string) => {
         if (!confirm(t('host.editor.confirmDeletePhoto', 'Are you sure you want to delete this photo?'))) return;
 
         try {
             const listingResponse = await apiClient.get(`/listings/${id}`);
-            const allPhotos = listingResponse.data.photos || [];
-            const filteredPhotos = allPhotos.filter((p: any) => String(p.id) !== String(photoId));
-            const syncData = filteredPhotos.map((p: any, idx: number) => ({
+            const allPhotos = (listingResponse.data.photos || []) as Array<{ id: string; url: string; caption: string; room_type?: string; is_cover?: boolean | number }>;
+            const filteredPhotos = allPhotos.filter((p) => String(p.id) !== String(photoId));
+            const syncData = filteredPhotos.map((p, idx: number) => ({
                 url: p.url,
                 caption: p.caption,
-                room_type: p.room_type,
+                room_type: p.room_type || null,
                 is_cover: p.is_cover === 1 || p.is_cover === true,
                 display_order: idx
             }));
@@ -117,10 +118,10 @@ const BathroomEditor: React.FC = () => {
             }
 
             // Prepare the complete photos array (existing + new)
-            const existingPhotosData = allExistingPhotos.map((p: any) => ({
+            const existingPhotosData = (allExistingPhotos as Array<{ url: string; caption: string; room_type?: string; is_cover?: boolean | number; display_order?: number }>).map((p) => ({
                 url: p.url,
                 caption: p.caption,
-                room_type: p.room_type,
+                room_type: p.room_type || null,
                 is_cover: p.is_cover === 1 || p.is_cover === true,
                 display_order: p.display_order
             }));

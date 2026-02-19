@@ -58,10 +58,11 @@ const SearchResults = () => {
         placeholderData: (prev) => prev, // keepPreviousData behavior
         retry: isSlowConnection ? 0 : 2,
         queryFn: ({ pageParam }) => {
-            const isManaged = (Object.keys(knownCities) as Array<keyof typeof knownCities>).includes(normalizeCity(location) as any) ||
-                (Object.keys(regions) as Array<keyof typeof regions>).includes(normalizeCity(location) as any) ||
-                normalizeCity(location) === 'other' ||
-                normalizeCity(location) === 'buea';
+            const locNorm = normalizeCity(location);
+            const isManaged = (Object.keys(knownCities) as Array<keyof typeof knownCities>).includes(locNorm as keyof typeof knownCities) ||
+                (Object.keys(regions) as Array<keyof typeof regions>).includes(locNorm as keyof typeof regions) ||
+                locNorm === 'other' ||
+                locNorm === 'buea';
 
             return getProducts({
                 search: (location && !isManaged) ? location : undefined,
@@ -94,8 +95,8 @@ const SearchResults = () => {
         const locNorm = normalizeCity(location);
 
         // Determine if the search location is a specific managed entity
-        const isKnownCity = (Object.keys(knownCities) as Array<keyof typeof knownCities>).includes(locNorm as any);
-        const isRegion = (Object.keys(regions) as Array<keyof typeof regions>).includes(locNorm as any);
+        const isKnownCity = (Object.keys(knownCities) as Array<keyof typeof knownCities>).includes(locNorm as keyof typeof knownCities);
+        const isRegion = (Object.keys(regions) as Array<keyof typeof regions>).includes(locNorm as keyof typeof regions);
 
         return properties.filter((p) => {
             if (!p?.listing) return false;
@@ -190,7 +191,7 @@ const SearchResults = () => {
         });
 
         return ordered.map(g => [g.name, g.items] as [string, Product[]]);
-    }, [filteredProperties, preferredOrder, inferCity]);
+    }, [filteredProperties, location]);
 
     const mapPoints = useMemo(() => {
         const raw: { id: string; lat: number; lon: number; product: Product }[] = [];
@@ -235,7 +236,7 @@ const SearchResults = () => {
         });
 
         return spread;
-    }, [filteredProperties, inferCity, knownCities]);
+    }, [filteredProperties]);
 
     const fallbackCenter = useMemo(() => {
         const locNorm = normalizeCity(location);
@@ -244,7 +245,7 @@ const SearchResults = () => {
             return [city.lat, city.lon] as [number, number];
         }
         return null;
-    }, [location, knownCities]);
+    }, [location]);
 
 
 

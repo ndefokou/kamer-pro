@@ -174,7 +174,7 @@ export class SupabaseAuthService {
         token: string
         type: 'signup' | 'recovery' | 'email' | 'sms'
     }): Promise<AuthResponse> {
-        const { data, error } = await supabase.auth.verifyOtp(params as any)
+        const { data, error } = await supabase.auth.verifyOtp(params as Parameters<typeof supabase.auth.verifyOtp>[0])
         return {
             user: data.user,
             session: data.session,
