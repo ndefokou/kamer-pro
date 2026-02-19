@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-echo "--- Running entrypoint.sh ---"
+echo "--- Running entrypoint.sh (v2.1) ---"
 echo "Running as user: $(whoami)"
 echo "DATABASE_URL is set"
 

@@ -21,7 +21,7 @@ backend:
           image:
             repository: ghcr.io/ndefokou/kamer-pro/backend
             tag: "{{ .Values.global.version }}"
-            pullPolicy: IfNotPresent
+            pullPolicy: Always
 
           resources:
             requests:
