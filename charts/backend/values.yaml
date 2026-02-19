@@ -80,6 +80,8 @@ backend:
     main:
       enabled: true
       className: traefik
+      annotations:
+        cert-manager.io/cluster-issuer: letsencrypt-prod
       hosts:
         - host: "{{ .Values.global.domain }}"
           paths:
@@ -88,6 +90,10 @@ backend:
               service:
                 identifier: main
                 port: http
+      tls:
+        - hosts:
+            - "{{ .Values.global.domain }}"
+          secretName: mboko-api-tls
 
   secrets:
     main:
