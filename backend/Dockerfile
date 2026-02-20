@@ -49,11 +49,22 @@ RUN --mount=type=cache,target=/usr/local/cargo/registry \
 # Now copy the rest of the application files
 COPY . .
 
+# Force Cargo to recompile the real source files by updating their timestamps.
+# This ensures we don't accidentally package the dummy binary from the previous stage.
+RUN find . -name "*.rs" -exec touch {} +
+
 # Build the real application
 RUN --mount=type=cache,target=/usr/local/cargo/registry \
     --mount=type=cache,target=/usr/src/app/target \
     cargo build --release --locked --target x86_64-unknown-linux-musl && \
     cp target/x86_64-unknown-linux-musl/release/kamer-pro-backend ./backend
+
+# Verify the binary is not a dummy (should be several MBs, whereas dummy is ~500KB)
+RUN BSIZE=$(stat -c%s "./backend") && \
+    if [ "$BSIZE" -lt 5000000 ]; then \
+    echo "Error: Backend binary is too small ($BSIZE bytes). This is likely the dummy binary."; \
+    exit 1; \
+    fi
 
 # 2. Runtime stage
 FROM alpine:3.20
