@@ -1,6 +1,6 @@
 global:
   domain: mboko.camer.digital
-  version: sha-8ff5aa2
+  version: sha-5af6626
 
 frontend:
   defaultPodOptions:
