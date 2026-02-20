@@ -41,6 +41,8 @@ fi
 echo "--- DEBUG START ---"
 echo "Binary info:"
 ls -la /app/backend
+[ -f /app/backend ] && stat /app/backend || echo "/app/backend does not exist"
+file /app/backend || echo "file command not available"
 ldd /app/backend || echo "ldd failed or not available"
 echo "--- DEBUG END ---"
 

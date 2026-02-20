@@ -16,6 +16,10 @@ ENV VITE_BACKEND_URL=$VITE_BACKEND_URL
 ENV VITE_SUPABASE_URL=$VITE_SUPABASE_URL
 ENV VITE_SUPABASE_ANON_KEY=$VITE_SUPABASE_ANON_KEY
 
+# Validate required variables for Vite build
+RUN if [ -z "$VITE_SUPABASE_URL" ] || [ "$VITE_SUPABASE_URL" = "undefined" ]; then echo "Error: VITE_SUPABASE_URL build-arg is missing" && exit 1; fi
+RUN if [ -z "$VITE_SUPABASE_ANON_KEY" ] || [ "$VITE_SUPABASE_ANON_KEY" = "undefined" ]; then echo "Error: VITE_SUPABASE_ANON_KEY build-arg is missing" && exit 1; fi
+
 RUN npm run build
 
 # 2. Serve stage

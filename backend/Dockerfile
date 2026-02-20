@@ -56,13 +56,15 @@ RUN find . -name "*.rs" -exec touch {} +
 # Build the real application
 RUN --mount=type=cache,target=/usr/local/cargo/registry \
     --mount=type=cache,target=/usr/src/app/target \
-    cargo build --release --locked --target x86_64-unknown-linux-musl && \
+    cargo build --release --locked --target x86_64-unknown-linux-musl --package kamer-pro-backend && \
     cp target/x86_64-unknown-linux-musl/release/kamer-pro-backend ./backend
 
 # Verify the binary is not a dummy (should be several MBs, whereas dummy is ~500KB)
 RUN BSIZE=$(stat -c%s "./backend") && \
-    if [ "$BSIZE" -lt 5000000 ]; then \
+    echo "Final binary size: $BSIZE bytes" && \
+    if [ "$BSIZE" -lt 2000000 ]; then \
     echo "Error: Backend binary is too small ($BSIZE bytes). This is likely the dummy binary."; \
+    ls -lh ./backend; \
     exit 1; \
     fi
 
