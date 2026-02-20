@@ -69,6 +69,7 @@ impl S3Storage {
             .client
             .post(&url)
             .header("Authorization", format!("Bearer {}", self.service_key))
+            .header("apikey", &self.service_key)
             .header("Content-Type", content_type)
             .body(file_data)
             .send()
@@ -109,6 +110,7 @@ impl S3Storage {
             .client
             .delete(&url)
             .header("Authorization", format!("Bearer {}", self.service_key))
+            .header("apikey", &self.service_key)
             .json(&serde_json::json!({ "prefixes": [path] }))
             .send()
             .await

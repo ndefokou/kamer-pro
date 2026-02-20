@@ -6,7 +6,7 @@ import apiClient from '@/api/client';
 import { getImageUrl } from '@/lib/utils';
 import OptimizedImage from '@/components/OptimizedImage';
 
-interface BathroomPhoto {
+interface BedroomPhoto {
     id: string;
     url: string;
     caption: string;
@@ -17,11 +17,11 @@ interface PendingPhoto {
     preview: string;
 }
 
-const BathroomEditor: React.FC = () => {
+const BedroomEditor: React.FC = () => {
     const navigate = useNavigate();
     const { t } = useTranslation();
     const { id } = useParams<{ id: string }>();
-    const [bathroomPhotos, setBathroomPhotos] = useState<BathroomPhoto[]>([]);
+    const [bedroomPhotos, setBedroomPhotos] = useState<BedroomPhoto[]>([]);
     const [pendingPhotos, setPendingPhotos] = useState<PendingPhoto[]>([]);
     const [uploading, setUploading] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -31,14 +31,14 @@ const BathroomEditor: React.FC = () => {
             const response = await apiClient.get(`/listings/${id}`);
             const listing = response.data;
 
-            // Filter bathroom photos
+            // Filter bedroom photos
             const photos = (listing.photos || []) as Array<{ id: string; url: string; caption: string; room_type?: string }>;
-            const bathroom = photos.filter((p) =>
-                p.caption?.toLowerCase().includes('bathroom') ||
-                p.room_type === 'bathroom'
+            const bedroom = photos.filter((p) =>
+                p.caption?.toLowerCase().includes('bedroom') ||
+                p.room_type === 'bedroom'
             );
 
-            setBathroomPhotos(bathroom);
+            setBedroomPhotos(bedroom);
         } catch (error) {
             console.error('Failed to fetch photos:', error);
         }
@@ -58,12 +58,12 @@ const BathroomEditor: React.FC = () => {
             const syncData = filteredPhotos.map((p, idx: number) => ({
                 url: p.url,
                 caption: p.caption,
-                room_type: p.room_type || null,
+                room_type: p.room_type,
                 is_cover: p.is_cover === 1 || p.is_cover === true,
                 display_order: idx
             }));
             await apiClient.post(`/listings/${id}/photos`, { photos: syncData });
-            setBathroomPhotos(prev => prev.filter(p => String(p.id) !== String(photoId)));
+            setBedroomPhotos(prev => prev.filter(p => String(p.id) !== String(photoId)));
         } catch (error) {
             console.error('Failed to delete photo:', error);
         }
@@ -121,15 +121,15 @@ const BathroomEditor: React.FC = () => {
             const existingPhotosData = (allExistingPhotos as Array<{ url: string; caption: string; room_type?: string; is_cover?: boolean | number; display_order?: number }>).map((p) => ({
                 url: p.url,
                 caption: p.caption,
-                room_type: p.room_type || null,
+                room_type: p.room_type,
                 is_cover: p.is_cover === 1 || p.is_cover === true,
                 display_order: p.display_order
             }));
 
             const newPhotosData = uploadedUrls.map(url => ({
                 url,
-                caption: 'Bathroom photo',
-                room_type: 'bathroom',
+                caption: 'Bedroom photo',
+                room_type: 'bedroom',
                 is_cover: false,
                 display_order: 0
             }));
@@ -152,7 +152,7 @@ const BathroomEditor: React.FC = () => {
         }
     };
 
-    const totalPhotos = bathroomPhotos.length + pendingPhotos.length;
+    const totalPhotos = bedroomPhotos.length + pendingPhotos.length;
 
     return (
         <div className="min-h-screen bg-white">
@@ -165,23 +165,23 @@ const BathroomEditor: React.FC = () => {
                     >
                         <ChevronLeft className="h-5 w-5" />
                     </button>
-                    <h2 className="text-lg font-semibold">{t('host.editor.fullBathroom', 'Full bathroom')}</h2>
+                    <h2 className="text-lg font-semibold">{t('host.editor.bedroom', 'Bedroom')}</h2>
                     <div className="w-10" />
                 </div>
             </header>
 
             {/* Main Content */}
             <div className="max-w-4xl mx-auto px-6 py-8">
-                <h1 className="text-3xl font-semibold mb-2">{t('host.editor.bathroomPhotos', 'Bathroom photos')}</h1>
+                <h1 className="text-3xl font-semibold mb-2">{t('host.editor.bedroomPhotos', 'Bedroom photos')}</h1>
                 <p className="text-gray-500 mb-8">
-                    {t('host.editor.addBathroomPhotosHelp', 'Add photos of your bathroom. You can select multiple photos at once.')}
+                    {t('host.editor.addBedroomPhotosHelp', 'Add photos of your bedroom. You can select multiple photos at once.')}
                 </p>
 
                 {/* Photo Grid */}
                 {totalPhotos > 0 && (
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
                         {/* Existing photos */}
-                        {bathroomPhotos.map((photo) => (
+                        {bedroomPhotos.map((photo) => (
                             <div key={photo.id} className="relative aspect-square rounded-lg overflow-hidden border border-gray-200 group">
                                 <OptimizedImage
                                     src={getImageUrl(photo.url)}
@@ -226,50 +226,40 @@ const BathroomEditor: React.FC = () => {
                 <div className="border-2 border-dashed border-gray-300 rounded-xl p-12 text-center bg-white mb-6">
                     {totalPhotos === 0 && (
                         <div className="mb-6">
-                            {/* Bathroom icon */}
+                            {/* Bed icon - 3D isometric style */}
                             <svg
                                 className="h-32 w-32 mx-auto mb-6"
                                 viewBox="0 0 120 100"
                                 fill="none"
                             >
-                                {/* Bathtub base */}
-                                <rect
-                                    x="20"
-                                    y="50"
-                                    width="80"
-                                    height="30"
-                                    rx="4"
+                                {/* Bed base */}
+                                <path
+                                    d="M20 60 L100 60 L100 75 L20 75 Z"
                                     fill="#E5E7EB"
                                     stroke="#9CA3AF"
                                     strokeWidth="1.5"
                                 />
-                                {/* Water */}
+                                {/* Mattress/blanket */}
+                                <path
+                                    d="M25 50 L95 50 L95 60 L25 60 Z"
+                                    fill="#F97316"
+                                    stroke="#EA580C"
+                                    strokeWidth="1.5"
+                                />
+                                {/* Pillow */}
                                 <rect
-                                    x="25"
-                                    y="55"
-                                    width="70"
-                                    height="15"
+                                    x="70"
+                                    y="40"
+                                    width="20"
+                                    height="12"
                                     rx="2"
-                                    fill="#60A5FA"
-                                    opacity="0.6"
+                                    fill="#D1D5DB"
+                                    stroke="#9CA3AF"
+                                    strokeWidth="1.5"
                                 />
-                                {/* Faucet */}
-                                <circle
-                                    cx="30"
-                                    cy="45"
-                                    r="3"
-                                    fill="#9CA3AF"
-                                />
-                                <rect
-                                    x="28"
-                                    y="35"
-                                    width="4"
-                                    height="10"
-                                    fill="#9CA3AF"
-                                />
-                                {/* Bathtub feet */}
-                                <ellipse cx="30" cy="82" rx="4" ry="2" fill="#6B7280" />
-                                <ellipse cx="90" cy="82" rx="4" ry="2" fill="#6B7280" />
+                                {/* Bed legs */}
+                                <line x1="25" y1="75" x2="25" y2="85" stroke="#9CA3AF" strokeWidth="2" />
+                                <line x1="95" y1="75" x2="95" y2="85" stroke="#9CA3AF" strokeWidth="2" />
                             </svg>
                         </div>
                     )}
@@ -288,12 +278,12 @@ const BathroomEditor: React.FC = () => {
                         disabled={uploading}
                         className="px-6 py-2 border border-gray-900 rounded-lg font-medium hover:bg-gray-100 transition-colors disabled:opacity-50"
                     >
-                        {totalPhotos === 0 ? t('host.editor.addPhotos', 'Add photos') : t('photos.addMorePhotos', 'Add more photos')}
+                        {totalPhotos === 0 ? t('host.editor.addPhotos', 'Add photos') : t('host.photos.addMorePhotos', 'Add more photos')}
                     </button>
 
                     {pendingPhotos.length > 0 && (
                         <p className="text-sm text-gray-500 mt-3">
-                            {pendingPhotos.length} {pendingPhotos.length !== 1 ? t('photos.photosPlural', 'photos') : t('photos.photoSingular', 'photo')} {t('photos.readyToUpload', 'ready to upload')}
+                            {pendingPhotos.length} {pendingPhotos.length !== 1 ? t('host.photos.photosPlural', 'photos') : t('host.photos.photoSingular', 'photo')} {t('host.photos.readyToUpload', 'ready to upload')}
                         </p>
                     )}
                 </div>
@@ -316,7 +306,7 @@ const BathroomEditor: React.FC = () => {
                             disabled={uploading}
                             className="px-6 py-3 bg-black text-white rounded-lg font-medium hover:bg-gray-800 transition-colors disabled:opacity-50"
                         >
-                            {uploading ? t('common.saving', 'Saving...') : t('common.savePhotosCount', 'Save {{count}} {{unit}}', { count: pendingPhotos.length, unit: pendingPhotos.length !== 1 ? t('photos.photosPlural', 'photos') : t('photos.photoSingular', 'photo') })}
+                            {uploading ? t('common.saving', 'Saving...') : t('common.savePhotosCount', 'Save {{count}} {{unit}}', { count: pendingPhotos.length, unit: pendingPhotos.length !== 1 ? t('host.photos.photosPlural', 'photos') : t('host.photos.photoSingular', 'photo') })}
                         </button>
                     </div>
                 )}
@@ -325,4 +315,4 @@ const BathroomEditor: React.FC = () => {
     );
 };
 
-export default BathroomEditor;
+export default BedroomEditor;

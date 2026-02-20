@@ -99,7 +99,7 @@ const PreviewMap = ({ latitude, longitude, title, selectedCategory }: PreviewMap
             <Marker position={[lat, lng]}>
                 <Popup>
                     <div className="font-semibold">{title}</div>
-                    <div className="text-sm text-gray-600">{t('host.preview.location.exact', 'Exact location provided after booking')}</div>
+                    <div className="text-sm text-gray-600">{t('preview.location.exact', 'Exact location provided after booking')}</div>
                 </Popup>
             </Marker>
 

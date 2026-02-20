@@ -78,20 +78,23 @@ define(['./workbox-bd8ba865'], (function (workbox) { 'use strict';
    * See https://goo.gl/S9QRab
    */
   workbox.precacheAndRoute([{
-    "url": "registerSW.js",
-    "revision": "3ca0b8505b4bec776b69afdba2768812"
-  }, {
-    "url": "/index.html",
-    "revision": "0.k75d0n998kg"
-  }], {});
+    "url": "index.html",
+    "revision": "0.10kir9auf"
+  }], {
+    "directoryIndex": "/"
+  });
   workbox.cleanupOutdatedCaches();
-  workbox.registerRoute(new workbox.NavigationRoute(workbox.createHandlerBoundToURL("/index.html"), {
+  workbox.registerRoute(new workbox.NavigationRoute(workbox.createHandlerBoundToURL("index.html"), {
     allowlist: [/^\/$/],
-    denylist: [/^\/api/]
+    denylist: [/\/api(\/|$)/, /supabase\.co/, /camer\.digital/]
   }));
   workbox.registerRoute(({
     url
-  }) => url.pathname.startsWith("/api"), new workbox.NetworkOnly({
+  }) => {
+    const isPathApi = url.pathname.includes("/api/") || url.pathname.endsWith("/api");
+    const isKnownBackend = url.hostname.includes("camer.digital") || url.hostname.includes("supabase.co");
+    return isPathApi || isKnownBackend;
+  }, new workbox.NetworkOnly({
     "fetchOptions": {
       "cache": "no-store"
     },

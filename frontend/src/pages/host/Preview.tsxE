@@ -135,7 +135,7 @@ const Preview: React.FC = () => {
                                 <p>• {draft.instantBook ? t('preview.instantAvailable', 'Instant booking available') : t('preview.hostApproval', 'Host approval required')}</p>
                                 <p>• {t('preview.minimumStay', 'Minimum stay')}: {draft.minNights} {draft.minNights !== 1 ? t('common.nights', 'nights') : t('preview.night', 'night')}</p>
                                 {draft.maxNights && <p>• {t('preview.maximumStay', 'Maximum stay')}: {draft.maxNights} {t('common.nights', 'nights')}</p>}
-                                {draft.cleaningFee && <p>• {t('pricing.cleaningFeeShort', 'Cleaning fee')}: {formatPrice(draft.cleaningFee)}</p>}
+                                {draft.cleaningFee && <p>• {t('host.pricing.cleaningFeeShort', 'Cleaning fee')}: {formatPrice(draft.cleaningFee)}</p>}
                             </div>
                         </div>
 

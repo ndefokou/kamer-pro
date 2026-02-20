@@ -72,7 +72,7 @@ const Reservations: React.FC = () => {
                 finalPhone = res.profile?.phone;
             }
 
-            const success = openWhatsApp(finalPhone || null, t('reservations.whatsappGreeting', { name: guestName }));
+            const success = openWhatsApp(finalPhone || null, t('host.reservations.whatsappGreeting', { name: guestName }));
             if (!success) {
                 toast({
                     title: t('common.error'),
@@ -139,7 +139,7 @@ const Reservations: React.FC = () => {
             if (b) {
                 openWhatsApp(
                     b.guest_phone || null,
-                    t('reservations.declineWhatsapp', { name: b.guest_name, reason: declineReason })
+                    t('host.reservations.declineWhatsapp', { name: b.guest_name, reason: declineReason })
                 );
             }
             setDeclineDialogOpen(false);
@@ -180,7 +180,7 @@ const Reservations: React.FC = () => {
 
             <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 <div className="mb-8">
-                    <h1 className="text-3xl font-semibold text-gray-900">{t('reservations.title', 'Reservations')}</h1>
+                    <h1 className="text-3xl font-semibold text-gray-900">{t('host.reservations.title', 'Reservations')}</h1>
                 </div>
 
                 {/* Segmented control */}
@@ -206,8 +206,8 @@ const Reservations: React.FC = () => {
                                 <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-5">
                                     <Calendar className="h-10 w-10 text-gray-400" />
                                 </div>
-                                <h3 className="text-xl font-semibold text-gray-900">{t('reservations.emptyTodayTitle', 'No reservations today')}</h3>
-                                <p className="text-gray-500 mt-2">{t("reservations.emptyTodayDesc", "You don't have any guests checking in or out today.")}</p>
+                                <h3 className="text-xl font-semibold text-gray-900">{t('host.reservations.emptyTodayTitle', 'No reservations today')}</h3>
+                                <p className="text-gray-500 mt-2">{t("host.reservations.emptyTodayDesc", "You don't have any guests checking in or out today.")}</p>
                                 <Button className="mt-6 rounded-full px-5">{t('host.common.manageListings', 'Manage Listings')}</Button>
                             </div>
                         ) : (
@@ -277,8 +277,8 @@ const Reservations: React.FC = () => {
                                 <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-5">
                                     <Calendar className="h-10 w-10 text-gray-400" />
                                 </div>
-                                <h3 className="text-xl font-semibold text-gray-900">{t('reservations.emptyUpcomingTitle', 'No upcoming reservations')}</h3>
-                                <p className="text-gray-500 mt-2">{t('reservations.emptyUpcomingDesc', 'Finish and publish your listing to receive bookings.')}</p>
+                                <h3 className="text-xl font-semibold text-gray-900">{t('host.reservations.emptyUpcomingTitle', 'No upcoming reservations')}</h3>
+                                <p className="text-gray-500 mt-2">{t('host.reservations.emptyUpcomingDesc', 'Finish and publish your listing to receive bookings.')}</p>
                                 <Button className="mt-6 rounded-full px-5">{t('host.common.manageListings', 'Manage Listings')}</Button>
                             </div>
                         ) : (
@@ -316,14 +316,14 @@ const Reservations: React.FC = () => {
             {declineDialogOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
                     <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-xl">
-                        <h3 className="text-lg font-semibold text-gray-900 mb-2">{t('reservations.declineTitle', 'Decline Booking')}</h3>
+                        <h3 className="text-lg font-semibold text-gray-900 mb-2">{t('host.reservations.declineTitle', 'Decline Booking')}</h3>
                         <p className="text-sm text-gray-500 mb-4">
-                            {t('reservations.declineHelp', 'Please provide a reason for declining this booking. This message will be sent to the guest.')}
+                            {t('host.reservations.declineHelp', 'Please provide a reason for declining this booking. This message will be sent to the guest.')}
                         </p>
                         <textarea
                             value={declineReason}
                             onChange={(e) => setDeclineReason(e.target.value)}
-                            placeholder={t('reservations.declinePlaceholder', 'e.g., The dates are no longer available...') as string}
+                            placeholder={t('host.reservations.declinePlaceholder', 'e.g., The dates are no longer available...') as string}
                             className="w-full h-32 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent resize-none mb-4"
                         />
                         <div className="flex justify-end gap-3">
@@ -339,7 +339,7 @@ const Reservations: React.FC = () => {
                                 disabled={!declineReason.trim() || isSubmitting}
                                 className="bg-red-600 hover:bg-red-700 text-white"
                             >
-                                {isSubmitting ? t('reservations.declining', 'Declining...') : t('reservations.declineCta', 'Decline Booking')}
+                                {isSubmitting ? t('host.reservations.declining', 'Declining...') : t('host.reservations.declineCta', 'Decline Booking')}
                             </Button>
                         </div>
                     </div>

@@ -1179,8 +1179,8 @@ const ListingDetails: React.FC = () => {
                                 <p>{t('listing.booking.checkIn')}: {houseRules.check_in_start} - {houseRules.check_in_end}</p>
                                 <p>{t('listing.booking.checkout')}: {houseRules.checkout_time}</p>
                                 <p>{t('listing.details.maxGuests', { count: listing.max_guests })}</p>
-                                <p>{houseRules.pets_allowed ? t('host.editor.safety.rules.pets') : t('preview.noPets')}</p>
-                                <p>{houseRules.events_allowed ? t('host.editor.safety.rules.events') : t('preview.noParties')}</p>
+                                <p>{houseRules.pets_allowed ? t('host.editor.houseRules.pets') : t('preview.noPets')}</p>
+                                <p>{houseRules.events_allowed ? t('host.editor.houseRules.events') : t('preview.noParties')}</p>
                                 <p>{houseRules.smoking_allowed ? t('listing.details.houseRulesProps.smokingAllowed') : t('preview.noSmoking')}</p>
                                 <p>{houseRules.quiet_hours ? t('listing.details.houseRulesProps.quietHoursEnforced') : t('listing.details.houseRulesProps.quietHoursNotEnforced')}</p>
                                 <p>{houseRules.commercial_photography_allowed ? t('listing.details.houseRulesProps.photographyAllowed') : t('listing.details.houseRulesProps.photographyNotAllowed')}</p>

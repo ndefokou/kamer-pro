@@ -234,20 +234,20 @@ const Location: React.FC = () => {
                     await reverseGeocode(data.latitude, data.longitude);
                 }
                 toast({
-                    title: t('location.approxTitle', 'Using approximate location'),
-                    description: t('location.approxDesc', "We estimated your location using your IP address."),
+                    title: t('host.location.approxTitle', 'Using approximate location'),
+                    description: t('host.location.approxDesc', "We estimated your location using your IP address."),
                 });
             } else {
                 toast({
-                    title: t('location.fallbackFailedTitle', 'Approximate location failed'),
-                    description: t('location.fallbackFailedDesc', 'We could not determine your location.'),
+                    title: t('host.location.fallbackFailedTitle', 'Approximate location failed'),
+                    description: t('host.location.fallbackFailedDesc', 'We could not determine your location.'),
                     variant: 'destructive',
                 });
             }
         } catch (e) {
             toast({
-                title: t('location.fallbackFailedTitle', 'Approximate location failed'),
-                description: t('location.fallbackFailedDesc', 'We could not determine your location.'),
+                title: t('host.location.fallbackFailedTitle', 'Approximate location failed'),
+                description: t('host.location.fallbackFailedDesc', 'We could not determine your location.'),
                 variant: 'destructive',
             });
         }
@@ -256,8 +256,8 @@ const Location: React.FC = () => {
     const handleUseMyLocation = () => {
         if (!navigator.geolocation) {
             toast({
-                title: t('location.geolocationUnsupportedTitle', 'Location unavailable'),
-                description: t('location.geolocationUnsupportedDesc', 'Geolocation is not supported by your browser.'),
+                title: t('host.location.geolocationUnsupportedTitle', 'Location unavailable'),
+                description: t('host.location.geolocationUnsupportedDesc', 'Geolocation is not supported by your browser.'),
                 variant: 'destructive',
             });
             return;
@@ -274,17 +274,17 @@ const Location: React.FC = () => {
                 setIsLocating(false);
             },
             (err) => {
-                let message: string = t('location.geolocationError', 'Unable to retrieve your location.');
+                let message: string = t('host.location.geolocationError', 'Unable to retrieve your location.');
                 if (err.code === GEO_ERROR.PERMISSION_DENIED) {
-                    message = t('location.permissionDenied', 'Permission to access location was denied.');
+                    message = t('host.location.permissionDenied', 'Permission to access location was denied.');
                 } else if (err.code === GEO_ERROR.POSITION_UNAVAILABLE) {
-                    message = t('location.positionUnavailable', 'Location information is unavailable.');
+                    message = t('host.location.positionUnavailable', 'Location information is unavailable.');
                 } else if (err.code === GEO_ERROR.TIMEOUT) {
-                    message = t('location.timeout', 'The request to get your location timed out.');
+                    message = t('host.location.timeout', 'The request to get your location timed out.');
                 }
                 toast({
-                    title: t('location.locationFailedTitle', 'Location failed'),
-                    description: message + ' ' + t('location.tryApprox', 'Trying approximate location...'),
+                    title: t('host.location.locationFailedTitle', 'Location failed'),
+                    description: message + ' ' + t('host.location.tryApprox', 'Trying approximate location...'),
                     variant: 'destructive',
                 });
                 setIsLocating(false);
@@ -322,8 +322,8 @@ const Location: React.FC = () => {
             } catch (error) {
                 console.error('Failed to save location:', error);
                 toast({
-                    title: t('location.saveFailedTitle', 'Save failed'),
-                    description: t('location.saveFailedDesc', 'Failed to save location. Please try again.'),
+                    title: t('host.location.saveFailedTitle', 'Save failed'),
+                    description: t('host.location.saveFailedDesc', 'Failed to save location. Please try again.'),
                     variant: 'destructive'
                 });
             } finally {
@@ -360,9 +360,9 @@ const Location: React.FC = () => {
             {/* Header */}
             <div className="p-4 md:p-8 pb-4">
                 <div className="max-w-4xl mx-auto">
-                    <h1 className="text-3xl md:text-4xl font-bold mb-2">{t('location.title', "Where's your place located?")}</h1>
+                    <h1 className="text-3xl md:text-4xl font-bold mb-2">{t('host.location.title', "Where's your place located?")}</h1>
                     <p className="text-muted-foreground">
-                        {t('location.subtitle', "Your address is only shared with guests after they've made a reservation.")}
+                        {t('host.location.subtitle', "Your address is only shared with guests after they've made a reservation.")}
                     </p>
                 </div>
             </div>
@@ -374,7 +374,7 @@ const Location: React.FC = () => {
                         <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                         <Input
                             type="text"
-                            placeholder={t('location.searchPlaceholder', 'Enter a location...') as string}
+                            placeholder={t('host.location.searchPlaceholder', 'Enter a location...') as string}
                             value={searchQuery}
                             onChange={(e) => {
                                 setSearchQuery(e.target.value);
@@ -400,8 +400,8 @@ const Location: React.FC = () => {
                     <div className="mt-3">
                         <Button variant="outline" size="sm" onClick={handleUseMyLocation} disabled={isLocating}>
                             {isLocating
-                                ? t('location.locating', 'Locating...')
-                                : t('location.useMyLocation', 'Use my location')}
+                                ? t('host.location.locating', 'Locating...')
+                                : t('host.location.useMyLocation', 'Use my location')}
                         </Button>
                     </div>
 

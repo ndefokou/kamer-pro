@@ -59,6 +59,11 @@ pub async fn upload_images_standalone(
 
             // Only process images
             if content_type.starts_with("image/") {
+                log::debug!(
+                    "Processing image: {}, size: {} bytes",
+                    filename,
+                    file_data.len()
+                );
                 if let Ok(img) = image::load_from_memory(&file_data) {
                     // Resize to HD quality (good balance for mobile/web)
                     let resized = limit_image_dimensions(img, 1280, 1280);
@@ -73,15 +78,14 @@ pub async fn upload_images_standalone(
                             .unwrap_or("image");
                         let webp_filename = format!("{}.webp", new_filename);
 
+                        log::debug!("Uploading optimized WebP: {}", webp_filename);
                         match s3.upload_file(webp_buf, &webp_filename, "image/webp").await {
                             Ok(url) => {
-                                println!("Successfully uploaded optimized WebP to S3: {}", url);
+                                log::info!("Successfully uploaded optimized WebP to S3: {}", url);
                                 file_urls.push(url);
                             }
                             Err(e) => {
-                                eprintln!("Failed to upload WebP to S3: {}", e);
-                                // Fallback: try uploading original if optimization/upload failed?
-                                // For now, return error to encourage fixing the issue
+                                log::error!("Failed to upload WebP to S3: {}", e);
                                 return Ok(HttpResponse::InternalServerError().json(
                                     ErrorResponse {
                                         message: format!("Failed to upload optimized image: {}", e),
@@ -91,37 +95,48 @@ pub async fn upload_images_standalone(
                         }
                     } else {
                         // Fallback if WebP encoding fails (unlikely)
-                        eprintln!("WebP encoding failed, uploading original");
+                        log::warn!("WebP encoding failed for {}, uploading original", filename);
                         match s3.upload_file(file_data, &filename, &content_type).await {
-                            Ok(url) => file_urls.push(url),
+                            Ok(url) => {
+                                log::info!("Successfully uploaded original image: {}", url);
+                                file_urls.push(url);
+                            }
                             Err(e) => {
+                                log::error!("Failed to upload original image to S3: {}", e);
                                 return Ok(HttpResponse::InternalServerError().json(
                                     ErrorResponse {
                                         message: format!("Failed to upload original image: {}", e),
                                     },
-                                ))
+                                ));
                             }
                         }
                     }
                 } else {
                     // Not a valid image format for image-rs, upload as is
+                    log::warn!(
+                        "File {} is not a valid image format, uploading as is",
+                        filename
+                    );
                     match s3.upload_file(file_data, &filename, &content_type).await {
                         Ok(url) => file_urls.push(url),
                         Err(e) => {
+                            log::error!("Failed to upload raw file to S3: {}", e);
                             return Ok(HttpResponse::InternalServerError().json(ErrorResponse {
                                 message: format!("Failed to upload file: {}", e),
-                            }))
+                            }));
                         }
                     }
                 }
             } else {
                 // Not an image (e.g. PDF?), upload as is
+                log::debug!("Uploading non-image file: {}", filename);
                 match s3.upload_file(file_data, &filename, &content_type).await {
                     Ok(url) => file_urls.push(url),
                     Err(e) => {
+                        log::error!("Failed to upload non-image file to S3: {}", e);
                         return Ok(HttpResponse::InternalServerError().json(ErrorResponse {
                             message: format!("Failed to upload file: {}", e),
-                        }))
+                        }));
                     }
                 }
             }

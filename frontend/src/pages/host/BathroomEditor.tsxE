@@ -288,12 +288,12 @@ const BathroomEditor: React.FC = () => {
                         disabled={uploading}
                         className="px-6 py-2 border border-gray-900 rounded-lg font-medium hover:bg-gray-100 transition-colors disabled:opacity-50"
                     >
-                        {totalPhotos === 0 ? t('host.editor.addPhotos', 'Add photos') : t('photos.addMorePhotos', 'Add more photos')}
+                        {totalPhotos === 0 ? t('host.editor.addPhotos', 'Add photos') : t('host.photos.addMorePhotos', 'Add more photos')}
                     </button>
 
                     {pendingPhotos.length > 0 && (
                         <p className="text-sm text-gray-500 mt-3">
-                            {pendingPhotos.length} {pendingPhotos.length !== 1 ? t('photos.photosPlural', 'photos') : t('photos.photoSingular', 'photo')} {t('photos.readyToUpload', 'ready to upload')}
+                            {pendingPhotos.length} {pendingPhotos.length !== 1 ? t('host.photos.photosPlural', 'photos') : t('host.photos.photoSingular', 'photo')} {t('host.photos.readyToUpload', 'ready to upload')}
                         </p>
                     )}
                 </div>
@@ -316,7 +316,7 @@ const BathroomEditor: React.FC = () => {
                             disabled={uploading}
                             className="px-6 py-3 bg-black text-white rounded-lg font-medium hover:bg-gray-800 transition-colors disabled:opacity-50"
                         >
-                            {uploading ? t('common.saving', 'Saving...') : t('common.savePhotosCount', 'Save {{count}} {{unit}}', { count: pendingPhotos.length, unit: pendingPhotos.length !== 1 ? t('photos.photosPlural', 'photos') : t('photos.photoSingular', 'photo') })}
+                            {uploading ? t('common.saving', 'Saving...') : t('common.savePhotosCount', 'Save {{count}} {{unit}}', { count: pendingPhotos.length, unit: pendingPhotos.length !== 1 ? t('host.photos.photosPlural', 'photos') : t('host.photos.photoSingular', 'photo') })}
                         </button>
                     </div>
                 )}

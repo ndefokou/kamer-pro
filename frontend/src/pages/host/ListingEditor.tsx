@@ -366,19 +366,19 @@ const ListingEditor: React.FC = () => {
             setIsPublishing(true);
             await apiClient.post(`/listings/${id}/publish`);
             toast({
-                title: t('host.preview.publishedTitle', 'Listing published!'),
-                description: t('host.preview.publishedDesc', 'Your listing is now live on Le Mboko'),
+                title: t('preview.publishedTitle', 'Listing published!'),
+                description: t('preview.publishedDesc', 'Your listing is now live on Le Mboko'),
             });
             navigate('/host/dashboard');
         } catch (error) {
-            let message = t('host.preview.publishFailedDesc', 'Please check all required fields') as string;
+            let message = t('preview.publishFailedDesc', 'Please check all required fields') as string;
             if (error instanceof AxiosError && error.response?.data?.error) {
                 message = error.response.data.error as string;
             } else if (error instanceof Error) {
                 message = error.message;
             }
             toast({
-                title: t('host.preview.publishFailedTitle', 'Failed to publish'),
+                title: t('preview.publishFailedTitle', 'Failed to publish'),
                 description: message,
                 variant: 'destructive',
             });
@@ -417,7 +417,7 @@ const ListingEditor: React.FC = () => {
                         </button>
                         {listing.status !== 'published' && (
                             <Button onClick={handlePublish} disabled={isPublishing} className="rounded-full">
-                                {isPublishing ? t('host.preview.publishing', 'Publishing...') : t('host.preview.publishListing', 'Publish listing')}
+                                {isPublishing ? t('preview.publishing', 'Publishing...') : t('preview.publishListing', 'Publish listing')}
                             </Button>
                         )}
                     </div>
