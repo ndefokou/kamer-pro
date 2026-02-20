@@ -1,10 +1,17 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-if (!supabaseUrl || !supabaseAnonKey) {
-    throw new Error('Missing Supabase credentials. Please check your .env file and ensure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY are set.')
+// Robust check for missing credentials, including literal "undefined" strings from build arguments
+const isMissing = (val: string | undefined) => !val || val === 'undefined' || val === '';
+
+if (isMissing(supabaseUrl) || isMissing(supabaseAnonKey)) {
+    const missing = [];
+    if (isMissing(supabaseUrl)) missing.push('VITE_SUPABASE_URL');
+    if (isMissing(supabaseAnonKey)) missing.push('VITE_SUPABASE_ANON_KEY');
+
+    throw new Error(`Missing Supabase credentials: ${missing.join(', ')}. Please check your repository secrets and build configuration.`);
 }
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
