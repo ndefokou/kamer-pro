@@ -149,17 +149,37 @@ export default defineConfig(({ mode }) => ({
   ].filter(Boolean),
   build: {
     rollupOptions: {
+      output: {
+        // Prevent Rollup from inlining small chunks as data:application/octet-stream URIs,
+        // which browsers reject as ES module scripts (strict MIME type checking).
+        inlineDynamicImports: false,
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+          'radix-ui': [
+            '@radix-ui/react-slot',
+            '@radix-ui/react-dialog',
+            '@radix-ui/react-dropdown-menu',
+            '@radix-ui/react-tooltip',
+            '@radix-ui/react-select',
+            '@radix-ui/react-tabs',
+            '@radix-ui/react-toast',
+            '@radix-ui/react-accordion',
+            '@radix-ui/react-popover',
+          ],
+          'ui-components': ['class-variance-authority', 'clsx', 'tailwind-merge'],
+          'tanstack': ['@tanstack/react-query'],
+          'supabase': ['@supabase/supabase-js'],
+          'charts': ['recharts'],
+          'map': ['leaflet', 'react-leaflet'],
+        },
+      },
     },
     chunkSizeWarningLimit: 2000,
     cssCodeSplit: true,
     sourcemap: false,
-    minify: 'terser',
-    terserOptions: {
-      compress: {
-        drop_console: false,
-        drop_debugger: true,
-      },
-    },
+    // esbuild is Vite's built-in minifier and handles complex re-exports
+    // more reliably than terser in this project.
+    minify: 'esbuild',
   },
   resolve: {
     alias: {
