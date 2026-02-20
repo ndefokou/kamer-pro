@@ -48,15 +48,16 @@ export default defineConfig(({ mode }) => ({
       workbox: {
         skipWaiting: true,
         clientsClaim: true,
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,webp,jpg,jpeg,webmanifest}'],
+        // IMPORTANT: Do NOT precache JS or CSS — they have content-hash names
+        // so the browser cache handles them natively. Precaching JS leads to
+        // stale bundles being served from the SW cache after new deployments.
+        globPatterns: ['**/*.{html,ico,png,svg,webp,jpg,jpeg,webmanifest}'],
         cleanupOutdatedCaches: true,
         runtimeCaching: [
           {
             // Never cache backend API calls or Supabase requests
             urlPattern: ({ url }) => {
-              // Handles root-relative /api and subpath /kamer-pro/api
               const isPathApi = url.pathname.includes('/api/') || url.pathname.endsWith('/api');
-              // Handles cross-origin backends: production API and Supabase
               const isKnownBackend =
                 url.hostname.includes('camer.digital') || url.hostname.includes('supabase.co');
               return isPathApi || isKnownBackend;
@@ -102,7 +103,6 @@ export default defineConfig(({ mode }) => ({
             },
           },
         ],
-        navigateFallback: null,
         navigateFallbackDenylist: [/\/api(\/|$)/, /supabase\.co/, /camer\.digital/],
         directoryIndex: '/',
       },

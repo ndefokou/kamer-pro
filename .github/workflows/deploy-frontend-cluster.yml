@@ -18,7 +18,7 @@ jobs:
   build-and-push:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
       packages: write
 
     steps:
@@ -58,3 +58,20 @@ jobs:
             VITE_SUPABASE_ANON_KEY=${{ secrets.VITE_SUPABASE_ANON_KEY }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Update Helm chart image tag to force pod rollout
+        run: |
+          # Use the short SHA tag so the Helm spec changes on every deploy,
+          # causing Kubernetes to do a real rolling restart (not just re-use
+          # the same 'latest' image that may already be cached on the node).
+          SHA_TAG="sha-$(echo '${{ github.sha }}' | cut -c1-7)"
+          sed -i "s/version: .*/version: ${SHA_TAG}/" charts/frontend/values.yaml
+          echo "Updated charts/frontend/values.yaml image tag to: ${SHA_TAG}"
+
+      - name: Commit and push updated Helm values
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add charts/frontend/values.yaml
+          git diff --staged --quiet || git commit -m "chore(helm): update frontend image tag to sha-$(echo '${{ github.sha }}' | cut -c1-7) [skip ci]"
+          git push
