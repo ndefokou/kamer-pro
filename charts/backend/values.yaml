@@ -96,6 +96,6 @@ backend:
         DATABASE_URL: "postgresql://postgres.bfxkhdjgdohrziavdorf:tnarthur%40022005@aws-0-us-west-2.pooler.supabase.com:5432/postgres"
         SUPABASE_PUBLIC_URL: "https://bfxkhdjgdohrziavdorf.supabase.co"
         S3_ENDPOINT: "https://bfxkhdjgdohrziavdorf.supabase.co/storage/v1/s3"
-        S3_ACCESS_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-        S3_SECRET_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        S3_ACCESS_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJmeGtoZGpnZG9ocnppYXZkb3JmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2OTc1MDk3NiwiZXhwIjoyMDg1MzI2OTc2fQ.zieW7auPyMdfgZ1e71ehGBVEO_8pmkgPKWLkUHGq9vM"
+        S3_SECRET_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJmeGtoZGpnZG9ocnppYXZkb3JmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2OTc1MDk3NiwiZXhwIjoyMDg1MzI2OTc2fQ.zieW7auPyMdfgZ1e71ehGBVEO_8pmkgPKWLkUHGq9vM"
         JWT_SECRET: "gB0GBlpiHi6bTMHgUc60Mlc8Goo0r6tawe1s+O56bt9d5IYSILRnLbkDMlzvuhO11BT/1f9Gi76wF7Ld/dPvbg=="

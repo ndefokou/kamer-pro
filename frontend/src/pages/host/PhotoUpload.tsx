@@ -75,10 +75,18 @@ const PhotoUpload: React.FC = () => {
 
             // Reset the file input to prevent duplicate uploads
             e.target.value = '';
-        } catch (error) {
+        } catch (error: any) {
+            console.error('Upload error details:', {
+                status: error.response?.status,
+                data: error.response?.data,
+                message: error.message
+            });
+
+            const errorMessage = error.response?.data?.message || t('photos.uploadFailedDesc', 'Failed to upload photos. Please try again.');
+
             toast({
                 title: t('photos.uploadFailedTitle', 'Upload failed'),
-                description: t('photos.uploadFailedDesc', 'Failed to upload photos. Please try again.'),
+                description: errorMessage,
                 variant: 'destructive',
             });
 
